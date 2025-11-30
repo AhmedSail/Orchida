@@ -1,0 +1,142 @@
+@import "tailwindcss";
+@source "../node_modules/@material-tailwind/react";
+@import "tw-animate-css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+}
+
+:root {
+  --radius: 0.625rem;
+  --background: #ffffff;
+  --foreground: #1a1a1a;
+  --card: #ffffff;
+  --card-foreground: #1a1a1a;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a1a;
+  --primary: #675795;
+  --primary-foreground: #ffffff;
+  --secondary: #f0eff5;
+  --secondary-foreground: #675795;
+  --muted: #f3f1f9;
+  --muted-foreground: #7e7698;
+  --accent: #f0eff5;
+  --accent-foreground: #675795;
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: #e2e0e8;
+  --input: #e2e0e8;
+  --ring: #675795;
+  --chart-1: #675795;
+  --chart-2: #56487c;
+  --chart-3: #453a63;
+  --chart-4: #897baa;
+  --chart-5: #ab9fc0;
+  --sidebar: #f8f7fa;
+  --sidebar-foreground: #2e2b38;
+  --sidebar-primary: #675795;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f0eff5;
+  --sidebar-accent-foreground: #675795;
+  --sidebar-border: #e2e0e8;
+  --sidebar-ring: #675795;
+}
+
+.dark {
+  --background: #121016;
+  --foreground: #f8f7fa;
+  --card: #1a1721;
+  --card-foreground: #f8f7fa;
+  --popover: #1a1721;
+  --popover-foreground: #f8f7fa;
+  --primary: #675795;
+  --primary-foreground: #ffffff;
+  --secondary: #2d2838;
+  --secondary-foreground: #f8f7fa;
+  --muted: #2d2838;
+  --muted-foreground: #9d96b8;
+  --accent: #2d2838;
+  --accent-foreground: #f8f7fa;
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: #2d2838;
+  --input: #2d2838;
+  --ring: #675795;
+  --chart-1: #675795;
+  --chart-2: #7d6ca8;
+  --chart-3: #9384bb;
+  --chart-4: #a99cce;
+  --chart-5: #bfb5e1;
+  --sidebar: #16131d;
+  --sidebar-foreground: #f8f7fa;
+  --sidebar-primary: #675795;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #2d2838;
+  --sidebar-accent-foreground: #f8f7fa;
+  --sidebar-border: #2d2838;
+  --sidebar-ring: #675795;
+}
+@font-face {
+  font-family: "BigVesta";
+  src: url("/fonts/BigVesta-Regular.woff2") format("woff2"),
+       url("/fonts/BigVesta-Regular.woff") format("woff");
+  font-weight: 400;
+  font-style: normal;
+}
+
+@font-face {
+  font-family: "BigVesta";
+  src: url("/fonts/BigVesta-Bold.woff2") format("woff2"),
+       url("/fonts/BigVesta-Bold.woff") format("woff");
+  font-weight: 700;
+  font-style: normal;
+}
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+  }
+
+  .hoverEffect {
+    transition: all 0.3s;
+  }
+}
