@@ -2,8 +2,17 @@
 @source "../node_modules/@material-tailwind/react";
 @import "tw-animate-css";
 
-@custom-variant dark (&:is(.dark *));
+@font-face {
+  font-family: "BigVestaRegular";
+  src: url("/fonts/BigVesta-Arabic-Regular.ttf");
+  font-weight: normal;
+}
 
+@custom-variant dark (&:is(.dark *));
+* {
+  font-family: "BigVestaRegular";
+  font-weight: 500;
+}
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
@@ -112,24 +121,10 @@
   --sidebar-border: #2d2838;
   --sidebar-ring: #675795;
 }
-@font-face {
-  font-family: "BigVesta";
-  src: url("/fonts/BigVesta-Regular.woff2") format("woff2"),
-       url("/fonts/BigVesta-Regular.woff") format("woff");
-  font-weight: 400;
-  font-style: normal;
-}
-
-@font-face {
-  font-family: "BigVesta";
-  src: url("/fonts/BigVesta-Bold.woff2") format("woff2"),
-       url("/fonts/BigVesta-Bold.woff") format("woff");
-  font-weight: 700;
-  font-style: normal;
-}
 @layer base {
   * {
     @apply border-border outline-ring/50;
+    font-family: "BigVestaBold";
   }
 
   body {

@@ -13,7 +13,7 @@ const HomeView = () => {
     return <p>Loading...</p>;
   }
   return (
-      <div><Header />
+      <div>
     <div className="flex flex-col h-[2000px]">
       <div className="flex flex-col p-4 gap-4">
         <p>Logged in as {session.user.name}</p>

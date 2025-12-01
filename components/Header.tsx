@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from "react";
+"use client";
+
 import {
   Navbar,
   Collapse,
@@ -17,6 +18,9 @@ import Image from "next/image";
 import { Button } from "./ui/button";
 import { User } from "lucide-react";
 import Link from "next/link";
+
+import React, { useState, useEffect } from "react";
+
 
 // --- المكونات الفرعية المشتركة (تبقى كما هي) ---
 
@@ -74,12 +78,21 @@ function NavList() {
     { id: 5, title: "اتصل بنا", href: "/contact" },
     { id: 6, title: "من نحن", href: "/about" },
   ];
+const [isScrolled, setIsScrolled] = useState(false);
+useEffect(() => {
+    const handleScroll = () => setIsScrolled(window.scrollY > 90);
 
+    window.addEventListener("scroll", handleScroll);
+    return () => {
+      window.removeEventListener("scroll", handleScroll);
+    };
+  }, []);
   return (
-    <List className="mt-4 mb-6 font-semibold p-0 lg:mt-0 lg:mb-0 lg:flex-row lg:p-1 lg:items-center">
+    <List className="mt-4 mb-6 font-semibold p-0 lg:mt-0 lg:mb-0 lg:flex-row lg:p-1 lg:items-center relative">
       {navListItemsData.map(({ id, title, href }) => (
-        <Typography key={id} as="a" href={href} variant="small" className="font-bold text-md">
-          <ListItem className="flex items-center gap-2 py-2 pl-4">{title}</ListItem>
+        <Typography key={id} as="a" href={href} variant="small" className="font-bold text-md relative group">
+          <ListItem className="flex items-center gap-2 py-2 pl-4 group">{title}</ListItem>
+          <span className={`absolute  w-0 top-1/2 translate-y-4  h-0.5  bg-gray-300 ${isScrolled ? "bg-white" : "bg-gray-800"} opacity-0 left-1/4 group-hover:opacity-100  group-hover:w-1/2 transition-all duration-700 ease-in-out `}></span>
         </Typography>
       ))}
       <NavListMenu />
@@ -132,7 +145,7 @@ export function Header() {
 
   const HeaderContent = ({ isFixed }: { isFixed: boolean }) => (
     <div className="container mx-auto flex items-center justify-between h-[86px]">
-      <Link href="/"><Image src="/logoNav.svg" alt="logo" width={70} height={70} /></Link>
+      <Link href="/"><Image src={`${isScrolled ? "/logoWhite.svg" : "/logoNav.svg"}`} alt="logo" width={isScrolled ? 60 : 70} height={isScrolled ? 60 : 70} /></Link>
       <div className="hidden lg:flex"><NavList /></div>
       <div className="hidden lg:inline-block">
         <Button variant="outline" size="sm" className={isFixed ? "text-primary border-white" : "text-primary border-primary"}>
