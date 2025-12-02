@@ -1,5 +1,16 @@
-import { pgTable, text, varchar, timestamp, decimal, boolean, pgEnum, integer, unique } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  varchar,
+  timestamp,
+  decimal,
+  boolean,
+  pgEnum,
+  integer,
+  unique,
+} from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
+import { uuid } from "drizzle-orm/pg-core";
 
 // 1. Enums Definitions
 export const userRoleEnum = pgEnum("user_role", [
@@ -106,7 +117,9 @@ export const courses = pgTable("courses", {
 // 3. courseSections
 export const courseSections = pgTable("courseSections", {
   id: text("id").primaryKey(),
-  courseId: text("courseId").notNull().references(() => courses.id),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id),
   sectionNumber: integer("sectionNumber").notNull(),
   startDate: timestamp("startDate"),
   endDate: timestamp("endDate"),
@@ -121,7 +134,9 @@ export const courseSections = pgTable("courseSections", {
 // 4. courseEnrollments
 export const courseEnrollments = pgTable("courseEnrollments", {
   id: text("id").primaryKey(),
-  sectionId: text("sectionId").notNull().references(() => courseSections.id),
+  sectionId: text("sectionId")
+    .notNull()
+    .references(() => courseSections.id),
   studentId: text("studentId").references(() => users.id),
   studentName: varchar("studentName", { length: 255 }).notNull(),
   studentEmail: varchar("studentEmail", { length: 320 }).notNull(),
@@ -132,7 +147,9 @@ export const courseEnrollments = pgTable("courseEnrollments", {
   username: varchar("username", { length: 255 }),
   password: varchar("password", { length: 255 }),
   smsNotificationSent: boolean("smsNotificationSent").default(false).notNull(),
-  isInIntroductorySession: boolean("isInIntroductorySession").default(false).notNull(),
+  isInIntroductorySession: boolean("isInIntroductorySession")
+    .default(false)
+    .notNull(),
   registeredAt: timestamp("registeredAt").defaultNow().notNull(),
   confirmedAt: timestamp("confirmedAt"),
   paidAt: timestamp("paidAt"),
@@ -143,7 +160,9 @@ export const courseEnrollments = pgTable("courseEnrollments", {
 // 5. courseContent
 export const courseContent = pgTable("courseContent", {
   id: text("id").primaryKey(),
-  courseId: text("courseId").notNull().references(() => courses.id),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id),
   title: varchar("title", { length: 255 }).notNull(),
   description: text("description"),
   contentType: contentContentTypeEnum("contentType").notNull(),
@@ -159,18 +178,27 @@ export const courseContent = pgTable("courseContent", {
 });
 
 // 6. studentProgress
-export const studentProgress = pgTable("studentProgress", {
-  id: text("id").primaryKey(),
-  enrollmentId: text("enrollmentId").notNull().references(() => courseEnrollments.id),
-  contentId: text("contentId").notNull().references(() => courseContent.id),
-  isCompleted: boolean("isCompleted").default(false).notNull(),
-  completedAt: timestamp("completedAt"),
-  progress: integer("progress"),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-},
+export const studentProgress = pgTable(
+  "studentProgress",
+  {
+    id: text("id").primaryKey(),
+    enrollmentId: text("enrollmentId")
+      .notNull()
+      .references(() => courseEnrollments.id),
+    contentId: text("contentId")
+      .notNull()
+      .references(() => courseContent.id),
+    isCompleted: boolean("isCompleted").default(false).notNull(),
+    completedAt: timestamp("completedAt"),
+    progress: integer("progress"),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
   (table) => ({
-    uniqueEnrollmentContent: unique("unique_enrollment_content").on(table.enrollmentId, table.contentId),
+    uniqueEnrollmentContent: unique("unique_enrollment_content").on(
+      table.enrollmentId,
+      table.contentId
+    ),
   })
 );
 
@@ -188,8 +216,12 @@ export const digitalServices = pgTable("digitalServices", {
 // 8. serviceRequests
 export const serviceRequests = pgTable("serviceRequests", {
   id: text("id").primaryKey(),
-  serviceId: text("serviceId").notNull().references(() => digitalServices.id),
-  clientId: text("clientId").notNull().references(() => users.id),
+  serviceId: text("serviceId")
+    .notNull()
+    .references(() => digitalServices.id),
+  clientId: text("clientId")
+    .notNull()
+    .references(() => users.id),
   clientName: varchar("clientName", { length: 255 }).notNull(),
   clientEmail: varchar("clientEmail", { length: 320 }).notNull(),
   clientPhone: varchar("clientPhone", { length: 20 }),
@@ -201,17 +233,30 @@ export const serviceRequests = pgTable("serviceRequests", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
-
+export const eventTypeEnum = pgEnum("event_type", [
+  "news",
+  "announcement",
+  "article",
+  "event",
+  "update",
+  "blog",
+  "pressRelease",
+  "promotion",
+  "alert",
+]);
 // 9. news
 export const news = pgTable("news", {
-  id: text("id").primaryKey(),
+  id: uuid("id").defaultRandom().primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
   content: text("content"),
   summary: text("summary"),
-  imageUrl: varchar("imageUrl", { length: 500 }),
+  imageUrl: varchar("imageUrl", { length: 500 }), // رابط الصورة الكامل
+  imagePublicId: varchar("imagePublicId", { length: 255 }), // ✅ public_id من Cloudinary
   publishedAt: timestamp("publishedAt"),
-  createdBy: text("createdBy").references(() => users.id),
   isActive: boolean("isActive").default(true).notNull(),
+  // الحقل الجديد لتحديد نوع الحدث
+  eventType: eventTypeEnum("eventType").default("news").notNull(),
+
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -232,7 +277,9 @@ export const contactMessages = pgTable("contactMessages", {
 // 11. notifications
 export const notifications = pgTable("notifications", {
   id: text("id").primaryKey(),
-  userId: text("userId").notNull().references(() => users.id),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id),
   title: varchar("title", { length: 255 }).notNull(),
   message: text("message").notNull(),
   type: notificationTypeEnum("type").notNull(),
@@ -247,10 +294,15 @@ export const session = pgTable("session", {
   expiresAt: timestamp("expires_at").notNull(),
   token: text("token").notNull().unique(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
   ipAddress: text("ip_address"),
   userAgent: text("user_agent"),
-  userId: text("user_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: text("user_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
 });
 
 // 13. account
@@ -258,7 +310,9 @@ export const account = pgTable("account", {
   id: text("id").primaryKey(),
   accountId: text("account_id").notNull(),
   providerId: text("provider_id").notNull(),
-  userId: text("users_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+  userId: text("users_id")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
   accessToken: text("access_token"),
   refreshToken: text("refresh_token"),
   idToken: text("id_token"),
@@ -267,7 +321,10 @@ export const account = pgTable("account", {
   scope: text("scope"),
   password: text("password"),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 // 14. verification
@@ -277,7 +334,10 @@ export const verification = pgTable("verification", {
   value: text("value").notNull(),
   expiresAt: timestamp("expires_at").notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at").defaultNow().$onUpdate(() => new Date()).notNull(),
+  updatedAt: timestamp("updated_at")
+    .defaultNow()
+    .$onUpdate(() => new Date())
+    .notNull(),
 });
 
 // 3. Relations Definitions
@@ -386,13 +446,6 @@ export const serviceRequestsRelations = relations(
     }),
   })
 );
-
-export const newsRelations = relations(news, ({ one }) => ({
-  createdBy: one(users, {
-    fields: [news.createdBy],
-    references: [users.id],
-  }),
-}));
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({
   user: one(users, {
