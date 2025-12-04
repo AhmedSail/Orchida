@@ -135,3 +135,28 @@
     transition: all 0.3s;
   }
 }
+@layer utilities {
+  .embla__slide.is-selected {
+    @apply opacity-100 scale-105 z-10;
+  }
+  .embla__slide.is-prev,
+  .embla__slide.is-next {
+    @apply opacity-50 scale-95;
+  }
+  .embla__slide {
+    @apply transition-all duration-500;
+  }
+}
+@layer utilities {
+  @keyframes fadeIn {
+    from {
+      opacity: 0;
+    }
+    to {
+      opacity: 1;
+    }
+  }
+  .animate-fadeIn {
+    animation: fadeIn 0.7s ease-in-out forwards; /* ✅ forwards يخليها تظل عند opacity:1 */
+  }
+}

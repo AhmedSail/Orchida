@@ -273,6 +273,16 @@ export const contactMessages = pgTable("contactMessages", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+export const sliders = pgTable("sliders", {
+  id: text("id").primaryKey(), // معرف السلايدر
+  title: varchar("title", { length: 255 }).notNull(), // عنوان السلايدر
+  imageUrl: text("imageUrl").notNull(), // رابط الصورة
+  description: text("description").default(""), // الوصف اختياري
+  isActive: boolean("isActive").default(true).notNull(), // حالة التفعيل
+  order: integer("order").default(1).notNull(), // ترتيب العرض (رقم صحيح)
+  createdAt: timestamp("createdAt").defaultNow().notNull(), // وقت الإنشاء
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(), // آخر تحديث
+});
 
 // 11. notifications
 export const notifications = pgTable("notifications", {

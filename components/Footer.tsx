@@ -12,7 +12,7 @@ import {
 } from "react-icons/fa";
 import { motion } from "framer-motion";
 import Image from "next/image";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "../hooks/use-mobile";
 
 export default function Footer() {
   const isMobile = useIsMobile();
@@ -50,7 +50,10 @@ export default function Footer() {
       <div className="container mx-auto items-center space-y-6 md:space-y-0">
         <div className="grid grid-cols-3 max-lg:grid-cols-1 mb-10">
           {/* Left Side - Branding */}
-          <motion.div variants={itemVariants} className={`${isMobile ? "text-center" : "text-left"}`}>
+          <motion.div
+            variants={itemVariants}
+            className={`${isMobile ? "text-center" : "text-left"}`}
+          >
             <Link href="/" className="inline-block mb-10">
               <Image
                 src="/logoNav.svg" // ضع مسار شعارك هنا
@@ -61,7 +64,11 @@ export default function Footer() {
               />
             </Link>
 
-            <p className={`${isMobile?"mx-auto px-2":" text-start w-2/3"}  mb-10 max-md:text-md max-lg:text-lg`}>
+            <p
+              className={`${
+                isMobile ? "mx-auto px-2" : " text-start w-2/3"
+              }  mb-10 max-md:text-md max-lg:text-lg`}
+            >
               أروكيدة هي شركة تقنية تأسست عام 2019، وتعمل منذ ذلك الحين بشكل
               مستمر لتقديم حلول رقمية متكاملة للأفراد والشركات. منذ انطلاقها،
               ركزت الشركة على بناء بيئة عمل حديثة تجمع بين المساحات الرقمية،
@@ -73,9 +80,15 @@ export default function Footer() {
           {/* Center - Navigation Links */}
           <motion.div variants={itemVariants} className="text-center mt-10">
             <div className="mb-10">
-              <h1 className="font-bold text-2xl text-primary">روابــــــــــط سريــــــعــــــــــة</h1>
+              <h1 className="font-bold text-2xl text-primary">
+                روابــــــــــط سريــــــعــــــــــة
+              </h1>
             </div>
-            <ul className={`flex-col space-y-3 max-lg:text-lg max-md:text-sm ${isMobile ? "mt-10" : "mt-28"}`}>
+            <ul
+              className={`flex-col space-y-3 max-lg:text-lg max-md:text-sm ${
+                isMobile ? "mt-10" : "mt-28"
+              }`}
+            >
               {navItems.map((item, index) => (
                 <motion.li key={index} variants={itemVariants}>
                   <Link
@@ -91,13 +104,20 @@ export default function Footer() {
           </motion.div>
 
           {/* Right Side - Social Media Links */}
-          <motion.div variants={itemVariants} className={`${isMobile?"text-center":"text-right"} mt-10`}>
+          <motion.div
+            variants={itemVariants}
+            className={`${isMobile ? "text-center" : "text-right"} mt-10`}
+          >
             <div className="mb-10 max-lg:mt-10">
-              <h1 className="font-bold text-2xl text-primary">تــــــــــــابعــــــــــــنا</h1>
+              <h1 className="font-bold text-2xl text-primary">
+                تــــــــــــابعــــــــــــنا
+              </h1>
             </div>
             <motion.div
               variants={containerVariants}
-              className={`flex-col ${isMobile ? "space-y-5 mt-10" : "space-y-3 mt-28"} max-lg:text-lg  max-md:text-sm`}
+              className={`flex-col ${
+                isMobile ? "space-y-5 mt-10" : "space-y-3 mt-28"
+              } max-lg:text-lg  max-md:text-sm`}
             >
               {[
                 {
@@ -129,7 +149,9 @@ export default function Footer() {
                 <motion.div key={label} variants={itemVariants}>
                   <a
                     href={href}
-                    className={`flex items-center  ${isMobile ? "justify-center text-lg" : "justify-end"}  transition duration-300 font-semibold hover:text-primary gap-3 `}
+                    className={`flex items-center  ${
+                      isMobile ? "justify-center text-lg" : "justify-end"
+                    }  transition duration-300 font-semibold hover:text-primary gap-3 `}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -176,8 +198,14 @@ export default function Footer() {
                 href: "https://www.instagram.com/itsa7meedd/",
                 icon: <FaInstagram size={15} />,
               },
-              { href: "https://x.com/home?lang=en", icon: <FaTwitter size={15} /> },
-              { href: "https://wa.me/+972592855602", icon: <FaWhatsapp size={15} /> },
+              {
+                href: "https://x.com/home?lang=en",
+                icon: <FaTwitter size={15} />,
+              },
+              {
+                href: "https://wa.me/+972592855602",
+                icon: <FaWhatsapp size={15} />,
+              },
               {
                 href: "https://www.linkedin.com/in/eng-ahmedqompoz/",
                 icon: <FaLinkedinIn size={15} />,
