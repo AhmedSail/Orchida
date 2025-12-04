@@ -9,10 +9,10 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-} from "@/components/ui/sidebar";
+} from "./ui/sidebar";
 import Image from "next/image";
 import Link from "next/link";
-
+import { Image as ImageIcon } from "lucide-react";
 // Menu items.
 const items = [
   {
@@ -24,6 +24,12 @@ const items = [
     title: "أحدث المستجدات",
     url: "/admin/news",
     icon: Inbox,
+  },
+
+  {
+    title: "تحكم بالسلايدر",
+    url: "/admin/slider",
+    icon: ImageIcon,
   },
   {
     title: "الخدمات الرقمية",

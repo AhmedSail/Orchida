@@ -13,13 +13,13 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+} from "../ui/form";
+import { Input } from "../ui/input";
+import { Textarea } from "../ui/textarea";
+import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
-import { Checkbox } from "@/components/ui/checkbox"; // ✅ Checkbox
+import { Checkbox } from "../ui/checkbox"; // ✅ Checkbox
 
 type News = {
   id: string;

@@ -6,20 +6,20 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
 
-import {
-  Form,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa"; // ✅ أيقونة سبينر
 import { Checkbox } from "../ui/checkbox";
+import {
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
+} from "../ui/form";
+import { Textarea } from "../ui/textarea";
+import { Input } from "../ui/input";
+import { Button } from "../ui/button";
 
 // ✅ تعريف Schema
 const formSchema = z.object({

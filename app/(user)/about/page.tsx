@@ -13,7 +13,7 @@ import {
   FaUsersCog,
 } from "react-icons/fa";
 import { motion } from "framer-motion";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useIsMobile } from "../../../hooks/use-mobile";
 
 const AboutPage = () => {
   const isMobile = useIsMobile();

@@ -1,10 +1,7 @@
-import { Button } from "@/components/ui/button";
-import { auth } from "@/lib/auth";
-import { authClient } from "@/lib/auth-client";
-import { session } from "@/src/db/schema";
-import HomeView from "@/src/modules/home/ui/view/home-view";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
+import { auth } from "@/lib/auth";
+import HomeView from "@/src/modules/home/ui/view/home-view";
 
 const page = async () => {
   const session = await auth.api.getSession({
@@ -13,9 +10,11 @@ const page = async () => {
   if (!session) {
     redirect("/sign-in");
   }
-  return <div className="h-[500px]">
-    <HomeView />
-  </div>;
+  return (
+    <div>
+      <HomeView />
+    </div>
+  );
 };
 
 export default page;

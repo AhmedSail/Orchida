@@ -8,7 +8,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "@/components/ui/table";
+} from "../ui/table";
 import Image from "next/image";
 import { Button } from "../ui/button";
 import { useRouter } from "next/navigation";

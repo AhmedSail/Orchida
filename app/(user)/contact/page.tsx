@@ -15,19 +15,18 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
-// shadcn/ui components
+import { Input } from "../../../components/ui/input";
+import { Textarea } from "../../../components/ui/textarea";
+import { Button } from "../../../components/ui/button";
+import { useIsMobile } from "../../../hooks/use-mobile";
 import {
+  FormMessage,
   Form,
   FormField,
   FormItem,
   FormLabel,
   FormControl,
-  FormMessage,
-} from "@/components/ui/form";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
-import { useIsMobile } from "@/hooks/use-mobile";
+} from "../../../components/ui/form";
 
 const formSchema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
