@@ -9,9 +9,52 @@
 }
 
 @custom-variant dark (&:is(.dark *));
+/* الخط الافتراضي للموقع */
 * {
-  font-family: "BigVestaRegular";
+  font-family: "BigVestaRegular", sans-serif;
   font-weight: 500;
+}
+.blog-slider .swiper-pagination {
+  position: absolute;
+  bottom: -30px; /* الوضع الافتراضي */
+  left: 0;
+  width: 100%;
+  text-align: center;
+}
+
+/* ✅ للموبايل */
+@media (max-width: 640px) {
+  .blog-slider .swiper-pagination {
+    bottom: -20px; /* أقرب للبوكس */
+  }
+}
+
+/* ✅ للتابلت */
+@media (min-width: 641px) and (max-width: 1024px) {
+  .blog-slider .swiper-pagination {
+    bottom: -25px;
+  }
+}
+
+/* ✅ للديسكتوب */
+@media (min-width: 1025px) {
+  .blog-slider .swiper-pagination {
+    bottom: -35px; /* أبعد شوي */
+  }
+}
+.blog-slider .swiper-pagination-bullet {
+  background: #675795; /* لون primary */
+  opacity: 0.5;
+  width: 10px;
+  height: 10px;
+  opacity: 0.3;
+}
+
+.blog-slider .swiper-pagination-bullet-active {
+  background: #675795;
+  opacity: 1;
+  width: 12px;
+  height: 12px;
 }
 @theme inline {
   --color-background: var(--background);

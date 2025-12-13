@@ -8,7 +8,7 @@ import Swal from "sweetalert2";
 
 import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa"; // ✅ أيقونة سبينر
-import { Checkbox } from "../ui/checkbox";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Form,
   FormControl,
@@ -16,10 +16,10 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "../ui/form";
-import { Textarea } from "../ui/textarea";
-import { Input } from "../ui/input";
-import { Button } from "../ui/button";
+} from "@/components/ui/form";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 
 // ✅ تعريف Schema
 const formSchema = z.object({
@@ -65,7 +65,7 @@ export default function NewNewsForm() {
       // ✅ رفع الصورة
       if (values.imageFile && values.imageFile[0]) {
         const uploadData = new FormData();
-        uploadData.append("image", values.imageFile[0]);
+        uploadData.append("file", values.imageFile[0]);
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",

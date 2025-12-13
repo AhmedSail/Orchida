@@ -13,13 +13,14 @@ import {
   FormLabel,
   FormControl,
   FormMessage,
-} from "../ui/form";
-import { Input } from "../ui/input";
-import { Textarea } from "../ui/textarea";
-import { Button } from "../ui/button";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
-import { Checkbox } from "../ui/checkbox"; // ✅ Checkbox
+import { Checkbox } from "@/components/ui/checkbox"; // ✅ Checkbox
+import Image from "next/image";
 
 type News = {
   id: string;
@@ -82,7 +83,7 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
 
       if (values.imageFile && values.imageFile[0]) {
         const uploadData = new FormData();
-        uploadData.append("image", values.imageFile[0]);
+        uploadData.append("file", values.imageFile[0]);
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",
@@ -247,9 +248,11 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
               {oldImage && (
                 <div className="mt-2">
                   <p className="text-sm text-gray-600">الصورة الحالية:</p>
-                  <img
+                  <Image
                     src={oldImage}
                     alt="الصورة القديمة"
+                    width={100}
+                    height={100}
                     className="w-48 rounded-md border"
                   />
                 </div>

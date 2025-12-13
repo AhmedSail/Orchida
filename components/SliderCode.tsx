@@ -3,48 +3,47 @@ import { useState, useEffect } from "react";
 import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import { SliderType } from "@/src/modules/home/ui/view/home-view";
 
-type Slide = {
-  id: string;
-  title: string;
-  description: string;
-  imageUrl: string;
-  order: number;
-  isActive: boolean;
-};
+function SliderSkeleton() {
+  return (
+    <main className="relative h-screen sm:h-[80vh] md:h-screen overflow-hidden animate-pulse">
+      {/* صورة الخلفية */}
+      <div className="absolute inset-0 bg-gray-300" />
 
-export default function Slider() {
-  const [slides, setSlides] = useState<Slide[]>([]);
+      {/* النصوص */}
+      <div className="relative z-20 p-6 max-w-md">
+        <div className="h-6 w-40 bg-gray-400 rounded mb-4" />
+        <div className="h-4 w-60 bg-gray-400 rounded mb-2" />
+        <div className="h-4 w-52 bg-gray-400 rounded mb-4" />
+        <div className="h-8 w-24 bg-gray-400 rounded" />
+      </div>
+
+      {/* Dots */}
+      <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-2">
+        <div className="w-3 h-3 bg-gray-400 rounded-full" />
+        <div className="w-3 h-3 bg-gray-400 rounded-full" />
+        <div className="w-3 h-3 bg-gray-400 rounded-full" />
+      </div>
+    </main>
+  );
+}
+
+export default function Slider({ sliders }: { sliders: SliderType[] }) {
   const [index, setIndex] = useState(0);
 
-  // ✅ جلب البيانات من الـ API
-  useEffect(() => {
-    const fetchSlides = async () => {
-      const res = await fetch("/api/slider");
-      const data = await res.json();
-      // فلترة السلايدرات المفعلة فقط + ترتيبها
-      const activeSlides = data
-        .filter((s: Slide) => s.isActive)
-        .sort((a: Slide, b: Slide) => a.order - b.order);
-      setSlides(activeSlides);
-    };
-    fetchSlides();
-  }, []);
-
   const prevSlide = () =>
-    setIndex((prev) => (prev === 0 ? slides.length - 1 : prev - 1));
+    setIndex((prev) => (prev === 0 ? sliders.length - 1 : prev - 1));
   const nextSlide = () =>
-    setIndex((prev) => (prev === slides.length - 1 ? 0 : prev + 1));
+    setIndex((prev) => (prev === sliders.length - 1 ? 0 : prev + 1));
   const goToSlide = (i: number) => setIndex(i);
 
-  if (slides.length === 0) {
-    return (
-      <p className="text-center text-gray-500">لا يوجد سلايدرات حالياً ❌</p>
-    );
+  if (sliders.length === 0) {
+    return <SliderSkeleton />;
   }
 
   return (
-    <main className="relative h-screen sm:h-[80vh] md:h-screen overflow-hidden">
+    <main className="relative h-screen sm:h-[80vh] md:h-screen overflow-hidden w-full">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -55,52 +54,48 @@ export default function Slider() {
           transition={{ duration: 0.7, ease: "easeInOut" }}
         >
           <Image
-            src={slides[index].imageUrl}
-            alt={slides[index].title}
+            src={sliders[index].imageUrl}
+            alt={sliders[index].title}
             fill
             priority
             className="object-cover"
             unoptimized
           />
-          <motion.div
-            className="relative z-20 bg-linear-to-t from-gray-900/70 via-gray-800/60 to-transparent p-4 sm:p-6 rounded-lg max-w-full sm:max-w-md text-white shadow-lg m-6"
-            initial={{ y: 50, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: -50, opacity: 0 }}
-            transition={{ duration: 0.6, ease: "easeOut" }}
-          >
-            <h2 className="text-xl sm:text-2xl font-bold mb-2 sm:mb-4">
-              {slides[index].title}
-            </h2>
-            <p className="text-xs sm:text-sm mb-2 sm:mb-4">
-              {slides[index].description}
-            </p>
-            <button className="px-3 py-2 sm:px-4 sm:py-2 border border-white rounded hover:bg-white hover:text-black transition text-xs sm:text-sm">
-              Read More
-            </button>
-          </motion.div>
         </motion.div>
       </AnimatePresence>
 
       {/* Navigation */}
       <div className="absolute bottom-1/2 right-4 flex flex-col gap-4 max-sm:hidden z-30">
-        <button
+        {/* زر فوق */}
+        <motion.button
           onClick={prevSlide}
+          initial={{ y: -80, opacity: 0 }} // ✅ ييجي من فوق
+          animate={{ y: 0, opacity: 1 }} // ✅ ينزل للنص
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          whileHover={{ scale: 1.15, y: -3 }}
+          whileTap={{ scale: 0.9 }}
           className="p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
         >
           <ChevronUp size={20} />
-        </button>
-        <button
+        </motion.button>
+
+        {/* زر تحت */}
+        <motion.button
           onClick={nextSlide}
+          initial={{ y: 80, opacity: 0 }} // ✅ ييجي من تحت
+          animate={{ y: 0, opacity: 1 }} // ✅ يطلع للنص
+          transition={{ duration: 0.6, ease: "easeOut" }}
+          whileHover={{ scale: 1.15, y: 3 }}
+          whileTap={{ scale: 0.9 }}
           className="p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
         >
           <ChevronDown size={20} />
-        </button>
+        </motion.button>
       </div>
 
       {/* Dots */}
       <div className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 flex gap-2 z-30">
-        {slides.map((_, i) => (
+        {sliders.map((_, i) => (
           <button
             key={i}
             onClick={() => goToSlide(i)}

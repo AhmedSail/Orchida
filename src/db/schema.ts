@@ -8,16 +8,18 @@ import {
   pgEnum,
   integer,
   unique,
+  serial,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { uuid } from "drizzle-orm/pg-core";
+import { int } from "zod";
 
 // 1. Enums Definitions
 export const userRoleEnum = pgEnum("user_role", [
   "user",
   "admin",
   "training_coordinator",
-  "project_acquirer",
+  "attractor",
   "specialist_technician",
 ]);
 
@@ -92,7 +94,7 @@ export const users = pgTable("users", {
   image: text("image"),
   phone: varchar("phone", { length: 20 }),
   loginMethod: varchar("loginMethod", { length: 64 }),
-  role: userRoleEnum("role"),
+  role: userRoleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
   lastSignedIn: timestamp("lastSignedIn"),
@@ -212,7 +214,55 @@ export const digitalServices = pgTable("digitalServices", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+export const works = pgTable("works", {
+  id: text("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  category: varchar("category", { length: 100 }).notNull(),
+  projectUrl: varchar("projectUrl", { length: 500 }),
+  priceRange: varchar("priceRange", { length: 100 }),
+  tags: text("tags"),
+  duration: varchar("duration", { length: 100 }),
+  toolsUsed: text("toolsUsed"),
+  isActive: boolean("isActive").default(true).notNull(),
 
+  mainMediaId: integer("mainMediaId"),
+
+  // ✅ ربط العمل بالخدمة
+  serviceId: text("serviceId")
+    .notNull()
+    .references(() => digitalServices.id, { onDelete: "cascade" }),
+
+  uploaderId: integer("uploaderId").notNull(),
+  uploadDate: timestamp("uploadDate").defaultNow().notNull(),
+  deletedAt: timestamp("deletedAt"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const mediaFiles = pgTable("mediaFiles", {
+  id: serial("id").primaryKey(),
+  workId: text("workId")
+    .notNull()
+    .references(() => works.id, { onDelete: "cascade" }),
+  url: varchar("url", { length: 1024 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  publicId: varchar("publicId", { length: 255 }).notNull(),
+  filename: varchar("filename", { length: 255 }),
+  mimeType: varchar("mimeType", { length: 100 }),
+  size: integer("size"),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const employees = pgTable("employees", {
+  id: text("id").primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  specialty: varchar("specialty", { length: 255 }).notNull(),
+  email: varchar("email", { length: 320 }),
+  phone: varchar("phone", { length: 20 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
 // 8. serviceRequests
 export const serviceRequests = pgTable("serviceRequests", {
   id: text("id").primaryKey(),
@@ -225,8 +275,10 @@ export const serviceRequests = pgTable("serviceRequests", {
   clientName: varchar("clientName", { length: 255 }).notNull(),
   clientEmail: varchar("clientEmail", { length: 320 }).notNull(),
   clientPhone: varchar("clientPhone", { length: 20 }),
+  name: varchar("name", { length: 255 }).notNull(),
   description: text("description").notNull(),
   budget: decimal("budget", { precision: 10, scale: 2 }),
+  duration: varchar("duration", { length: 255 }).notNull(),
   status: serviceRequestStatusEnum("status").notNull(),
   assignedTo: text("assignedTo").references(() => users.id),
   contractUrl: varchar("contractUrl", { length: 500 }),
@@ -415,6 +467,28 @@ export const courseContentRelations = relations(
     progress: many(studentProgress),
   })
 );
+
+// علاقة الأعمال
+export const worksRelations = relations(works, ({ one, many }) => ({
+  // كل عمل له ميديا متعددة
+  media: many(mediaFiles),
+
+  // لو بدك تربط العمل بالمستخدم اللي رفعه
+  uploader: one(users, {
+    fields: [works.uploaderId],
+    references: [users.id],
+    relationName: "uploader",
+  }),
+}));
+
+// علاقة الميديا
+export const mediaFilesRelations = relations(mediaFiles, ({ one }) => ({
+  // كل ملف ميديا مرتبط بعمل واحد
+  work: one(works, {
+    fields: [mediaFiles.workId],
+    references: [works.id],
+  }),
+}));
 
 export const studentProgressRelations = relations(
   studentProgress,

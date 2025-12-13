@@ -90,21 +90,19 @@ export default function SignUpView() {
     },
   });
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6 ">
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
           <Form {...form}>
             <form
               action=""
               onSubmit={form.handleSubmit(onSubmit)}
-              className="p-6 md:p-8"
+              className="p-6 md:p-8 bg-primary/80"
             >
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 text-white">
                 <div className="flex flex-col items-center text-center">
                   <h1 className="text-2xl font-bold">Let&apos;s get started</h1>
-                  <p className="text-muted-foreground text-balance">
-                    Create an account
-                  </p>
+                  <p className="text-white text-balance">Create an account</p>
                 </div>
                 <div className="grid gap-3">
                   <FormField
@@ -112,9 +110,14 @@ export default function SignUpView() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Name</FormLabel>
+                        <FormLabel className="text-white">Name</FormLabel>
                         <FormControl>
-                          <Input type="text" placeholder="Ahmed" {...field} />
+                          <Input
+                            type="text"
+                            placeholder="Ahmed"
+                            {...field}
+                            className="bg-white text-black"
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
@@ -133,6 +136,7 @@ export default function SignUpView() {
                             type="email"
                             placeholder="m@example.com"
                             {...field}
+                            className="bg-white text-black"
                           />
                         </FormControl>
                         <FormMessage />
@@ -152,6 +156,7 @@ export default function SignUpView() {
                             placeholder="*********"
                             type="password"
                             {...field}
+                            className="bg-white text-black"
                           />
                         </FormControl>
                         <FormMessage />
@@ -171,6 +176,7 @@ export default function SignUpView() {
                             placeholder="*********"
                             type="password"
                             {...field}
+                            className="bg-white text-black"
                           />
                         </FormControl>
                         <FormMessage />
@@ -188,12 +194,8 @@ export default function SignUpView() {
                 <Button disabled={pending} type="submit" className="w-full">
                   {pending ? <Spinner /> : <div>Sign Up</div>}
                 </Button>
-                <div className="after:border-border relative text-center text-sm after:absolute after:inset-0 after:top-1/2 after:z-0 after:items-center after:border-t">
-                  <span className="bg-card text-muted-foreground relative z-10 px-2">
-                    Or Continue with
-                  </span>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
+                <span className="text-white text-center">Or Continue with</span>
+                <div className="grid grid-cols-2 gap-4 text-black">
                   <Button
                     onClick={() => onSocial("google")}
                     variant={"outline"}
@@ -213,7 +215,7 @@ export default function SignUpView() {
                     Github
                   </Button>
                 </div>
-                <div className="text-center text-muted-foreground">
+                <div className="text-center text-white">
                   {" "}
                   Already have an account ?{" "}
                   <Link href="/sign-in" className="underline">
@@ -224,7 +226,7 @@ export default function SignUpView() {
             </form>
           </Form>
 
-          <div className="bg-radial from-green-700 to-green-900 relative hidden md:flex flex-col gap-y-4 items-center justify-center">
+          <div className=" relative hidden md:flex flex-col gap-y-4 items-center justify-center">
             <Image
               src="/logo.svg"
               alt="Logo"

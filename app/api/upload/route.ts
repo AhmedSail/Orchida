@@ -10,7 +10,7 @@ cloudinary.config({
 
 export async function POST(req: Request) {
   const formData = await req.formData();
-  const file = formData.get("image") as File;
+  const file = formData.get("file") as File; // ✅ موحد مع الفرونت إند
 
   if (!file) {
     return NextResponse.json({ error: "No file uploaded" }, { status: 400 });
@@ -19,18 +19,23 @@ export async function POST(req: Request) {
   const arrayBuffer = await file.arrayBuffer();
   const buffer = Buffer.from(arrayBuffer);
 
-  // ✅ نلف upload_stream داخل Promise
   const result = await new Promise<any>((resolve, reject) => {
     const uploadStream = cloudinary.uploader.upload_stream(
-      { folder: "news" },
+      {
+        folder: "news",
+        resource_type: "auto", // يقبل صور وفيديوهات
+      },
       (error, uploadResult) => {
         if (error) return reject(error);
         resolve(uploadResult);
       }
     );
 
-    uploadStream.end(buffer); // نكتب البيانات في الـ stream
+    uploadStream.end(buffer);
   });
 
-  return NextResponse.json({ url: result.secure_url });
+  return NextResponse.json({
+    url: result.secure_url,
+    public_id: result.public_id,
+  });
 }

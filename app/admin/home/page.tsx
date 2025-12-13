@@ -1,57 +1,96 @@
-import LatestNews from "@/components/news/LatestNews";
-import React from "react";
+import HomePage from "@/components/admin/home/HomePage";
+import { db } from "@/src";
+import { news, users, courses, serviceRequests } from "@/src/db/schema";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { eq } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { and, gte, lt } from "drizzle-orm";
 
-export default function AdminHomePage() {
+export const metadata = {
+  title: "لوحة التحكم | لوحة الإدارة",
+  description: "لوحة التحكم",
+};
+
+export default async function AdminHomePage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user?.id) {
+    redirect("/sign-in");
+  }
+
+  const userRecord = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const role = userRecord[0]?.role;
+  if (role !== "admin") {
+    redirect("/");
+  }
+
+  // ✅ استعلامات ديناميكية
+  const activeUsers = await db.select().from(users);
+  const now = new Date();
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0
+  );
+  const endOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+    0,
+    0,
+    0
+  );
+
+  const todayRequests = await db
+    .select()
+    .from(serviceRequests)
+    .where(
+      and(
+        gte(serviceRequests.createdAt, startOfDay),
+        lt(serviceRequests.createdAt, endOfDay)
+      )
+    );
+
+  // const activeCourses = await db
+  //   .select()
+  //   .from(courses)
+  //   .where(eq(courses.isActive, true));
+  // const endedCourses = await db
+  //   .select()
+  //   .from(courses)
+  //   .where(eq(courses.isActive, false));
+  // const allCourses = await db.select().from(courses);
+  const activeServices = await db
+    .select()
+    .from(serviceRequests)
+    .where(eq(serviceRequests.status, "in_progress"));
+  const endedServices = await db
+    .select()
+    .from(serviceRequests)
+    .where(eq(serviceRequests.status, "completed"));
+  const allServices = await db.select().from(serviceRequests);
+  const latestNews = await db.select().from(news);
+  const serviceRequestsData = await db.select().from(serviceRequests);
   return (
-    <div className="mx-auto p-6 space-y-6">
-      {/* Header */}
-      <header className="flex items-center justify-between">
-        <h1 className="text-3xl font-bold text-primary">لوحة التحكم</h1>
-        <p className="text-sm text-muted-foreground">
-          مرحبًا بكم في لوحة الإدارة
-        </p>
-      </header>
-
-      {/* Dashboard cards */}
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mx-auto">
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">المستخدمون النشطون</h2>
-          <p className="text-2xl font-bold text-primary">1,234</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">
-            الطلبات اليوم (دورات + خدمات)
-          </h2>
-          <p className="text-2xl font-bold text-primary">56</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">الدورات النشطة</h2>
-          <p className="text-2xl font-bold text-primary">3</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">الدورات المنتهية</h2>
-          <p className="text-2xl font-bold text-primary">5</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">مجموع الدورات</h2>
-          <p className="text-2xl font-bold text-primary">5</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">الخدمات المتاحة</h2>
-          <p className="text-2xl font-bold text-primary">5</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">الخدمات المنتهية</h2>
-          <p className="text-2xl font-bold text-primary">5</p>
-        </div>
-        <div className="rounded-lg p-4 shadow-sm shadow-primary ">
-          <h2 className="text-lg font-medium mb-2">مجموع الخدمات</h2>
-          <p className="text-2xl font-bold text-primary">5</p>
-        </div>
-      </div>
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 mx-auto">
-        <LatestNews />
-      </div>
-    </div>
+    <HomePage
+      stats={{
+        activeUsers: activeUsers.length,
+        todayRequests: todayRequests.length,
+        activeServices: activeServices.length,
+        endedServices: endedServices.length,
+        allServices: allServices.length,
+      }}
+      data={latestNews}
+      serviceRequestsData={serviceRequestsData}
+    />
   );
 }

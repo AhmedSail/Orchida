@@ -44,6 +44,9 @@ export default function SignInView() {
         onError: ({ error }) => {
           setPending(false);
           setError(error?.message ?? "Unexpected error");
+          if (error?.status === 403) {
+            setError("Please verify your email address");
+          }
         },
       }
     );
@@ -83,12 +86,14 @@ export default function SignInView() {
             <form
               action=""
               onSubmit={form.handleSubmit(onSubmit)}
-              className="p-6 md:p-8"
+              className="p-6 md:p-8 bg-primary/80"
             >
-              <div className="flex flex-col gap-6">
+              <div className="flex flex-col gap-6 ">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">Welcome Back!</h1>
-                  <p className="text-muted-foreground text-balance">
+                  <h1 className="text-2xl font-bold text-white">
+                    Welcome Back!
+                  </h1>
+                  <p className=" text-balance text-white">
                     Login to your account
                   </p>
                 </div>
@@ -98,12 +103,13 @@ export default function SignInView() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel className="text-white">Email</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
                             placeholder="m@example.com"
                             {...field}
+                            className="bg-white"
                           />
                         </FormControl>
                         <FormMessage />
@@ -111,25 +117,37 @@ export default function SignInView() {
                     )}
                   />
                 </div>
-                <div>
+                <div className="flex flex-col gap-1">
                   <FormField
                     control={form.control}
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel className="text-white">Password</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="*********"
                             type="password"
                             {...field}
+                            className="bg-white"
                           />
                         </FormControl>
                         <FormMessage />
                       </FormItem>
                     )}
                   />
+
+                  {/* ✅ رابط Forgot Password */}
+                  <div className="flex justify-end">
+                    <Link
+                      href="/request-password-reset"
+                      className="text-white text-sm underline hover:text-gray-200 transition"
+                    >
+                      Forgot your password?
+                    </Link>
+                  </div>
                 </div>
+
                 {!!error && (
                   <Alert className="bg-destructive/10 border-none">
                     <OctagonAlertIcon className="h-4 w-4 text-destructive!" />
@@ -137,16 +155,46 @@ export default function SignInView() {
                   </Alert>
                 )}
 
-                <Button disabled={pending} type="submit" className="w-full">
+                <Button
+                  disabled={pending}
+                  type="submit"
+                  className="w-full bg-primary text-white font-bold"
+                >
                   {pending ? <Spinner /> : <div>Sign In</div>}
                 </Button>
-
-
+                <span className="text-white text-center">Or Continue with</span>
+                <div className="grid grid-cols-2 gap-4">
+                  <Button
+                    onClick={() => onSocial("google")}
+                    variant={"outline"}
+                    type="button"
+                    className="w-full"
+                  >
+                    <FaGoogle />
+                    Google
+                  </Button>
+                  <Button
+                    onClick={() => onSocial("github")}
+                    variant={"outline"}
+                    type="button"
+                    className="w-full"
+                  >
+                    <FaGithub />
+                    Github
+                  </Button>
+                </div>
+                <div className="text-center text-white">
+                  {" "}
+                  Don&apos;t have an account ?{" "}
+                  <Link href="/sign-up" className="underline">
+                    Sign Up
+                  </Link>
+                </div>
               </div>
             </form>
           </Form>
 
-          <div className="bg-radial from-primary/30 to-primary relative hidden md:flex flex-col gap-y-4 items-center justify-center py-20">
+          <div className=" relative hidden md:flex flex-col gap-y-4 items-center justify-center py-20">
             <Image
               src="/logo.svg"
               alt="Logo"

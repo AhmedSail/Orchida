@@ -18,6 +18,10 @@ import { Textarea } from "@/components/ui/textarea";
 import Swal from "sweetalert2";
 import { useState, useEffect } from "react";
 import { useRouter, useParams } from "next/navigation";
+import { sliders } from "@/src/db/schema";
+import { InferSelectModel } from "drizzle-orm";
+import Image from "next/image";
+import { uploadToCloudinary } from "@/utils/cloudinary";
 
 // ✅ Zod schema
 const sliderSchema = z.object({
@@ -25,68 +29,43 @@ const sliderSchema = z.object({
   imageFile: z.instanceof(File).optional(),
   description: z.string().optional(),
   isActive: z.boolean(),
-  order: z.coerce
-    .number()
-    .min(1, "ترتيب العرض يجب أن يكون رقم موجب")
-    .default(1),
+  order: z.preprocess(
+    (val) => Number(val),
+    z.number().min(1, "ترتيب العرض يجب أن يكون رقم موجب").default(1)
+  ),
 });
 
 type SliderFormValues = z.infer<typeof sliderSchema>;
+export type Slider = InferSelectModel<typeof sliders>;
 
-export default function EditSliderPage() {
+export default function EditSliderPage({ slider }: { slider: Slider }) {
   const [loading, setLoading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | undefined>(
+    slider.imageUrl
+  );
   const router = useRouter();
   const { id } = useParams();
 
+  // 👇 Tell TypeScript that the resolver works with SliderFormValues
   const form = useForm<SliderFormValues>({
-    resolver: zodResolver(sliderSchema),
+    resolver: zodResolver(sliderSchema) as any, // safe cast – we know the types line‑up
     defaultValues: {
-      title: "",
-      description: "",
-      isActive: true,
-      order: 1,
+      title: slider.title ?? "",
+      description: slider.description ?? "",
+      isActive: slider.isActive ?? false,
+      order: slider.order ?? 1,
       imageFile: undefined,
     },
   });
 
-  // ✅ جلب بيانات السلايدر عند فتح الصفحة
-  useEffect(() => {
-    const fetchSlider = async () => {
-      const res = await fetch(`/api/slider/${id}`);
-      const data = await res.json();
-      if (data) {
-        form.reset({
-          title: data.title,
-          description: data.description,
-          isActive: data.isActive,
-          order: data.order,
-          imageFile: undefined,
-        });
-        setImagePreview(data.imageUrl);
-      }
-    };
-    fetchSlider();
-  }, [id]);
-
-  // ✅ إرسال التعديلات
   const onSubmit: SubmitHandler<SliderFormValues> = async (values) => {
     try {
       setLoading(true);
-
       let imageUrl = imagePreview || "";
 
       if (values.imageFile) {
-        const uploadData = new FormData();
-        uploadData.append("image", values.imageFile);
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
-        });
-        const uploadJson = await uploadRes.json();
-        imageUrl = uploadJson.url;
+        imageUrl = await uploadToCloudinary(values.imageFile);
       }
-
       const payload = {
         title: values.title,
         description: values.description ?? "",
@@ -152,10 +131,12 @@ export default function EditSliderPage() {
           {imagePreview && (
             <div>
               <FormLabel>الصورة الحالية</FormLabel>
-              <img
+              <Image
                 src={imagePreview}
                 alt="الصورة الحالية"
                 className="w-64 rounded-lg"
+                width={200}
+                height={200}
               />
             </div>
           )}
@@ -171,7 +152,11 @@ export default function EditSliderPage() {
                   <Input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => field.onChange(e.target.files?.[0])}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      field.onChange(file);
+                      if (file) setImagePreview(URL.createObjectURL(file));
+                    }}
                   />
                 </FormControl>
                 <FormMessage />
