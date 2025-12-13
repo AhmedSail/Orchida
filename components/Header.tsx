@@ -12,6 +12,7 @@ import {
   MenuList,
   MenuItem,
 } from "@material-tailwind/react";
+import Avatar from "react-avatar";
 import {
   ChevronDownIcon,
   Bars3Icon,
@@ -23,10 +24,13 @@ import {
   Bars4Icon,
 } from "@heroicons/react/24/solid";
 import Image from "next/image";
-import { Button } from "./ui/button";
-import { User } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { FileText, LayoutDashboard, LogOut, User, User2 } from "lucide-react";
 import Link from "next/link";
 import React, { useState, useEffect } from "react";
+import { authClient } from "@/lib/auth-client";
+import { ServiceRequests } from "@/src/modules/home/ui/view/home-view";
+import { useRouter } from "next/navigation";
 // @ts-ignore
 
 // --- عناصر قائمة الدورات ---
@@ -47,7 +51,7 @@ const navListMenuItems = [
 function NavListMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
-
+  const { data } = authClient.useSession();
   const renderItems = navListMenuItems.map(
     ({ icon, title, description }, key) => (
       <Link href="#" key={key}>
@@ -117,7 +121,7 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
   const navListItemsData = [
     { id: 1, title: "الرئيسية", href: "/" },
     { id: 2, title: "اخر المستجدات", href: "/latest" },
-    { id: 4, title: "الخدمات الرقمية", href: "/digital-services" },
+    { id: 4, title: "الخدمات الرقمية", href: "/services" },
     { id: 5, title: "اتصل بنا", href: "/contact" },
     { id: 6, title: "من نحن", href: "/about" },
   ];
@@ -148,26 +152,118 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
   );
 }
 
-const CollapseContent = ({ open }: { open: boolean }) => {
+const CollapseContent = ({
+  open,
+  data,
+  role,
+  requests,
+  isScrolled,
+  isMobileMenuOpen,
+  setIsMobileMenuOpen,
+  authClient,
+}: {
+  open: boolean;
+  data?: any;
+  role?: string | null;
+  requests?: any[];
+  isScrolled?: boolean;
+  isMobileMenuOpen?: boolean;
+  setIsMobileMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
+  authClient?: any;
+}) => {
   return (
     <Collapse open={open} className="lg:hidden">
-      <div className="bg-white rounded-lg shadow-xl mx-4 my-2 text-blue-gray-900">
+      <div className="bg-white text-primary rounded-lg shadow-xl mx-4 my-2">
         <NavList isScrolled={false} />
-        <div className="flex w-full flex-nowrap items-center gap-2 p-4 pt-0">
-          <Button size="sm" variant="secondary" className="w-full">
-            تسجيل الدخول
-          </Button>
-        </div>
+
+        {data?.user ? (
+          <div className="p-4 pt-0 flex flex-col gap-2">
+            {/* Avatar */}
+            <div className="flex items-center gap-2 mb-2">
+              {data.user.image ? (
+                <Image
+                  src={data.user.image}
+                  alt={data.user.name || "User"}
+                  width={40}
+                  height={40}
+                  className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                />
+              ) : (
+                <Avatar
+                  name={data.user.name || "User"}
+                  size="40"
+                  round={true}
+                  className="cursor-pointer"
+                  color={isScrolled ? "#fff" : "#675795"}
+                  fgColor={isScrolled ? "#675795" : "#fff"}
+                />
+              )}
+
+              <span className="font-semibold">{data.user.name}</span>
+            </div>
+
+            {/* ملفي الشخصي */}
+            <Link
+              href="/profile"
+              className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
+            >
+              <User2 /> ملفي الشخصي
+            </Link>
+
+            {/* خدماتي المطلوبة */}
+            {requests && requests.length > 0 && (
+              <Link
+                href={`/${data.user.id}/services`}
+                className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
+              >
+                <FileText /> خدماتي المطلوبة
+              </Link>
+            )}
+
+            {/* لوحة التحكم */}
+            {(role === "admin" || role === "attractor") && (
+              <Link
+                href={`/${role}/home`}
+                className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
+              >
+                <LayoutDashboard /> لوحة التحكم الخاص بي
+              </Link>
+            )}
+
+            {/* تسجيل الخروج */}
+            <button
+              onClick={() => authClient?.signOut()}
+              className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-red-600"
+            >
+              <LogOut /> تسجيل الخروج
+            </button>
+          </div>
+        ) : (
+          <div className="flex w-full items-center gap-2 p-4 pt-0">
+            <Button size="sm" variant="secondary" className="w-full">
+              <Link href="/sign-in">تسجيل الدخول</Link>
+            </Button>
+          </div>
+        )}
       </div>
     </Collapse>
   );
 };
 
 // --- المكون الرئيسي Header ---
-export function Header() {
+export function Header({
+  requests,
+  role,
+}: {
+  requests: ServiceRequests[];
+  role: string | null;
+}) {
   const [openNav, setOpenNav] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
-
+  const { data } = authClient.useSession();
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const router = useRouter();
   useEffect(() => {
     const handleResize = () => window.innerWidth >= 960 && setOpenNav(false);
     const handleScroll = () => setIsScrolled(window.scrollY > 90);
@@ -205,18 +301,97 @@ export function Header() {
         <NavList isScrolled={isScrolled} />
       </div>
       <div className="hidden lg:inline-block">
-        <Button
-          variant="outline"
-          size="sm"
-          className={
-            isFixed
-              ? "text-primary border-white"
-              : "text-primary border-primary"
-          }
-        >
-          <User className="h-5 w-5" />
-        </Button>
+        {data?.user ? (
+          <div>
+            <Menu offset={{ mainAxis: 20 }} placement="bottom">
+              <MenuHandler>
+                {/* @ts-ignore */}
+                <ListItem
+                  className="flex items-center gap-2 py-2 pl-4"
+                  selected={isMenuOpen || isMobileMenuOpen}
+                  onClick={() => setIsMobileMenuOpen((cur) => !cur)}
+                >
+                  {data.user.image ? (
+                    <Image
+                      src={data.user.image}
+                      alt={data.user.name || "User"}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                    />
+                  ) : (
+                    <Avatar
+                      name={data.user.name || "User"}
+                      size="40"
+                      round={true}
+                      className="cursor-pointer"
+                      color={isScrolled ? "#fff" : "#675795"}
+                      fgColor={isScrolled ? "#675795" : "#fff"}
+                    />
+                  )}
+                </ListItem>
+              </MenuHandler>
+              {/* @ts-ignore */}
+              <MenuList className="font-semibold text-sm">
+                {/* تسجيل الخروج */}
+                {/* @ts-ignore */}
+                <MenuItem
+                  onClick={() => authClient.signOut()}
+                  className="flex items-center gap-2 hover:bg-gray-100"
+                >
+                  <LogOut />
+                  تسجيل الخروج
+                </MenuItem>
+                <hr className="my-2" />
+                {/* ملفي الشخصي */}
+                {/* @ts-ignore */}
+                <MenuItem
+                  onClick={() => router.push(`/${data.user.id}/profile`)}
+                  className="flex items-center gap-2 hover:bg-gray-100"
+                >
+                  <User2 />
+                  ملفي الشخصي
+                </MenuItem>
+
+                {/* خدماتي المطلوبة */}
+                {requests.length > 0 && (
+                  <div>
+                    <hr className="my-2" />
+                    {/* @ts-ignore */}
+                    <MenuItem
+                      // onClick={() => router.push("/requests")}
+                      className="flex items-center gap-2 hover:bg-gray-100"
+                    >
+                      <FileText />
+                      <Link href={`/${data.user.id}/services`}>
+                        خدماتي المطلوبة
+                      </Link>
+                    </MenuItem>
+                  </div>
+                )}
+                {(role === "admin" || role === "attractor") && (
+                  <div>
+                    <hr className="my-2" />
+                    {/* @ts-ignore */}
+                    <MenuItem
+                      // onClick={() => router.push("/requests")}
+                      className="flex items-center gap-2 hover:bg-gray-100"
+                    >
+                      <LayoutDashboard />
+                      <Link href={`/${role}/home`}>لوحة التحكم الخاص بي</Link>
+                    </MenuItem>
+                  </div>
+                )}
+              </MenuList>
+            </Menu>
+          </div>
+        ) : (
+          <Link href="/sign-in">
+            <User className="h-5 w-5 cursor-pointer" />
+          </Link>
+        )}
       </div>
+
       {/* @ts-ignore */}
       <IconButton
         variant="text"
@@ -237,12 +412,30 @@ export function Header() {
       {/* @ts-ignore */}
       <Navbar className={`${commonClasses} ${staticHeaderClasses}`}>
         <HeaderContent isFixed={false} />
-        <CollapseContent open={openNav} />
+        <CollapseContent
+          open={openNav}
+          data={data}
+          role={role}
+          requests={requests}
+          isScrolled={isScrolled}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          authClient={authClient}
+        />
       </Navbar>
       {/* @ts-ignore */}
       <Navbar className={`${commonClasses} ${fixedHeaderClasses}`}>
         <HeaderContent isFixed={true} />
-        <CollapseContent open={openNav} />
+        <CollapseContent
+          open={openNav}
+          data={data}
+          role={role}
+          requests={requests}
+          isScrolled={isScrolled}
+          isMobileMenuOpen={isMobileMenuOpen}
+          setIsMobileMenuOpen={setIsMobileMenuOpen}
+          authClient={authClient}
+        />
       </Navbar>
     </div>
   );

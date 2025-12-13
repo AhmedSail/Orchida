@@ -1,7 +1,13 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   images: {
-    domains: ["res.cloudinary.com"], // السماح بعرض الصور من Cloudinary
+    remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "**",
+      },
+    ],
   },
 };
 

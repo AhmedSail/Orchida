@@ -1,0 +1,12 @@
+/* CSS إضافي لتغيير الخط في صفحة العقد فقط */
+/* تم اختيار خط "Noto Sans Arabic" لكونه خطاً عربياً حديثاً وواضحاً ومناسباً للمستندات الرسمية */
+
+.contract-font-override {
+  /* تطبيق الخط الجديد على العنصر الحاوي */
+  font-family: "Arial", Tahoma, sans-serif;
+}
+
+/* لضمان تجاوز الخط الافتراضي للموقع (الذي يستخدم المحدد *)، نستخدم inherit */
+.contract-font-override * {
+  font-family: inherit;
+}

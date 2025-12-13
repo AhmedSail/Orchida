@@ -1,58 +1,55 @@
 "use client";
-
-import { useRouter } from "next/navigation";
 import { Button } from "../../../../../components/ui/button";
-import { authClient } from "../../../../../lib/auth-client";
-import { EmblaCarousel } from "@/components/EmblaCarousel";
 import Slider from "@/components/SliderCode"; // استدعاء الكومبوننت الجديد
 import LatestNewsUser from "../components/lastEvents";
-import ServicesFound from "@/components/servicesFound";
-
-const HomeView = () => {
-  const router = useRouter();
-  const { data: session } = authClient.useSession();
-
-  if (!session) {
-    return (
-      <div className="flex items-center justify-center h-screen">
-        <p className="text-lg font-medium text-gray-600">Loading...</p>
-      </div>
-    );
-  }
-
+import { motion, Variants } from "framer-motion";
+import Link from "next/link";
+import ServicesFound from "@/components/admin/service/servicesFound";
+import { Services } from "@/components/admin/service/servicesPage";
+import { InferSelectModel } from "drizzle-orm";
+import { serviceRequests, sliders, news } from "@/src/db/schema";
+export type ServiceRequests = InferSelectModel<typeof serviceRequests>;
+export type SliderType = InferSelectModel<typeof sliders>;
+export type NewsType = InferSelectModel<typeof news>;
+const HomeView = ({
+  services,
+  sliders,
+  news,
+}: {
+  services: Services;
+  sliders: SliderType[];
+  news: NewsType[];
+}) => {
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50  mx-auto">
+    <div className="min-h-screen w-full overflow-x-hidden overflow-y-auto">
       {/* الكاروسيل الثاني (Slider) */}
-      <div>
-        <Slider />
-      </div>
-      <div className="p-6">
-        <ServicesFound />
-      </div>
-      <div className="p-6">
-        <LatestNewsUser />
+      <div className="w-full h-screen overflow-x-hidden">
+        <Slider sliders={sliders} />
       </div>
 
-      {/* معلومات المستخدم + زر تسجيل الخروج */}
-      <div className="flex flex-col items-center justify-center flex-1 gap-4 p-6">
-        <p className="text-lg font-semibold text-gray-800">
-          Logged in as{" "}
-          <span className="text-blue-600">{session.user.name}</span>
-        </p>
-        <Button
-          onClick={() => {
-            authClient.signOut({
-              fetchOptions: {
-                onSuccess: () => {
-                  router.push("/sign-in");
-                },
-              },
-            });
-          }}
-          className="bg-red-500 hover:bg-red-600 text-white px-6 py-2 rounded-md shadow"
+      <div className="p-6">
+        <motion.h2
+          className="text-2xl font-bold text-center mb-6"
+          initial={{ opacity: 0, y: -20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.6 }}
         >
-          Sign Out
-        </Button>
+          خدمـــــــاتــــــــــنـــــــــــــــــا
+        </motion.h2>
+        <ServicesFound services={services} />
+        <motion.div
+          className="flex justify-center items-center mt-10"
+          initial={{ opacity: 0, y: 50 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ duration: 1 }}
+        >
+          <Button className="w-1/3 hover:bg-white hover:text-primary hover:shadow-primary hover:shadow">
+            <Link href="/services">أطلب الان</Link>
+          </Button>
+        </motion.div>
+      </div>
+      <div className="p-6">
+        <LatestNewsUser news={news} />
       </div>
     </div>
   );

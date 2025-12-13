@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import React, { useState } from "react";
+import React from "react";
 import {
   FaFacebook,
-  FaGithub,
   FaInstagram,
   FaLinkedinIn,
   FaTwitter,
   FaWhatsapp,
 } from "react-icons/fa";
-import { motion } from "framer-motion";
+// قم باستيراد Variants
+import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import { useIsMobile } from "../hooks/use-mobile";
 
@@ -26,48 +26,93 @@ export default function Footer() {
   ];
 
   // Motion Variants
-  const containerVariants = {
+  // حدد النوع Variants لكل متغير
+  const footerVariants: Variants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.3 },
+      transition: {
+        staggerChildren: 0.2,
+        delayChildren: 0.1,
+      },
     },
   };
 
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0 },
+  const brandingVariants: Variants = {
+    hidden: { opacity: 0, scale: 0.8 },
+    show: {
+      opacity: 1,
+      scale: 1,
+      transition: {
+        duration: 0.5,
+        ease: "easeOut",
+      },
+    },
+  };
+
+  const navLinksVariants: Variants = {
+    hidden: { opacity: 0, y: 20 },
+    show: {
+      opacity: 1,
+      y: 0,
+      transition: {
+        duration: 0.4,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const socialLinksVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        duration: 0.4,
+        ease: "easeInOut",
+      },
+    },
+  };
+
+  const bottomSectionVariants: Variants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: {
+        duration: 0.8,
+        ease: "easeIn",
+      },
+    },
   };
 
   return (
     <motion.footer
       initial="hidden"
       whileInView="show"
-      viewport={{ once: true, amount: 0.2 }}
-      variants={containerVariants}
+      viewport={{ amount: 0.2, once: false }}
+      variants={footerVariants}
       className="bg-gray-200  py-10 mt-36 text-gray-800"
     >
       <div className="container mx-auto items-center space-y-6 md:space-y-0">
         <div className="grid grid-cols-3 max-lg:grid-cols-1 mb-10">
           {/* Left Side - Branding */}
           <motion.div
-            variants={itemVariants}
-            className={`${isMobile ? "text-center" : "text-left"}`}
+            variants={brandingVariants}
+            className={`max-lg:text-center`}
           >
             <Link href="/" className="inline-block mb-10">
-              <Image
-                src="/logoNav.svg" // ضع مسار شعارك هنا
-                alt="Arokida Logo"
-                width={100}
-                height={100}
-                className="hover:rotate-6 transition-all duration-300"
-              />
+              <motion.div whileHover={{ scale: 1.05, rotate: -5 }}>
+                <Image
+                  src="/logoNav.svg" // ضع مسار شعارك هنا
+                  alt="Arokida Logo"
+                  width={100}
+                  height={100}
+                  className="transition-all duration-300"
+                />
+              </motion.div>
             </Link>
 
             <p
-              className={`${
-                isMobile ? "mx-auto px-2" : " text-start w-2/3"
-              }  mb-10 max-md:text-md max-lg:text-lg`}
+              className={`w-2/3 max-lg:mx-auto lg:w-full mb-10 max-md:text-md max-lg:text-lg`}
             >
               أروكيدة هي شركة تقنية تأسست عام 2019، وتعمل منذ ذلك الحين بشكل
               مستمر لتقديم حلول رقمية متكاملة للأفراد والشركات. منذ انطلاقها،
@@ -78,19 +123,23 @@ export default function Footer() {
           </motion.div>
 
           {/* Center - Navigation Links */}
-          <motion.div variants={itemVariants} className="text-center mt-10">
-            <div className="mb-10">
+          <motion.div className="text-center mt-10">
+            <motion.div variants={navLinksVariants} className="mb-10">
               <h1 className="font-bold text-2xl text-primary">
                 روابــــــــــط سريــــــعــــــــــة
               </h1>
-            </div>
+            </motion.div>
             <ul
               className={`flex-col space-y-3 max-lg:text-lg max-md:text-sm ${
                 isMobile ? "mt-10" : "mt-28"
               }`}
             >
               {navItems.map((item, index) => (
-                <motion.li key={index} variants={itemVariants}>
+                <motion.li
+                  key={index}
+                  custom={index}
+                  variants={navLinksVariants}
+                >
                   <Link
                     href={item.href}
                     className="font-semibold relative group text-lg"
@@ -104,20 +153,19 @@ export default function Footer() {
           </motion.div>
 
           {/* Right Side - Social Media Links */}
-          <motion.div
-            variants={itemVariants}
-            className={`${isMobile ? "text-center" : "text-right"} mt-10`}
-          >
-            <div className="mb-10 max-lg:mt-10">
-              <h1 className="font-bold text-2xl text-primary">
+          <motion.div className={`text-center lg:text-right mt-10`}>
+            <motion.div
+              variants={socialLinksVariants}
+              className="mb-10 max-lg:mt-10"
+            >
+              <h1 className="font-bold text-2xl text-primary max-lg:text-center">
                 تــــــــــــابعــــــــــــنا
               </h1>
-            </div>
+            </motion.div>
             <motion.div
-              variants={containerVariants}
               className={`flex-col ${
                 isMobile ? "space-y-5 mt-10" : "space-y-3 mt-28"
-              } max-lg:text-lg  max-md:text-sm`}
+              } max-lg:text-lg  max-md:text-sm text-center`}
             >
               {[
                 {
@@ -146,12 +194,15 @@ export default function Footer() {
                   icon: <FaLinkedinIn size={24} />,
                 },
               ].map(({ href, label, icon }, idx) => (
-                <motion.div key={label} variants={itemVariants}>
-                  <a
+                <motion.div
+                  key={label}
+                  custom={idx}
+                  variants={socialLinksVariants}
+                  className="text-center"
+                >
+                  <Link
                     href={href}
-                    className={`flex items-center  ${
-                      isMobile ? "justify-center text-lg" : "justify-end"
-                    }  transition duration-300 font-semibold hover:text-primary gap-3 `}
+                    className={`flex items-center justify-center lg:justify-end  transition duration-300 font-semibold hover:text-primary gap-3 `}
                     target="_blank"
                     rel="noopener noreferrer"
                   >
@@ -166,7 +217,7 @@ export default function Footer() {
                         {icon}
                       </>
                     )}
-                  </a>
+                  </Link>
                 </motion.div>
               ))}
             </motion.div>
@@ -177,7 +228,7 @@ export default function Footer() {
 
         {/* Bottom Section */}
         <motion.div
-          variants={itemVariants}
+          variants={bottomSectionVariants}
           className="md:flex justify-between items-center mt-10 mb-0 pb-0 "
         >
           <div className="block mt-10">
@@ -213,13 +264,13 @@ export default function Footer() {
             ].map((item, index) => (
               <motion.a
                 key={index}
-                variants={itemVariants}
                 href={item.href}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary p-4 rounded-full border-2 hover:scale-110 hover:bg-primary hover:text-white transition-all duration-300 shadow-sm shadow-primary border-primary mt-5"
-                whileHover={{ scale: 1.2, rotate: 5 }}
+                whileHover={{ scale: 1.2, rotate: 10 }}
                 whileTap={{ scale: 0.9 }}
+                transition={{ duration: 0.2 }}
               >
                 {item.icon}
               </motion.a>

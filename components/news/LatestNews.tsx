@@ -1,5 +1,6 @@
 "use client";
-import React, { useEffect, useState } from "react";
+
+import React, { useState } from "react";
 import {
   Table,
   TableBody,
@@ -8,43 +9,40 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from "../ui/table";
-import Image from "next/image";
-import { Button } from "../ui/button";
+} from "@/components/ui/table";
+import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { InferSelectModel } from "drizzle-orm";
+import { news } from "@/src/db/schema";
+import {
+  Pagination,
+  PaginationContent,
+  PaginationItem,
+  PaginationLink,
+  PaginationNext,
+  PaginationPrevious,
+} from "@/components/ui/pagination";
+import Image from "next/image";
 
-// تعريف نوع البيانات (اختياري)
-interface NewsItem {
-  id: string;
-  title: string;
-  summary: string;
-  publishedAt: string;
-  imageUrl?: string;
-  eventType: string;
-  isActive: boolean; // ✅ جديد
-}
+export type News = InferSelectModel<typeof news>;
 
-const LatestNews = () => {
-  const [newsData, setNewsData] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+const LatestNews = ({ news }: { news: News[] }) => {
   const router = useRouter();
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const res = await fetch("/api/news", { cache: "no-store" });
-        const data = await res.json();
-        setNewsData(data);
-      } catch (error) {
-        console.error("Error fetching news:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const sortedNews = [...news].sort(
+    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+  );
 
-    fetchNews();
-  }, []);
+  const itemsPerPage = 5;
+  const [page, setPage] = useState(1);
+
+  const totalPages = Math.ceil(sortedNews.length / itemsPerPage);
+  const paginatedNews = sortedNews.slice(
+    (page - 1) * itemsPerPage,
+    page * itemsPerPage
+  );
+
   const eventTypeMap: Record<string, string> = {
     news: "خبر",
     announcement: "إعلان",
@@ -56,6 +54,7 @@ const LatestNews = () => {
     promotion: "عرض ترويجي",
     alert: "تنبيه",
   };
+
   const deleteNews = async (id: string) => {
     Swal.fire({
       title: "هل أنت متأكد؟",
@@ -68,13 +67,10 @@ const LatestNews = () => {
       cancelButtonText: "إلغاء",
     }).then(async (result) => {
       if (result.isConfirmed) {
-        const res = await fetch(`/api/news/${id}`, {
-          method: "DELETE",
-        });
-
+        const res = await fetch(`/api/news/${id}`, { method: "DELETE" });
         if (res.ok) {
-          setNewsData((prev) => prev.filter((item) => item.id !== id));
           Swal.fire("تم الحذف ✅", "تم حذف الخبر بنجاح", "success");
+          router.refresh();
         } else {
           Swal.fire("خطأ ❌", "فشل في حذف الخبر", "error");
         }
@@ -84,12 +80,9 @@ const LatestNews = () => {
 
   return (
     <div className="p-6">
-      {loading ? (
-        <p className="text-center text-muted-foreground">
-          جاري تحميل الأخبار...
-        </p>
-      ) : (
-        <Table className="w-full text-center border">
+      {/* ✅ جدول للشاشات الكبيرة */}
+      <div className="hidden lg:block overflow-x-auto">
+        <Table className="min-w-full text-center border">
           <TableCaption>آخر الأخبار والتحديثات</TableCaption>
           <TableHeader>
             <TableRow>
@@ -98,18 +91,17 @@ const LatestNews = () => {
               <TableHead className="text-center">الملخص</TableHead>
               <TableHead className="text-center">نوع الحدث</TableHead>
               <TableHead className="text-center">تاريخ النشر</TableHead>
-              <TableHead className="text-center">الحالة</TableHead>{" "}
-              {/* ✅ جديد */}
+              <TableHead className="text-center">الحالة</TableHead>
               <TableHead className="text-center">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
 
           <TableBody>
-            {newsData.map((item) => (
+            {paginatedNews.map((item) => (
               <TableRow key={item.id} className="hover:bg-muted/50">
                 <TableCell>
                   {item.imageUrl ? (
-                    <img
+                    <Image
                       src={item.imageUrl}
                       alt={item.title}
                       width={80}
@@ -133,15 +125,19 @@ const LatestNews = () => {
                     : "—"}
                 </TableCell>
                 <TableCell className="text-sm">
-                  {item.isActive ? "نشط ✅" : "غير نشط ❌"}{" "}
-                  {/* ✅ عرض الحالة */}
+                  <span
+                    className={
+                      item.isActive ? "text-green-600" : "text-red-600"
+                    }
+                  >
+                    {item.isActive ? "نشط ✅" : "غير نشط ❌"}
+                  </span>
                 </TableCell>
                 <TableCell className="flex gap-2 justify-center">
                   <Button
                     variant="outline"
                     size="sm"
                     onClick={() => router.push(`/admin/news/edit/${item.id}`)}
-                    className="cursor-pointer"
                   >
                     تعديل
                   </Button>
@@ -149,7 +145,6 @@ const LatestNews = () => {
                     variant="destructive"
                     size="sm"
                     onClick={() => deleteNews(item.id)}
-                    className="cursor-pointer"
                   >
                     حذف
                   </Button>
@@ -158,7 +153,93 @@ const LatestNews = () => {
             ))}
           </TableBody>
         </Table>
-      )}
+      </div>
+
+      {/* ✅ كاردز للموبايل */}
+      <div className="grid grid-cols-1 gap-4 lg:hidden">
+        {paginatedNews.map((item) => (
+          <div
+            key={item.id}
+            className="border rounded-lg p-4 shadow flex flex-col gap-2"
+          >
+            {item.imageUrl ? (
+              <Image
+                src={item.imageUrl}
+                alt={item.title}
+                width={120}
+                height={120}
+                className="rounded-md object-cover mx-auto"
+              />
+            ) : (
+              <div className="w-24 h-24 bg-gray-200 rounded-md mx-auto" />
+            )}
+            <p>
+              <strong>العنوان:</strong> {item.title}
+            </p>
+            <p>
+              <strong>الملخص:</strong> {item.summary}
+            </p>
+            <p>
+              <strong>نوع الحدث:</strong>{" "}
+              {eventTypeMap[item.eventType] || item.eventType}
+            </p>
+            <p>
+              <strong>تاريخ النشر:</strong>{" "}
+              {item.publishedAt
+                ? new Date(item.publishedAt).toLocaleDateString("ar-EG")
+                : "—"}
+            </p>
+            <p>
+              <strong>الحالة:</strong> {item.isActive ? "نشط ✅" : "غير نشط ❌"}
+            </p>
+            <div className="flex gap-2 justify-center mt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => router.push(`/admin/news/edit/${item.id}`)}
+              >
+                تعديل
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteNews(item.id)}
+              >
+                حذف
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* ✅ الباجينيشن */}
+      <Pagination className="mt-6 flex justify-center">
+        <PaginationContent>
+          {page > 1 && (
+            <PaginationItem>
+              <PaginationPrevious onClick={() => setPage(page - 1)} />
+            </PaginationItem>
+          )}
+          {Array.from({ length: totalPages }).map((_, i) => {
+            const pageNum = i + 1;
+            return (
+              <PaginationItem key={i}>
+                <PaginationLink
+                  isActive={pageNum === page}
+                  onClick={() => setPage(pageNum)}
+                >
+                  {pageNum}
+                </PaginationLink>
+              </PaginationItem>
+            );
+          })}
+          {page < totalPages && (
+            <PaginationItem>
+              <PaginationNext onClick={() => setPage(page + 1)} />
+            </PaginationItem>
+          )}
+        </PaginationContent>
+      </Pagination>
     </div>
   );
 };

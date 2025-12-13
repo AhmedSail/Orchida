@@ -41,7 +41,7 @@ export default function AddPhotoToSlider() {
 
   // 3) useForm مضبوط بنفس النوع
   const form = useForm<SliderFormValues>({
-    resolver: zodResolver(sliderSchema),
+    resolver: zodResolver(sliderSchema) as any,
     defaultValues: {
       title: "",
       imageFile: undefined,
@@ -51,6 +51,19 @@ export default function AddPhotoToSlider() {
     },
     mode: "onSubmit",
   });
+  const validateImageDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = new Image();
+      img.src = URL.createObjectURL(file);
+
+      img.onload = () => {
+        const isValid = img.width === 1920 && img.height === 1072;
+        resolve(isValid);
+      };
+
+      img.onerror = () => resolve(false);
+    });
+  };
 
   // 4) onSubmit مطابق لـ SubmitHandler
   const onSubmit: SubmitHandler<SliderFormValues> = async (values) => {
@@ -60,8 +73,20 @@ export default function AddPhotoToSlider() {
       let imageUrl: string | undefined;
 
       if (values.imageFile) {
+        const isValid = await validateImageDimensions(values.imageFile);
+
+        if (!isValid) {
+          Swal.fire({
+            icon: "error",
+            title: "الصورة غير مناسبة ❌",
+            text: "يجب اختيار صورة بأبعاد 1920 عرض × 1072 ارتفاع.",
+          });
+          setLoading(false);
+          return;
+        }
+
         const uploadData = new FormData();
-        uploadData.append("image", values.imageFile);
+        uploadData.append("file", values.imageFile);
 
         const uploadRes = await fetch("/api/upload", {
           method: "POST",

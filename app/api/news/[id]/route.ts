@@ -6,7 +6,7 @@ import { v2 as cloudinary } from "cloudinary";
 
 // إعداد Cloudinary من env
 cloudinary.config({
-  cloud_name: process.env.CLOUDINARY_CLOUD_NAME!,
+  cloud_name: process.env.NEXT_PUBLIC_CLOUDINARY_CLOUD_NAME!,
   api_key: process.env.CLOUDINARY_API_KEY!,
   api_secret: process.env.CLOUDINARY_API_SECRET!,
 });
@@ -14,14 +14,11 @@ cloudinary.config({
 // ✅ GET: جلب خبر واحد بالـ id
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
+  const { id } = await context.params;
   try {
-    const result = await db
-      .select()
-      .from(news)
-      .where(eq(news.id, params.id))
-      .limit(1);
+    const result = await db.select().from(news).where(eq(news.id, id)).limit(1);
 
     if (result.length === 0) {
       return NextResponse.json({ error: "الخبر غير موجود" }, { status: 404 });
@@ -65,14 +62,14 @@ export async function PUT(
         title: body.title,
         summary: body.summary,
         content: body.content,
-        imageUrl: body.imageUrl,
-        imagePublicId: body.imagePublicId,
-        eventType: body.eventType, // ✅ جديد
-        isActive: body.isActive, // ✅ جديد
+        imageUrl: body.imageUrl ?? existingNews[0].imageUrl,
+        imagePublicId: body.imagePublicId ?? existingNews[0].imagePublicId,
+        eventType: body.eventType,
+        isActive: body.isActive,
         publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
         updatedAt: new Date(),
       })
-      .where(eq(news.id, id)) // ✅ استخدم id هنا
+      .where(eq(news.id, id))
       .returning();
 
     return NextResponse.json(updatedNews[0]);

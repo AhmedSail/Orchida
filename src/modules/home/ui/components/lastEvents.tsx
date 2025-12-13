@@ -9,22 +9,13 @@ import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import Link from "next/link";
 import { motion } from "framer-motion";
+import { NewsType } from "../view/home-view";
 
 // سبينر بسيط
 function Spinner() {
   return (
     <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mx-auto" />
   );
-}
-
-interface NewsItem {
-  id: string;
-  title: string;
-  summary: string;
-  publishedAt: string;
-  imageUrl?: string;
-  eventType: string;
-  isActive: boolean;
 }
 
 const eventTypeMap: Record<string, string> = {
@@ -39,32 +30,14 @@ const eventTypeMap: Record<string, string> = {
   alert: "تنبيه",
 };
 
-export default function LatestNewsUser() {
-  const [newsData, setNewsData] = useState<NewsItem[]>([]);
-  const [loading, setLoading] = useState(true);
+export default function LatestNewsUser({ news }: { news: NewsType[] }) {
   const [buttonLoading, setButtonLoading] = useState<string | null>(null); // ✅ حالة الزر
 
-  useEffect(() => {
-    const fetchNews = async () => {
-      try {
-        const res = await fetch("/api/news", { cache: "no-store" });
-        const data = await res.json();
-        setNewsData(data);
-      } catch (error) {
-        console.error("Error fetching news:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchNews();
-  }, []);
-
-  const activeNews = [...newsData]
+  const activeNews = [...news]
     .filter((item) => item.isActive)
     .sort(
       (a, b) =>
-        new Date(b.publishedAt).getTime() - new Date(a.publishedAt).getTime()
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
     )
     .slice(0, 3);
 
@@ -81,24 +54,23 @@ export default function LatestNewsUser() {
 
       <Swiper
         modules={[Pagination, EffectFade]}
-        spaceBetween={30}
         effect="fade"
         fadeEffect={{ crossFade: true }}
         loop
         pagination={{ clickable: true }}
-        className="blog-slider"
+        className="blog-slider block mt-10" // مساحة أكبر تحت
       >
         {activeNews.map((item) => (
           <SwiperSlide key={item.id}>
             <motion.div
-              className="flex flex-col md:grid md:grid-cols-2 items-center gap-6"
+              className="flex flex-col md:grid lg:grid-cols-2 items-center gap-6"
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7 }}
             >
               {/* الصورة */}
               <motion.div
-                className="relative h-72 rounded-xl overflow-hidden shadow-lg"
+                className="relative h-96 rounded-xl overflow-hidden shadow-lg"
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
@@ -159,19 +131,17 @@ export default function LatestNewsUser() {
                 <Button
                   variant="default"
                   size="sm"
-                  className="cursor-pointer w-full mt-10 flex items-center justify-center"
+                  className="cursor-pointer w-full mb-10 flex items-center justify-center"
                   onClick={() => {
                     setButtonLoading(item.id);
-                    // محاكاة تحميل قصير قبل الانتقال
-                    setTimeout(() => {
-                      window.location.href = `/news/${item.id}`;
-                    }, 1000);
                   }}
                 >
                   {buttonLoading === item.id ? (
-                    <Spinner />
+                    <Link href={`/news/${item.id}`}>
+                      <Spinner />
+                    </Link>
                   ) : (
-                    <span>اقرا المزيد</span>
+                    <Link href={`/news/${item.id}`}>اقرا المزيد</Link>
                   )}
                 </Button>
               </motion.div>

@@ -1,42 +1,49 @@
-"use client";
 import LatestNews from "@/components/news/LatestNews";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
-import { useState } from "react";
-import { FaSpinner } from "react-icons/fa";
+import { db } from "@/src";
+import { news, users } from "@/src/db/schema";
+import Link from "next/link";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { redirect } from "next/navigation";
+import { eq } from "drizzle-orm";
+export const metadata = {
+  title: "قائمة المستجدات | لوحة الإدارة",
+  description: "عرض جميع المستجدات مع تفاصيلها وتاريخ الإضافة",
+};
+export default async function LatestNewsPage() {
+  const data = await db.select().from(news);
+  const session = await auth.api.getSession({ headers: await headers() });
 
-const LatestNewsPage = () => {
-  const router = useRouter();
-  const [loading, setLoading] = useState(false);
+  if (!session?.user?.id) {
+    redirect("/sign-in"); // لو مش مسجل دخول
+  }
 
-  const newNews = () => {
-    setLoading(true); // إظهار السبينر
-    setTimeout(() => {
-      router.push("/admin/news/newNews");
-    }, 500); // نصف ثانية كافية لعرض السبينر
-  };
+  // ✅ جلب بيانات المستخدم من DB
+  const userRecord = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const role = userRecord[0]?.role;
+
+  // ✅ تحقق من الرول
+  if (role !== "admin") {
+    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
+  }
 
   return (
     <>
-      <div className="flex justify-between items-center">
+      <div className="md:flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary mb-6">أحدث المستجدات</h1>
-        <Button
-          className="bg-primary text-white disabled:opacity-50 flex items-center gap-2"
-          onClick={newNews}
-          disabled={loading} // ✅ تعطيل الزر أثناء التحميل
-        >
-          {loading ? (
-            <>
-              <FaSpinner className="animate-spin" />
-            </>
-          ) : (
-            "إضافة خبر جديد"
-          )}
-        </Button>
+        <Link href="/admin/news/newNews">
+          <Button className="bg-primary text-white flex items-center gap-2">
+            إضافة خبر جديد
+          </Button>
+        </Link>
       </div>
-      <LatestNews />
+      <LatestNews news={data} />
     </>
   );
-};
-
-export default LatestNewsPage;
+}
