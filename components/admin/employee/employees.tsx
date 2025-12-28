@@ -10,7 +10,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { employees } from "@/src/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import { Spinner } from "@/components/ui/spinner";
@@ -20,8 +20,10 @@ export type Employee = InferSelectModel<typeof employees>;
 
 export default function EmployeesPage({
   initialEmployees,
+  userId,
 }: {
   initialEmployees: Employee[];
+  userId: string;
 }) {
   const [employees, setEmployees] = useState<Employee[]>(initialEmployees);
   const [loading, setLoading] = useState(false);
@@ -98,7 +100,7 @@ export default function EmployeesPage({
           variant="default"
           className="text-white font-bold w-full md:w-auto"
         >
-          <Link href="/admin/employees/add">إضافة موظف جديد</Link>
+          <Link href={`/admin/${userId}/employees/add`}>إضافة موظف جديد</Link>
         </Button>
       </div>
 
@@ -130,7 +132,9 @@ export default function EmployeesPage({
                 </TableCell>
                 <TableCell className="flex gap-2">
                   <Button variant="outline" size="sm">
-                    <Link href={`/admin/employees/edit/${emp.id}`}>تعديل</Link>
+                    <Link href={`/admin/${userId}/employees/edit/${emp.id}`}>
+                      تعديل
+                    </Link>
                   </Button>
                   <Button
                     variant="destructive"
@@ -173,7 +177,9 @@ export default function EmployeesPage({
             </p>
             <div className="flex gap-2 mt-2">
               <Button variant="outline" size="sm">
-                <Link href={`/admin/employees/edit/${emp.id}`}>تعديل</Link>
+                <Link href={`/admin/${userId}/employees/edit/${emp.id}`}>
+                  تعديل
+                </Link>
               </Button>
               <Button
                 variant="destructive"

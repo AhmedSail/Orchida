@@ -49,9 +49,11 @@ export type Works = InferSelectModel<typeof works>;
 const EditWork = ({
   allServices,
   foundWork,
+  userId,
 }: {
   allServices: Services;
   foundWork: Works;
+  userId: string;
 }) => {
   const [loading, setLoading] = React.useState(false);
   const router = useRouter();
@@ -86,7 +88,7 @@ const EditWork = ({
           confirmButtonText: "موافق",
         });
         // ✅ تحويل لصفحة تعديل الوسائط
-        router.push(`/admin/works/${foundWork.id}/media/edit`);
+        router.push(`/admin/${userId}/works/${foundWork.id}/media/edit`);
         form.reset();
       } else {
         Swal.fire({

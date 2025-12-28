@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react";
 import { Loader2, Trash2, Pencil } from "lucide-react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import Image from "next/image";
 import { Service } from "@/components/admin/service/servicesPage";
 

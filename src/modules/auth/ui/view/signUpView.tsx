@@ -19,7 +19,7 @@ import {
 import { FaGithub, FaGoogle } from "react-icons/fa";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { useRouter } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 

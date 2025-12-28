@@ -25,95 +25,130 @@ import {
 } from "@heroicons/react/24/solid";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
-import { FileText, LayoutDashboard, LogOut, User, User2 } from "lucide-react";
-import Link from "next/link";
+import {
+  CheckCircleIcon,
+  FileText,
+  LayoutDashboard,
+  LogOut,
+  User,
+  User2,
+} from "lucide-react";
+import { Link } from "next-view-transitions";
 import React, { useState, useEffect } from "react";
 import { authClient } from "@/lib/auth-client";
 import { ServiceRequests } from "@/src/modules/home/ui/view/home-view";
 import { useRouter } from "next/navigation";
+import { useIsMobile } from "@/hooks/use-mobile";
+import Swal from "sweetalert2";
 // @ts-ignore
 
 // --- عناصر قائمة الدورات ---
 const navListMenuItems = [
   {
-    title: "المنتج الأول",
-    description: "وصف للمنتج الأول",
-    icon: SquaresPlusIcon,
+    title: "دوراتنا",
+    description: "تجد في هذه الصفحة جميع الدورات المطروحة حاليا لدينا",
+    icon: Bars4Icon,
   },
   {
-    title: "المنتج الثاني",
-    description: "وصف للمنتج الثاني",
+    title: "دوراتي المسجل فيها",
+    description:
+      "في هذه الصفحة تجد جميع الدورات المسجل فيها حاليا والمسجل بها مسبقا ",
     icon: UserGroupIcon,
   },
-  { title: "المنتج الثالث", description: "وصف للمنتج الثالث", icon: Bars4Icon },
 ];
 
 function NavListMenu() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data } = authClient.useSession();
+
   const renderItems = navListMenuItems.map(
-    ({ icon, title, description }, key) => (
-      <Link href="#" key={key}>
-        {/* @ts-ignore */}
-        <MenuItem className="flex items-center gap-3 hover:bg-gray-100 text-right">
-          <div className="flex items-center justify-center p-2">
-            {React.createElement(icon, { className: "h-6 w-6 text-gray-900" })}
-          </div>
-          <div>
-            {/* @ts-ignore */}
-            <Typography as="h6" className="font-bold">
-              {title}
-            </Typography>
-            {/* @ts-ignore */}
-            <Typography as="p" className="text-xs text-blue-gray-500">
-              {description}
-            </Typography>
-          </div>
-        </MenuItem>
-      </Link>
-    )
+    ({ icon, title, description }, key) => {
+      let href = "#";
+
+      if (title === "دوراتي المسجل فيها") {
+        if (data?.user?.id) {
+          href = `/${data.user.id}/myCourses`;
+        }
+      } else if (title === "دوراتنا") {
+        href = "/courses";
+      }
+
+      const handleClick = async (e: React.MouseEvent) => {
+        if (title === "دوراتي المسجل فيها" && !data?.user?.id) {
+          e.preventDefault(); // منع الانتقال
+          await Swal.fire({
+            title: "تنبيه",
+            text: "يجب تسجيل الدخول لمشاهدة دوراتك",
+            icon: "warning",
+            confirmButtonText: "حسناً",
+          });
+        }
+      };
+
+      return (
+        <Link href={href} key={key} onClick={handleClick}>
+          {/* @ts-ignore */}
+          <MenuItem className="flex items-center gap-3 hover:bg-gray-100 text-right w-96">
+            <div className="flex items-center justify-center p-2">
+              {React.createElement(icon, {
+                className: "h-6 w-6 text-gray-900",
+              })}
+            </div>
+            <div>
+              {/* @ts-ignore */}
+              <Typography as="h6" className="font-bold">
+                {title}
+              </Typography>
+              {/* @ts-ignore */}
+              <Typography as="p" className="text-xs text-blue-gray-500">
+                {description}
+              </Typography>
+            </div>
+          </MenuItem>
+        </Link>
+      );
+    }
   );
 
+  // ✅ لازم ترجع JSX
   return (
-    <>
-      <Menu
-        open={isMenuOpen}
-        handler={setIsMenuOpen}
-        offset={{ mainAxis: 20 }}
-        placement="bottom"
-        allowHover
-      >
-        <MenuHandler>
-          {/* @ts-ignore */}
-          <Typography as="div" className="font-bold text-md">
-            {/* @ts-ignore */}
-            <ListItem
-              className="flex items-center gap-2 py-2 pl-4"
-              selected={isMenuOpen || isMobileMenuOpen}
-              onClick={() => setIsMobileMenuOpen((cur) => !cur)}
-            >
-              الدورات
-              <ChevronDownIcon
-                strokeWidth={2.5}
-                className={`hidden h-3 w-3 transition-transform lg:block ${
-                  isMenuOpen ? "rotate-180" : ""
-                }`}
-              />
-            </ListItem>
-          </Typography>
-        </MenuHandler>
+    <Menu
+      open={isMenuOpen}
+      handler={setIsMenuOpen}
+      offset={{ mainAxis: 20 }}
+      placement="bottom"
+      allowHover
+    >
+      <MenuHandler>
         {/* @ts-ignore */}
-        <MenuList className="hidden lg:grid grid-cols-3 gap-y-2">
-          {renderItems}
-        </MenuList>
-      </Menu>
+        <Typography as="div" className="font-bold text-md">
+          {/* @ts-ignore */}
+          <ListItem
+            className="flex items-center gap-2 py-2 pl-4"
+            selected={isMenuOpen || isMobileMenuOpen}
+            onClick={() => setIsMobileMenuOpen((cur) => !cur)}
+          >
+            الدورات
+            <ChevronDownIcon
+              strokeWidth={2.5}
+              className={`hidden h-3 w-3 transition-transform lg:block ${
+                isMenuOpen ? "rotate-180" : ""
+              }`}
+            />
+          </ListItem>
+        </Typography>
+      </MenuHandler>
+      {/* @ts-ignore */}
+      <MenuList className="hidden lg:grid grid-cols-2 gap-y-2">
+        {renderItems}
+      </MenuList>
 
       {/* نسخة الموبايل */}
       <div className="block lg:hidden">
         <Collapse open={isMobileMenuOpen}>{renderItems}</Collapse>
       </div>
-    </>
+    </Menu>
   );
 }
 
@@ -125,7 +160,7 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
     { id: 5, title: "اتصل بنا", href: "/contact" },
     { id: 6, title: "من نحن", href: "/about" },
   ];
-
+  const isMobile = useIsMobile();
   return (
     <div>
       {/* @ts-ignore */}
@@ -139,9 +174,13 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
                 {title}
               </ListItem>
               <span
-                className={`absolute w-0 top-1/2 translate-y-4 h-0.5 ${
-                  isScrolled ? "bg-white" : "bg-gray-800"
-                } opacity-0 left-1/4 group-hover:opacity-100 group-hover:w-1/2 transition-all duration-700`}
+                className={`${
+                  isMobile
+                    ? ""
+                    : `absolute w-0 top-1/2 translate-y-4 h-0.5 ${
+                        isScrolled ? "bg-white" : "bg-gray-800"
+                      } opacity-0 left-1/4 group-hover:opacity-100 group-hover:w-1/2 transition-all duration-700`
+                }`}
               ></span>
             </Typography>
           </Link>
@@ -158,8 +197,6 @@ const CollapseContent = ({
   role,
   requests,
   isScrolled,
-  isMobileMenuOpen,
-  setIsMobileMenuOpen,
   authClient,
 }: {
   open: boolean;
@@ -221,13 +258,30 @@ const CollapseContent = ({
             )}
 
             {/* لوحة التحكم */}
-            {(role === "admin" || role === "attractor") && (
-              <Link
-                href={`/${role}/home`}
-                className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
-              >
-                <LayoutDashboard /> لوحة التحكم الخاص بي
-              </Link>
+            {(role === "admin" ||
+              role === "attractor" ||
+              role === "coordinator" ||
+              role === "instructor" ||
+              role === "user") && (
+              <div>
+                <hr className="my-2" />
+                {/* @ts-ignore */}
+                <MenuItem
+                  // onClick={() => router.push("/requests")}
+                  className="flex items-center gap-2 hover:bg-gray-100"
+                >
+                  <LayoutDashboard />
+                  <Link
+                    href={
+                      role === "user"
+                        ? `/dashboardUser/${data.user.id}/home`
+                        : `/${role}/${data.user.id}/home`
+                    }
+                  >
+                    لوحة التحكم الخاص بي
+                  </Link>
+                </MenuItem>
+              </div>
             )}
 
             {/* تسجيل الخروج */}
@@ -295,6 +349,7 @@ export function Header({
           alt="logo"
           width={isScrolled ? 60 : 70}
           height={isScrolled ? 60 : 70}
+          loading="eager"
         />
       </Link>
       <div className="hidden lg:flex">
@@ -369,7 +424,11 @@ export function Header({
                     </MenuItem>
                   </div>
                 )}
-                {(role === "admin" || role === "attractor") && (
+                {(role === "admin" ||
+                  role === "attractor" ||
+                  role === "coordinator" ||
+                  role === "instructor" ||
+                  role === "user") && (
                   <div>
                     <hr className="my-2" />
                     {/* @ts-ignore */}
@@ -378,7 +437,15 @@ export function Header({
                       className="flex items-center gap-2 hover:bg-gray-100"
                     >
                       <LayoutDashboard />
-                      <Link href={`/${role}/home`}>لوحة التحكم الخاص بي</Link>
+                      <Link
+                        href={
+                          role === "user"
+                            ? `/dashboardUser/${data.user.id}/home`
+                            : `/${role}/${data.user.id}/home`
+                        }
+                      >
+                        لوحة التحكم الخاص بي
+                      </Link>
                     </MenuItem>
                   </div>
                 )}

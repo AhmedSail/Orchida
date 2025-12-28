@@ -12,16 +12,18 @@ export type ServiceRequest = InferSelectModel<typeof serviceRequests>;
 const PendingServices = ({
   data,
   role,
+  userId,
 }: {
   data: ServiceRequest[];
   role?: string;
+  userId: string;
 }) => {
   const [requests, setRequests] = useState<ServiceRequest[]>(data);
 
   return (
     <div>
       <h1 className="text-2xl text-primary font-bold mb-4">الخدمات المعلقة </h1>
-      <ServiceTable data={data} role={role} />
+      <ServiceTable data={data} role={role} userId={userId} />
     </div>
   );
 };

@@ -1,28 +1,32 @@
 "use client";
 import React, { useState } from "react";
 import { InferSelectModel } from "drizzle-orm";
-import { works } from "@/src/db/schema";
+import { mediaFiles, works } from "@/src/db/schema";
 import WorksTable from "./worksTable";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
-
-// ✅ تعريف النوع بشكل صحيح
 export type Work = InferSelectModel<typeof works>;
+
+// يمثل صف واحد من جدول mediaFiles
+export type MediaFile = InferSelectModel<typeof mediaFiles>;
+export type WorkWithMedia = Work & {
+  mediaFiles: MediaFile[];
+};
 
 const AllWorkstable = ({
   allWorks,
+  userId,
 }: {
-  allWorks: (Work & {
-    mainMedia?: { url: string; type: string; publicId?: string } | null;
-  })[];
+  allWorks: WorkWithMedia[];
+  userId: string;
 }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleAddWork = () => {
     setLoading(true); // ✅ إظهار السبينر
-    router.push("/admin/works/new");
+    router.push(`/admin/${userId}/works/new`);
   };
 
   return (
@@ -46,7 +50,7 @@ const AllWorkstable = ({
           )}
         </Button>
       </div>
-      <WorksTable allWorks={allWorks} />
+      <WorksTable allWorks={allWorks} userId={userId} />
     </div>
   );
 };

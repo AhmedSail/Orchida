@@ -90,7 +90,7 @@ const AddMedia = ({
 
       <Button
         onClick={handleUpload}
-        className="bg-primary text-white hover:bg-primary/90 w-full"
+        className="bg-primary text-white w-1/2 block mx-auto  hover:bg-primary/90 "
         disabled={loading}
       >
         {loading ? "جاري الرفع..." : "رفع الملف"}

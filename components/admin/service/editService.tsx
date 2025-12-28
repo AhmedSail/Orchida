@@ -37,7 +37,13 @@ const schema = z.object({
   isActive: z.boolean(),
 });
 
-export default function EditServiceForm({ service }: { service: Service }) {
+export default function EditServiceForm({
+  service,
+  userId,
+}: {
+  service: Service;
+  userId: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [initialLoading, setInitialLoading] = useState(false);
 
@@ -76,7 +82,7 @@ export default function EditServiceForm({ service }: { service: Service }) {
         confirmButtonColor: "#2563eb",
       });
 
-      router.push("/admin/services");
+      router.push(`/admin/${userId}/services`);
     } catch (error) {
       Swal.fire({
         icon: "error",

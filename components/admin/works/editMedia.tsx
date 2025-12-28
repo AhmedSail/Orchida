@@ -14,7 +14,7 @@ type MediaFile = {
   workId: string;
 };
 
-const EditMedia = ({ workId }: { workId: string }) => {
+const EditMedia = ({ workId, userId }: { workId: string; userId: string }) => {
   const [files, setFiles] = useState<MediaFile[]>([]);
   const [mainId, setMainId] = useState<number | null>(null);
   const [loading, setLoading] = useState(false);
@@ -59,7 +59,7 @@ const EditMedia = ({ workId }: { workId: string }) => {
         title: "تم الحفظ ✅",
         text: "تم تحديث الوسيط الرئيسي",
       });
-      router.push(`/admin/works`);
+      router.push(`/admin/${userId}/works`);
       fetchData();
     } else {
       Swal.fire({ icon: "error", title: "خطأ ❌", text: "فشل حفظ التحديث" });

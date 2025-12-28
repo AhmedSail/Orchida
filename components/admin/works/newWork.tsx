@@ -42,7 +42,13 @@ const workSchema = z.object({
 
 type WorkFormValues = z.infer<typeof workSchema>;
 
-const NewWork = ({ allServices }: { allServices: Services }) => {
+const NewWork = ({
+  allServices,
+  userId,
+}: {
+  allServices: Services;
+  userId: string;
+}) => {
   const [loading, setLoading] = React.useState(false);
   const [createdWorkId, setCreatedWorkId] = React.useState<string | null>(null);
   const router = useRouter();
@@ -226,7 +232,7 @@ const NewWork = ({ allServices }: { allServices: Services }) => {
           {/* زر الإرسال */}
           <Button
             type="submit"
-            className="bg-primary w-full text-center text-white hover:bg-primary/90"
+            className="bg-primary w-1/2 block mx-auto text-center text-white hover:bg-primary/90"
             disabled={loading}
           >
             {loading ? (
@@ -259,12 +265,14 @@ const NewWork = ({ allServices }: { allServices: Services }) => {
           <div className="flex gap-2">
             <Button
               variant="outline"
-              onClick={() => router.push("/admin/works")}
+              onClick={() => router.push(`/admin/${userId}/works`)}
             >
               إنهاء والعودة للقائمة
             </Button>
             <Button
-              onClick={() => router.push(`/admin/works/${createdWorkId}/edit`)}
+              onClick={() =>
+                router.push(`/admin/${userId}/works/${createdWorkId}/edit`)
+              }
             >
               الذهاب لتعديل العمل
             </Button>

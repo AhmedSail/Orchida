@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import Swal from "sweetalert2";
 import { InferSelectModel } from "drizzle-orm";
 import { sliders } from "@/src/db/schema";
@@ -23,12 +23,19 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
+import { useEdgeStore } from "@/lib/edgestore";
 
 export type Slider = InferSelectModel<typeof sliders>;
 
-export default function AdminSlider({ data }: { data: Slider[] }) {
+export default function AdminSlider({
+  data,
+  userId,
+}: {
+  data: Slider[];
+  userId: string;
+}) {
   const [sliders, setSliders] = useState<Slider[]>(data);
-
+  const { edgestore } = useEdgeStore();
   const itemsPerPage = 5;
   const [page, setPage] = useState(1);
 
@@ -38,7 +45,7 @@ export default function AdminSlider({ data }: { data: Slider[] }) {
     page * itemsPerPage
   );
 
-  const handleDelete = async (id: string) => {
+  const handleDelete = async (slider: Slider) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
       text: "سيتم حذف السلايدر نهائياً ولا يمكن التراجع!",
@@ -52,14 +59,21 @@ export default function AdminSlider({ data }: { data: Slider[] }) {
 
     if (result.isConfirmed) {
       try {
-        const res = await fetch(`/api/slider/${id}`, { method: "DELETE" });
+        if (slider.imageUrl) {
+          await edgestore.publicFiles.delete({
+            url: slider.imageUrl,
+          });
+        }
+        const res = await fetch(`/api/slider/${slider.id}`, {
+          method: "DELETE",
+        });
         if (res.ok) {
           Swal.fire({
             icon: "success",
             title: "تم الحذف ✅",
             text: "تم حذف السلايدر بنجاح",
           });
-          setSliders((prev) => prev.filter((s) => s.id !== id));
+          setSliders((prev) => prev.filter((s) => s.id !== slider.id));
         } else {
           const errorData = await res.json();
           Swal.fire({
@@ -83,7 +97,7 @@ export default function AdminSlider({ data }: { data: Slider[] }) {
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-primary">📸 إدارة السلايدر</h1>
         <Button className="bg-primary text-white hover:bg-primary/80 w-full md:w-auto">
-          <Link href="/admin/slider/add">+ إضافة صورة جديدة</Link>
+          <Link href={`/admin/${userId}/slider/add`}>+ إضافة صورة جديدة</Link>
         </Button>
       </div>
 
@@ -133,12 +147,14 @@ export default function AdminSlider({ data }: { data: Slider[] }) {
                 </TableCell>
                 <TableCell className="text-center flex gap-2 justify-center">
                   <Button variant="outline" size="sm">
-                    <Link href={`/admin/slider/edit/${slider.id}`}>تعديل</Link>
+                    <Link href={`/admin/${userId}/slider/edit/${slider.id}`}>
+                      تعديل
+                    </Link>
                   </Button>
                   <Button
                     variant="destructive"
                     size="sm"
-                    onClick={() => handleDelete(slider.id)}
+                    onClick={() => handleDelete(slider)}
                   >
                     حذف
                   </Button>
@@ -181,12 +197,14 @@ export default function AdminSlider({ data }: { data: Slider[] }) {
             </p>
             <div className="flex gap-2 justify-center mt-2">
               <Button variant="outline" size="sm">
-                <Link href={`/admin/slider/edit/${slider.id}`}>تعديل</Link>
+                <Link href={`/admin/${userId}/slider/edit/${slider.id}`}>
+                  تعديل
+                </Link>
               </Button>
               <Button
                 variant="destructive"
                 size="sm"
-                onClick={() => handleDelete(slider.id)}
+                onClick={() => handleDelete(slider)}
               >
                 حذف
               </Button>

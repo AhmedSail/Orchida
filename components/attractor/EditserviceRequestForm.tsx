@@ -22,9 +22,11 @@ import { useRouter } from "next/navigation";
 export default function EditServiceRequestForm({
   service,
   services,
+  userId,
 }: {
   service: ServiceRequests;
   services: Services;
+  userId: string;
 }) {
   const { data: session } = authClient.useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -99,7 +101,7 @@ export default function EditServiceRequestForm({
           text: "تم تحديث بيانات الخدمة",
           confirmButtonColor: "#0f172a",
         });
-        router.push(`/attractor/allServices`);
+        router.push(`/attractor/${userId}/allServices`);
       } else {
         Swal.fire({
           icon: "error",

@@ -7,7 +7,11 @@ import { digitalServices, serviceRequests } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import EditServiceRequestForm from "@/components/user/service/EditserviceRequestForm";
-
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "اوركيدة",
+  description: "اوكيدة| تعديل خدمتي المطلوبة",
+};
 const page = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });

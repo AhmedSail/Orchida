@@ -6,7 +6,7 @@ import Footer from "../../components/Footer";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/src/db";
-import { serviceRequests } from "@/src/db/schema";
+import { companies, serviceRequests } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
 const tajawal = Tajawal({
@@ -34,15 +34,24 @@ export default async function RootLayout({
       .from(serviceRequests)
       .where(eq(serviceRequests.clientId, session.user.id));
   }
-
+  const result = await db
+    .select({
+      facebookUrl: companies.facebookUrl,
+      instagramUrl: companies.instagramUrl,
+      twitterUrl: companies.twitterUrl,
+      whatsappUrl: companies.whatsappUrl,
+      linkedinUrl: companies.linkedinUrl,
+      tiktokUrl: companies.tiktokUrl,
+    })
+    .from(companies)
+    .where(eq(companies.id, "orchid-company"))
+    .limit(1);
   return (
-    <html lang="en">
-      <body className={`${tajawal.variable} antialiased`}>
-        <Header requests={requests} role={session?.user?.role ?? null} />
+    <div>
+      <Header requests={requests} role={session?.user?.role ?? null} />
 
-        {children}
-        <Footer />
-      </body>
-    </html>
+      {children}
+      <Footer result={result[0]} />
+    </div>
   );
 }

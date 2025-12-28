@@ -6,7 +6,11 @@ import Profile from "@/components/user/profile";
 import { db } from "@/src/db";
 import { eq } from "drizzle-orm";
 import { users } from "@/src/db/schema";
-
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "اوركيدة",
+  description: "اوكيدة| البروفايل",
+};
 const page = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
   const session = await auth.api.getSession({ headers: await headers() });

@@ -36,7 +36,7 @@ const schema = z.object({
   isActive: z.boolean(),
 });
 
-export default function AddServiceForm() {
+export default function AddServiceForm({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   type ServiceFormType = z.infer<typeof schema>;
@@ -67,7 +67,7 @@ export default function AddServiceForm() {
         text: "تم إضافة الخدمة بنجاح",
         confirmButtonColor: "#2563eb",
       });
-      router.push("/admin/services");
+      router.push(`/admin/${userId}/services`);
       form.reset();
     } catch (error) {
       Swal.fire({
