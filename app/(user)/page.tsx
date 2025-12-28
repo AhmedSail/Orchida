@@ -18,12 +18,7 @@ import { eq, inArray } from "drizzle-orm";
 const page = async () => {
   // ✅ جيب الخدمات
   const services = await db.select().from(digitalServices);
-  await fetch(
-    `${process.env.NEXT_PUBLIC_BASE_URL}/api/courses/courseSections/meetings/bulk-archive`,
-    {
-      method: "PUT",
-    }
-  );
+
   const slidersPhoto = await db.select().from(sliders);
   const newsData = await db.select().from(news);
 

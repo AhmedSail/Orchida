@@ -1,10 +1,9 @@
 // import { useIsMobile } from "@/hooks/use-mobile";
 import NewsPageId from "@/components/NewsPageid";
-import NewsTicker from "@/components/NewsTicker";
 import { db } from "@/src"; // اتصال drizzle
 import { news } from "@/src/db/schema"; // جدول الأخبار
 import { eq } from "drizzle-orm";
-import Image from "next/image";
+
 import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "اوركيدة",

@@ -5,7 +5,7 @@ import { courseEnrollments, courses, courseSections } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import React from "react";
+
 import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "اوركيدة",

@@ -1,4 +1,5 @@
 // app/(user)/workPage/[id]/page.tsx
+
 import WorkPage from "@/components/user/work/workPage";
 import { db } from "@/src";
 import { works, mediaFiles } from "@/src/db/schema";

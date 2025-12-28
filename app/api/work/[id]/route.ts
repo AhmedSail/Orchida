@@ -56,8 +56,7 @@ export async function PUT(
       duration: body.duration ?? null,
       toolsUsed: body.toolsUsed ?? null,
       isActive: body.isActive,
-      serviceId: body.serviceId ?? undefined, // نفس الفكرة
-      mainMediaId: body.mainMediaId ?? undefined,
+      serviceId: body.serviceId ?? undefined,
       updatedAt: new Date(),
     };
 

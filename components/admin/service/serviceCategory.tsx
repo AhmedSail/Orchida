@@ -145,11 +145,6 @@ export default function ServicesCategoriesPage({
                       {work.description}
                     </TableCell>
                     <TableCell className="flex gap-2 justify-start items-center place-content-center">
-                      <Button variant="outline" size="sm">
-                        <Link href={`/admin/teamWorks/editWork/${work.id}`}>
-                          تعديل
-                        </Link>
-                      </Button>
                       <Button
                         variant="destructive"
                         size="sm"

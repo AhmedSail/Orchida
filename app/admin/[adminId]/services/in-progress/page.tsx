@@ -1,5 +1,4 @@
 import InProgress from "@/components/attractor/InProgress";
-import PendingServices from "@/components/attractor/pending-services";
 import { db } from "@/src/db";
 import { serviceRequests, users } from "@/src/db/schema";
 import { eq } from "drizzle-orm";

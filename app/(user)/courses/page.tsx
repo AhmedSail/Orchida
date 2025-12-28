@@ -2,8 +2,7 @@ import AllCourses from "@/components/users/AllCourses";
 import { db } from "@/src/db";
 import { courses, courseSections, studentWorks, users } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
-import React from "react";
-import { inArray } from "drizzle-orm";
+
 import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "اوركيدة",

@@ -5,10 +5,13 @@ import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { NextResponse } from "next/server";
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await auth.api.getSession({ headers: await headers() });
-
+    const param = await context.params;
     if (!session || !session.user) {
       return NextResponse.json(
         { success: false, error: "المستخدم غير مسجل الدخول" },
@@ -34,7 +37,7 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
         markedBy: currentUserId,
         updatedAt: new Date(),
       })
-      .where(eq(attendance.id, context.params.id));
+      .where(eq(attendance.id, param.id));
 
     return NextResponse.json(
       { success: true, message: "✅ تم تحديث الحضور بنجاح" },

@@ -2,10 +2,28 @@
 import { NextResponse } from "next/server";
 import { db } from "@/src/db";
 import { mediaFiles, works } from "@/src/db/schema";
-import { eq, and, isNull } from "drizzle-orm";
+import {
+  eq,
+  and,
+  isNull,
+  InferSelectModel,
+  InferInsertModel,
+} from "drizzle-orm";
 import cloudinary from "@/lib/cloudinary";
-import { isValidId, NewWork } from "../../work/_types";
+export type Work = InferSelectModel<typeof works>;
+export type NewWork = InferInsertModel<typeof works>;
 
+export function isValidId(id: unknown): id is string {
+  return typeof id === "string" && id.trim().length > 0;
+}
+
+// Minimal body validation for create/update
+export function validateNewWork(body: Partial<NewWork>) {
+  if (!body.title || !body.category) {
+    return "title and category are required";
+  }
+  return null;
+}
 // GET /api/work/:id → fetch single active (not soft-deleted)
 export async function GET(
   _: Request,
@@ -33,7 +51,10 @@ export async function GET(
   }
 }
 
-export async function PATCH(req: Request, context: { params: { id: string } }) {
+export async function PATCH(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   try {
     const param = await context.params;
     const { id } = param;

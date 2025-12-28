@@ -3,8 +3,7 @@ import { db } from "@/src";
 import { courses, courseSections, users } from "@/src/db/schema";
 
 import { inArray, InferSelectModel } from "drizzle-orm";
-import { Button } from "@/components/ui/button";
-import { Link } from "next-view-transitions";
+
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

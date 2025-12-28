@@ -6,11 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
-import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| اعادة تعيين كلمة المرور",
-};
+
 export default function ResetPasswordPage() {
   const router = useRouter();
   const [token, setToken] = useState<string | null>(null);

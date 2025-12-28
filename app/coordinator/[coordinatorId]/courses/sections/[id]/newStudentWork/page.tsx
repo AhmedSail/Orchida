@@ -77,6 +77,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
         userRole={userRole}
         courseTitle={section[0].courseTitle} // 👈 تمرير اسم الكورس
         sectionNumber={section[0].sectionNumber}
+        userId={session.user.id}
       />
     </div>
   );

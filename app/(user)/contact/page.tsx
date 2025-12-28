@@ -2,7 +2,6 @@ import ContactPage from "@/components/ContactPage";
 import { db } from "@/src/db";
 import { companies } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
-import React from "react";
 
 const page = async () => {
   const result = await db
