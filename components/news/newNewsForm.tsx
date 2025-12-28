@@ -20,6 +20,9 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useEdgeStore } from "@/lib/edgestore";
+import { SingleImageDropzone } from "@/src/components/upload/single-image";
+import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 
 // ✅ تعريف Schema
 const formSchema = z.object({
@@ -41,7 +44,7 @@ const formSchema = z.object({
   ]),
 });
 
-export default function NewNewsForm() {
+export default function NewNewsForm({ userId }: { userId: string }) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -54,27 +57,23 @@ export default function NewNewsForm() {
   });
   const router = useRouter();
   const [loading, setLoading] = useState(false); // ✅ حالة التحميل
-
+  const { edgestore } = useEdgeStore();
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoading(true); // ✅ إظهار السبينر
 
-      let imageUrl: string | undefined;
-      let imagePublicId: string | undefined;
+      let imageUrl = "";
 
-      // ✅ رفع الصورة
-      if (values.imageFile && values.imageFile[0]) {
-        const uploadData = new FormData();
-        uploadData.append("file", values.imageFile[0]);
-
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
+      if (values.imageFile) {
+        const resUpload = await edgestore.publicFiles.upload({
+          file: values.imageFile,
+          onProgressChange: (progress) => {
+            // لو بدك تعمل progress bar
+            console.log("Upload progress:", progress);
+          },
         });
 
-        const uploadJson = await uploadRes.json();
-        imageUrl = uploadJson.url;
-        imagePublicId = uploadJson.public_id;
+        imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
       }
 
       // ✅ إرسال البيانات
@@ -84,7 +83,6 @@ export default function NewNewsForm() {
         content: values.content || "",
         publishedAt: new Date().toISOString(),
         imageUrl,
-        imagePublicId,
         isActive: values.isActive, // ✅ هنا التعديل
         eventType: values.eventType, // ✅ إضافة النوع
       };
@@ -102,7 +100,7 @@ export default function NewNewsForm() {
           text: "تم إضافة الحدث الجديد مع الصورة",
         });
         form.reset();
-        router.push("/admin/news");
+        router.push(`/admin/${userId}/news`);
       } else {
         Swal.fire({
           icon: "error",
@@ -219,11 +217,30 @@ export default function NewNewsForm() {
             <FormItem>
               <FormLabel>الصورة</FormLabel>
               <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => field.onChange(e.target.files)}
-                />
+                <UploaderProvider
+                  uploadFn={async ({ file, onProgressChange, signal }) => {
+                    // رفع الصورة عبر EdgeStore
+                    const res = await edgestore.publicFiles.upload({
+                      file,
+                      signal,
+                      onProgressChange,
+                    });
+                    // نخزن الملف في الفورم
+                    field.onChange(file);
+                    // إذا بدك تحفظ الرابط مباشرةً:
+                    // field.onChange(res.url);
+                    return res;
+                  }}
+                  autoUpload
+                >
+                  <SingleImageDropzone
+                    height={200}
+                    width={200}
+                    dropzoneOptions={{
+                      maxSize: 1024 * 1024 * 1, // 1 MB
+                    }}
+                  />
+                </UploaderProvider>
               </FormControl>
               <FormMessage />
             </FormItem>

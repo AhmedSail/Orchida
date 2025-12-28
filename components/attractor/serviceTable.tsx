@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { InferSelectModel } from "drizzle-orm";
 import { serviceRequests } from "@/src/db/schema";
 import Swal from "sweetalert2";
@@ -19,10 +19,11 @@ import Swal from "sweetalert2";
 type Props = {
   data: ServiceRequest[];
   role?: string;
+  userId: string;
 };
 export type ServiceRequest = InferSelectModel<typeof serviceRequests>;
 
-const ServiceTable = ({ data, role }: Props) => {
+const ServiceTable = ({ data, role, userId }: Props) => {
   const [requests, setRequests] = useState<ServiceRequest[]>(data);
 
   const handleDelete = async (id: string) => {
@@ -147,7 +148,7 @@ const ServiceTable = ({ data, role }: Props) => {
                     {req.status === "in_progress" && role === "admin" && (
                       <Button variant="default" size="sm" asChild>
                         <Link
-                          href={`/admin/services/in-progress/${req.id}/contract`}
+                          href={`/admin/${userId}/services/in-progress/${req.id}/contract`}
                         >
                           تفعيل العقد
                         </Link>
@@ -162,11 +163,11 @@ const ServiceTable = ({ data, role }: Props) => {
       </div>
 
       {/* ✅ كارد للموبايل والآيباد */}
-      <div className="grid grid-cols-1 gap-4 lg:hidden mt-6">
+      <div className="grid grid-cols-1 gap-4 lg:hidden mt-6 w-full">
         {requests.map((req) => (
           <div
             key={req.id}
-            className="border rounded-lg p-4 shadow flex flex-col gap-2 bg-gray-50"
+            className="border rounded-lg p-4 overflow-hidden  shadow flex flex-col gap-2 bg-gray-50 w-full"
           >
             <p>
               <strong>اسم العميل:</strong> {req.clientName}
@@ -243,7 +244,9 @@ const ServiceTable = ({ data, role }: Props) => {
                   className="w-full sm:w-auto"
                   asChild
                 >
-                  <Link href={`/admin/services/in-progress/${req.id}/contract`}>
+                  <Link
+                    href={`/admin/${userId}/services/in-progress/${req.id}/contract`}
+                  >
                     تفعيل العقد
                   </Link>
                 </Button>

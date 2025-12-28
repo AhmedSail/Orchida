@@ -1,6 +1,6 @@
 "use client";
 import React, { useState, useMemo } from "react";
-import { Work } from "./allWorkstable";
+import { Work, WorkWithMedia } from "./allWorkstable";
 import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
@@ -28,15 +28,17 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useEdgeStore } from "@/lib/edgestore";
 
 const WorksTable = ({
   allWorks,
+  userId,
 }: {
-  allWorks: (Work & {
-    mainMedia?: { url: string; type: string; publicId?: string } | null;
-  })[];
+  allWorks: WorkWithMedia[];
+  userId: string | null;
 }) => {
   const router = useRouter();
+  const { edgestore } = useEdgeStore(); // ✅ استدعاء EdgeStore
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const itemsPerPage = 5;
   const [page, setPage] = useState(1);
@@ -60,10 +62,14 @@ const WorksTable = ({
     setPage(1);
   };
 
-  const handleDelete = async (id: string, publicId?: string) => {
+  const handleDelete = async (
+    id: string,
+    fileUrl?: string,
+    mediaFiles?: { url: string }[]
+  ) => {
     const confirm = await Swal.fire({
       title: "هل أنت متأكد؟",
-      text: "سيتم حذف هذا العمل نهائياً مع صورته الرئيسية",
+      text: "سيتم حذف هذا العمل نهائياً مع وسائطه",
       icon: "warning",
       showCancelButton: true,
       confirmButtonColor: "#d33",
@@ -74,17 +80,29 @@ const WorksTable = ({
 
     if (confirm.isConfirmed) {
       try {
-        const res = await fetch(`/api/work/${id}`, {
+        // ✅ 1. حذف الملف من EdgeStore
+        if (fileUrl) {
+          await edgestore.publicFiles.delete({ url: fileUrl });
+        }
+        if (mediaFiles && mediaFiles.length > 0) {
+          for (const file of mediaFiles) {
+            if (file.url) {
+              await edgestore.publicFiles.delete({ url: file.url });
+            }
+          }
+        }
+
+        // ✅ 2. حذف السجل من قاعدة البيانات عبر API
+        const res = await fetch(`/api/works/${id}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ publicId }),
         });
 
         if (res.ok) {
           Swal.fire({
             icon: "success",
             title: "تم الحذف ✅",
-            text: "تم حذف العمل والصورة الرئيسية بنجاح",
+            text: "تم حذف العمل والوسائط بنجاح",
           });
           router.refresh();
         } else {
@@ -129,16 +147,16 @@ const WorksTable = ({
         <Table>
           <TableHeader>
             <TableRow dir="rtl" className="text-right">
-              <TableHead>الصورة الرئيسية</TableHead>
-              <TableHead>العنوان</TableHead>
-              <TableHead>الوصف</TableHead>
-              <TableHead>الفئة</TableHead>
-              <TableHead>النطاق السعري</TableHead>
-              <TableHead>المدة</TableHead>
-              <TableHead>الحالة</TableHead>
-              <TableHead>تاريخ الإنشاء</TableHead>
-              <TableHead>آخر تحديث</TableHead>
-              <TableHead>الإجراءات</TableHead>
+              <TableHead className="text-right">الصورة الرئيسية</TableHead>
+              <TableHead className="text-right">العنوان</TableHead>
+              <TableHead className="text-right">الوصف</TableHead>
+              <TableHead className="text-right">الفئة</TableHead>
+              <TableHead className="text-right">النطاق السعري</TableHead>
+              <TableHead className="text-right">المدة</TableHead>
+              <TableHead className="text-right">الحالة</TableHead>
+              <TableHead className="text-right">تاريخ الإنشاء</TableHead>
+              <TableHead className="text-right">آخر تحديث</TableHead>
+              <TableHead className="text-right">الإجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
@@ -146,10 +164,10 @@ const WorksTable = ({
               paginatedWorks.map((work) => (
                 <TableRow key={work.id} className="text-right">
                   <TableCell>
-                    {work.mainMedia ? (
-                      work.mainMedia.type === "image" ? (
+                    {work.imageUrl ? (
+                      work.type === "image" ? (
                         <Image
-                          src={work.mainMedia.url}
+                          src={work.imageUrl}
                           alt={work.title}
                           width={100}
                           height={60}
@@ -157,7 +175,7 @@ const WorksTable = ({
                         />
                       ) : (
                         <video
-                          src={work.mainMedia.url}
+                          src={work.imageUrl}
                           controls
                           className="w-[100px] h-[60px] rounded"
                         />
@@ -192,21 +210,16 @@ const WorksTable = ({
                       ? new Date(work.updatedAt).toLocaleDateString("ar-EG")
                       : "—"}
                   </TableCell>
-                  <TableCell className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() =>
-                        router.push(`/admin/works/${work.id}/edit`)
-                      }
-                    >
-                      تعديل
-                    </Button>
+                  <TableCell>
                     <Button
                       variant="destructive"
                       size="sm"
                       onClick={() =>
-                        handleDelete(work.id, work.mainMedia?.publicId)
+                        handleDelete(
+                          work.id,
+                          work.imageUrl ?? "",
+                          work.mediaFiles
+                        )
                       }
                     >
                       حذف
@@ -233,10 +246,10 @@ const WorksTable = ({
               key={work.id}
               className="border rounded-lg p-4 shadow flex flex-col gap-2"
             >
-              {work.mainMedia ? (
-                work.mainMedia.type === "image" ? (
+              {work.imageUrl ? (
+                work.type === "image" ? (
                   <Image
-                    src={work.mainMedia.url}
+                    src={work.imageUrl}
                     alt={work.title}
                     width={400}
                     height={200}
@@ -244,7 +257,7 @@ const WorksTable = ({
                   />
                 ) : (
                   <video
-                    src={work.mainMedia.url}
+                    src={work.imageUrl}
                     controls
                     className="w-full h-[200px] rounded"
                   />
@@ -292,20 +305,11 @@ const WorksTable = ({
               {/* أزرار الإجراءات */}
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
                 <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => router.push(`/admin/works/${work.id}/edit`)}
-                  className="w-full sm:w-auto"
-                >
-                  تعديل
-                </Button>
-                <Button
                   variant="destructive"
                   size="sm"
                   onClick={() =>
-                    handleDelete(work.id, work.mainMedia?.publicId)
+                    handleDelete(work.id, work.imageUrl ?? "", work.mediaFiles)
                   }
-                  className="w-full sm:w-auto"
                 >
                   حذف
                 </Button>

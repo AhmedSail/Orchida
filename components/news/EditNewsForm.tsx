@@ -21,6 +21,9 @@ import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
 import { Checkbox } from "@/components/ui/checkbox"; // ✅ Checkbox
 import Image from "next/image";
+import { useEdgeStore } from "@/lib/edgestore";
+import { UploaderProvider } from "@/src/components/upload/uploader-provider";
+import { SingleImageDropzone } from "@/src/components/upload/single-image";
 
 type News = {
   id: string;
@@ -52,10 +55,16 @@ const formSchema = z.object({
     "promotion",
     "alert",
   ]),
-  isActive: z.boolean().catch(false),
+  isActive: z.boolean(),
 });
 
-export default function EditNewsForm({ currentNews }: { currentNews: News }) {
+export default function EditNewsForm({
+  currentNews,
+  userId,
+}: {
+  currentNews: News;
+  userId: string;
+}) {
   const [oldImage, setOldImage] = useState<string | null>(
     currentNews.imageUrl || null
   );
@@ -73,26 +82,30 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
   });
 
   const router = useRouter();
-
+  const { edgestore } = useEdgeStore();
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoading(true);
 
-      let imageUrl: string | undefined = oldImage || undefined;
-      let imagePublicId: string | undefined;
+      let imageUrl = currentNews?.imageUrl ?? "";
 
-      if (values.imageFile && values.imageFile[0]) {
-        const uploadData = new FormData();
-        uploadData.append("file", values.imageFile[0]);
+      if (values.imageFile) {
+        // ✅ أولاً نحذف الصورة القديمة إذا موجودة
+        if (currentNews?.imageUrl) {
+          await edgestore.publicFiles.delete({
+            url: currentNews.imageUrl,
+          });
+        }
 
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
+        // ✅ ثم نرفع الصورة الجديدة
+        const resUpload = await edgestore.publicFiles.upload({
+          file: values.imageFile,
+          onProgressChange: (progress) => {
+            console.log("Upload progress:", progress);
+          },
         });
 
-        const uploadJson = await uploadRes.json();
-        imageUrl = uploadJson.url;
-        imagePublicId = uploadJson.public_id;
+        imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
       }
 
       const payload = {
@@ -101,7 +114,6 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
         content: values.content || "",
         publishedAt: new Date().toISOString(),
         imageUrl,
-        imagePublicId,
         eventType: values.eventType,
         isActive: values.isActive,
       };
@@ -118,7 +130,7 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
           title: "تم التعديل بنجاح ✅",
           text: "تم تحديث الحدث",
         });
-        router.push("/admin/news");
+        router.push(`/admin/${userId}/news`);
       } else {
         Swal.fire({
           icon: "error",
@@ -231,7 +243,6 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
           )}
         />
 
-        {/* رفع صورة */}
         <FormField
           control={form.control}
           name="imageFile"
@@ -239,24 +250,44 @@ export default function EditNewsForm({ currentNews }: { currentNews: News }) {
             <FormItem>
               <FormLabel>الصورة</FormLabel>
               <FormControl>
-                <Input
-                  type="file"
-                  accept="image/*"
-                  onChange={(e) => field.onChange(e.target.files)}
-                />
-              </FormControl>
-              {oldImage && (
-                <div className="mt-2">
-                  <p className="text-sm text-gray-600">الصورة الحالية:</p>
-                  <Image
-                    src={oldImage}
-                    alt="الصورة القديمة"
-                    width={100}
-                    height={100}
-                    className="w-48 rounded-md border"
+                <UploaderProvider
+                  uploadFn={async ({ file, onProgressChange, signal }) => {
+                    // رفع الصورة عبر EdgeStore
+                    const res = await edgestore.publicFiles.upload({
+                      file,
+                      signal,
+                      onProgressChange,
+                    });
+                    // نخزن الملف في الفورم
+                    field.onChange(file);
+                    // إذا بدك تحفظ الرابط مباشرةً:
+                    // field.onChange(res.url);
+                    return res;
+                  }}
+                  autoUpload
+                >
+                  <SingleImageDropzone
+                    height={200}
+                    width={200}
+                    dropzoneOptions={{
+                      maxSize: 1024 * 1024 * 1, // 1 MB
+                    }}
                   />
-                </div>
-              )}
+                  {oldImage && (
+                    <div className="mt-2">
+                      <p className="text-sm text-gray-600">الصورة الحالية:</p>
+                      <Image
+                        src={oldImage}
+                        alt="الصورة القديمة"
+                        width={100}
+                        height={100}
+                        className="w-48 rounded-md border"
+                        unoptimized
+                      />
+                    </div>
+                  )}
+                </UploaderProvider>
+              </FormControl>
               <FormMessage />
             </FormItem>
           )}

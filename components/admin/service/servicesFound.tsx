@@ -1,8 +1,7 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { motion, Variants } from "framer-motion";
-import { Loader2 } from "lucide-react";
 import {
   Megaphone,
   Video,
@@ -27,6 +26,7 @@ const ICON_MAP: Record<string, any> = {
   research: BookOpen,
   writing: PenLine,
 };
+
 function ServicesSkeleton() {
   return (
     <div className="p-6 container mx-auto" dir="rtl">
@@ -36,13 +36,8 @@ function ServicesSkeleton() {
             key={i}
             className="flex flex-col items-center justify-center bg-white shadow-md rounded-lg p-6 animate-pulse"
           >
-            {/* دائرة الأيقونة */}
             <div className="w-16 h-16 rounded-full bg-gray-300 mb-4" />
-
-            {/* العنوان */}
             <div className="h-4 w-32 bg-gray-300 rounded mb-3" />
-
-            {/* الوصف */}
             <div className="h-3 w-40 bg-gray-200 rounded mb-2" />
             <div className="h-3 w-32 bg-gray-200 rounded" />
           </div>
@@ -53,16 +48,25 @@ function ServicesSkeleton() {
 }
 
 export default function ServicesFound({ services }: { services: Services }) {
-  const [loading, setLoading] = useState(false);
+  const [loading] = useState(false);
 
-  // ✅ أنيميشن الكروت
+  // ✅ أنيميشن الحاوية والكروت
+  const containerVariants: Variants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: { staggerChildren: 0.2 },
+    },
+  };
+
   const cardVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    visible: (i: number) => ({
+    hidden: { opacity: 0, scale: 0.9, y: 20 },
+    visible: {
       opacity: 1,
       scale: 1,
-      transition: { delay: i * 0.2, duration: 0.6, ease: ["easeOut"] },
-    }),
+      y: 0,
+      transition: { duration: 0.5, ease: "easeOut" },
+    },
   };
 
   if (loading) {
@@ -72,33 +76,36 @@ export default function ServicesFound({ services }: { services: Services }) {
       </div>
     );
   }
+
   const activeServices = services.filter((s: any) => s.isActive);
+
   return (
     <div className="p-6 container mx-auto" dir="rtl">
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <motion.div
+        className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6"
+        variants={containerVariants}
+        initial="hidden"
+        whileInView="visible"
+        viewport={{ once: true }} // ✅ الأنيميشن مرة واحدة فقط
+      >
         {activeServices.map((service: any, i: number) => (
           <motion.div
             key={service.id}
             className="group flex flex-col items-center justify-center bg-white shadow-md rounded-lg p-6 transition duration-300 hover:shadow hover:bg-primary hover:shadow-primary hover:scale-105"
             variants={cardVariants}
-            initial="hidden"
-            whileInView="visible"
-            custom={i}
+            viewport={{ once: true }}
           >
-            {service.icon ? (
-              <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4 transition duration-300 group-hover:bg-white">
-                {service.icon && ICON_MAP[service.icon] ? (
-                  React.createElement(ICON_MAP[service.icon], {
-                    className:
-                      "w-10 h-10 text-primary transition duration-300 group-hover:scale-110",
-                  })
-                ) : (
-                  <span className="text-primary font-bold text-xl">?</span>
-                )}
-              </div>
-            ) : (
-              <span className="text-primary font-bold text-xl">?</span>
-            )}
+            {/* الأيقونة */}
+            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4 transition duration-300 group-hover:bg-white">
+              {service.icon && ICON_MAP[service.icon] ? (
+                React.createElement(ICON_MAP[service.icon], {
+                  className:
+                    "w-10 h-10 text-primary transition duration-300 group-hover:scale-110",
+                })
+              ) : (
+                <span className="text-primary font-bold text-xl">?</span>
+              )}
+            </div>
 
             {/* النص */}
             <h3 className="text-lg font-semibold text-gray-800 transition duration-300 group-hover:text-white">
@@ -113,7 +120,7 @@ export default function ServicesFound({ services }: { services: Services }) {
             )}
           </motion.div>
         ))}
-      </div>
+      </motion.div>
     </div>
   );
 }

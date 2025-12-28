@@ -20,10 +20,11 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { useState } from "react";
+import { User } from "../admin/instructor/NewInstructorForm";
 
-export function AppSidebarAttractor() {
+export function AppSidebarAttractor({ user }: { user: User }) {
   const [servicesOpen, setServicesOpen] = useState(false);
 
   const toggleServices = () => setServicesOpen((prev) => !prev);
@@ -46,7 +47,7 @@ export function AppSidebarAttractor() {
               {/* عناصر القائمة الرئيسية */}
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/home">
+                  <Link href={`/attractor/${user.id}/home`}>
                     <Home />
                     <span>الرئيسية</span>
                   </Link>
@@ -55,7 +56,7 @@ export function AppSidebarAttractor() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/allServices">
+                  <Link href={`/attractor/${user.id}/allServices`}>
                     <Briefcase />
                     <span>الخدمات</span>
                   </Link>
@@ -63,7 +64,7 @@ export function AppSidebarAttractor() {
               </SidebarMenuItem>
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/pending-services">
+                  <Link href={`/attractor/${user.id}/pending-services`}>
                     <Clock />
                     <span>الخدمات المعلقة</span>
                   </Link>
@@ -72,7 +73,7 @@ export function AppSidebarAttractor() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/in-progress">
+                  <Link href={`/attractor/${user.id}/in-progress`}>
                     <CheckCircle />
                     <span>الخدمات الفعّالة</span>
                   </Link>
@@ -81,7 +82,7 @@ export function AppSidebarAttractor() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/completed">
+                  <Link href={`/attractor/${user.id}/completed`}>
                     <Archive />
                     <span>الخدمات المنتهية</span>
                   </Link>
@@ -90,7 +91,7 @@ export function AppSidebarAttractor() {
 
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
-                  <Link href="/attractor/cancelled">
+                  <Link href={`/attractor/${user.id}/cancelled`}>
                     <XCircle />
                     <span>غير متفق عليها</span>
                   </Link>

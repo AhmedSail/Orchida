@@ -1,6 +1,6 @@
 "use client";
 import Image from "next/image";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import React from "react";
 import {
   FaBuilding,
@@ -15,10 +15,20 @@ import {
 import { motion } from "framer-motion";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-const AboutPage = () => {
+type CompanyFormValues = {
+  name: string;
+  phone: string;
+  accountNumber?: string;
+  ibanShekel?: string;
+  ibanDinar?: string;
+  ibanDollar?: string;
+  videoUrl?: string;
+  managerMessage?: string;
+};
+
+const AboutPage = ({ company }: { company: Partial<CompanyFormValues> }) => {
   const isMobile = useIsMobile();
 
-  // Variants للحاوية والكروت
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
@@ -52,8 +62,6 @@ const AboutPage = () => {
           className="object-cover object-top"
           unoptimized
         />
-
-        {/* Overlay */}
         <div
           className={`absolute inset-0 bg-black ${
             isMobile ? "opacity-0" : "opacity-20"
@@ -139,6 +147,69 @@ const AboutPage = () => {
             />
           </motion.div>
         </div>
+
+        {/* كلمة المدير */}
+        {/* كلمة المدير */}
+        {company.managerMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: 50 }} // يبدأ مخفي وتحت
+            whileInView={{ opacity: 1, y: 0 }} // يظهر تدريجيًا ويصعد لأعلى
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, amount: 0.2 }}
+            className="mt-12 max-w-4xl mx-auto text-center p-6 border rounded-lg shadow-md bg-gray-50"
+          >
+            <motion.h2
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6 }}
+              className="text-2xl font-bold text-primary mb-4"
+            >
+              💬 كلمة المدير
+            </motion.h2>
+            <motion.p
+              initial={{ opacity: 0 }}
+              whileInView={{ opacity: 1 }}
+              transition={{ duration: 1, delay: 0.3 }}
+              className="text-lg leading-relaxed"
+            >
+              {company.managerMessage}
+            </motion.p>
+          </motion.div>
+        )}
+
+        {/* الفيديو التعريفي */}
+        {company.videoUrl && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            viewport={{ once: true, amount: 0.2 }}
+            className="mt-12 max-w-4xl mx-auto text-center"
+          >
+            <motion.h2
+              initial={{ opacity: 0, y: -20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="text-2xl font-bold text-primary mb-4"
+            >
+              🎥 الفيديو التعريفي بالشركة
+            </motion.h2>
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.2 }}
+              className="aspect-w-16 aspect-h-9"
+            >
+              <iframe
+                src={company.videoUrl}
+                title="Company Intro Video"
+                className="w-full h-[400px] rounded-lg shadow-lg"
+                allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                allowFullScreen
+              />
+            </motion.div>
+          </motion.div>
+        )}
       </div>
     </motion.div>
   );

@@ -6,7 +6,7 @@ import { Works } from "@/components/admin/works/editWork";
 import { Services } from "@/components/admin/service/servicesPage";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 
 export type WorkWithMedia = Works & {
   mainMedia?: { url: string; type: string } | null;
@@ -23,25 +23,27 @@ const WorkService = ({
 }) => {
   const [loading, setLoading] = useState(false);
 
-  // كل ما يتغير active نعمل skeleton
   useEffect(() => {
     if (active) {
       setLoading(true);
-      const timer = setTimeout(() => setLoading(false), 500); // ⏳ 5 ثواني
+      const timer = setTimeout(() => setLoading(false), 500);
       return () => clearTimeout(timer);
     }
   }, [active]);
 
   if (!active) {
-    return <p className="text-gray-500">اختر خدمة لعرض الأعمال الخاصة بها</p>;
+    return (
+      <p className="text-gray-500 text-center">
+        اختر خدمة لعرض الأعمال الخاصة بها
+      </p>
+    );
   }
 
   const filteredWorks = allWorks.filter((work) => work.serviceId === active);
 
   if (loading) {
-    // Skeletons
     return (
-      <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-10rem)]">
+      <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         {[...Array(3)].map((_, i) => (
           <div
             key={i}
@@ -62,7 +64,7 @@ const WorkService = ({
 
   if (filteredWorks.length === 0) {
     return (
-      <p className="text-gray-500 col-span-3 text-center">
+      <p className="text-gray-500 text-center mt-12">
         لا توجد أعمال لهذه الخدمة حالياً
       </p>
     );
@@ -73,62 +75,58 @@ const WorkService = ({
     return service ? service.name : id;
   };
 
-  // إعدادات الحركة للكروت
   const cardVariants = {
     hidden: { opacity: 0, scale: 0.95 },
     show: { opacity: 1, scale: 1 },
   };
 
   return (
-    <div className="mt-32 grid grid-cols-1 md:grid-cols-3 gap-6 h-[calc(100vh-10rem)]">
+    <div className="mt-12 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
       <AnimatePresence>
         {filteredWorks.map((work) => (
-          <motion.div
-            key={work.id}
-            variants={cardVariants}
-            initial="hidden"
-            animate="show"
-            transition={{ duration: 0.6, ease: "easeOut" }}
-            className="shadow hover:shadow-lg hover:shadow-primary hover:scale-105 cursor-pointer hoverEffect flex flex-col h-[400px]"
-          >
-            {work.mainMedia ? (
-              work.mainMedia.type === "image" ? (
-                <Image
-                  src={work.mainMedia.url}
-                  alt={work.title}
-                  width={300}
-                  height={200}
-                  className="object-cover rounded-t w-full h-[200px]"
-                  unoptimized
-                />
+          <Link href={`/workPage/${work.id}`}>
+            <motion.div
+              key={work.id}
+              variants={cardVariants}
+              initial="hidden"
+              animate="show"
+              transition={{ duration: 0.6, ease: "easeOut" }}
+              className="shadow hover:shadow-lg hover:shadow-primary/50 hover:scale-105 transition-transform duration-300 cursor-pointer flex flex-col rounded-lg overflow-hidden"
+            >
+              {/* صورة أو فيديو */}
+              {work.mainMedia ? (
+                work.mainMedia.type === "image" ? (
+                  <Image
+                    src={work.mainMedia.url}
+                    alt={work.title}
+                    width={600}
+                    height={400}
+                    className="object-cover w-full h-[200px]"
+                    unoptimized
+                  />
+                ) : (
+                  <video
+                    src={work.mainMedia.url}
+                    controls
+                    className="w-full h-[200px] object-cover"
+                  />
+                )
               ) : (
-                <video
-                  src={work.mainMedia.url}
-                  controls
-                  className="w-full h-[200px] rounded-t object-cover"
-                />
-              )
-            ) : (
-              <div className="w-full h-[200px] bg-gray-200 flex items-center justify-center text-gray-500 rounded-t">
-                لا يوجد صورة
-              </div>
-            )}
+                <div className="w-full h-[200px] bg-gray-200 flex items-center justify-center text-gray-500">
+                  لا يوجد صورة
+                </div>
+              )}
 
-            <div className="flex flex-col gap-2 bg-primary/10 p-4 flex-1">
-              <div className="flex items-center gap-2">
-                <h3 className="text-gray-500">عنوان العمل :</h3>
+              {/* تفاصيل العمل */}
+              <div className="flex flex-col gap-3 bg-primary/10 p-4 flex-1">
                 <h3 className="text-lg font-semibold text-primary">
                   {work.title}
                 </h3>
-              </div>
-              <div className="flex flex-col gap-2">
-                <div className="flex justify-start gap-2">
-                  <h3 className="text-gray-500">الوصف :</h3>
-                  <h3 className="text-lg font-semibold text-primary line-clamp-2">
-                    {work.description}
-                  </h3>
-                </div>
-                <p className="text-xs text-gray-500 mt-auto mb-5">
+                <p className="text-sm text-gray-600 line-clamp-3">
+                  {work.description}
+                </p>
+
+                <p className="text-xs text-gray-500 mt-auto">
                   الخدمة:{" "}
                   <span className="text-primary">
                     {getServiceName(work.serviceId)}
@@ -136,24 +134,13 @@ const WorkService = ({
                   | مدة العمل:{" "}
                   <span className="text-primary">{work.duration || "—"}</span>
                 </p>
-              </div>
 
-              <Button className="w-full" variant={"default"}>
-                <Link
-                  href={{
-                    pathname: `/workPage/${work.id}`,
-                    query: {
-                      title: work.title,
-                      description: work.description,
-                      duration: work.duration,
-                    },
-                  }}
-                >
-                  عرض العمل
-                </Link>
-              </Button>
-            </div>
-          </motion.div>
+                <Button className="w-full mt-3" variant="default">
+                  <Link href={`/workPage/${work.id}`}>عرض العمل</Link>
+                </Button>
+              </div>
+            </motion.div>
+          </Link>
         ))}
       </AnimatePresence>
     </div>

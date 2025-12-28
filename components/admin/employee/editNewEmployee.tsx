@@ -28,8 +28,10 @@ const formSchema = z.object({
 
 export default function EditEmployee({
   initialEmployee,
+  userId,
 }: {
   initialEmployee: Employee;
+  userId: string;
 }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
@@ -60,7 +62,7 @@ export default function EditEmployee({
         title: "تم التعديل",
         text: "تم تعديل بيانات الموظف بنجاح",
       });
-      router.push("/admin/employees");
+      router.push(`/admin/${userId}/employees`);
     } catch (error) {
       Swal.fire({ icon: "error", title: "خطأ", text: "حدث خطأ أثناء التعديل" });
     } finally {

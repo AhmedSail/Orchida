@@ -3,7 +3,11 @@ import WorkPage from "@/components/user/work/workPage";
 import { db } from "@/src";
 import { works, mediaFiles } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
-
+import { Metadata } from "next";
+export const metadata: Metadata = {
+  title: "اوركيدة",
+  description: "اوكيدة| عرض العمل",
+};
 export default async function Page({ params }: { params: { id: string } }) {
   const { id } = await params;
 

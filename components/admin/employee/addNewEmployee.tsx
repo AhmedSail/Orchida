@@ -28,7 +28,7 @@ const formSchema = z.object({
   phone: z.string().optional(),
 });
 
-export default function AddNewEmployee() {
+export default function AddNewEmployee({ userId }: { userId: string }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
   const form = useForm({
@@ -59,7 +59,7 @@ export default function AddNewEmployee() {
       });
 
       form.reset();
-      router.push("/admin/employees");
+      router.push(`/admin/${userId}/employees`);
     } catch (error) {
       Swal.fire({
         icon: "error",

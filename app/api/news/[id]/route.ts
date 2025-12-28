@@ -96,13 +96,6 @@ export async function DELETE(
       return NextResponse.json({ error: "News not found" }, { status: 404 });
     }
 
-    const imagePublicId = existingNews[0].imagePublicId;
-
-    // حذف الصورة من Cloudinary لو موجودة
-    if (imagePublicId) {
-      await cloudinary.uploader.destroy(imagePublicId);
-    }
-
     // حذف الخبر من قاعدة البيانات
     const deletedNews = await db
       .delete(news)

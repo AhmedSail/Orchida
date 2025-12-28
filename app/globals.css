@@ -7,6 +7,9 @@
   src: url("/fonts/BigVesta-Arabic-Regular.ttf");
   font-weight: normal;
 }
+.no-copy {
+  user-select: none;
+}
 
 @custom-variant dark (&:is(.dark *));
 /* الخط الافتراضي للموقع */

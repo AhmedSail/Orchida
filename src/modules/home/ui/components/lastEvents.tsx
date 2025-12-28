@@ -5,9 +5,9 @@ import Image from "next/image";
 import "swiper/css";
 import "swiper/css/pagination";
 import "swiper/css/effect-fade";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import { motion } from "framer-motion";
 import { NewsType } from "../view/home-view";
 
@@ -31,7 +31,7 @@ const eventTypeMap: Record<string, string> = {
 };
 
 export default function LatestNewsUser({ news }: { news: NewsType[] }) {
-  const [buttonLoading, setButtonLoading] = useState<string | null>(null); // ✅ حالة الزر
+  const [buttonLoading, setButtonLoading] = useState<string | null>(null);
 
   const activeNews = [...news]
     .filter((item) => item.isActive)
@@ -48,6 +48,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
         initial={{ opacity: 0, y: -20 }}
         whileInView={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
+        viewport={{ once: true }} // ✅ مرة واحدة فقط
       >
         آخر الأحداث
       </motion.h1>
@@ -58,7 +59,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
         fadeEffect={{ crossFade: true }}
         loop
         pagination={{ clickable: true }}
-        className="blog-slider block mt-10" // مساحة أكبر تحت
+        className="blog-slider block mt-10"
       >
         {activeNews.map((item) => (
           <SwiperSlide key={item.id}>
@@ -67,6 +68,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
               initial={{ opacity: 0, scale: 0.95 }}
               whileInView={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.7 }}
+              viewport={{ once: true }} // ✅ مرة واحدة فقط
             >
               {/* الصورة */}
               <motion.div
@@ -74,6 +76,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                 initial={{ opacity: 0, x: -50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
+                viewport={{ once: true }} // ✅ مرة واحدة فقط
               >
                 {item.imageUrl ? (
                   <Image
@@ -94,6 +97,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                   initial={{ opacity: 0, y: -10 }}
                   whileInView={{ opacity: 1, y: 0 }}
                   transition={{ delay: 0.3, duration: 0.5 }}
+                  viewport={{ once: true }} // ✅ مرة واحدة فقط
                 >
                   {eventTypeMap[item.eventType] || item.eventType}
                 </motion.span>
@@ -106,6 +110,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                 initial={{ opacity: 0, x: 50 }}
                 whileInView={{ opacity: 1, x: 0 }}
                 transition={{ duration: 0.7 }}
+                viewport={{ once: true }} // ✅ مرة واحدة فقط
               >
                 <div className="flex gap-2 items-center">
                   <span className="text-gray-500 font-medium">

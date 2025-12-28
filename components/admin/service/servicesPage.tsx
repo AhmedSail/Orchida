@@ -54,9 +54,11 @@ export type Services = Service[];
 export default function ServicesPage({
   services,
   role,
+  userId,
 }: {
   services: Service[];
   role?: string;
+  userId: string;
 }) {
   const router = useRouter();
 
@@ -111,7 +113,7 @@ export default function ServicesPage({
 
         <Button
           className="text-white font-bold flex items-center gap-2"
-          onClick={() => router.push("/admin/services/add")}
+          onClick={() => router.push(`/admin/${userId}/services/add`)}
         >
           إضافة خدمة جديدة
         </Button>
@@ -171,7 +173,9 @@ export default function ServicesPage({
                         variant="outline"
                         size="sm"
                         onClick={() =>
-                          router.push(`/admin/services/edit/${service.id}`)
+                          router.push(
+                            `/admin/${userId}/services/edit/${service.id}`
+                          )
                         }
                       >
                         تعديل
@@ -243,7 +247,9 @@ export default function ServicesPage({
                     size="sm"
                     className="w-full sm:w-auto"
                     onClick={() =>
-                      router.push(`/admin/services/edit/${service.id}`)
+                      router.push(
+                        `/admin/${userId}/services/edit/${service.id}`
+                      )
                     }
                   >
                     تعديل

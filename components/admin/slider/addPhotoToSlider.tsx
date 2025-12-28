@@ -19,6 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 import Swal from "sweetalert2";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { useEdgeStore } from "@/lib/edgestore";
 
 // 1) Zod schema أولاً
 const sliderSchema = z.object({
@@ -35,10 +36,10 @@ const sliderSchema = z.object({
 // 2) النوع المستنتج من Zod
 type SliderFormValues = z.infer<typeof sliderSchema>;
 
-export default function AddPhotoToSlider() {
+export default function AddPhotoToSlider({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-
+  const { edgestore } = useEdgeStore();
   // 3) useForm مضبوط بنفس النوع
   const form = useForm<SliderFormValues>({
     resolver: zodResolver(sliderSchema) as any,
@@ -85,16 +86,17 @@ export default function AddPhotoToSlider() {
           return;
         }
 
-        const uploadData = new FormData();
-        uploadData.append("file", values.imageFile);
+        if (values.imageFile) {
+          const resUpload = await edgestore.publicFiles.upload({
+            file: values.imageFile,
+            onProgressChange: (progress) => {
+              // لو بدك تعمل progress bar
+              console.log("Upload progress:", progress);
+            },
+          });
 
-        const uploadRes = await fetch("/api/upload", {
-          method: "POST",
-          body: uploadData,
-        });
-
-        const uploadJson = await uploadRes.json();
-        imageUrl = uploadJson.url;
+          imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+        }
       }
 
       if (!imageUrl) {
@@ -130,7 +132,7 @@ export default function AddPhotoToSlider() {
           text: "تم إضافة السلايدر مع الصورة",
         });
         form.reset();
-        router.push("/admin/slider");
+        router.push(`/admin/${userId}/slider`);
       } else {
         const errText = await res.text();
         Swal.fire({

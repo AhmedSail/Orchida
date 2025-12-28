@@ -1,0 +1,175 @@
+import HomePage from "@/components/admin/home/HomePage";
+import { db } from "@/src";
+import {
+  news,
+  users,
+  courses,
+  serviceRequests,
+  courseSections,
+  courseEnrollments,
+} from "@/src/db/schema";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { desc, eq, sql } from "drizzle-orm";
+import { redirect } from "next/navigation";
+import { and, gte, lt } from "drizzle-orm";
+
+export const metadata = {
+  title: "لوحة التحكم | لوحة الإدارة",
+  description: "لوحة التحكم",
+};
+
+export default async function AdminHomePage() {
+  const session = await auth.api.getSession({ headers: await headers() });
+
+  if (!session?.user?.id) {
+    redirect("/sign-in");
+  }
+
+  const userRecord = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  const role = userRecord[0]?.role;
+  if (role !== "admin") {
+    redirect("/");
+  }
+
+  // ✅ استعلامات ديناميكية
+  const activeUsers = await db.select().from(users);
+
+  const now = new Date();
+  const startOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+    0,
+    0,
+    0
+  );
+  const endOfDay = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate() + 1,
+    0,
+    0,
+    0
+  );
+
+  const todayRequests = await db
+    .select()
+    .from(serviceRequests)
+    .where(
+      and(
+        gte(serviceRequests.createdAt, startOfDay),
+        lt(serviceRequests.createdAt, endOfDay)
+      )
+    );
+
+  // ✅ الكورسات
+  const activeCourses = await db
+    .select()
+    .from(courseSections)
+    .where(eq(courseSections.status, "open"));
+  const pendingCourses = await db
+    .select()
+    .from(courseSections)
+    .where(eq(courseSections.status, "pending_approval"));
+  const inProgressCourses = await db
+    .select()
+    .from(courseSections)
+    .where(eq(courseSections.status, "in_progress"));
+  const ClosedCourses = await db
+    .select()
+    .from(courseSections)
+    .where(eq(courseSections.status, "closed"));
+  const completedCourses = await db
+    .select()
+    .from(courseSections)
+    .where(eq(courseSections.status, "completed"));
+
+  // ✅ عدد الطلاب المسجلين في كل دورة
+  const registrations = await db.select().from(courseEnrollments);
+
+  const activeServices = await db
+    .select()
+    .from(serviceRequests)
+    .where(eq(serviceRequests.status, "in_progress"));
+  const endedServices = await db
+    .select()
+    .from(serviceRequests)
+    .where(eq(serviceRequests.status, "completed"));
+  const allServices = await db.select().from(serviceRequests);
+  const latestNews = await db.select().from(news);
+  const serviceRequestsData = await db.select().from(serviceRequests);
+  const latestEnrollments = await db
+    .select({
+      enrollmentId: courseEnrollments.id,
+      studentName: courseEnrollments.studentName,
+      studentEmail: courseEnrollments.studentEmail,
+      studentPhone: courseEnrollments.studentPhone,
+      registeredAt: courseEnrollments.registeredAt,
+      sectionId: courseSections.id,
+      sectionStatus: courseSections.status,
+      courseId: courses.id,
+      courseTitle: courses.title,
+    })
+    .from(courseEnrollments)
+    .innerJoin(
+      courseSections,
+      eq(courseEnrollments.sectionId, courseSections.id)
+    )
+    .innerJoin(courses, eq(courseSections.courseId, courses.id))
+    .orderBy(desc(courseEnrollments.registeredAt))
+    .limit(5);
+  const enrollmentsByDay = await db
+    .select({
+      day: sql<string>`TO_CHAR(${courseEnrollments.registeredAt}, 'YYYY-MM-DD')`.as(
+        "day"
+      ),
+      count: sql<number>`COUNT(${courseEnrollments.id})`.as("count"),
+    })
+    .from(courseEnrollments)
+    .groupBy(sql`TO_CHAR(${courseEnrollments.registeredAt}, 'YYYY-MM-DD')`)
+    .orderBy(sql`TO_CHAR(${courseEnrollments.registeredAt}, 'YYYY-MM-DD') DESC`)
+    .limit(7);
+  const enrollmentsWithCourse = await db
+    .select({
+      courseTitle: courses.title,
+      sectionId: courseEnrollments.sectionId,
+    })
+    .from(courseEnrollments)
+    .innerJoin(
+      courseSections,
+      eq(courseEnrollments.sectionId, courseSections.id)
+    )
+    .innerJoin(courses, eq(courseSections.courseId, courses.id));
+
+  const studentsCountByCourse: Record<string, number> = {};
+  enrollmentsWithCourse.forEach((row) => {
+    studentsCountByCourse[row.courseTitle] =
+      (studentsCountByCourse[row.courseTitle] || 0) + 1;
+  });
+  return (
+    <HomePage
+      stats={{
+        activeUsers: activeUsers.length,
+        todayRequests: todayRequests.length,
+        activeServices: activeServices.length,
+        endedServices: endedServices.length,
+        allServices: allServices.length,
+        activeCourses: activeCourses.length,
+        pendingCourses: pendingCourses.length,
+        inProgressCourses: inProgressCourses.length,
+        completedCourses: completedCourses.length,
+        ClosedCourses: ClosedCourses.length,
+      }}
+      studentsCountByCourse={studentsCountByCourse}
+      userId={session.user.id}
+      latestEnrollments={latestEnrollments}
+      enrollmentsByDay={enrollmentsByDay} // ✅ تمرير آخر 5 تسجيلات
+    />
+  );
+}

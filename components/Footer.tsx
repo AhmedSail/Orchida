@@ -1,11 +1,12 @@
 "use client";
 
-import Link from "next/link";
+import { Link } from "next-view-transitions";
 import React from "react";
 import {
   FaFacebook,
   FaInstagram,
   FaLinkedinIn,
+  FaTiktok,
   FaTwitter,
   FaWhatsapp,
 } from "react-icons/fa";
@@ -13,8 +14,15 @@ import {
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import { useIsMobile } from "../hooks/use-mobile";
-
-export default function Footer() {
+type Links = {
+  facebookUrl: string | null;
+  instagramUrl: string | null;
+  twitterUrl: string | null;
+  whatsappUrl: string | null;
+  linkedinUrl: string | null;
+  tiktokUrl: string | null;
+};
+export default function Footer({ result }: { result: Links }) {
   const isMobile = useIsMobile();
 
   const navItems = [
@@ -88,7 +96,7 @@ export default function Footer() {
     <motion.footer
       initial="hidden"
       whileInView="show"
-      viewport={{ amount: 0.2, once: false }}
+      viewport={{ amount: 0.2, once: true }}
       variants={footerVariants}
       className="bg-gray-200  py-10 mt-36 text-gray-800"
     >
@@ -107,6 +115,7 @@ export default function Footer() {
                   width={100}
                   height={100}
                   className="transition-all duration-300"
+                  loading="eager"
                 />
               </motion.div>
             </Link>
@@ -169,31 +178,36 @@ export default function Footer() {
             >
               {[
                 {
-                  href: "https://www.facebook.com/profile.php?id=100010021352300",
+                  link: result.facebookUrl,
                   label: "Facebook",
                   icon: <FaFacebook size={24} />,
                 },
                 {
-                  href: "https://www.instagram.com/itsa7meedd/",
+                  ink: result.instagramUrl,
                   label: "Instagram",
                   icon: <FaInstagram size={24} />,
                 },
                 {
-                  href: "https://x.com/home?lang=en",
+                  link: result.twitterUrl,
                   label: "Twitter",
                   icon: <FaTwitter size={24} />,
                 },
                 {
-                  href: "https://wa.me/+972592855602",
+                  link: result.whatsappUrl,
                   label: "Whatsapp",
                   icon: <FaWhatsapp size={24} />,
                 },
                 {
-                  href: "https://www.linkedin.com/in/eng-ahmedqompoz/",
+                  link: result.linkedinUrl,
                   label: "LinkedIn",
                   icon: <FaLinkedinIn size={24} />,
                 },
-              ].map(({ href, label, icon }, idx) => (
+                {
+                  link: result.tiktokUrl,
+                  label: "TikTok",
+                  icon: <FaTiktok size={24} />,
+                },
+              ].map(({ link, label, icon }, idx) => (
                 <motion.div
                   key={label}
                   custom={idx}
@@ -201,7 +215,7 @@ export default function Footer() {
                   className="text-center"
                 >
                   <Link
-                    href={href}
+                    href={link ?? "#"}
                     className={`flex items-center justify-center lg:justify-end  transition duration-300 font-semibold hover:text-primary gap-3 `}
                     target="_blank"
                     rel="noopener noreferrer"
@@ -242,29 +256,33 @@ export default function Footer() {
           <div className="flex justify-center space-x-6 flex-wrap">
             {[
               {
-                href: "https://www.facebook.com/profile.php?id=100010021352300",
                 icon: <FaFacebook size={15} />,
+                link: result.facebookUrl,
               },
               {
-                href: "https://www.instagram.com/itsa7meedd/",
                 icon: <FaInstagram size={15} />,
+                link: result.instagramUrl,
               },
               {
-                href: "https://x.com/home?lang=en",
                 icon: <FaTwitter size={15} />,
+                link: result.twitterUrl,
               },
               {
-                href: "https://wa.me/+972592855602",
                 icon: <FaWhatsapp size={15} />,
+                link: result.whatsappUrl,
               },
               {
-                href: "https://www.linkedin.com/in/eng-ahmedqompoz/",
                 icon: <FaLinkedinIn size={15} />,
+                link: result.linkedinUrl,
+              },
+              {
+                icon: <FaTiktok size={15} />,
+                link: result.tiktokUrl,
               },
             ].map((item, index) => (
               <motion.a
                 key={index}
-                href={item.href}
+                href={item.link ?? "#"}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-primary p-4 rounded-full border-2 hover:scale-110 hover:bg-primary hover:text-white transition-all duration-300 shadow-sm shadow-primary border-primary mt-5"

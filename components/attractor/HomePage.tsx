@@ -6,12 +6,14 @@ interface HomePageProps {
   activeServices: ServiceRequests[];
   endedServices: ServiceRequests[];
   allServices: ServiceRequests[];
+  userId: string;
 }
 export default function AttractorHomePage({
   todayRequests,
   activeServices,
   endedServices,
   allServices,
+  userId,
 }: HomePageProps) {
   return (
     <div className="mx-auto p-6 space-y-6">

@@ -22,6 +22,7 @@ import { sliders } from "@/src/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import Image from "next/image";
 import { uploadToCloudinary } from "@/utils/cloudinary";
+import { useEdgeStore } from "@/lib/edgestore";
 
 // ✅ Zod schema
 const sliderSchema = z.object({
@@ -38,14 +39,20 @@ const sliderSchema = z.object({
 type SliderFormValues = z.infer<typeof sliderSchema>;
 export type Slider = InferSelectModel<typeof sliders>;
 
-export default function EditSliderPage({ slider }: { slider: Slider }) {
+export default function EditSliderPage({
+  slider,
+  userId,
+}: {
+  slider: Slider;
+  userId: string;
+}) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | undefined>(
     slider.imageUrl
   );
   const router = useRouter();
   const { id } = useParams();
-
+  const { edgestore } = useEdgeStore();
   // 👇 Tell TypeScript that the resolver works with SliderFormValues
   const form = useForm<SliderFormValues>({
     resolver: zodResolver(sliderSchema) as any, // safe cast – we know the types line‑up
@@ -57,14 +64,53 @@ export default function EditSliderPage({ slider }: { slider: Slider }) {
       imageFile: undefined,
     },
   });
+  const validateImageDimensions = (file: File): Promise<boolean> => {
+    return new Promise((resolve) => {
+      const img = document.createElement("img");
+      img.src = URL.createObjectURL(file);
 
+      img.onload = () => {
+        const isValid = img.width === 1920 && img.height === 1072;
+        resolve(isValid);
+      };
+
+      img.onerror = () => resolve(false);
+    });
+  };
   const onSubmit: SubmitHandler<SliderFormValues> = async (values) => {
     try {
       setLoading(true);
       let imageUrl = imagePreview || "";
 
       if (values.imageFile) {
-        imageUrl = await uploadToCloudinary(values.imageFile);
+        const isValid = await validateImageDimensions(values.imageFile);
+
+        if (!isValid) {
+          Swal.fire({
+            icon: "error",
+            title: "الصورة غير مناسبة ❌",
+            text: "يجب اختيار صورة بأبعاد 1920 عرض × 1072 ارتفاع.",
+          });
+          setLoading(false);
+          return;
+        }
+
+        if (values.imageFile) {
+          if (imageUrl) {
+            await edgestore.publicFiles.delete({
+              url: imageUrl,
+            });
+          }
+          const resUpload = await edgestore.publicFiles.upload({
+            file: values.imageFile,
+            onProgressChange: (progress) => {
+              // لو بدك تعمل progress bar
+              console.log("Upload progress:", progress);
+            },
+          });
+
+          imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+        }
       }
       const payload = {
         title: values.title,
@@ -87,7 +133,7 @@ export default function EditSliderPage({ slider }: { slider: Slider }) {
           title: "تم التعديل ✅",
           text: "تم تحديث السلايدر",
         });
-        router.push("/admin/slider");
+        router.push(`/admin/${userId}/slider`);
       } else {
         Swal.fire({
           icon: "error",
@@ -147,16 +193,12 @@ export default function EditSliderPage({ slider }: { slider: Slider }) {
             name="imageFile"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>تغيير الصورة</FormLabel>
+                <FormLabel>الصورة</FormLabel>
                 <FormControl>
                   <Input
                     type="file"
                     accept="image/*"
-                    onChange={(e) => {
-                      const file = e.target.files?.[0];
-                      field.onChange(file);
-                      if (file) setImagePreview(URL.createObjectURL(file));
-                    }}
+                    onChange={(e) => field.onChange(e.target.files?.[0])}
                   />
                 </FormControl>
                 <FormMessage />
