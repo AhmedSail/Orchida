@@ -1,4 +1,3 @@
-import CourseSelected from "@/components/users/CourseSelected";
 import RegisterUser from "@/components/users/RegisterUser";
 import { auth } from "@/lib/auth";
 import { db } from "@/src/db";

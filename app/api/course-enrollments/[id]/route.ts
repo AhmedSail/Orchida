@@ -24,7 +24,10 @@ export async function DELETE(
   );
 }
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const { id } = await context.params;
 
   if (!id) {

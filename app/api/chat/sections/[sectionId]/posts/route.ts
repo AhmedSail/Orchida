@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
 // ✅ إضافة مشاركة جديدة
 export async function POST(
   req: Request,
-  context: { params: { sectionId: string } }
+  context: { params: Promise<{ sectionId: string }> }
 ) {
   const param = await context.params;
   const body = await req.json();

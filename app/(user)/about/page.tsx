@@ -1,5 +1,5 @@
 import AboutPage from "@/components/about";
-import React from "react";
+
 import { Metadata } from "next";
 import { db } from "@/src/db";
 import { companies } from "@/src/db/schema";

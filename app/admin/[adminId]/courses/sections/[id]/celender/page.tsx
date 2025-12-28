@@ -1,12 +1,8 @@
-// 📍 المسار: src/app/coordinator/[coordinatorId]/courses/sections/[id]/calendar/page.tsx (أو مسارك الصحيح)
-
-import React from "react";
 import { db } from "@/src/db"; // تأكد من صحة هذا المسار
 import { courses, courseSections, meetings, users } from "@/src/db/schema"; // تأكد من صحة هذا المسار
 import { eq } from "drizzle-orm";
 import { JoinedMeeting } from "@/components/MeetingScheduler/useMeetingScheduler";
 import AddNewMeeting from "@/components/coordinator/AddNewMeeting";
-
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

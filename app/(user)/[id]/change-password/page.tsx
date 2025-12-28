@@ -11,12 +11,8 @@ import { z } from "zod";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
-import { Metadata } from "next";
 import { Loading } from "@/components/ui/loading";
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| اعادة تعيين كلمة المرور",
-};
+
 const formSchema = z.object({
   currentPassword: z.string().min(1, "أدخل كلمة المرور الحالية"),
   newPassword: z

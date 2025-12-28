@@ -1,4 +1,3 @@
-import { Card } from "@/components/ui/card";
 import { Metadata } from "next";
 import React from "react";
 interface Props {

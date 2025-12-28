@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Services } from "@/components/admin/service/servicesPage";
-import { Works } from "@/components/admin/works/editWork";
+
 import { Button } from "@/components/ui/button";
 import WorkService from "./workService";
 import { Link } from "next-view-transitions";
@@ -30,12 +30,32 @@ const ICON_MAP: Record<string, React.ElementType> = {
   research: BookOpen,
   writing: PenLine,
 };
+export type WorkWithMedia = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  duration: string | null;
+  serviceId: string;
+  projectUrl: string | null;
+  priceRange: string | null;
+  tags: string | null;
+  toolsUsed: string | null;
+  isActive: boolean;
+  imageUrl: string | null;
+  type: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  uploadDate: Date;
+  // ✅ الآن يقبل null كامل
+};
 export default function ServicePage({
   services,
   allWorks,
 }: {
   services: Services;
-  allWorks: Works[];
+  allWorks: WorkWithMedia[];
 }) {
   const [loading, setLoading] = useState(true);
   const [activeService, setActiveService] = useState<string | null>(null);

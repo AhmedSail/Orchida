@@ -1,8 +1,8 @@
-import { NextResponse } from "next/server";
 import cloudinary from "@/lib/cloudinary";
 import { db } from "@/src/db";
 import { mediaFiles, works } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
+import { NextResponse } from "next/server";
 
 export async function POST(req: Request) {
   try {
@@ -53,7 +53,7 @@ export async function POST(req: Request) {
     if (isMain && saved?.id) {
       await db
         .update(works)
-        .set({ mainMediaId: saved.id, updatedAt: new Date() })
+        .set({ updatedAt: new Date() })
         .where(eq(works.id, workId));
     }
 
@@ -87,12 +87,11 @@ export async function DELETE(req: Request) {
     // إذا المحذوف هو الرئيسي، صفّر mainMediaId
     if (workId) {
       const [work] = await db.select().from(works).where(eq(works.id, workId));
-      if (work?.mainMediaId === id) {
-        await db
-          .update(works)
-          .set({ mainMediaId: null, updatedAt: new Date() })
-          .where(eq(works.id, workId));
-      }
+
+      await db
+        .update(works)
+        .set({ updatedAt: new Date() })
+        .where(eq(works.id, workId));
     }
 
     // حذف من DB

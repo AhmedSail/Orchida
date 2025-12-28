@@ -22,7 +22,6 @@ export async function GET(
     return NextResponse.json(
       {
         files,
-        mainMediaId: work?.mainMediaId ?? null,
       },
       { status: 200 }
     );

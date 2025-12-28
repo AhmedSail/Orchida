@@ -7,7 +7,7 @@ import { randomUUID } from "crypto";
 // ✅ إضافة رد
 export async function POST(
   req: Request,
-  context: { params: { postId: string } }
+  context: { params: Promise<{ postId: string }> }
 ) {
   const param = await context.params;
   const postId = param.postId;
@@ -30,12 +30,7 @@ export async function POST(
 }
 
 // ✅ حذف رد
-export async function DELETE(
-  req: Request,
-  context: { params: { postId: string } }
-) {
-  const param = await context.params;
-  const postId = param.postId;
+export async function DELETE(req: Request) {
   const body = await req.json();
   const { replyId } = body;
 

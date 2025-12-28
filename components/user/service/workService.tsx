@@ -2,16 +2,29 @@
 
 import React, { useEffect, useState } from "react";
 import Image from "next/image";
-import { Works } from "@/components/admin/works/editWork";
 import { Services } from "@/components/admin/service/servicesPage";
 import { Button } from "@/components/ui/button";
 import { motion, AnimatePresence } from "framer-motion";
 import { Link } from "next-view-transitions";
-
-export type WorkWithMedia = Works & {
-  mainMedia?: { url: string; type: string } | null;
+export type WorkWithMedia = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  duration: string | null;
+  serviceId: string;
+  projectUrl: string | null;
+  priceRange: string | null;
+  tags: string | null;
+  toolsUsed: string | null;
+  isActive: boolean;
+  imageUrl: string | null;
+  type: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+  deletedAt: Date | null;
+  uploadDate: Date;
 };
-
 const WorkService = ({
   active,
   allWorks,
@@ -94,10 +107,10 @@ const WorkService = ({
               className="shadow hover:shadow-lg hover:shadow-primary/50 hover:scale-105 transition-transform duration-300 cursor-pointer flex flex-col rounded-lg overflow-hidden"
             >
               {/* صورة أو فيديو */}
-              {work.mainMedia ? (
-                work.mainMedia.type === "image" ? (
+              {work.imageUrl ? (
+                work.type === "image" ? (
                   <Image
-                    src={work.mainMedia.url}
+                    src={work.imageUrl ?? ""}
                     alt={work.title}
                     width={600}
                     height={400}
@@ -106,7 +119,7 @@ const WorkService = ({
                   />
                 ) : (
                   <video
-                    src={work.mainMedia.url}
+                    src={work.imageUrl ?? ""}
                     controls
                     className="w-full h-[200px] object-cover"
                   />

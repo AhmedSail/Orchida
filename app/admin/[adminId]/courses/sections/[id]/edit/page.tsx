@@ -1,7 +1,7 @@
 import React from "react";
 import { db } from "@/src/db";
 import { courses, courseSections, instructors, users } from "@/src/db/schema";
-import { desc, eq, InferSelectModel } from "drizzle-orm";
+import { eq, InferSelectModel } from "drizzle-orm";
 import EditSection from "@/components/admin/courses/sections/editSection";
 import { headers } from "next/headers";
 import { auth } from "@/lib/auth";

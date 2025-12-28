@@ -2,7 +2,6 @@
 
 import React from "react";
 import Image from "next/image";
-import { Works } from "@/components/admin/works/editWork";
 
 // نوع للوسائط المرتبطة بالعمل
 type MediaFile = {
@@ -13,8 +12,27 @@ type MediaFile = {
   mimeType?: string | null;
   size?: number | null;
 };
-
-const WorkPage = ({ work, media }: { work: Works; media: MediaFile[] }) => {
+export type Work = {
+  id: string;
+  title: string;
+  description: string | null;
+  category: string;
+  projectUrl: string | null;
+  priceRange: string | null;
+  tags: string | null;
+  duration: string | null;
+  toolsUsed: string | null;
+  isActive: boolean;
+  imageUrl: string | null;
+  type: string; // نوع العمل (مثلاً: image | video | design)
+  serviceId: string;
+  uploaderId: string;
+  uploadDate: Date;
+  deletedAt: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+const WorkPage = ({ work, media }: { work: Work; media: MediaFile[] }) => {
   return (
     <div
       className="max-w-5xl mx-auto mt-12 p-8 bg-white shadow-lg rounded-xl space-y-6"

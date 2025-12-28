@@ -27,7 +27,7 @@ export async function POST(req: Request) {
 
     await db
       .update(works)
-      .set({ mainMediaId: mediaId, updatedAt: new Date() })
+      .set({ updatedAt: new Date() })
       .where(eq(works.id, workId));
 
     return NextResponse.json({ success: true }, { status: 200 });

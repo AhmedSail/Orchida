@@ -8,7 +8,7 @@ import {
 } from "@/src/db/schema";
 import { and, eq } from "drizzle-orm";
 import AttendanceTable from "@/components/attendence";
-import AttendancePDF from "@/components/pdf";
+
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

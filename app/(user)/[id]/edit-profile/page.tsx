@@ -1,5 +1,4 @@
 import EditProfilePage from "@/components/user/edit-profile";
-import React from "react";
 import { db } from "@/src";
 import { users } from "@/src/db/schema";
 import { eq } from "drizzle-orm";

@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 // ✅ حذف مشاركة مع ردودها
 export async function DELETE(
   req: Request,
-  context: { params: { postId: string } }
+  context: { params: Promise<{ postId: string }> }
 ) {
   const { postId } = await context.params;
 
@@ -24,7 +24,7 @@ export async function DELETE(
 // ✅ تعديل مشاركة عبر postId في الـ params
 export async function PUT(
   req: Request,
-  context: { params: { postId: string } }
+  context: { params: Promise<{ postId: string }> }
 ) {
   const { postId } = await context.params; // 👈 ناخذ postId من الـ params
   const body = await req.json();

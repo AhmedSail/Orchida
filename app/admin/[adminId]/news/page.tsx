@@ -1,8 +1,8 @@
 import LatestNews from "@/components/news/LatestNews";
-import { Button } from "@/components/ui/button";
+
 import { db } from "@/src";
 import { news, users } from "@/src/db/schema";
-import { Link } from "next-view-transitions";
+
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";

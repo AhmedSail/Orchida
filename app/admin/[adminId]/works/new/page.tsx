@@ -1,6 +1,5 @@
 import { db } from "@/src/db";
 import { digitalServices } from "@/src/db/schema";
-import NewWork from "@/components/admin/works/newWork";
 import { Service } from "@/components/admin/service/servicesPage";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";

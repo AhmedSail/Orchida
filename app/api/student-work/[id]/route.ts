@@ -3,7 +3,10 @@ import { db } from "@/src/db";
 import { studentWorks } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
-export async function PUT(req: Request, context: { params: { id: string } }) {
+export async function PUT(
+  req: Request,
+  context: { params: Promise<{ id: string }> }
+) {
   const param = await context.params;
   try {
     const body = await req.json();
@@ -32,7 +35,7 @@ export async function PUT(req: Request, context: { params: { id: string } }) {
 // 🗑️ حذف عمل
 export async function DELETE(
   req: Request,
-  context: { params: { id: string } }
+  context: { params: Promise<{ id: string }> }
 ) {
   const param = await context.params;
   try {

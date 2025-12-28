@@ -8,7 +8,6 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { users } from "@/src/db/schema";
-import React from "react";
 import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "لوحة التحكم | الأعمال",
