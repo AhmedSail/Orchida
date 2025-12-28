@@ -1,29 +1,30 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
+import type { NextConfig } from "next";
+
+const config: NextConfig = {
   images: {
     remotePatterns: [
       {
         protocol: "https",
         hostname: "res.cloudinary.com",
-        pathname: "**", // يسمح بكل المسارات
-      },
-      {
-        protocol: "https",
-        hostname: "files.edgestore.dev", // الدومين اللي ظهر في الخطأ
         pathname: "**",
       },
       {
         protocol: "https",
-        hostname: "lh3.googleusercontent.com", // صور Google profile
+        hostname: "files.edgestore.dev",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "lh3.googleusercontent.com",
         pathname: "**",
       },
       {
         protocol: "http",
-        hostname: "localhost", // صور محلية أثناء التطوير
+        hostname: "localhost",
         pathname: "**",
       },
     ],
   },
 };
 
-module.exports = nextConfig;
+export default config;
