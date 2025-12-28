@@ -67,10 +67,7 @@ const schema = z.object({
     .max(20, "رقم الهاتف طويل جداً")
     .optional()
     .or(z.literal("")),
-  studentAge: z.coerce
-    .number()
-    .min(15, "العمر يجب أن يكون أكبر من 15")
-    .max(100, "العمر غير صالح"),
+  studentAge: z.number().int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
   paymentReceiptUrl: z
