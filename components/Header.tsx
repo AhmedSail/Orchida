@@ -449,6 +449,7 @@ export function Header({
                             ? `/dashboardUser/${data.user.id}/home`
                             : `/${role}/${data.user.id}/home`
                         }
+                        target="_blank"
                       >
                         لوحة التحكم الخاص بي
                       </Link>
