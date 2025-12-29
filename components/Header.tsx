@@ -208,6 +208,7 @@ const CollapseContent = ({
   setIsMobileMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   authClient?: any;
 }) => {
+  const router = useRouter();
   return (
     <Collapse open={open} className="lg:hidden">
       <div className="bg-white text-primary rounded-lg shadow-xl mx-4 my-2">
@@ -224,6 +225,8 @@ const CollapseContent = ({
                   width={40}
                   height={40}
                   className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                  unoptimized
+                  loading="eager"
                 />
               ) : (
                 <Avatar
@@ -241,7 +244,7 @@ const CollapseContent = ({
 
             {/* ملفي الشخصي */}
             <Link
-              href="/profile"
+              href={`/${data.user.id}/profile`}
               className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
             >
               <User2 /> ملفي الشخصي
@@ -277,6 +280,7 @@ const CollapseContent = ({
                         ? `/dashboardUser/${data.user.id}/home`
                         : `/${role}/${data.user.id}/home`
                     }
+                    target="_blank"
                   >
                     لوحة التحكم الخاص بي
                   </Link>
@@ -373,6 +377,8 @@ export function Header({
                       width={40}
                       height={40}
                       className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                      loading="eager"
+                      unoptimized
                     />
                   ) : (
                     <Avatar

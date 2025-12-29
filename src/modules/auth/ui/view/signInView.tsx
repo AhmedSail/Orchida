@@ -201,6 +201,7 @@ export default function SignInView() {
               width={200}
               height={200}
               className="w-[200px] h-[250px]"
+              unoptimized
             />
           </div>
         </CardContent>

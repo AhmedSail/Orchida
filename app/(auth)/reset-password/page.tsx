@@ -54,6 +54,7 @@ export default function ResetPasswordPage() {
         width={300}
         height={300}
         className="block mx-auto"
+        unoptimized
       />
       <div className="max-w-md mx-auto mt-20 p-6 border rounded-lg shadow">
         <h1 className="text-2xl font-semibold mb-4">Set a new password</h1>

@@ -233,6 +233,7 @@ export default function SignUpView() {
               width={200}
               height={200}
               className="w-[200px] h-[200px]"
+              unoptimized
             />
           </div>
         </CardContent>
