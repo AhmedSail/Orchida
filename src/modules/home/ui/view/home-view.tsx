@@ -12,7 +12,7 @@ import { Courses } from "@/app/admin/[adminId]/courses/page";
 import { Section } from "@/app/admin/[adminId]/courses/sections/[id]/edit/page";
 import CoursesUser from "@/components/users/CoursesUser";
 import { Card, CardContent } from "@/components/ui/card";
-import Image from "next/image";
+
 import StudentWorksHome from "../components/studentWorksHome";
 import { useEffect, useState } from "react";
 export type ServiceRequests = InferSelectModel<typeof serviceRequests>;

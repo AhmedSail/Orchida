@@ -12,6 +12,7 @@ const NotFound = () => {
         width={200}
         height={200}
         className="mb-20"
+        unoptimized
       />
       <h1 className="text-7xl animate-bounce font-extrabold text-primary mb-4">
         404
