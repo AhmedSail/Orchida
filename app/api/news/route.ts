@@ -34,7 +34,6 @@ export async function POST(req: Request) {
     let content: string | null = null;
     let publishedAt: Date = new Date();
     let imageUrl: string | undefined;
-    let imagePublicId: string | undefined;
     let eventType:
       | "news"
       | "announcement"
@@ -50,27 +49,16 @@ export async function POST(req: Request) {
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
-      // 📌 لو البيانات جاية كـ JSON
+      // 📌 لو البيانات جاية كـ JSON (رابط يوتيوب أو رابط خارجي)
       const body = await req.json();
       title = body.title;
       summary = body.summary;
       content = body.content;
       publishedAt = body.publishedAt ? new Date(body.publishedAt) : new Date();
-      eventType = body.eventType as
-        | "news"
-        | "announcement"
-        | "article"
-        | "event"
-        | "update"
-        | "blog"
-        | "pressRelease"
-        | "promotion"
-        | "alert"
-        | undefined;
-      imageUrl = body.imageUrl;
-      imagePublicId = body.imagePublicId;
+      eventType = body.eventType;
+      imageUrl = body.imageUrl; // ✅ نخزن الرابط مباشرة
     } else if (contentType.includes("multipart/form-data")) {
-      // 📌 لو البيانات جاية كـ FormData (مع صورة)
+      // 📌 لو البيانات جاية كـ FormData (رفع ملف)
       const formData = await req.formData();
       title = formData.get("title") as string;
       summary = formData.get("summary") as string;
@@ -87,27 +75,19 @@ export async function POST(req: Request) {
         | "promotion"
         | "alert"
         | undefined;
+
       const imageFile = formData.get("image") as File | null;
       if (imageFile) {
-        const arrayBuffer = await imageFile.arrayBuffer();
-        const buffer = Buffer.from(arrayBuffer);
-
-        // رفع الصورة إلى Cloudinary
-        const uploadRes = await cloudinary.uploader.upload(
-          `data:${imageFile.type};base64,${buffer.toString("base64")}`,
-          {
-            folder: "news",
-            public_id: uuidv4(), // اسم فريد تولدته بـ uuid
-            overwrite: true,
-          }
-        );
-
-        imageUrl = uploadRes.secure_url;
-        imagePublicId = uploadRes.public_id;
+        // هنا لازم ترفع الملف على EdgeStore أو أي خدمة تخزين
+        // وترجع الرابط العام (Public URL)
+        // مثال:
+        // const resUpload = await edgestore.publicFiles.upload({ file: imageFile });
+        // imageUrl = resUpload.url;
+        imageUrl = ""; // مؤقتاً نخليها فاضية لو ما رفعت
       }
     }
 
-    // ✅ إدخال الخبر في قاعدة البيانات مع الصورة والنوع
+    // ✅ إدخال الخبر في قاعدة البيانات
     const newNews = await db
       .insert(news)
       .values({
@@ -116,9 +96,8 @@ export async function POST(req: Request) {
         summary,
         content,
         imageUrl,
-        imagePublicId,
         publishedAt,
-        eventType: eventType || "news", // ✅ قيمة افتراضية
+        eventType: eventType || "news", // قيمة افتراضية
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),

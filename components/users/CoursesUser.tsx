@@ -1,10 +1,11 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "next-view-transitions";
+import { useRouter } from "next/navigation";
 
 type UserCourse = {
   id: string;
@@ -33,6 +34,10 @@ const cardVariants = {
 };
 
 const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
+  const router = useRouter();
+  const [loadingCourseId, setLoadingCourseId] = useState<string | null>(null);
+  const [loadingAll, setLoadingAll] = useState<boolean>(false);
+
   return (
     <div className="container mx-auto px-4" dir="rtl">
       <motion.h2
@@ -94,8 +99,41 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
               <p className=" text-primary font-bold">{course.price} $</p>
             </div>
 
-            <Button className="w-full group-hover:bg-primary group-hover:text-white transition-colors duration-300">
-              <Link href={`/courses/${course.id}`}>تفاصيل الدورة</Link>
+            <Button
+              className="w-full"
+              disabled={loadingCourseId === course.id}
+              onClick={() => {
+                setLoadingCourseId(course.id);
+                router.push(`/courses/${course.id}`);
+              }}
+            >
+              {loadingCourseId === course.id ? (
+                <span className="flex items-center gap-2">
+                  <svg
+                    className="animate-spin h-4 w-4 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                    ></path>
+                  </svg>
+                  جاري التحميل...
+                </span>
+              ) : (
+                " تفاصيل الدورة"
+              )}
             </Button>
           </motion.div>
         ))}
@@ -108,8 +146,41 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
         transition={{ duration: 0.5 }}
         viewport={{ once: true }}
       >
-        <Button className="w-1/2 mt-10 mx-auto block hover:bg-primary hover:text-white transition-colors duration-300">
-          <Link href={`/courses`}>عــــــرض الــــــــكــــــــــل</Link>
+        <Button
+          className="w-1/2 mt-10 mx-auto block hover:bg-primary/80 hover:text-white transition-colors duration-300"
+          disabled={loadingAll}
+          onClick={() => {
+            setLoadingAll(true);
+            router.push(`/courses`);
+          }}
+        >
+          {loadingAll ? (
+            <span className="flex items-center gap-2 justify-center">
+              <svg
+                className="animate-spin h-4 w-4 text-white"
+                xmlns="http://www.w3.org/2000/svg"
+                fill="none"
+                viewBox="0 0 24 24"
+              >
+                <circle
+                  className="opacity-25"
+                  cx="12"
+                  cy="12"
+                  r="10"
+                  stroke="currentColor"
+                  strokeWidth="4"
+                ></circle>
+                <path
+                  className="opacity-75"
+                  fill="currentColor"
+                  d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                ></path>
+              </svg>
+              جاري التحميل...
+            </span>
+          ) : (
+            "عــــــرض الــــــــكــــــــــل"
+          )}
         </Button>
       </motion.div>
     </div>

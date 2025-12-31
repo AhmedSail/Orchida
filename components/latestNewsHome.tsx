@@ -42,7 +42,7 @@ export default function LatestNewsHome({ allNews }: { allNews: any[] }) {
   return (
     <div className="container mx-auto py-12 px-4 sm:px-6 lg:px-8" dir="rtl">
       <div className="text-right mb-12">
-        <h1 className="text-4xl font-extrabold text-primary sm:text-5xl">
+        <h1 className="text-3xl font-extrabold text-primary lg:text-5xl">
           آخـــــــــــــر الــــــمـــســــتــجـــدات
         </h1>
         <p className="mt-4 text-lg text-gray-600">

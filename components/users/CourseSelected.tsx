@@ -1,10 +1,11 @@
 "use client";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "next-view-transitions";
 import Image from "next/image";
+import { useRouter } from "next/navigation";
 
 export type Instructor = {
   id: string | null;
@@ -39,11 +40,12 @@ const CourseSelected = ({
 }) => {
   const isRegisterEnabled =
     lastSection?.status === "open" || lastSection?.status === "in_progress";
-
+  const [registerLoading, setRegisterLoading] = useState(false);
+  const router = useRouter();
   return (
     <div className="p-6 mx-auto container" dir="rtl">
       <motion.h1
-        className="text-3xl font-bold mb-6 text-right text-primary"
+        className="lg:text-3xl text-xl text-center font-bold mb-6 md:text-right text-primary"
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
@@ -56,7 +58,7 @@ const CourseSelected = ({
           <Image
             src={coursesSelected.imageUrl}
             alt={coursesSelected.title}
-            className="h-screen w-full object-cover rounded-lg mb-6 shadow"
+            className="lg:h-screen w-full object-cover rounded-lg mb-6 shadow"
             width={20}
             height={20}
             unoptimized
@@ -64,7 +66,7 @@ const CourseSelected = ({
         )}
 
         <div className="w-full">
-          <div className="flex justify-start text-2xl mb-10">
+          <div className="flex flex-col lg:flex-row lg:justify-start items-center  justify-center text-2xl mb-10">
             <h1>عنوان الدورة :</h1>
             <h1>{coursesSelected.title}</h1>
           </div>
@@ -99,10 +101,41 @@ const CourseSelected = ({
 
           {/* زر التسجيل */}
           <div className="flex flex-col justify-center items-center">
-            <Button className="w-full mt-5" disabled={!isRegisterEnabled}>
-              <Link href={`/courses/${coursesSelected.id}/register`}>
-                سجل الان في الشعبة الجديدة
-              </Link>
+            <Button
+              className="w-full mt-5 flex items-center justify-center gap-2"
+              disabled={registerLoading || !isRegisterEnabled} // ✅ الزر يتعطل إذا الشعبة مغلقة أو غير قيد التنفيذ
+              onClick={() => {
+                setRegisterLoading(true);
+                router.push(`/courses/${coursesSelected.id}/register`);
+              }}
+            >
+              {registerLoading ? (
+                <>
+                  <svg
+                    className="animate-spin h-5 w-5 text-white"
+                    xmlns="http://www.w3.org/2000/svg"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                  >
+                    <circle
+                      className="opacity-25"
+                      cx="12"
+                      cy="12"
+                      r="10"
+                      stroke="currentColor"
+                      strokeWidth="4"
+                    ></circle>
+                    <path
+                      className="opacity-75"
+                      fill="currentColor"
+                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
+                    ></path>
+                  </svg>
+                  جاري التسجيل...
+                </>
+              ) : (
+                "سجل الآن في الشعبة الجديدة"
+              )}
             </Button>
 
             {/* ✅ الرسالة إذا كانت الشعبة غير مفتوحة أو غير قيد التنفيذ */}

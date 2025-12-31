@@ -100,17 +100,6 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
               <SidebarMenuItem>
                 <SidebarMenuButton asChild className="text-lg">
                   <Link
-                    href={`/coordinator/${user.id}/courses/sections/approvedSection`}
-                  >
-                    <CheckCircle />
-                    <span>شعب معتمدة</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
-
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-lg">
-                  <Link
                     href={`/coordinator/${user.id}/courses/sections/closedSection`}
                   >
                     <Lock />

@@ -57,7 +57,7 @@ const navListMenuItems = [
   },
 ];
 
-function NavListMenu() {
+function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const { data } = authClient.useSession();
@@ -83,6 +83,9 @@ function NavListMenu() {
             icon: "warning",
             confirmButtonText: "حسناً",
           });
+        } else {
+          // إغلاق القائمة عند الضغط على الرابط
+          if (closeMenu) closeMenu();
         }
       };
 
@@ -152,7 +155,13 @@ function NavListMenu() {
   );
 }
 
-function NavList({ isScrolled }: { isScrolled: boolean }) {
+function NavList({
+  isScrolled,
+  closeMenu,
+}: {
+  isScrolled: boolean;
+  closeMenu?: () => void;
+}) {
   const navListItemsData = [
     { id: 1, title: "الرئيسية", href: "/" },
     { id: 2, title: "اخر المستجدات", href: "/latest" },
@@ -166,7 +175,7 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
       {/* @ts-ignore */}
       <List className="mt-4 mb-6 font-semibold p-0 lg:mt-0 lg:mb-0 lg:flex-row lg:p-1 lg:items-center relative">
         {navListItemsData.map(({ id, title, href }) => (
-          <Link key={id} href={href}>
+          <Link key={id} href={href} onClick={closeMenu}>
             {/* @ts-ignore */}
             <Typography as="span" className="font-bold text-md relative group">
               {/* @ts-ignore */}
@@ -185,7 +194,7 @@ function NavList({ isScrolled }: { isScrolled: boolean }) {
             </Typography>
           </Link>
         ))}
-        <NavListMenu />
+        <NavListMenu closeMenu={closeMenu} />
       </List>
     </div>
   );
@@ -198,6 +207,7 @@ const CollapseContent = ({
   requests,
   isScrolled,
   authClient,
+  setOpenNav,
 }: {
   open: boolean;
   data?: any;
@@ -207,12 +217,15 @@ const CollapseContent = ({
   isMobileMenuOpen?: boolean;
   setIsMobileMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   authClient?: any;
+  setOpenNav: React.Dispatch<React.SetStateAction<boolean>>;
 }) => {
   const router = useRouter();
+  const closeMenu = () => setOpenNav(false);
+
   return (
     <Collapse open={open} className="lg:hidden">
       <div className="bg-white text-primary rounded-lg shadow-xl mx-4 my-2">
-        <NavList isScrolled={false} />
+        <NavList isScrolled={false} closeMenu={closeMenu} />
 
         {data?.user ? (
           <div className="p-4 pt-0 flex flex-col gap-2">
@@ -245,6 +258,7 @@ const CollapseContent = ({
             {/* ملفي الشخصي */}
             <Link
               href={`/${data.user.id}/profile`}
+              onClick={closeMenu}
               className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
             >
               <User2 /> ملفي الشخصي
@@ -254,6 +268,7 @@ const CollapseContent = ({
             {requests && requests.length > 0 && (
               <Link
                 href={`/${data.user.id}/services`}
+                onClick={closeMenu}
                 className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
               >
                 <FileText /> خدماتي المطلوبة
@@ -269,10 +284,7 @@ const CollapseContent = ({
               <div>
                 <hr className="my-2" />
                 {/* @ts-ignore */}
-                <MenuItem
-                  // onClick={() => router.push("/requests")}
-                  className="flex items-center gap-2 hover:bg-gray-100"
-                >
+                <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
                   <LayoutDashboard />
                   <Link
                     href={
@@ -281,6 +293,7 @@ const CollapseContent = ({
                         : `/${role}/${data.user.id}/home`
                     }
                     target="_blank"
+                    onClick={closeMenu}
                   >
                     لوحة التحكم الخاص بي
                   </Link>
@@ -290,7 +303,10 @@ const CollapseContent = ({
 
             {/* تسجيل الخروج */}
             <button
-              onClick={() => authClient?.signOut()}
+              onClick={() => {
+                authClient?.signOut();
+                closeMenu();
+              }}
               className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-red-600"
             >
               <LogOut /> تسجيل الخروج
@@ -299,7 +315,9 @@ const CollapseContent = ({
         ) : (
           <div className="flex w-full items-center gap-2 p-4 pt-0">
             <Button size="sm" variant="secondary" className="w-full">
-              <Link href="/sign-in">تسجيل الدخول</Link>
+              <Link href="/sign-in" onClick={closeMenu}>
+                تسجيل الدخول
+              </Link>
             </Button>
           </div>
         )}
@@ -322,6 +340,7 @@ export function Header({
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const router = useRouter();
+
   useEffect(() => {
     const handleResize = () => window.innerWidth >= 960 && setOpenNav(false);
     const handleScroll = () => setIsScrolled(window.scrollY > 90);
@@ -419,10 +438,7 @@ export function Header({
                   <div>
                     <hr className="my-2" />
                     {/* @ts-ignore */}
-                    <MenuItem
-                      // onClick={() => router.push("/requests")}
-                      className="flex items-center gap-2 hover:bg-gray-100"
-                    >
+                    <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
                       <FileText />
                       <Link href={`/${data.user.id}/services`}>
                         خدماتي المطلوبة
@@ -438,10 +454,7 @@ export function Header({
                   <div>
                     <hr className="my-2" />
                     {/* @ts-ignore */}
-                    <MenuItem
-                      // onClick={() => router.push("/requests")}
-                      className="flex items-center gap-2 hover:bg-gray-100"
-                    >
+                    <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
                       <LayoutDashboard />
                       <Link
                         href={
@@ -495,6 +508,7 @@ export function Header({
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           authClient={authClient}
+          setOpenNav={setOpenNav}
         />
       </Navbar>
       {/* @ts-ignore */}
@@ -509,6 +523,7 @@ export function Header({
           isMobileMenuOpen={isMobileMenuOpen}
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           authClient={authClient}
+          setOpenNav={setOpenNav}
         />
       </Navbar>
     </div>

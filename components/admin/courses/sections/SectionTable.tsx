@@ -30,7 +30,6 @@ type Section = {
   currentEnrollment: number;
   status:
     | "pending_approval"
-    | "approved"
     | "open"
     | "in_progress"
     | "completed"
@@ -55,7 +54,6 @@ const statusMap: Record<
 > = {
   open: { label: "نشطة", variant: "default" },
   pending_approval: { label: "بانتظار الموافقة", variant: "secondary" },
-  approved: { label: "معتمدة", variant: "default" },
   in_progress: { label: "قيد التنفيذ", variant: "default" },
   completed: { label: "مكتملة", variant: "outline" },
   closed: { label: "مغلقة", variant: "secondary" },
@@ -110,16 +108,39 @@ const SectionTable = ({
     let options: Record<string, string> = {};
 
     if (role === "admin") {
-      // الأدمين يشوف كل الحالات
-      options = {
-        pending_approval: "بانتظار الموافقة",
-        approved: "معتمدة",
-        open: "نشطة",
-        in_progress: "قيد التنفيذ",
-        completed: "مكتملة",
-        closed: "مغلقة",
-        cancelled: "ملغاة",
-      };
+      if (currentStatus === "pending_approval") {
+        // ✅ إذا بانتظار الموافقة → فقط خيارين
+        options = {
+          open: "✅ موافقة (نشطة)",
+          cancelled: "❌ إلغاء",
+        };
+      } else {
+        // باقي الحالات للأدمين
+        options = {
+          pending_approval: "بانتظار الموافقة",
+          open: "نشطة",
+          in_progress: "قيد التنفيذ",
+          completed: "مكتملة",
+          closed: "مغلقة",
+          cancelled: "ملغاة",
+        };
+      }
+    } else if (role === "coordinator") {
+      if (currentStatus === "pending_approval") {
+        // ✅ الكوردينيتور عند pending_approval → فقط خيارين
+        options = {
+          open: "✅ موافقة (نشطة)",
+          cancelled: "❌ إلغاء",
+        };
+      } else {
+        options = {
+          open: "نشطة",
+          in_progress: "قيد التنفيذ",
+          completed: "مكتملة",
+          closed: "مغلقة",
+          cancelled: "ملغاة",
+        };
+      }
     } else if (role === "coordinator") {
       // الكوردينيتور
       if (currentStatus === "pending_approval") {
@@ -133,7 +154,6 @@ const SectionTable = ({
       } else {
         // إذا الشعبة معتمدة أو أي حالة أخرى → يظهر له كل الحالات ما عدا "بانتظار الموافقة"
         options = {
-          approved: "معتمدة",
           open: "نشطة",
           in_progress: "قيد التنفيذ",
           completed: "مكتملة",
@@ -246,7 +266,7 @@ const SectionTable = ({
                       ) : null}
 
                       {/* ✅ شرط ظهور جدولة اللقاءات */}
-                      {(section.status === "approved" ||
+                      {(section.status === "open" ||
                         section.status === "in_progress") && (
                         <Link
                           href={`/${role}/${userId}/courses/sections/${section.id}/celender`}

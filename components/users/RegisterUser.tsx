@@ -335,7 +335,8 @@ const RegisterUser = ({
                     type="number"
                     placeholder="أدخل عمرك"
                     {...field}
-                    disabled={emailHasAccount}
+                    value={field.value ?? ""}
+                    onChange={(e) => field.onChange(e.target.valueAsNumber)}
                   />
                 </FormControl>
                 <FormMessage />

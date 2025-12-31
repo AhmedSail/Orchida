@@ -234,12 +234,6 @@ export function AppSidebar({ user }: { user: User }) {
                           - شعب بانتظار الموافقة
                         </Link>
                         <Link
-                          href={`/admin/${user.id}/courses/sections/approvedSection`}
-                          className="transition-all hover:text-primary hover:translate-x-1"
-                        >
-                          - شعب معتمدة
-                        </Link>
-                        <Link
                           href={`/admin/${user.id}/courses/sections/closedSection`}
                           className="transition-all hover:text-primary hover:translate-x-1"
                         >

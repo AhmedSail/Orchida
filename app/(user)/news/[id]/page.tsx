@@ -9,9 +9,6 @@ export const metadata: Metadata = {
   title: "اوركيدة",
   description: "اوكيدة| الخبر",
 };
-interface PageProps {
-  params: { id: string };
-}
 
 const eventTypeMap: Record<string, string> = {
   news: "خبر",
@@ -25,11 +22,11 @@ const eventTypeMap: Record<string, string> = {
   alert: "تنبيه",
 };
 
-export default async function Page({ params }: PageProps) {
-  const { id } = await params;
+export default async function Page({ params }: { params: { id: string } }) {
+  const param = await params;
 
   // ✅ جلب الخبر المطلوب
-  const FoundNews = await db.select().from(news).where(eq(news.id, id));
+  const FoundNews = await db.select().from(news).where(eq(news.id, param.id));
 
   // ✅ جلب كل الأخبار (للعناوين)
   const allNews = await db.select().from(news).orderBy(news.publishedAt);

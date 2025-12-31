@@ -116,7 +116,8 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
                       alt={item.title}
                       width={80}
                       height={80}
-                      className="rounded-md object-cover mx-auto"
+                      className="rounded-md object-cover mx-auto h-30 w-full"
+                      unoptimized
                     />
                   ) : (
                     <div className="w-20 h-20 bg-gray-200 rounded-md mx-auto" />
