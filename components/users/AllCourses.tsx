@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation";
 import Image from "next/image";
 import { Link } from "next-view-transitions";
 
-type UserCourse = {
+export type UserCourse = {
   id: string;
   title: string;
   description: string | null;
@@ -156,7 +156,7 @@ const AllCourses = ({
                     {course.section.number}
                   </p>
                   <p className="text-sm text-gray-700">
-                    <span className="font-semibold">حالة الشعبة الحالية:</span>{" "}
+                    <span className="font-semibold">حالة الشعبة :</span>{" "}
                     <span
                       className={`font-bold ${getStatusColor(
                         course.section?.status
@@ -187,8 +187,19 @@ const AllCourses = ({
               {/* ✅ زر مع حالة تحميل */}
               <Button
                 className="w-full"
-                disabled={loadingCourseId === course.id}
+                disabled={
+                  loadingCourseId === course.id ||
+                  !["open", "in_progress"].includes(
+                    course.section?.status ?? ""
+                  )
+                }
                 onClick={() => {
+                  if (
+                    !["open", "in_progress"].includes(
+                      course.section?.status ?? ""
+                    )
+                  )
+                    return; // 🚫 منع التنفيذ إذا الشعبة غير مفتوحة أو غير قيد التنفيذ
                   setLoadingCourseId(course.id);
                   router.push(`/courses/${course.id}`);
                 }}
@@ -217,8 +228,12 @@ const AllCourses = ({
                     </svg>
                     جاري التحميل...
                   </span>
+                ) : !["open", "in_progress"].includes(
+                    course.section?.status ?? ""
+                  ) ? (
+                  "🚫 التسجيل مغلق، سيتم فتح دورة لاحقاً"
                 ) : (
-                  " تفاصيل الدورة"
+                  "تفاصيل الدورة"
                 )}
               </Button>
             </motion.div>
