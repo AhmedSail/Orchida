@@ -1,25 +1,29 @@
 import { NextResponse } from "next/server";
 import { db } from "@/src/db";
-import { courseEnrollments } from "@/src/db/schema";
+import { attendance, courseEnrollments } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
 export async function DELETE(
   req: Request,
   context: { params: Promise<{ id: string }> }
 ) {
-  const { id } = await context.params;
+  const param = await context.params;
 
-  if (!id) {
+  if (!param.id) {
     return NextResponse.json(
       { message: "يجب إرسال معرف التسجيل (id)" },
       { status: 400 }
     );
   }
 
-  await db.delete(courseEnrollments).where(eq(courseEnrollments.id, id));
+  // أولاً احذف الحضور المرتبط بهذا التسجيل
+  await db.delete(attendance).where(eq(attendance.enrollmentId, param.id));
+
+  // بعدين احذف التسجيل نفسه
+  await db.delete(courseEnrollments).where(eq(courseEnrollments.id, param.id));
 
   return NextResponse.json(
-    { message: "تم حذف التسجيل بنجاح", id },
+    { message: "تم حذف التسجيل بنجاح" },
     { status: 200 }
   );
 }

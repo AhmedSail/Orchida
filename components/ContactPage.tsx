@@ -135,9 +135,7 @@ const ContactPage = ({ result }: { result: Links }) => {
           className={` font-bold absolute text-white ${
             isMobile ? "bottom-36 text-lg" : "bottom-0  text-2xl"
           } left-1/2 -translate-x-1/2`}
-        >
-          <span>اتــــــــــــــــصــــــــل بنــــــــا</span>
-        </div>
+        ></div>
       </motion.div>
 
       {/* Main Content */}
@@ -257,31 +255,31 @@ const ContactPage = ({ result }: { result: Links }) => {
             </motion.span>
             <motion.div
               variants={containerVariants}
-              className="flex justify-center space-x-6 max-sm:space-x-3"
+              className="flex justify-center flex-wrap space-y-2 space-x-6 max-sm:space-x-3"
             >
               {[
                 {
-                  icon: <FaFacebook size={25} />,
+                  icon: <FaFacebook size={isMobile ? 30 : 25} />,
                   link: result.facebookUrl,
                 },
                 {
-                  icon: <FaInstagram size={25} />,
+                  icon: <FaInstagram size={isMobile ? 30 : 25} />,
                   link: result.instagramUrl,
                 },
                 {
-                  icon: <FaTwitter size={25} />,
+                  icon: <FaTwitter size={isMobile ? 30 : 25} />,
                   link: result.twitterUrl,
                 },
                 {
-                  icon: <FaWhatsapp size={25} />,
+                  icon: <FaWhatsapp size={isMobile ? 30 : 25} />,
                   link: result.whatsappUrl,
                 },
                 {
-                  icon: <FaLinkedinIn size={25} />,
+                  icon: <FaLinkedinIn size={isMobile ? 30 : 25} />,
                   link: result.linkedinUrl,
                 },
                 {
-                  icon: <FaTiktok size={25} />,
+                  icon: <FaTiktok size={isMobile ? 30 : 25} />,
                   link: result.tiktokUrl,
                 },
               ].map((social, idx) => (
@@ -291,7 +289,11 @@ const ContactPage = ({ result }: { result: Links }) => {
                   href={social.link ?? "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary p-4 rounded-full border-2 border-primary hover:bg-primary hover:text-white shadow-primary hover:shadow-2xl transition-all duration-300"
+                  className={`${
+                    isMobile
+                      ? "text-primary text-3xl"
+                      : "text-primary p-4 rounded-full border-2 border-primary hover:bg-primary hover:text-white shadow-primary hover:shadow-2xl transition-all duration-300"
+                  }`}
                   whileHover={{ scale: 1.2, rotate: 5 }}
                   whileTap={{ scale: 0.9 }}
                 >

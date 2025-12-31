@@ -33,29 +33,11 @@ export async function PUT(
 ) {
   const params = await context.params;
   try {
-    const {
-      instructorId,
-      startDate,
-      endDate,
-      maxCapacity,
-      location,
-      courseType,
-      notes,
-      status,
-    } = await req.json();
+    const { status } = await req.json();
 
     const updated = await db
       .update(courseSections)
-      .set({
-        instructorId,
-        startDate: startDate ? new Date(startDate) : null,
-        endDate: endDate ? new Date(endDate) : null,
-        maxCapacity,
-        location,
-        courseType,
-        notes,
-        status,
-      })
+      .set({ status })
       .where(eq(courseSections.id, params.id))
       .returning();
 

@@ -32,29 +32,31 @@ const page = async () => {
     .from(courses)
     .leftJoin(courseSections, eq(courses.id, courseSections.courseId));
 
-  const allCourses = rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    imageUrl: row.imageUrl,
-    hours: row.hours,
-    price: row.price,
-    duration: row.duration,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    approvedAt: row.approvedAt,
-    section: row.sectionId
-      ? {
-          id: row.sectionId,
-          number: row.sectionNumber ?? 0,
-          startDate: row.startDate
-            ? row.startDate.toISOString().split("T")[0]
-            : "",
-          endDate: row.endDate ? row.endDate.toISOString().split("T")[0] : "",
-          status: row.status,
-        }
-      : null,
-  }));
+  const allCourses = rows
+    .map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      imageUrl: row.imageUrl,
+      hours: row.hours,
+      price: row.price,
+      duration: row.duration,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt,
+      approvedAt: row.approvedAt,
+      section: row.sectionId
+        ? {
+            id: row.sectionId,
+            number: row.sectionNumber ?? 0,
+            startDate: row.startDate
+              ? row.startDate.toISOString().split("T")[0]
+              : "",
+            endDate: row.endDate ? row.endDate.toISOString().split("T")[0] : "",
+            status: row.status,
+          }
+        : null,
+    }))
+    .filter((course) => course.section?.status !== null); // ✅ فلترة الشعب اللي إلها status
   const studentStories = await db
     .select({
       id: studentWorks.id,
@@ -64,14 +66,24 @@ const page = async () => {
       mediaUrl: studentWorks.mediaUrl,
       studentName: users.name,
       courseId: studentWorks.courseId,
+      sectionId: studentWorks.sectionId,
+      sectionNumber: courseSections.sectionNumber, // ✅ أضف هذا
     })
     .from(studentWorks)
     .innerJoin(users, eq(studentWorks.studentId, users.id))
+    .leftJoin(courseSections, eq(studentWorks.sectionId, courseSections.id)) // ✅ مهم
     .where(eq(studentWorks.status, "approved"))
-    .limit(6);
+    .limit(20);
+  const uniqueCourses = allCourses.filter(
+    (course, index, self) => index === self.findIndex((c) => c.id === course.id)
+  );
   return (
     <div>
-      <AllCourses allCourses={allCourses} studentStories={studentStories} />
+      <AllCourses
+        allCourses={allCourses}
+        studentStories={studentStories}
+        uniqueCourses={uniqueCourses}
+      />
     </div>
   );
 };

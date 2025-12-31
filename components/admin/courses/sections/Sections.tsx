@@ -20,7 +20,6 @@ type Section = {
   instructorSpecialty: string;
   status:
     | "pending_approval"
-    | "approved"
     | "open"
     | "in_progress"
     | "completed"

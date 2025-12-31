@@ -32,7 +32,9 @@ const MyCourses = ({
 }) => {
   // حالة محلية لإدارة الصفوف
   const [rows, setRows] = useState<MyCourse[]>(myCourses);
-  const [loadingId, setLoadingId] = useState<string | null>(null);
+  const [loadingCancelId, setLoadingCancelId] = useState<string | null>(null);
+  const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
+
   const router = useRouter();
   const handleCancel = async (id: string) => {
     const result = await Swal.fire({
@@ -47,7 +49,7 @@ const MyCourses = ({
     if (!result.isConfirmed) return;
 
     try {
-      setLoadingId(id); // تعطيل الأزرار لهذا الصف
+      setLoadingCancelId(id); // تعطيل الأزرار لهذا الصف
       // تحديث متفائل: احذف الصف محلياً مباشرةً
       setRows((prev) => prev.filter((r) => r.enrollmentId !== id));
 
@@ -70,7 +72,7 @@ const MyCourses = ({
       // في حال الفشل، أعد تحميل البيانات من السيرفر أو أخبر المستخدم
       await Swal.fire("خطأ", error.message || "فشل إلغاء التسجيل", "error");
     } finally {
-      setLoadingId(null);
+      setLoadingCancelId(null);
     }
   };
 
@@ -87,7 +89,7 @@ const MyCourses = ({
     if (!result.isConfirmed) return;
 
     try {
-      setLoadingId(id);
+      setLoadingPaymentId(id);
       const res = await fetch(`/api/payments`, {
         method: "POST",
         body: JSON.stringify({ enrollmentId: id }),
@@ -112,7 +114,7 @@ const MyCourses = ({
     } catch (error: any) {
       await Swal.fire("خطأ", error.message || "فشل عملية الدفع", "error");
     } finally {
-      setLoadingId(null);
+      setLoadingPaymentId(null);
     }
   };
 
@@ -135,7 +137,8 @@ const MyCourses = ({
         </TableHeader>
         <TableBody>
           {rows.map((course) => {
-            const disabled = loadingId === course.enrollmentId;
+            const disabledPayment = loadingPaymentId === course.enrollmentId;
+            const disabledCancel = loadingCancelId === course.enrollmentId;
             return (
               <TableRow key={course.enrollmentId}>
                 <TableCell className="font-medium">
@@ -160,25 +163,81 @@ const MyCourses = ({
                   {course.status === "confirmed" ? "نشط" : "معلق"}
                 </TableCell>
                 <TableCell className="flex gap-2">
+                  {/* زر إلغاء التسجيل */}
                   <Button
                     variant="destructive"
                     size="sm"
                     onClick={() => handleCancel(course.enrollmentId)}
-                    disabled={disabled}
+                    disabled={disabledCancel}
                   >
-                    إلغاء التسجيل
+                    {loadingCancelId === course.enrollmentId ? (
+                      <span className="flex items-center gap-2">
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                          ></path>
+                        </svg>
+                        جاري الإلغاء...
+                      </span>
+                    ) : (
+                      "إلغاء التسجيل"
+                    )}
                   </Button>
+
+                  {/* زر دفع الرسوم بنفس الأسلوب */}
                   <Button
                     variant="default"
                     size="sm"
-                    onClick={() =>
+                    onClick={() => {
                       router.push(
                         `/${userId}/myCourses/${course.enrollmentId}/payment`
-                      )
-                    }
-                    disabled={disabled}
+                      );
+                      setLoadingPaymentId(course.enrollmentId);
+                    }}
+                    disabled={disabledPayment}
                   >
-                    دفع الرسوم
+                    {loadingPaymentId === course.enrollmentId ? (
+                      <span className="flex items-center gap-2">
+                        <svg
+                          className="animate-spin h-4 w-4 text-white"
+                          xmlns="http://www.w3.org/2000/svg"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                        >
+                          <circle
+                            className="opacity-25"
+                            cx="12"
+                            cy="12"
+                            r="10"
+                            stroke="currentColor"
+                            strokeWidth="4"
+                          ></circle>
+                          <path
+                            className="opacity-75"
+                            fill="currentColor"
+                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
+                          ></path>
+                        </svg>
+                        جاري الدفع...
+                      </span>
+                    ) : (
+                      "دفع الرسوم"
+                    )}
                   </Button>
                 </TableCell>
               </TableRow>

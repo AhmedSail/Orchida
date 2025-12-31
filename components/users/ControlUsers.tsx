@@ -112,6 +112,8 @@ const ControlUsers = ({
             <SelectItem value="user">مستخدم</SelectItem>
             <SelectItem value="admin">مدير</SelectItem>
             <SelectItem value="attractor">مستقطب</SelectItem>
+            <SelectItem value="coordinator">منسق تدريب</SelectItem>
+            <SelectItem value="instructor">مدرب</SelectItem>
           </SelectContent>
         </Select>
 
@@ -277,6 +279,8 @@ const ControlUsers = ({
                 <SelectItem value="user">مستخدم</SelectItem>
                 <SelectItem value="admin">مدير</SelectItem>
                 <SelectItem value="attractor">مستقطب</SelectItem>
+                <SelectItem value="coordinator">منسق تدريب</SelectItem>
+                <SelectItem value="instructor">مدرب</SelectItem>
               </SelectContent>
             </Select>
           </div>

@@ -18,7 +18,6 @@ interface CoursePageProps {
 
 const sectionStatuses = [
   { key: "pending_approval", label: "⏳ بانتظار الموافقة" },
-  { key: "approved", label: "✅ تمت الموافقة" },
   { key: "open", label: "📖 التسجيل مفتوح" },
   { key: "in_progress", label: "🚀 الدورة قيد التنفيذ" },
   { key: "completed", label: "🏁 الدورة انتهت" },

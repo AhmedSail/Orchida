@@ -130,7 +130,6 @@ export default function EditSectionForm({
     role === "admin"
       ? [
           { value: "pending_approval", label: "بانتظار الموافقة" },
-          { value: "approved", label: "معتمدة" },
           { value: "open", label: "نشطة" },
           { value: "in_progress", label: "قيد التنفيذ" },
           { value: "completed", label: "مكتملة" },
@@ -140,7 +139,6 @@ export default function EditSectionForm({
       : section.status === "pending_approval"
       ? []
       : [
-          { value: "approved", label: "معتمدة" },
           { value: "open", label: "نشطة" },
           { value: "in_progress", label: "قيد التنفيذ" },
           { value: "completed", label: "مكتملة" },

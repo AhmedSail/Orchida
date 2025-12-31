@@ -42,7 +42,7 @@ export async function POST(req: Request) {
       .insert(courseSections)
       .values({
         id: uuidv4(),
-        status: role === "admin" ? "approved" : "pending_approval", // ✅ الشرط
+        status: role === "admin" ? "open" : "pending_approval", // ✅ الشرط
         ...body,
         startDate:
           body.startDate && body.startDate !== ""

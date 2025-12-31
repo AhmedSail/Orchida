@@ -1,7 +1,12 @@
 import Payment from "@/components/users/Payment";
 import { auth } from "@/lib/auth";
 import { db } from "@/src/db";
-import { courseEnrollments, courses, courseSections } from "@/src/db/schema";
+import {
+  companies,
+  courseEnrollments,
+  courses,
+  courseSections,
+} from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
 import { headers } from "next/headers";
@@ -35,12 +40,17 @@ const page = async ({ params }: { params: { courseId: string } }) => {
     )
     .innerJoin(courses, eq(courseSections.courseId, courses.id))
     .where(eq(courseEnrollments.id, param.courseId));
+  const company = await db
+    .select()
+    .from(companies)
+    .where(eq(companies.id, "orchid-company"));
   return (
     <div>
       <Payment
         myCourses={myCourses[0]}
         name={session.user.name}
         userId={session.user.id}
+        company={company[0]}
       />
     </div>
   );
