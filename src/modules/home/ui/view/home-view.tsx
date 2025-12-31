@@ -55,7 +55,7 @@ const HomeView = ({
   return (
     <div className="min-h-screen w-full ">
       {/* الكاروسيل الثاني (Slider) */}
-      <div className="w-full h-screen overflow-x-hidden ">
+      <div className="w-full md:h-screen overflow-x-hidden ">
         <Slider sliders={sliders} />
       </div>
 
