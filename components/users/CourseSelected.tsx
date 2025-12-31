@@ -103,8 +103,9 @@ const CourseSelected = ({
           <div className="flex flex-col justify-center items-center">
             <Button
               className="w-full mt-5 flex items-center justify-center gap-2"
-              disabled={registerLoading || !isRegisterEnabled} // ✅ الزر يتعطل إذا الشعبة مغلقة أو غير قيد التنفيذ
+              disabled={registerLoading || lastSection?.status === "closed"}
               onClick={() => {
+                if (!isRegisterEnabled) return; // 🚫 منع التنفيذ إذا الشعبة مغلقة
                 setRegisterLoading(true);
                 router.push(`/courses/${coursesSelected.id}/register`);
               }}
@@ -133,8 +134,10 @@ const CourseSelected = ({
                   </svg>
                   جاري التسجيل...
                 </>
-              ) : (
+              ) : isRegisterEnabled ? (
                 "سجل الآن في الشعبة الجديدة"
+              ) : (
+                "التسجيل غير متاح حالياً"
               )}
             </Button>
 
