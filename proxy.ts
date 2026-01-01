@@ -5,26 +5,15 @@ export const config = {
 };
 
 export default function proxy() {
+  // اسم الدالة تم تغييره إلى middleware
   const res = NextResponse.next();
 
-  // ✅ ضبط CORS
+  // ✅ ضبط CORS (هذا جيد)
   res.headers.set(
     "Access-Control-Allow-Origin",
     process.env.NEXT_PUBLIC_BASE_URL ?? ""
   );
   res.headers.set("Access-Control-Allow-Credentials", "true");
-
-  // ✅ ضبط CSP
-  res.headers.set(
-    "Content-Security-Policy",
-    [
-      "default-src 'self'",
-      "style-src 'self' 'unsafe-inline'", // أو استخدم nonce لو بدك أمان أعلى
-      "script-src 'self' https://apis.google.com 'unsafe-inline'",
-      "img-src 'self' https://files.edgestore.dev https://res.cloudinary.com",
-      "connect-src 'self' https://orchida-liard.vercel.app",
-    ].join("; ")
-  );
 
   return res;
 }
