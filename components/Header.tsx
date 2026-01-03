@@ -264,12 +264,12 @@ const CollapseContent = ({
                 />
               )}
 
-              <span className="font-semibold">{data.user.name}</span>
+              <span className="font-semibold">{user.name}</span>
             </div>
 
             {/* ملفي الشخصي */}
             <Link
-              href={`/${data.user.id}/profile`}
+              href={`/${user.id}/profile`}
               onClick={closeMenu}
               className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
             >
@@ -279,7 +279,7 @@ const CollapseContent = ({
             {/* خدماتي المطلوبة */}
             {requests && requests.length > 0 && (
               <Link
-                href={`/${data.user.id}/services`}
+                href={`/${user.id}/services`}
                 onClick={closeMenu}
                 className="flex items-center gap-2 p-2 rounded hover:bg-gray-100"
               >
@@ -301,8 +301,8 @@ const CollapseContent = ({
                   <Link
                     href={
                       role === "user"
-                        ? `/dashboardUser/${data.user.id}/home`
-                        : `/${role}/${data.user.id}/home`
+                        ? `/dashboardUser/${user.id}/home`
+                        : `/${role}/${user.id}/home`
                     }
                     target="_blank"
                     onClick={closeMenu}
@@ -437,7 +437,9 @@ export function Header({
                 {/* ملفي الشخصي */}
                 {/* @ts-ignore */}
                 <MenuItem
-                  onClick={() => router.push(`/${data.user.id}/profile`)}
+                  onClick={() =>
+                    data?.user?.id && router.push(`/${data.user.id}/profile`)
+                  }
                   className="flex items-center gap-2 hover:bg-gray-100"
                 >
                   <User2 />

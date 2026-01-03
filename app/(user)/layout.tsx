@@ -46,7 +46,7 @@ export default async function RootLayout({
     .from(companies)
     .where(eq(companies.id, "orchid-company"))
     .limit(1);
-  let user: any[] = [];
+  let user: any;
   if (session?.user?.id) {
     user = await db.select().from(users).where(eq(users.id, session.user.id));
   }
@@ -55,7 +55,7 @@ export default async function RootLayout({
       <Header
         requests={requests}
         role={session?.user?.role ?? null}
-        user={user[0]}
+        user={user?.[0]}
       />
 
       {children}
