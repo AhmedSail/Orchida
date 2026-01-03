@@ -19,7 +19,7 @@ import {
   XMarkIcon,
 } from "@heroicons/react/24/outline";
 import {
-  SquaresPlusIcon,
+  ChevronDownIcon as ChevronDownIconSolid,
   UserGroupIcon,
   Bars4Icon,
 } from "@heroicons/react/24/solid";
@@ -40,7 +40,16 @@ import { ServiceRequests } from "@/src/modules/home/ui/view/home-view";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Swal from "sweetalert2";
-// @ts-ignore
+
+// دالة لاستخراج أول حرفين من الاسم
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
 
 // --- عناصر قائمة الدورات ---
 const navListMenuItems = [
@@ -114,7 +123,6 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
     }
   );
 
-  // ✅ لازم ترجع JSX
   return (
     <Menu
       open={isMenuOpen}
@@ -245,7 +253,7 @@ const CollapseContent = ({
                 </Link>
               ) : (
                 <Avatar
-                  name={data.user.name || "User"}
+                  name={getInitials(data.user.name || "User")}
                   size="40"
                   round={true}
                   className="cursor-pointer"
@@ -336,11 +344,11 @@ export function Header({
   requests: ServiceRequests[];
   role: string | null;
 }) {
-  const [openNav, setOpenNav] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
   const { data } = authClient.useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [openNav, setOpenNav] = useState(false);
+  const [isScrolled, setIsScrolled] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -403,7 +411,7 @@ export function Header({
                     />
                   ) : (
                     <Avatar
-                      name={data.user.name || "User"}
+                      name={getInitials(data.user.name || "User")}
                       size="40"
                       round={true}
                       className="cursor-pointer"
