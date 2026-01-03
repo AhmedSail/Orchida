@@ -6,7 +6,7 @@ import Footer from "../../components/Footer";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/src/db";
-import { companies, serviceRequests, users } from "@/src/db/schema";
+import { companies, serviceRequests } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 
 const tajawal = Tajawal({
@@ -46,17 +46,10 @@ export default async function RootLayout({
     .from(companies)
     .where(eq(companies.id, "orchid-company"))
     .limit(1);
-  let user: any[] = [];
-  if (session?.user?.id) {
-    user = await db.select().from(users).where(eq(users.id, session.user.id));
-  }
+
   return (
     <div>
-      <Header
-        requests={requests}
-        role={session?.user?.role ?? null}
-        user={user[0]}
-      />
+      <Header requests={requests} role={session?.user?.role ?? null} />
 
       {children}
       <Footer result={result[0]} />
