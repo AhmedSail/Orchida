@@ -58,7 +58,7 @@ export default function AddPhotoToSlider({ userId }: { userId: string }) {
       img.src = URL.createObjectURL(file);
 
       img.onload = () => {
-        const isValid = img.width === 1920 && img.height === 1072;
+        const isValid = img.width === 1920 && img.height === 820;
         resolve(isValid);
       };
 
@@ -80,7 +80,7 @@ export default function AddPhotoToSlider({ userId }: { userId: string }) {
           Swal.fire({
             icon: "error",
             title: "الصورة غير مناسبة ❌",
-            text: "يجب اختيار صورة بأبعاد 1920 عرض × 1072 ارتفاع.",
+            text: "يجب اختيار صورة بأبعاد 1920 عرض × 820 ارتفاع.",
           });
           setLoading(false);
           return;

@@ -43,7 +43,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
   }
 
   return (
-    <main className="relative h-96 md:h-screen overflow-hidden w-full">
+    <main className="relative h-96 md:h-[90vh] overflow-hidden w-full">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
