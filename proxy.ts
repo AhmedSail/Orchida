@@ -22,7 +22,7 @@ export default function middleware(req: NextRequest) {
     secure: true, // لازم HTTPS
     sameSite: "none", // يسمح بالـ cross-site (مطلوب للجوال)
     maxAge: 60 * 60 * 24, // يوم واحد (تقدر تغيره)
-    domain: process.env.NEXT_PUBLIC_BASE_URL ?? "", // ✅ مهم: يربط الكوكيز بالدومين الحقيقي
+    domain: ".orchida-ods.com", // ✅ مهم: يربط الكوكيز بالدومين الحقيقي
   });
 
   return res;
