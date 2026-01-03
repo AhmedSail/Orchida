@@ -45,15 +45,18 @@ export default function ServiceRequestForm({
     if (!formData.clientName.trim()) return "اسم العميل مطلوب";
     if (!formData.clientEmail.includes("@"))
       return "البريد الإلكتروني غير صالح";
+    if (!formData.clientPhone.trim()) return "رقم الهاتف مطلوب";
     if (!formData.serviceId) return "يجب اختيار خدمة";
+    if (!formData.name.trim()) return "عنوان الخدمة مطلوب";
     if (!formData.description.trim()) return "الوصف مطلوب";
+    if (!formData.budget.trim()) return "الميزانية مطلوبة";
+    if (!formData.duration.trim()) return "المدة مطلوبة";
     return null;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    // ✅ تحقق من تسجيل الدخول
     if (!session) {
       Swal.fire({
         icon: "warning",
@@ -84,7 +87,7 @@ export default function ServiceRequestForm({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          clientId: session.user.id, // ✅ اربط الطلب بالمستخدم المسجل
+          clientId: session.user.id,
         }),
       });
 
@@ -162,15 +165,14 @@ export default function ServiceRequestForm({
 
         {/* رقم الجوال */}
         <div>
-          <Label className="text-lg font-semibold mb-2">
-            رقم الواتس مبدوء بمقدمة دولتك
-          </Label>
+          <Label className="text-lg font-semibold mb-2">رقم الواتس</Label>
           <Input
             type="tel"
             name="clientPhone"
             value={formData.clientPhone}
             onChange={(e) => handleChange("clientPhone", e.target.value)}
             dir="rtl"
+            required
           />
         </div>
 
@@ -180,6 +182,7 @@ export default function ServiceRequestForm({
           <Select
             value={formData.serviceId}
             onValueChange={(val) => handleChange("serviceId", val)}
+            required
           >
             <SelectTrigger className="w-full" dir="rtl">
               <SelectValue placeholder="-- اختر الخدمة --" />
@@ -208,10 +211,10 @@ export default function ServiceRequestForm({
             required
           />
         </div>
+
+        {/* الوصف */}
         <div>
-          <Label className="text-lg font-semibold mb-2">
-            وصف الخدمة التي تريدها
-          </Label>
+          <Label className="text-lg font-semibold mb-2">وصف الخدمة</Label>
           <Textarea
             name="description"
             value={formData.description}
@@ -224,7 +227,7 @@ export default function ServiceRequestForm({
         {/* الميزانية */}
         <div>
           <Label className="text-lg font-semibold mb-2">
-            ميزانيتك للخدمة بالدولار
+            ميزانيتك بالدولار
           </Label>
           <Input
             type="number"
@@ -232,8 +235,11 @@ export default function ServiceRequestForm({
             name="budget"
             value={formData.budget}
             onChange={(e) => handleChange("budget", e.target.value)}
+            required
           />
         </div>
+
+        {/* المدة */}
         <div>
           <Label className="text-lg font-semibold mb-2">المدة المطلوبة</Label>
           <Input
@@ -241,6 +247,7 @@ export default function ServiceRequestForm({
             name="duration"
             value={formData.duration}
             onChange={(e) => handleChange("duration", e.target.value)}
+            required
           />
         </div>
 
