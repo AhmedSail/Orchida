@@ -81,6 +81,7 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
                   width={400}
                   height={300}
                   unoptimized
+                  loading="lazy"
                 />
               </motion.div>
             )}

@@ -232,15 +232,17 @@ const CollapseContent = ({
             {/* Avatar */}
             <div className="flex items-center gap-2 mb-2">
               {data.user.image ? (
-                <Image
-                  src={data.user.image}
-                  alt={data.user.name || "User"}
-                  width={40}
-                  height={40}
-                  className="rounded-full object-cover w-10 h-10 cursor-pointer"
-                  unoptimized
-                  loading="eager"
-                />
+                <Link href={`/${data.user.id}`}>
+                  <Image
+                    src={data.user.image}
+                    alt={data.user.name || "User"}
+                    width={40}
+                    height={40}
+                    className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                    unoptimized
+                    loading="eager"
+                  />
+                </Link>
               ) : (
                 <Avatar
                   name={data.user.name || "User"}
@@ -390,15 +392,17 @@ export function Header({
                   onClick={() => setIsMobileMenuOpen((cur) => !cur)}
                 >
                   {data.user.image ? (
-                    <Image
-                      src={data.user.image}
-                      alt={data.user.name || "User"}
-                      width={40}
-                      height={40}
-                      className="rounded-full object-cover w-10 h-10 cursor-pointer"
-                      loading="eager"
-                      unoptimized
-                    />
+                    <Link href={`/${data.user.id}`}>
+                      <Image
+                        src={data.user.image}
+                        alt={data.user.name || "User"}
+                        width={40}
+                        height={40}
+                        className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                        loading="eager"
+                        unoptimized
+                      />
+                    </Link>
                   ) : (
                     <Avatar
                       name={data.user.name || "User"}
