@@ -392,17 +392,15 @@ export function Header({
                   onClick={() => setIsMobileMenuOpen((cur) => !cur)}
                 >
                   {data.user.image ? (
-                    <Link href={`/${data.user.id}`}>
-                      <Image
-                        src={data.user.image}
-                        alt={data.user.name || "User"}
-                        width={40}
-                        height={40}
-                        className="rounded-full object-cover w-10 h-10 cursor-pointer"
-                        loading="eager"
-                        unoptimized
-                      />
-                    </Link>
+                    <Image
+                      src={data.user.image}
+                      alt={data.user.name || "User"}
+                      width={40}
+                      height={40}
+                      className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                      loading="eager"
+                      unoptimized
+                    />
                   ) : (
                     <Avatar
                       name={data.user.name || "User"}
