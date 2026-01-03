@@ -216,6 +216,7 @@ const CollapseContent = ({
   isScrolled,
   authClient,
   setOpenNav,
+  user,
 }: {
   open: boolean;
   data?: any;
@@ -226,6 +227,7 @@ const CollapseContent = ({
   setIsMobileMenuOpen?: React.Dispatch<React.SetStateAction<boolean>>;
   authClient?: any;
   setOpenNav: React.Dispatch<React.SetStateAction<boolean>>;
+  user?: User;
 }) => {
   const router = useRouter();
   const closeMenu = () => setOpenNav(false);
@@ -235,15 +237,15 @@ const CollapseContent = ({
       <div className="bg-white text-primary rounded-lg shadow-xl mx-4 my-2">
         <NavList isScrolled={false} closeMenu={closeMenu} />
 
-        {data?.user ? (
+        {user ? (
           <div className="p-4 pt-0 flex flex-col gap-2">
             {/* Avatar */}
             <div className="flex items-center gap-2 mb-2">
-              {data.user.image ? (
-                <Link href={`/${data.user.id}`}>
+              {user.image ? (
+                <Link href={`/${user.id}`}>
                   <Image
-                    src={data.user.image}
-                    alt={data.user.name || "User"}
+                    src={user.image}
+                    alt={user.name || "User"}
                     width={40}
                     height={40}
                     className="rounded-full object-cover w-10 h-10 cursor-pointer"
@@ -253,7 +255,7 @@ const CollapseContent = ({
                 </Link>
               ) : (
                 <Avatar
-                  name={getInitials(data.user.name || "User")}
+                  name={getInitials(user.name || "User")}
                   size="40"
                   round={true}
                   className="cursor-pointer"
@@ -518,6 +520,7 @@ export function Header({
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           authClient={authClient}
           setOpenNav={setOpenNav}
+          user={user}
         />
       </Navbar>
       {/* @ts-ignore */}
@@ -533,6 +536,7 @@ export function Header({
           setIsMobileMenuOpen={setIsMobileMenuOpen}
           authClient={authClient}
           setOpenNav={setOpenNav}
+          user={user}
         />
       </Navbar>
     </div>
