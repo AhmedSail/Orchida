@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button";
 import { Link } from "next-view-transitions";
 import { motion } from "framer-motion";
 import { NewsType } from "../view/home-view";
+import { useRouter } from "next/navigation";
 
 // سبينر بسيط
 function Spinner() {
@@ -32,6 +33,17 @@ const eventTypeMap: Record<string, string> = {
 
 export default function LatestNewsUser({ news }: { news: NewsType[] }) {
   const [buttonLoading, setButtonLoading] = useState<string | null>(null);
+  const router = useRouter();
+  const handleClick = async (item: NewsType) => {
+    try {
+      setButtonLoading(item.id); // تشغيل حالة التحميل
+      await router.push(`/news/${item.id}`); // التنقل مع await
+      setButtonLoading(null); // إعادة الحالة بعد اكتمال التنقل
+    } catch (error) {
+      console.error("Navigation error:", error);
+      setButtonLoading(null); // إعادة الحالة حتى لو صار خطأ
+    }
+  };
 
   const activeNews = [...news]
     .filter((item) => item.isActive)
@@ -134,22 +146,20 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                 </p>
 
                 {/* زر مع سبينر */}
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="cursor-pointer w-full mb-10 flex items-center justify-center"
-                  onClick={() => {
-                    setButtonLoading(item.id);
-                  }}
-                >
+                <div className="mt-auto pt-4">
                   {buttonLoading === item.id ? (
-                    <Link href={`/news/${item.id}`}>
-                      <Spinner />
-                    </Link>
+                    <div className="flex items-center justify-center h-10">
+                      <div className="w-6 h-6 border-2 border-primary border-t-transparent rounded-full animate-spin"></div>
+                    </div>
                   ) : (
-                    <Link href={`/news/${item.id}`}>اقرا المزيد</Link>
+                    <button
+                      onClick={() => handleClick(item)}
+                      className="flex items-center justify-center w-full font-semibold text-primary hover:text-primary/80 transition-colors"
+                    >
+                      <span>اقرأ المزيد</span>
+                    </button>
                   )}
-                </Button>
+                </div>
               </motion.div>
             </motion.div>
           </SwiperSlide>
