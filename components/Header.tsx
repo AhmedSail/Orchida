@@ -30,7 +30,6 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
-  User,
   User2,
 } from "lucide-react";
 import { Link } from "next-view-transitions";
@@ -40,6 +39,7 @@ import { ServiceRequests } from "@/src/modules/home/ui/view/home-view";
 import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Swal from "sweetalert2";
+import { User } from "./admin/instructor/NewInstructorForm";
 
 // دالة لاستخراج أول حرفين من الاسم
 const getInitials = (name: string) => {
@@ -340,9 +340,11 @@ const CollapseContent = ({
 export function Header({
   requests,
   role,
+  user,
 }: {
   requests: ServiceRequests[];
   role: string | null;
+  user: User;
 }) {
   const { data } = authClient.useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -399,22 +401,19 @@ export function Header({
                   selected={isMenuOpen || isMobileMenuOpen}
                   onClick={() => setIsMobileMenuOpen((cur) => !cur)}
                 >
-                  {data.user.image ? (
+                  {user?.image ? (
                     <Image
-                      src={data.user.image}
-                      alt={data.user.name || "User"}
+                      src={user.image}
+                      alt={user.name || "User"}
                       width={40}
                       height={40}
                       className="rounded-full object-cover w-10 h-10 cursor-pointer"
-                      loading="eager"
-                      unoptimized
                     />
                   ) : (
                     <Avatar
-                      name={getInitials(data.user.name || "User")}
+                      name={getInitials(user?.name || "User")}
                       size="40"
                       round={true}
-                      className="cursor-pointer"
                       color={isScrolled ? "#fff" : "#675795"}
                       fgColor={isScrolled ? "#675795" : "#fff"}
                     />
@@ -484,7 +483,7 @@ export function Header({
           </div>
         ) : (
           <Link href="/sign-in">
-            <User className="h-5 w-5 cursor-pointer" />
+            <User2 className="h-5 w-5 cursor-pointer" />
           </Link>
         )}
       </div>
