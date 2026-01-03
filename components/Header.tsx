@@ -340,11 +340,9 @@ const CollapseContent = ({
 export function Header({
   requests,
   role,
-  user,
 }: {
   requests: ServiceRequests[];
   role: string | null;
-  user: any;
 }) {
   const { data } = authClient.useSession();
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -401,10 +399,10 @@ export function Header({
                   selected={isMenuOpen || isMobileMenuOpen}
                   onClick={() => setIsMobileMenuOpen((cur) => !cur)}
                 >
-                  {user.image ? (
+                  {data.user.image ? (
                     <Image
-                      src={user.image}
-                      alt={user.name || "User"}
+                      src={data.user.image}
+                      alt={data.user.name || "User"}
                       width={40}
                       height={40}
                       className="rounded-full object-cover w-10 h-10 cursor-pointer"

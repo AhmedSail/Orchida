@@ -23,6 +23,7 @@ export const auth = betterAuth({
   user: {
     additionalFields: {
       role: { type: "string" }, // ✅ إضافة role هنا
+      image: { type: "string" },
     },
   },
   emailVerification: {
@@ -66,7 +67,7 @@ export const auth = betterAuth({
           name: profile.name,
           email: profile.email,
           image: profile.picture,
-          role: "client", // ✅ لو بدك تعطي دور افتراضي لمستخدم Google
+          role: "user", // ✅ لو بدك تعطي دور افتراضي لمستخدم Google
         };
       },
     },
