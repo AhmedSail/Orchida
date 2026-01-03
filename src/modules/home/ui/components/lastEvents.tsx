@@ -86,6 +86,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                     height={300}
                     unoptimized
                     className="w-full h-full object-cover"
+                    loading="lazy"
                   />
                 ) : (
                   <div className="w-full h-full bg-gray-200" />

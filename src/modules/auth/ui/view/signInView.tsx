@@ -195,14 +195,17 @@ export default function SignInView() {
           </Form>
 
           <div className=" relative hidden md:flex flex-col gap-y-4 items-center justify-center py-20">
-            <Image
-              src="/logo.svg"
-              alt="Logo"
-              width={200}
-              height={200}
-              className="w-[200px] h-[250px]"
-              unoptimized
-            />
+            <Link href="/">
+              <Image
+                src="/logo.svg"
+                alt="Logo"
+                width={200}
+                height={200}
+                className="w-[200px] h-[250px]"
+                unoptimized
+                loading="eager"
+              />
+            </Link>
           </div>
         </CardContent>
       </Card>

@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import { Link } from "next-view-transitions";
 
 export default function ResetPasswordPage() {
   const router = useRouter();
@@ -48,14 +49,16 @@ export default function ResetPasswordPage() {
 
   return (
     <div>
-      <Image
-        src="/logo.png"
-        alt="Logo"
-        width={300}
-        height={300}
-        className="block mx-auto"
-        unoptimized
-      />
+      <Link href="/">
+        <Image
+          src="/logo.png"
+          alt="Logo"
+          width={300}
+          height={300}
+          className="block mx-auto"
+          unoptimized
+        />
+      </Link>
       <div className="max-w-md mx-auto mt-20 p-6 border rounded-lg shadow">
         <h1 className="text-2xl font-semibold mb-4">Set a new password</h1>
 

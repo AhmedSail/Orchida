@@ -78,6 +78,7 @@ const StudentWorksHome = ({
                         width={400}
                         height={300}
                         unoptimized
+                        loading="lazy"
                       />
                     </div>
                     {story.description && (
