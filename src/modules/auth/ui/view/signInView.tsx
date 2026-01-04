@@ -32,11 +32,12 @@ export default function SignInView() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const router = useRouter();
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
     await authClient.signIn.email(
-      { email: data.email, password: data.password, callbackURL: "/" },
+      { email: data.email, password: data.password, callbackURL: baseUrl },
       {
         onSuccess: () => {
           setPending(false);
@@ -57,7 +58,7 @@ export default function SignInView() {
     await authClient.signIn.social(
       {
         provider: provider,
-        callbackURL: "/",
+        callbackURL: baseUrl,
       },
       {
         onSuccess: () => {

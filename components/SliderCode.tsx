@@ -4,6 +4,7 @@ import Image from "next/image";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { SliderType } from "@/src/modules/home/ui/view/home-view";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 function SliderSkeleton() {
   return (
@@ -31,7 +32,7 @@ function SliderSkeleton() {
 
 export default function Slider({ sliders }: { sliders: SliderType[] }) {
   const [index, setIndex] = useState(0);
-
+  const isMobile = useIsMobile();
   const prevSlide = () =>
     setIndex((prev) => (prev === 0 ? sliders.length - 1 : prev - 1));
   const nextSlide = () =>
@@ -43,7 +44,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
   }
 
   return (
-    <main className="relative h-96 md:h-[90vh] overflow-hidden w-full">
+    <main className="relative h-[20vh] md:h-[90vh] overflow-hidden w-full">
       <AnimatePresence mode="wait">
         <motion.div
           key={index}
@@ -65,7 +66,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
       </AnimatePresence>
 
       {/* Navigation */}
-      <div className="absolute bottom-1/2 right-4 flex flex-col gap-4 max-sm:hidden z-30">
+      <div className="absolute bottom-1/2 right-4 flex flex-col gap-4 z-30">
         {/* زر فوق */}
         <motion.button
           onClick={prevSlide}
@@ -74,9 +75,9 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           whileHover={{ scale: 1.15, y: -3 }}
           whileTap={{ scale: 0.9 }}
-          className="p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
+          className="p-1 md:p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
         >
-          <ChevronUp size={20} />
+          <ChevronUp size={isMobile ? 10 : 25} />
         </motion.button>
 
         {/* زر تحت */}
@@ -87,9 +88,9 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
           transition={{ duration: 0.6, ease: "easeOut" }}
           whileHover={{ scale: 1.15, y: 3 }}
           whileTap={{ scale: 0.9 }}
-          className="p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
+          className="p-1 md:p-3 bg-white/50 text-black rounded-full hover:bg-white transition"
         >
-          <ChevronDown size={20} />
+          <ChevronDown size={isMobile ? 10 : 25} />
         </motion.button>
       </div>
 

@@ -9,7 +9,7 @@ export function useLogout(authClient: any, closeMenu?: () => void) {
     try {
       // تسجيل الخروج من الـ Auth
       await authClient.signOut();
-
+      window.location.reload();
       // إغلاق القائمة إذا فيه دالة مرسلة
       if (closeMenu) {
         closeMenu();
