@@ -71,7 +71,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
         fadeEffect={{ crossFade: true }}
         loop
         pagination={{ clickable: true }}
-        className="blog-slider block mt-10"
+        className="custom-swiper block mt-10"
       >
         {activeNews.map((item) => (
           <SwiperSlide key={item.id}>

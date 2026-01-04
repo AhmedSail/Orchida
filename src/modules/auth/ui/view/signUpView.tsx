@@ -39,6 +39,7 @@ export default function SignUpView() {
   const router = useRouter();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
@@ -47,7 +48,7 @@ export default function SignUpView() {
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: "/",
+        callbackURL: baseUrl,
       },
       {
         onSuccess: () => {
@@ -67,7 +68,7 @@ export default function SignUpView() {
     await authClient.signIn.social(
       {
         provider: provider,
-        callbackURL: "/",
+        callbackURL: baseUrl,
       },
       {
         onSuccess: () => {

@@ -19,16 +19,23 @@
 }
 .blog-slider .swiper-pagination {
   position: absolute;
-  bottom: -30px; /* الوضع الافتراضي */
+  bottom: -20px; /* الوضع الافتراضي */
   left: 0;
   width: 100%;
   text-align: center;
+}
+/* لو تستخدم Tailwind أضفها في ملف global.css أو داخل style */
+.custom-swiper .swiper-pagination {
+  position: relative; /* خليها بالنسبة للبوكس */
+  bottom: 0;
+  margin-top: 20px; /* نزّلها تحت البوكس */
 }
 
 /* ✅ للموبايل */
 @media (max-width: 640px) {
   .blog-slider .swiper-pagination {
-    bottom: -20px; /* أقرب للبوكس */
+    bottom: -20px;
+    margin-top: 20px; /* أقرب للبوكس */
   }
 }
 
@@ -36,28 +43,32 @@
 @media (min-width: 641px) and (max-width: 1024px) {
   .blog-slider .swiper-pagination {
     bottom: -25px;
+    margin-top: 20px; /* أقرب للبوكس */
   }
 }
 
 /* ✅ للديسكتوب */
 @media (min-width: 1025px) {
   .blog-slider .swiper-pagination {
-    bottom: -35px; /* أبعد شوي */
+    bottom: -35px;
+    margin-top: 20px; /* أبعد شوي */
   }
 }
-.blog-slider .swiper-pagination-bullet {
+.custom-swiper .swiper-pagination-bullet {
   background: #675795; /* لون primary */
   opacity: 0.5;
   width: 10px;
   height: 10px;
   opacity: 0.3;
+  margin-top: 20px;
 }
 
-.blog-slider .swiper-pagination-bullet-active {
+.custom-swiper .swiper-pagination-bullet-active {
   background: #eeb919;
   opacity: 1;
   width: 12px;
   height: 12px;
+  margin-top: 20px;
 }
 @theme inline {
   --color-background: var(--background);
