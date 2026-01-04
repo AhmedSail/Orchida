@@ -40,6 +40,7 @@ import { useRouter } from "next/navigation";
 import { useIsMobile } from "@/hooks/use-mobile";
 import Swal from "sweetalert2";
 import { User } from "./admin/instructor/NewInstructorForm";
+import { useLogout } from "./logout";
 
 // دالة لاستخراج أول حرفين من الاسم
 const getInitials = (name: string) => {
@@ -231,7 +232,7 @@ const CollapseContent = ({
 }) => {
   const router = useRouter();
   const closeMenu = () => setOpenNav(false);
-
+  const logout = useLogout(authClient, closeMenu);
   return (
     <Collapse open={open} className="lg:hidden">
       <div className="bg-white text-primary rounded-lg shadow-xl mx-4 my-2">
@@ -315,10 +316,7 @@ const CollapseContent = ({
 
             {/* تسجيل الخروج */}
             <button
-              onClick={() => {
-                authClient?.signOut();
-                closeMenu();
-              }}
+              onClick={logout}
               className="flex items-center gap-2 p-2 rounded hover:bg-gray-100 text-red-600"
             >
               <LogOut /> تسجيل الخروج
