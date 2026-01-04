@@ -60,14 +60,14 @@ const ContactPage = ({ result }: { result: Links }) => {
     setLoading(true);
     try {
       await emailjs.send(
-        "service_ofqdhcu",
+        "service_fan2sii",
         "template_c3vgke8",
         {
           from_name: values.name,
           from_email: values.email,
           message: values.message,
         },
-        "LOnH5LrFYmESJ1IkD"
+        "R0y_2mr9nl9WpEKZc"
       );
       setIsSent(true);
       form.reset();
