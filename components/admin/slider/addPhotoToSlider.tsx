@@ -58,7 +58,11 @@ export default function AddPhotoToSlider({ userId }: { userId: string }) {
       img.src = URL.createObjectURL(file);
 
       img.onload = () => {
-        const isValid = img.width === 1920 && img.height === 820;
+        const isValid =
+          img.width >= 1910 &&
+          img.width <= 1930 &&
+          img.height >= 810 &&
+          img.height <= 830;
         resolve(isValid);
       };
 
