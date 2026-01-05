@@ -9,6 +9,9 @@ interface GoogleProfile {
   name: string;
   email: string;
   picture?: string;
+  given_name?: string;
+  family_name?: string;
+  email_verified?: boolean;
 }
 
 export const auth = betterAuth({
@@ -26,11 +29,19 @@ export const auth = betterAuth({
       name: "better-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: "lax", // جرب تغييرها إلى lax إذا كان الموقع على نفس النطاق
+        sameSite: "lax", // ضروري جداً للجوال
         secure: process.env.NODE_ENV === "production",
+        path: "/",
       },
     },
   },
+
+  // trustedOrigins مهم للتعامل مع الـ Redirects والأمان
+  trustedOrigins: [
+    process.env.NEXT_PUBLIC_BASE_URL as string,
+    "https://orchida-liard.vercel.app",
+    "https://orchida-ods.com",
+  ],
 
   user: {
     additionalFields: {
@@ -78,7 +89,8 @@ export const auth = betterAuth({
       prompt: "select_account", // لو بدك يجبر المستخدم يختار حساب كل مرة
       accessType: "offline", // لو بدك refresh token دائم
 
-      profile(profile: GoogleProfile) {
+      // تم تغيير profile إلى mapProfileToUser لحل مشكلة التايب
+      mapProfileToUser: (profile: GoogleProfile) => {
         return {
           id: profile.sub,
           name: profile.name,
