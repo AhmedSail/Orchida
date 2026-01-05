@@ -73,7 +73,7 @@ export const auth = betterAuth({
       </div>
     `;
 
-      void sendEmail({
+      await sendEmail({
         to: user.email,
         subject: "Verify your email address",
         text: `اضغط على الرابط لتأكيد بريدك الإلكتروني: ${verifyUrl}`,
@@ -88,7 +88,7 @@ export const auth = betterAuth({
     // ✅ هنا تضع دوال reset password
     sendResetPassword: async ({ user, url, token }, request) => {
       const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/reset-password?token=${token}`;
-      void sendEmail({
+      await sendEmail({
         to: user.email,
         subject: "Reset your password",
         text: `Click the link to reset your password: ${resetUrl}`,
