@@ -71,9 +71,19 @@ export const auth = betterAuth({
       </div>
     `;
 
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "--------------- EMAIL VERIFICATION LINK (DEV) ---------------"
+        );
+        console.log(url);
+        console.log(
+          "-------------------------------------------------------------"
+        );
+      }
+
       await sendEmail({
         to: user.email,
-        subject: "Verify your email address",
+        subject: "تأكيد عنوان البريد الإلكتروني",
         text: `اضغط على الرابط لتأكيد بريدك الإلكتروني: ${url}`,
         html: htmlContent,
       });
@@ -107,6 +117,16 @@ export const auth = betterAuth({
         </div>
         `,
       });
+
+      if (process.env.NODE_ENV === "development") {
+        console.log(
+          "--------------- RESET PASSWORD LINK (DEV) ---------------"
+        );
+        console.log(url);
+        console.log(
+          "---------------------------------------------------------"
+        );
+      }
     },
 
     onPasswordReset: async ({ user }, request) => {
