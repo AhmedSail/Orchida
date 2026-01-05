@@ -20,6 +20,18 @@ export const auth = betterAuth({
     },
   }),
 
+  // 👇 هنا تحط إعدادات الكوكيز
+  cookies: {
+    sessionToken: {
+      name: "better-auth.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "none", // ضروري للجوال
+        secure: true, // لازم HTTPS
+      },
+    },
+  },
+
   user: {
     additionalFields: {
       role: { type: "string" }, // ✅ إضافة role هنا
