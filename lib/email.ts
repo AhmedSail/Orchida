@@ -1,14 +1,4 @@
-import nodemailer from "nodemailer";
-
-const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST, // smtp.hostinger.com
-  port: Number(process.env.SMTP_PORT), // 465 أو 587
-  secure: Number(process.env.SMTP_PORT) === 465, // true للـ 465, false للـ 587
-  auth: {
-    user: process.env.SMTP_USER, // بريدك الاحترافي
-    pass: process.env.SMTP_PASS, // الباسورد
-  },
-});
+import Brevo from "@getbrevo/brevo";
 
 export async function sendEmail({
   to,
@@ -19,15 +9,22 @@ export async function sendEmail({
   subject: string;
   text: string;
 }) {
-  try {
-    const info = await transporter.sendMail({
-      from: process.env.SMTP_FROM, // لازم يكون نفس البريد أو دومينك
-      to,
-      subject,
-      text,
-    });
+  const client = new Brevo.TransactionalEmailsApi();
+  client.setApiKey(
+    Brevo.TransactionalEmailsApiApiKeys.apiKey,
+    process.env.BREVO_API_KEY!
+  );
 
-    console.log("✅ Email sent:", info.messageId);
+  const email = {
+    sender: { email: "admin@orchida-ods.com", name: "orchida" }, // لازم يكون بريد من دومينك
+    to: [{ email: to }],
+    subject,
+    textContent: text,
+  };
+
+  try {
+    const result = await client.sendTransacEmail(email);
+    console.log("✅ Email sent:", result.body.messageId);
   } catch (err) {
     console.error("❌ Email sending failed:", err);
   }
