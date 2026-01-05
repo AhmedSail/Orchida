@@ -26,8 +26,8 @@ export const auth = betterAuth({
       name: "better-auth.session-token",
       options: {
         httpOnly: true,
-        sameSite: "none", // ضروري للجوال
-        secure: true, // لازم HTTPS
+        sameSite: "lax", // جرب تغييرها إلى lax إذا كان الموقع على نفس النطاق
+        secure: process.env.NODE_ENV === "production",
       },
     },
   },
