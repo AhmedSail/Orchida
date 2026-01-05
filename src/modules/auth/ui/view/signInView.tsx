@@ -63,7 +63,6 @@ export default function SignInView() {
       {
         onSuccess: () => {
           setPending(false);
-          router.push("/");
         },
         onError: ({ error }) => {
           setPending(false);
