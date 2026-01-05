@@ -66,12 +66,12 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
       </AnimatePresence>
 
       {/* Navigation */}
-      <div className="absolute bottom-1/2 right-4 flex flex-col gap-4 z-30">
+      <div className="absolute top-1/2 right-2 -translate-x-1/2 -translate-y-1/2 flex flex-col gap-4 z-30">
         {/* زر فوق */}
         <motion.button
           onClick={prevSlide}
-          initial={{ y: -80, opacity: 0 }} // ✅ ييجي من فوق
-          animate={{ y: 0, opacity: 1 }} // ✅ ينزل للنص
+          initial={{ y: -80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           whileHover={{ scale: 1.15, y: -3 }}
           whileTap={{ scale: 0.9 }}
@@ -83,8 +83,8 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
         {/* زر تحت */}
         <motion.button
           onClick={nextSlide}
-          initial={{ y: 80, opacity: 0 }} // ✅ ييجي من تحت
-          animate={{ y: 0, opacity: 1 }} // ✅ يطلع للنص
+          initial={{ y: 80, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
           transition={{ duration: 0.6, ease: "easeOut" }}
           whileHover={{ scale: 1.15, y: 3 }}
           whileTap={{ scale: 0.9 }}
