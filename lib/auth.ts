@@ -28,10 +28,11 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
+      const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/verify-email?token=${token}`;
       void sendEmail({
         to: user.email,
         subject: "Verify your email address",
-        text: `Click the link to verify your email: ${url}`,
+        text: `Click the link to verify your email: ${verifyUrl}`,
       });
     },
   },
@@ -41,10 +42,11 @@ export const auth = betterAuth({
 
     // ✅ هنا تضع دوال reset password
     sendResetPassword: async ({ user, url, token }, request) => {
+      const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/reset-password?token=${token}`;
       void sendEmail({
         to: user.email,
         subject: "Reset your password",
-        text: `Click the link to reset your password: ${url}`,
+        text: `Click the link to reset your password: ${resetUrl}`,
       });
     },
 
