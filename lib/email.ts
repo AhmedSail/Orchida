@@ -1,12 +1,12 @@
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  host: process.env.SMTP_HOST,
-  port: Number(process.env.SMTP_PORT),
-  secure: false, // Brevo uses TLS on port 587
+  host: process.env.SMTP_HOST, // smtp.hostinger.com
+  port: Number(process.env.SMTP_PORT), // 465 أو 587
+  secure: Number(process.env.SMTP_PORT) === 465, // true للـ 465, false للـ 587
   auth: {
-    user: process.env.SMTP_USER,
-    pass: process.env.SMTP_PASS,
+    user: process.env.SMTP_USER, // بريدك الاحترافي
+    pass: process.env.SMTP_PASS, // الباسورد
   },
 });
 
@@ -19,12 +19,16 @@ export async function sendEmail({
   subject: string;
   text: string;
 }) {
-  const info = await transporter.sendMail({
-    from: process.env.SMTP_FROM,
-    to,
-    subject,
-    text,
-  });
+  try {
+    const info = await transporter.sendMail({
+      from: process.env.SMTP_FROM, // لازم يكون نفس البريد أو دومينك
+      to,
+      subject,
+      text,
+    });
 
-  console.log("✅ Email sent:", info.messageId);
+    console.log("✅ Email sent:", info.messageId);
+  } catch (err) {
+    console.error("❌ Email sending failed:", err);
+  }
 }
