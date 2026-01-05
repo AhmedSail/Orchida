@@ -51,8 +51,6 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
-      const verifyUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/verify-email?token=${token}`;
-
       // HTML email template مع شعار وهيدر
       const htmlContent = `
       <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
@@ -62,13 +60,13 @@ export const auth = betterAuth({
         <p style="color: #555; font-size: 16px;">
           شكراً لتسجيلك معنا! يرجى الضغط على الزر أدناه لتأكيد بريدك الإلكتروني وإكمال عملية التسجيل.
         </p>
-        <a href="${verifyUrl}" 
+        <a href="${url}" 
            style="display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #007BFF; color: #fff; text-decoration: none; border-radius: 6px;">
           تأكيد البريد الإلكتروني
         </a>
         <p style="margin-top: 30px; font-size: 14px; color: #888;">
           إذا لم يعمل الزر، يمكنك نسخ الرابط التالي ولصقه في المتصفح:<br/>
-          <span style="color: #007BFF;">${verifyUrl}</span>
+          <span style="color: #007BFF;">${url}</span>
         </p>
       </div>
     `;
@@ -76,7 +74,7 @@ export const auth = betterAuth({
       await sendEmail({
         to: user.email,
         subject: "Verify your email address",
-        text: `اضغط على الرابط لتأكيد بريدك الإلكتروني: ${verifyUrl}`,
+        text: `اضغط على الرابط لتأكيد بريدك الإلكتروني: ${url}`,
         html: htmlContent,
       });
     },
