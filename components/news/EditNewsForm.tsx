@@ -276,7 +276,7 @@ export default function EditNewsForm({
                   {oldImage && (
                     <div className="mt-2">
                       <p className="text-sm text-gray-600">الصورة الحالية:</p>
-                      
+                      <Image
                         src={oldImage}
                         alt="الصورة القديمة"
                         width={100}
