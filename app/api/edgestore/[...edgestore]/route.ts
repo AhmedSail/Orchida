@@ -27,6 +27,16 @@ const edgeStoreRouter = es.router({
       console.log("beforeDelete", ctx, fileInfo);
       return ctx.userRole === "admin"; // امنع الحذف إلا لو Admin
     }),
+
+  // 👇 هذا البكت "محمي"، يعني الصور ما بتفتح إلا من خلال موقعك (لأنها تتطلب كوكي/سيشن)
+  protectedFiles: es
+    .fileBucket()
+    .accessControl({
+      OR: [{ userRole: { eq: "admin" } }, { userRole: { eq: "user" } }],
+    })
+    .beforeDelete(({ ctx, fileInfo }) => {
+      return ctx.userRole === "admin"; // السماح بالحذف فقط للأدمن
+    }),
 });
 
 const handler = createEdgeStoreNextHandler({

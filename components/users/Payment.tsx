@@ -91,7 +91,7 @@ const Payment = ({
       setLoading(true);
 
       // 1️⃣ رفع الصورة على EdgeStore
-      const uploadRes = await edgestore.publicFiles.upload({
+      const uploadRes = await edgestore.protectedFiles.upload({
         file: receipt,
       });
       const receiptUrl = uploadRes.url;

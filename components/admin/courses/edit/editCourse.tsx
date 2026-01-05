@@ -71,13 +71,13 @@ export default function EditCourseForm({
     if (values.imageFile) {
       // ✅ أولاً نحذف الصورة القديمة إذا موجودة
       if (initialData?.imageUrl) {
-        await edgestore.publicFiles.delete({
+        await edgestore.protectedFiles.delete({
           url: initialData.imageUrl,
         });
       }
 
       // ✅ ثم نرفع الصورة الجديدة
-      const resUpload = await edgestore.publicFiles.upload({
+      const resUpload = await edgestore.protectedFiles.upload({
         file: values.imageFile,
         onProgressChange: (progress) => {
           console.log("Upload progress:", progress);
@@ -191,6 +191,7 @@ export default function EditCourseForm({
                 width={200}
                 height={200}
                 className="rounded-md object-cover mt-2"
+                unoptimized
               />
             ) : initialData?.imageUrl ? (
               <Image
@@ -199,6 +200,7 @@ export default function EditCourseForm({
                 width={200}
                 height={200}
                 className="rounded-md object-cover mt-2"
+                unoptimized
               />
             ) : (
               <p className="text-sm text-gray-500 mt-2">لا توجد صورة حالياً</p>

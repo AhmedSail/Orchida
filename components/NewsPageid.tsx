@@ -103,6 +103,7 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
               height={400}
               className="object-cover transition-transform duration-500 ease-out group-hover:scale-105"
               loading="lazy" // ✅ أفضل للأداء
+              unoptimized
             />
           ) : (
             <div className="w-full h-full bg-gray-200" />

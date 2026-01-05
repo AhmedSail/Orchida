@@ -118,6 +118,7 @@ export default function EditContentDialog({
                     src={content.imageUrl}
                     alt={content.title}
                     className="w-full object-cover rounded h-96"
+                    unoptimized
                   />
                 )}
                 {content.videoUrl && (

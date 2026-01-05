@@ -31,6 +31,7 @@ export function EmblaCarousel() {
               width={400}
               height={300}
               className="w-full h-64 object-cover rounded-lg"
+              unoptimized
             />
           </div>
         ))}

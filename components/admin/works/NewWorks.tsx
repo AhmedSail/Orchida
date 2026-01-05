@@ -210,7 +210,7 @@ const NewWorks = ({
                 <FormLabel>الصورة / الفيديو الرئيسي</FormLabel>
                 <FormControl>
                   <SingleUploader
-                    bucket="publicFiles"
+                    bucket="protectedFiles"
                     onChange={(url) => field.onChange(url)} // رابط واحد فقط
                     initialUrl={field.value ?? ""}
                     required={true}
@@ -315,7 +315,7 @@ const NewWorks = ({
                 <FormLabel>📂 وسائط إضافية (صور، فيديو، ملفات)</FormLabel>
                 <FormControl>
                   <MultiUploader
-                    bucket="publicFiles"
+                    bucket="protectedFiles"
                     onChange={(files) => field.onChange(files)} // files لازم تكون [{url, type, filename, mimeType, size}, ...]
                     initialUrls={field.value}
                   />

@@ -40,6 +40,7 @@ export function AppSidebarAttractor({ user }: { user: User }) {
               width={100}
               height={100}
               className="mt-28 mx-auto"
+              unoptimized
             />
           </SidebarGroupLabel>
           <SidebarGroupContent>

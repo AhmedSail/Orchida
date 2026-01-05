@@ -6,7 +6,7 @@ import { FileState, MultiFileDropzone } from "./multi-file-dropzone";
 import Swal from "sweetalert2";
 
 type MultiUploaderProps = {
-  bucket: "publicFiles";
+  bucket: "publicFiles" | "protectedFiles";
   onChange: (urls: string[]) => void;
   initialUrls?: string[];
   maxFiles?: number;

@@ -82,12 +82,12 @@ const WorksTable = ({
       try {
         // ✅ 1. حذف الملف من EdgeStore
         if (fileUrl) {
-          await edgestore.publicFiles.delete({ url: fileUrl });
+          await edgestore.protectedFiles.delete({ url: fileUrl });
         }
         if (mediaFiles && mediaFiles.length > 0) {
           for (const file of mediaFiles) {
             if (file.url) {
-              await edgestore.publicFiles.delete({ url: file.url });
+              await edgestore.protectedFiles.delete({ url: file.url });
             }
           }
         }
@@ -172,6 +172,7 @@ const WorksTable = ({
                           width={100}
                           height={60}
                           className="object-cover rounded"
+                          unoptimized
                         />
                       ) : (
                         <video
@@ -254,6 +255,7 @@ const WorksTable = ({
                     width={400}
                     height={200}
                     className="object-cover rounded"
+                    unoptimized
                   />
                 ) : (
                   <video

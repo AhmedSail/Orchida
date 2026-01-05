@@ -36,6 +36,7 @@ const Contract = ({ data }: { data: ServiceRequest }) => {
           width={100}
           height={100}
           className="mx-auto block mb-10"
+          unoptimized
         />
         <h1 className="text-2xl text-center  mb-6 text-primary ">
           اتفاق على تقديم خدمة
@@ -115,7 +116,13 @@ const Contract = ({ data }: { data: ServiceRequest }) => {
             <p>توقيع الشركة</p>
             <div className="flex items-center gap-2">
               <p>أوركيدة</p>
-              <Image src="/logo.png" alt="Logo" width={20} height={20} />
+              <Image
+                src="/logo.png"
+                alt="Logo"
+                width={20}
+                height={20}
+                unoptimized
+              />
             </div>
           </div>
           <div>

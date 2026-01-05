@@ -58,7 +58,7 @@ export default function AddCourseForm({ userId }: { userId: string }) {
     let imageUrl = "";
 
     if (values.imageFile) {
-      const resUpload = await edgestore.publicFiles.upload({
+      const resUpload = await edgestore.protectedFiles.upload({
         file: values.imageFile,
         onProgressChange: (progress) => {
           // لو بدك تعمل progress bar
