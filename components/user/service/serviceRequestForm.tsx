@@ -15,7 +15,7 @@ import {
 } from "@/components/ui/select";
 import { Loader2 } from "lucide-react";
 import { authClient } from "@/lib/auth-client";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 export default function ServiceRequestForm({
   services,
@@ -25,17 +25,28 @@ export default function ServiceRequestForm({
   const { data: session } = authClient.useSession();
   const [isSubmitting, setIsSubmitting] = useState(false);
   const router = useRouter();
+  const pathname = usePathname();
 
   const [formData, setFormData] = useState({
     serviceId: "",
-    clientName: session?.user?.name || "",
-    clientEmail: session?.user?.email || "",
+    clientName: "",
+    clientEmail: "",
     clientPhone: "",
     name: "",
     description: "",
     budget: "",
     duration: "",
   });
+
+  React.useEffect(() => {
+    if (session?.user) {
+      setFormData((prev) => ({
+        ...prev,
+        clientName: session.user.name || "",
+        clientEmail: session.user.email || "",
+      }));
+    }
+  }, [session]);
 
   const handleChange = (name: string, value: string) => {
     setFormData({ ...formData, [name]: value });
@@ -63,6 +74,13 @@ export default function ServiceRequestForm({
         title: "تنبيه ⚠️",
         text: "يجب تسجيل الدخول قبل إرسال الطلب",
         confirmButtonColor: "#f59e0b",
+        showCancelButton: true,
+        confirmButtonText: "تسجيل الدخول",
+        cancelButtonText: "إلغاء",
+      }).then((result) => {
+        if (result.isConfirmed) {
+          router.push(`/sign-in?callbackURL=${encodeURIComponent(pathname)}`);
+        }
       });
       return;
     }
@@ -100,8 +118,8 @@ export default function ServiceRequestForm({
         });
         setFormData({
           serviceId: "",
-          clientName: session.user.name,
-          clientEmail: session.user.email,
+          clientName: session.user.name || "",
+          clientEmail: session.user.email || "",
           clientPhone: "",
           name: "",
           description: "",
@@ -142,7 +160,7 @@ export default function ServiceRequestForm({
           <Input
             name="clientName"
             value={formData.clientName}
-            disabled
+            disabled={!!session?.user}
             onChange={(e) => handleChange("clientName", e.target.value)}
             required
           />
@@ -156,7 +174,7 @@ export default function ServiceRequestForm({
           <Input
             type="email"
             name="clientEmail"
-            disabled
+            disabled={!!session?.user}
             value={formData.clientEmail}
             onChange={(e) => handleChange("clientEmail", e.target.value)}
             required

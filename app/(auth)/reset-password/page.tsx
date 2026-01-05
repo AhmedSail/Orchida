@@ -24,7 +24,7 @@ export default function ResetPasswordPage() {
     e.preventDefault();
 
     if (!token) {
-      setMessage("Invalid or missing token.");
+      setMessage("رمز التحقق مفقود أو غير صالح.");
       return;
     }
 
@@ -39,48 +39,54 @@ export default function ResetPasswordPage() {
     setLoading(false);
 
     if (error) {
-      setMessage(error.message ?? "Unexpected error");
+      setMessage(error.message ?? "خطأ غير متوقع");
       return;
     }
 
-    setMessage("Password reset successfully. Redirecting...");
+    setMessage("تم إعادة تعيين كلمة المرور بنجاح. جارٍ التحويل...");
     router.push("/sign-in");
   };
 
   return (
-    <div>
+    <div dir="rtl">
       <Link href="/">
         <Image
-          src="/logo.png"
+          src="/logo.svg"
           alt="Logo"
-          width={300}
-          height={300}
+          width={200}
+          height={200}
           className="block mx-auto"
           unoptimized
         />
       </Link>
       <div className="max-w-md mx-auto mt-20 p-6 border rounded-lg shadow">
-        <h1 className="text-2xl font-semibold mb-4">Set a new password</h1>
+        <h1 className="text-2xl font-bold mb-4 text-center">
+          تعيين كلمة مرور جديدة
+        </h1>
 
         {!token ? (
-          <p className="text-red-500">Invalid or expired reset link.</p>
+          <p className="text-destructive text-center">
+            رابط إعادة التعيين غير صالح أو منتهي الصلاحية.
+          </p>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <Input
               type="password"
-              placeholder="New password"
+              placeholder="كلمة المرور الجديدة"
               value={newPassword}
               onChange={(e) => setNewPassword(e.target.value)}
               required
             />
 
-            <Button type="submit" disabled={loading}>
-              {loading ? "Resetting..." : "Reset Password"}
+            <Button type="submit" disabled={loading} className="w-full">
+              {loading ? "جارٍ التحديث..." : "تحديث كلمة المرور"}
             </Button>
           </form>
         )}
 
-        {message && <p className="mt-4 text-sm text-gray-600">{message}</p>}
+        {message && (
+          <p className="mt-4 text-sm text-center text-gray-600">{message}</p>
+        )}
       </div>
     </div>
   );

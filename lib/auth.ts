@@ -87,11 +87,27 @@ export const auth = betterAuth({
 
     // ✅ هنا تضع دوال reset password
     sendResetPassword: async ({ user, url, token }, request) => {
-      const resetUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/api/auth/reset-password?token=${token}`;
       await sendEmail({
         to: user.email,
-        subject: "Reset your password",
-        text: `Click the link to reset your password: ${resetUrl}`,
+        subject: "إعادة تعيين كلمة المرور",
+        text: `اضغط على الرابط لإعادة تعيين كلمة المرور: ${url}`,
+        html: `
+        <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
+          <h1 style="color: #675795;font-size: 35px;">Orchida</h1>
+          <h2 style="color: #333;">إعادة تعيين كلمة المرور</h2>
+          <p style="color: #555; font-size: 16px;">
+            لقد تلقينا طلباً لإعادة تعيين كلمة المرور الخاصة بك. اضغط على الزر أدناه للمتابعة.
+          </p>
+          <a href="${url}" 
+             style="display: inline-block; margin-top: 20px; padding: 12px 24px; background-color: #007BFF; color: #fff; text-decoration: none; border-radius: 6px;">
+            إعادة تعيين كلمة المرور
+          </a>
+          <p style="margin-top: 30px; font-size: 14px; color: #888;">
+            إذا لم يعمل الزر، يمكنك نسخ الرابط التالي:<br/>
+            <span style="color: #007BFF;">${url}</span>
+          </p>
+        </div>
+        `,
       });
     },
 

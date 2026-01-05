@@ -23,7 +23,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
 import { User } from "../user/edit-profile";
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 // types
 type Section = {
@@ -91,10 +91,9 @@ const RegisterUser = ({
 }) => {
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
-  // --- بداية التعديل ---
-  // استخدام <FormValues> هنا يحل جميع مشاكل عدم تطابق الأنواع
+  const pathname = usePathname();
+
   const form = useForm<FormValues>({
-    // --- نهاية التعديل ---
     resolver: zodResolver(schema),
     defaultValues: {
       studentName: user?.name ?? "",
@@ -109,82 +108,30 @@ const RegisterUser = ({
     mode: "onChange",
   });
 
-  // لا حاجة لتحديد النوع هنا مرة أخرى، سيتم استنتاجه بشكل صحيح
   const onSubmit = async (values: FormValues) => {
-    const exists = allUsers.some((u) => u.email === values.studentEmail);
-    if (!exists) {
-      try {
-        // ✅ إنشاء حساب جديد
-        const newUserPayload = {
-          name: values.studentName,
-          email: values.studentEmail,
-          password: values.studentPhone, // رقم الجوال ككلمة مرور
-          phone: values.studentPhone,
-        };
+    if (!user) {
+      const result = await MySwal.fire({
+        title: "تنبيه ⚠️",
+        text: "يجب تسجيل الدخول قبل التسجيل في الدورة",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "تسجيل الدخول",
+        cancelButtonText: "إلغاء",
+        confirmButtonColor: "#f59e0b",
+      });
 
-        const userRes = await fetch("/api/users", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(newUserPayload),
-        });
-
-        if (!userRes.ok) throw new Error("فشل إنشاء الحساب");
-        const newUser = await userRes.json();
-
-        // ✅ بناء بيانات التسجيل وربطها بالمستخدم الجديد
-        const enrollment = {
-          sectionId: lastSectionRaw.sectionId,
-          studentId: newUser.id, // ربط التسجيل بالمستخدم الجديد
-          studentName: values.studentName,
-          studentEmail: values.studentEmail,
-          studentPhone: values.studentPhone || null,
-          studentAge: values.studentAge,
-          studentMajor: values.studentMajor,
-          studentCountry: values.studentCountry,
-          paymentReceiptUrl: values.paymentReceiptUrl || null,
-          confirmationStatus: "pending",
-          paymentStatus: values.paymentReceiptUrl ? "paid" : "pending",
-        };
-
-        const res = await fetch("/api/course-enrollments", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(enrollment),
-        });
-
-        if (!res.ok) throw new Error("فشل إنشاء التسجيل");
-
-        const result = await MySwal.fire({
-          title: "تم إنشاء الحساب والتسجيل",
-          text: "تم تسجيلك في الدورة بنجاح ولقد حصلت على عضوية في الموقع الخاص بنا على الايميل الخاص بك يرجى اعادة تعيين كلمة المرور للاستفادة من خدماتنا والدخول الى لوحة التحكم الخاصة بك",
-          icon: "success",
-          confirmButtonText: "حسناً",
-        });
-
-        // ✅ إذا ضغط OK → تحويل لصفحة إعادة تعيين كلمة المرور
-        if (result.isConfirmed) {
-          window.location.href = "/request-password-reset"; // غيّر المسار حسب صفحة إعادة التعيين عندك
-        }
-
-        form.reset();
-      } catch (err: any) {
-        await MySwal.fire({
-          title: "حدث خطأ",
-          text: err?.message ?? "تعذر إرسال النموذج، حاول مرة أخرى.",
-          icon: "error",
-          confirmButtonText: "حسناً",
-        });
-      } finally {
-        setSubmitting(false);
+      if (result.isConfirmed) {
+        router.push(`/sign-in?callbackURL=${encodeURIComponent(pathname)}`);
       }
+      return;
     }
+
     try {
       setSubmitting(true);
 
-      // ✅ بناء بيانات التسجيل وربطها بالمستخدم الجديد
       const enrollment = {
         sectionId: lastSectionRaw.sectionId,
-        studentId: user?.id, // ربط التسجيل بالمستخدم الجديد
+        studentId: user.id,
         studentName: values.studentName,
         studentEmail: values.studentEmail,
         studentPhone: values.studentPhone || null,
@@ -204,13 +151,13 @@ const RegisterUser = ({
 
       if (!res.ok) throw new Error("فشل إنشاء التسجيل");
 
-      const result = await MySwal.fire({
+      await MySwal.fire({
         title: "تم ",
         text: "تم تسجيلك في الدورة بنجاح",
         icon: "success",
         confirmButtonText: "حسناً",
       });
-      router.push(`/${user?.id}/myCourses`);
+      router.push(`/${user.id}/myCourses`);
       form.reset();
     } catch (err: any) {
       await MySwal.fire({
@@ -223,49 +170,13 @@ const RegisterUser = ({
       setSubmitting(false);
     }
   };
-  const [emailHasAccount, setEmailHasAccount] = useState(false);
-  const checkEmail = async (email: string) => {
-    try {
-      const exists = allUsers.some((u) => u.email === email);
-      if (exists) {
-        if (!user) {
-          // له حساب لكنه غير مسجل دخول → تعطيل + تنبيه
-          setEmailHasAccount(true);
-          const result = await MySwal.fire({
-            title: "البريد مسجل مسبقاً",
-            text: "هذا البريد مرتبط بحساب. يجب تسجيل الدخول لإكمال التسجيل.",
-            icon: "warning",
-            confirmButtonText: "حسناً",
-          });
 
-          if (result.isConfirmed) {
-            window.location.href = "/sign-in";
-          }
-        } else {
-          // له حساب وهو مسجل دخول → لا تعطيل
-          setEmailHasAccount(false);
-        }
-      } else {
-        // ما له حساب → لا تعطيل
-        setEmailHasAccount(false);
-      }
-    } catch (err) {
-      console.error("Error checking email:", err);
-    }
-  };
   return (
     <div className="container mx-auto p-6" dir="rtl">
       <h2 className="text-2xl font-bold mb-4 text-primary">
         التسجيل في الشعبة رقم {lastSectionRaw.sectionNumber} من دورة{" "}
         {coursesSelected.title}
       </h2>
-
-      {!user && (
-        <div className="mb-4 text-sm text-muted-foreground">
-          لم تسجّل الدخول. يمكنك المتابعة كزائر، لكن يُفضّل تسجيل الدخول لضمان
-          حفظ بياناتك.
-        </div>
-      )}
 
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
@@ -279,7 +190,7 @@ const RegisterUser = ({
                   <Input
                     placeholder="اكتب اسمك الكامل"
                     {...field}
-                    disabled={!!user || emailHasAccount}
+                    disabled={!!user}
                   />
                 </FormControl>
                 <FormMessage />
@@ -298,8 +209,7 @@ const RegisterUser = ({
                     type="email"
                     placeholder="example@mail.com"
                     {...field}
-                    disabled={!!user || emailHasAccount}
-                    onBlur={(e) => checkEmail(e.target.value)}
+                    disabled={!!user}
                   />
                 </FormControl>
                 <FormMessage />
@@ -314,11 +224,7 @@ const RegisterUser = ({
               <FormItem>
                 <FormLabel>رقم الهاتف</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="05XXXXXXXX"
-                    {...field}
-                    disabled={emailHasAccount}
-                  />
+                  <Input placeholder="05XXXXXXXX" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -351,11 +257,7 @@ const RegisterUser = ({
               <FormItem>
                 <FormLabel>التخصص الجامعي</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="مثال: هندسة الحاسوب"
-                    {...field}
-                    disabled={emailHasAccount}
-                  />
+                  <Input placeholder="مثال: هندسة الحاسوب" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -369,11 +271,7 @@ const RegisterUser = ({
               <FormItem>
                 <FormLabel>الدولة</FormLabel>
                 <FormControl>
-                  <Input
-                    placeholder="مثال: فلسطين"
-                    {...field}
-                    disabled={emailHasAccount}
-                  />
+                  <Input placeholder="مثال: فلسطين" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -390,7 +288,6 @@ const RegisterUser = ({
                   <Textarea
                     placeholder="أضف أي معلومات إضافية هنا"
                     {...field}
-                    disabled={emailHasAccount}
                   />
                 </FormControl>
                 <FormMessage />
@@ -402,7 +299,7 @@ const RegisterUser = ({
             <Button
               type="submit"
               className="w-1/2 block mx-auto"
-              disabled={emailHasAccount || submitting}
+              disabled={submitting}
             >
               {submitting ? "جارٍ الإرسال..." : "سجّل الآن"}
             </Button>

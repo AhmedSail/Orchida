@@ -23,32 +23,39 @@ export default function RequestPasswordResetPage() {
     setLoading(false);
 
     if (error) {
-      setMessage(error.message ?? "Unexpected error");
+      setMessage(error.message ?? "خطأ غير متوقع");
       return;
     }
 
-    setMessage("Check your email for the reset link.");
+    setMessage("تحقق من بريدك الإلكتروني للحصول على رابط إعادة التعيين.");
   };
 
   return (
-    <div className="max-w-md mx-auto mt-20 p-6 border rounded-lg shadow">
-      <h1 className="text-2xl font-semibold mb-4">Reset your password</h1>
+    <div
+      className="max-w-md mx-auto mt-20 p-6 border rounded-lg shadow"
+      dir="rtl"
+    >
+      <h1 className="text-2xl font-bold mb-4 text-center">
+        إعادة تعيين كلمة المرور
+      </h1>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <Input
           type="email"
-          placeholder="Enter your email"
+          placeholder="أدخل بريدك الإلكتروني"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           required
         />
 
-        <Button type="submit" disabled={loading}>
-          {loading ? "Sending..." : "Send reset link"}
+        <Button type="submit" disabled={loading} className="w-full">
+          {loading ? "جارٍ الإرسال..." : "إرسال رابط إعادة التعيين"}
         </Button>
       </form>
 
-      {message && <p className="mt-4 text-sm text-gray-600">{message}</p>}
+      {message && (
+        <p className="mt-4 text-sm text-center text-gray-600">{message}</p>
+      )}
     </div>
   );
 }
