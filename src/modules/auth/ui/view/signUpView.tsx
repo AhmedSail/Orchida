@@ -25,13 +25,13 @@ import { Spinner } from "@/components/ui/spinner";
 
 const formSchema = z
   .object({
-    email: z.string().email({ message: "Invalid email address" }),
-    name: z.string({ message: "Your Name is required" }),
-    password: z.string().min(1, { message: "Password is required" }),
-    confirmPassword: z.string().min(1, { message: "Password is required" }),
+    email: z.string().email({ message: "بريد إلكتروني غير صالح" }),
+    name: z.string({ message: "الاسم مطلوب" }),
+    password: z.string().min(1, { message: "كلمة المرور مطلوبة" }),
+    confirmPassword: z.string().min(1, { message: "كلمة المرور مطلوبة" }),
   })
   .refine((data) => data.password === data.confirmPassword, {
-    message: "Password's don't match",
+    message: "كلمات المرور غير متطابقة",
     path: ["confirmPassword"],
   });
 
@@ -57,7 +57,7 @@ export default function SignUpView() {
         },
         onError: ({ error }) => {
           setPending(false);
-          setError(error?.message ?? "Unexpected error");
+          setError(error?.message ?? "خطأ غير متوقع");
         },
       }
     );
@@ -76,7 +76,7 @@ export default function SignUpView() {
         },
         onError: ({ error }) => {
           setPending(false);
-          setError(error?.message ?? "Unexpected error");
+          setError(error?.message ?? "خطأ غير متوقع");
         },
       }
     );
@@ -91,7 +91,7 @@ export default function SignUpView() {
     },
   });
   return (
-    <div className="flex flex-col gap-6 ">
+    <div className="flex flex-col gap-6 " dir="rtl">
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
           <Form {...form}>
@@ -102,8 +102,8 @@ export default function SignUpView() {
             >
               <div className="flex flex-col gap-6 text-white">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold">Let&apos;s get started</h1>
-                  <p className="text-white text-balance">Create an account</p>
+                  <h1 className="text-2xl font-bold">لنبدأ رحلتك</h1>
+                  <p className="text-white text-balance">أنشئ حساباً جديداً</p>
                 </div>
                 <div className="grid gap-3">
                   <FormField
@@ -111,11 +111,11 @@ export default function SignUpView() {
                     name="name"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white">Name</FormLabel>
+                        <FormLabel className="text-white">الاسم</FormLabel>
                         <FormControl>
                           <Input
                             type="text"
-                            placeholder="Ahmed"
+                            placeholder="أحمد"
                             {...field}
                             className="bg-white text-black"
                           />
@@ -131,7 +131,7 @@ export default function SignUpView() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Email</FormLabel>
+                        <FormLabel>البريد الإلكتروني</FormLabel>
                         <FormControl>
                           <Input
                             type="email"
@@ -151,7 +151,7 @@ export default function SignUpView() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Password</FormLabel>
+                        <FormLabel>كلمة المرور</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="*********"
@@ -171,7 +171,7 @@ export default function SignUpView() {
                     name="confirmPassword"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel>Confirm Password</FormLabel>
+                        <FormLabel>تأكيد كلمة المرور</FormLabel>
                         <FormControl>
                           <Input
                             placeholder="*********"
@@ -193,9 +193,9 @@ export default function SignUpView() {
                 )}
 
                 <Button disabled={pending} type="submit" className="w-full">
-                  {pending ? <Spinner /> : <div>Sign Up</div>}
+                  {pending ? <Spinner /> : <div>إنشاء حساب</div>}
                 </Button>
-                <span className="text-white text-center">Or Continue with</span>
+                <span className="text-white text-center">أو تابع باستخدام</span>
                 <div className="grid grid-cols-2 gap-4 text-black">
                   <Button
                     onClick={() => onSocial("google")}
@@ -218,9 +218,9 @@ export default function SignUpView() {
                 </div>
                 <div className="text-center text-white">
                   {" "}
-                  Already have an account ?{" "}
+                  لديك حساب بالفعل؟{" "}
                   <Link href="/sign-in" className="underline">
-                    Sign In
+                    تسجيل الدخول
                   </Link>
                 </div>
               </div>
@@ -243,8 +243,8 @@ export default function SignUpView() {
         </CardContent>
       </Card>
       <div className="text-muted-foreground *:[a]:hover:text-primary text-center text-xs text-balance *:[a]:underline *:[a]:underline-offset-4 hoverEffect">
-        By clicking continue, you agree to your{" "}
-        <a href="#">Terms of Services</a> and <a href="#">Privecy Policy</a>
+        بالمتابعة أنت توافق على <a href="#">شروط الخدمة</a> و{" "}
+        <a href="#">سياسة الخصوصية</a>
       </div>
     </div>
   );

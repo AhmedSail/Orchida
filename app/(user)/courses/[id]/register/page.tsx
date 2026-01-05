@@ -38,20 +38,12 @@ const page = async ({ params }: { params: { id: string } }) => {
 
   return (
     <div>
-      {session?.user ? (
-        <RegisterUser
-          lastSectionRaw={lastSectionRaw[0]}
-          user={session.user!}
-          coursesSelected={coursesSelected[0]}
-          allUsers={allUsers}
-        />
-      ) : (
-        <RegisterUser
-          lastSectionRaw={lastSectionRaw[0]}
-          coursesSelected={coursesSelected[0]}
-          allUsers={allUsers}
-        />
-      )}
+      <RegisterUser
+        lastSectionRaw={lastSectionRaw[0]}
+        user={session?.user!}
+        coursesSelected={coursesSelected[0]}
+        allUsers={allUsers}
+      />
     </div>
   );
 };

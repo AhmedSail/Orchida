@@ -20,33 +20,45 @@ import {
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
 import { Link } from "next-view-transitions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
+import { Suspense } from "react";
 
 const formSchema = z.object({
-  email: z.string().email({ message: "Invalid email address" }),
-  password: z.string().min(1, { message: "Password is required" }),
+  email: z.string().email({ message: "البريد الإلكتروني غير صالح" }),
+  password: z.string().min(1, { message: "كلمة المرور مطلوبة" }),
 });
 
 export default function SignInView() {
+  return (
+    <Suspense fallback={<Spinner />}>
+      <SignInForm />
+    </Suspense>
+  );
+}
+
+function SignInForm() {
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackURL = searchParams.get("callbackURL") || "/";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
     setPending(true);
     await authClient.signIn.email(
-      { email: data.email, password: data.password, callbackURL: baseUrl },
+      { email: data.email, password: data.password, callbackURL },
       {
         onSuccess: () => {
           setPending(false);
+          router.push(callbackURL);
         },
         onError: ({ error }) => {
           setPending(false);
-          setError(error?.message ?? "Unexpected error");
+          setError(error?.message ?? "خطأ غير متوقع");
           if (error?.status === 403) {
-            setError("Please verify your email address");
+            setError("يرجى تأكيد البريد الإلكتروني الخاص بك");
           }
         },
       }
@@ -58,7 +70,7 @@ export default function SignInView() {
     await authClient.signIn.social(
       {
         provider: provider,
-        callbackURL: baseUrl,
+        callbackURL,
       },
       {
         onSuccess: () => {
@@ -66,7 +78,7 @@ export default function SignInView() {
         },
         onError: ({ error }) => {
           setPending(false);
-          setError(error?.message ?? "Unexpected error");
+          setError(error?.message ?? "خطأ غير متوقع");
         },
       }
     );
@@ -79,7 +91,7 @@ export default function SignInView() {
     },
   });
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-6" dir="rtl">
       <Card className="overflow-hidden p-0">
         <CardContent className="grid p-0 md:grid-cols-2">
           <Form {...form}>
@@ -90,11 +102,9 @@ export default function SignInView() {
             >
               <div className="flex flex-col gap-6 ">
                 <div className="flex flex-col items-center text-center">
-                  <h1 className="text-2xl font-bold text-white">
-                    Welcome Back!
-                  </h1>
+                  <h1 className="text-2xl font-bold text-white">مرحبًا بك</h1>
                   <p className=" text-balance text-white">
-                    Login to your account
+                    تسجيل الدخول إلى حسابك
                   </p>
                 </div>
                 <div className="grid gap-3">
@@ -103,7 +113,9 @@ export default function SignInView() {
                     name="email"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white">Email</FormLabel>
+                        <FormLabel className="text-white">
+                          البريد الالكتروني
+                        </FormLabel>
                         <FormControl>
                           <Input
                             type="email"
@@ -123,7 +135,9 @@ export default function SignInView() {
                     name="password"
                     render={({ field }) => (
                       <FormItem>
-                        <FormLabel className="text-white">Password</FormLabel>
+                        <FormLabel className="text-white">
+                          كلمة المرور
+                        </FormLabel>
                         <FormControl>
                           <Input
                             placeholder="*********"
@@ -143,7 +157,7 @@ export default function SignInView() {
                       href="/request-password-reset"
                       className="text-white text-sm underline hover:text-gray-200 transition"
                     >
-                      Forgot your password?
+                      هل نسيت كلمة المرور؟
                     </Link>
                   </div>
                 </div>
@@ -160,9 +174,9 @@ export default function SignInView() {
                   type="submit"
                   className="w-full bg-primary text-white font-bold"
                 >
-                  {pending ? <Spinner /> : <div>Sign In</div>}
+                  {pending ? <Spinner /> : <div>تسجيل الدخول</div>}
                 </Button>
-                <span className="text-white text-center">Or Continue with</span>
+                <span className="text-white text-center">أو اكمل باستخدام</span>
                 <div className="grid grid-cols-2 gap-4">
                   <Button
                     onClick={() => onSocial("google")}
@@ -184,10 +198,9 @@ export default function SignInView() {
                   </Button>
                 </div>
                 <div className="text-center text-white">
-                  {" "}
-                  Don&apos;t have an account ?{" "}
+                  لا تمتلك حساباً؟{" "}
                   <Link href="/sign-up" className="underline">
-                    Sign Up
+                    سجّل الآن
                   </Link>
                 </div>
               </div>
