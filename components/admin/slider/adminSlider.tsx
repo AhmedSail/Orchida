@@ -60,7 +60,7 @@ export default function AdminSlider({
     if (result.isConfirmed) {
       try {
         if (slider.imageUrl) {
-          await edgestore.publicFiles.delete({
+          await edgestore.protectedFiles.delete({
             url: slider.imageUrl,
           });
         }
@@ -126,6 +126,7 @@ export default function AdminSlider({
                     width={100}
                     height={60}
                     className="object-cover rounded-md mx-auto"
+                    unoptimized
                   />
                 </TableCell>
                 <TableCell className="text-center font-semibold">
@@ -178,6 +179,7 @@ export default function AdminSlider({
               width={200}
               height={100}
               className="object-cover rounded-md mx-auto"
+              unoptimized
             />
             <p>
               <strong>العنوان:</strong> {slider.title}

@@ -154,7 +154,13 @@ export default function EditProfilePage({
             <div className="flex justify-center">
               <div className="w-24 h-24 rounded-full overflow-hidden border-2 border-primary">
                 {preview ? (
-                  <Image src={preview} alt="preview" width={96} height={96} />
+                  <Image
+                    src={preview}
+                    alt="preview"
+                    width={96}
+                    height={96}
+                    unoptimized
+                  />
                 ) : (
                   <span className="text-gray-500 text-sm flex items-center justify-center h-full">
                     No Image

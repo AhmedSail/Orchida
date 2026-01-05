@@ -29,6 +29,7 @@ const Profile = ({ user }: { user: User }) => {
                   width={96}
                   height={96}
                   className="w-full h-full object-cover"
+                  unoptimized
                 />
               ) : (
                 <span className="text-gray-500 text-sm">No Image</span>

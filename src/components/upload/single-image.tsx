@@ -183,6 +183,7 @@ const SingleImageDropzone = React.forwardRef<
             className="h-full w-full rounded-md object-cover"
             src={displayUrl}
             alt={fileState?.file.name ?? "uploaded image"}
+            unoptimized
           />
         ) : (
           // Placeholder content shown when no image is selected

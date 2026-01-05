@@ -79,6 +79,7 @@ const ImageList = React.forwardRef<HTMLDivElement, ImageListProps>(
                   className="h-full w-full rounded-md object-cover"
                   src={displayUrl}
                   alt={fileState.file.name}
+                  unoptimized
                 />
               ) : (
                 <div className="flex h-full w-full items-center justify-center bg-secondary">

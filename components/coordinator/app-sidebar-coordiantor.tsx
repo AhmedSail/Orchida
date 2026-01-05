@@ -40,6 +40,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
               height={100}
               className="mt-28 mx-auto"
               priority
+              unoptimized
             />
           </SidebarGroupLabel>
           <SidebarGroupContent>

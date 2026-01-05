@@ -65,7 +65,7 @@ export default function NewNewsForm({ userId }: { userId: string }) {
       let imageUrl = "";
 
       if (values.imageFile) {
-        const resUpload = await edgestore.publicFiles.upload({
+        const resUpload = await edgestore.protectedFiles.upload({
           file: values.imageFile,
           onProgressChange: (progress) => {
             // لو بدك تعمل progress bar
@@ -220,7 +220,7 @@ export default function NewNewsForm({ userId }: { userId: string }) {
                 <UploaderProvider
                   uploadFn={async ({ file, onProgressChange, signal }) => {
                     // رفع الصورة عبر EdgeStore
-                    const res = await edgestore.publicFiles.upload({
+                    const res = await edgestore.protectedFiles.upload({
                       file,
                       signal,
                       onProgressChange,

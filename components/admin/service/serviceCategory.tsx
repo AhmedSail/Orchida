@@ -136,6 +136,7 @@ export default function ServicesCategoriesPage({
                         width={100}
                         height={80}
                         className="rounded-md object-cover"
+                        unoptimized
                       />
                     </TableCell>
                     <TableCell className="font-semibold">

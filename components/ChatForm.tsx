@@ -233,6 +233,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                     src={post.userImage ?? "/default-avatar.png"}
                     alt={post.authorName ?? "user"}
                     className="rounded-full h-10 w-10 object-cover"
+                    unoptimized
                   />
                   <p className="text-primary font-bold text-sm">
                     {post.authorName}

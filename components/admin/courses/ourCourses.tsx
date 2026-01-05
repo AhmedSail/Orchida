@@ -74,7 +74,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
 
     try {
       if (course.imageUrl) {
-        await edgestore.publicFiles.delete({
+        await edgestore.protectedFiles.delete({
           url: course.imageUrl,
         });
       }
@@ -156,6 +156,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                         alt={course.title}
                         width={100}
                         height={100}
+                        unoptimized
                       />
                     ) : (
                       <span>لا توجد صورة</span>
@@ -176,13 +177,13 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                   <TableCell className="flex flex-col gap-2">
                     {role === "admin" && (
                       <>
-                        <Button variant={"outline"}>
-                          <Link
-                            href={`/admin/${userId}/courses/edit/${course.id}`}
-                          >
+                        <Link
+                          href={`/admin/${userId}/courses/edit/${course.id}`}
+                        >
+                          <Button variant={"outline"} className="w-full">
                             تعديل
-                          </Link>
-                        </Button>
+                          </Button>
+                        </Link>
                         <Button
                           variant={"destructive"}
                           onClick={() => handleDelete(course)}
@@ -197,17 +198,18 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                     >
                       <span className="font-semibold">عرض</span>
                     </Button>
-                    <Button
-                      variant={"default"}
-                      size="sm"
-                      disabled={isNewSectionDisabled}
+                    <Link
+                      href={`/${role}/${userId}/courses/newSection/${course.id}`}
                     >
-                      <Link
-                        href={`/${role}/${userId}/courses/newSection/${course.id}`}
+                      <Button
+                        variant={"default"}
+                        size="sm"
+                        disabled={isNewSectionDisabled}
+                        className="w-full"
                       >
                         فتح شعبة
-                      </Link>
-                    </Button>
+                      </Button>
+                    </Link>
                   </TableCell>
                 </TableRow>
               );
@@ -251,6 +253,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                 width={200}
                 height={150}
                 className="rounded-md object-cover mb-3"
+                unoptimized
               />
             ) : (
               <span>لا توجد صورة</span>
@@ -274,11 +277,11 @@ const OurCourses = ({ courses, role, userId }: Props) => {
             <div className="flex justify-center gap-2 mt-3">
               {role === "admin" && (
                 <>
-                  <Button variant={"outline"} size="sm">
-                    <Link href={`/admin/${userId}/courses/edit/${course.id}`}>
+                  <Link href={`/admin/${userId}/courses/edit/${course.id}`}>
+                    <Button variant={"outline"} size="sm" className="w-full">
                       تعديل
-                    </Link>
-                  </Button>
+                    </Button>
+                  </Link>
                   <Button
                     variant={"destructive"}
                     size="sm"
@@ -295,17 +298,16 @@ const OurCourses = ({ courses, role, userId }: Props) => {
               >
                 عرض
               </Button>
-              <Button
-                variant={"default"}
-                size="sm"
-                disabled={!canOpenNewSection(course)}
-              >
-                <Link
-                  href={`/${role}/${userId}/courses/newSection/${course.id}`}
+              <Link href={`/${role}/${userId}/courses/newSection/${course.id}`}>
+                <Button
+                  variant={"default"}
+                  size="sm"
+                  disabled={!canOpenNewSection(course)}
+                  className="w-full"
                 >
                   فتح شعبة
-                </Link>
-              </Button>
+                </Button>
+              </Link>
             </div>
           </div>
         ))}

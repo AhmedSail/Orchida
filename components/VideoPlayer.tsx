@@ -106,7 +106,13 @@ const VideoPlayer = ({ src }: VideoPlayerProps) => {
 
       {/* العلامة المائية */}
       <div className="absolute top-[50%] right-[50%] text-white pointer-events-none select-none">
-        <Image src={"/logo.png"} width={40} height={40} alt="logo" />
+        <Image
+          src={"/logo.png"}
+          width={40}
+          height={40}
+          alt="logo"
+          unoptimized
+        />
       </div>
 
       {/* الكنترولز */}

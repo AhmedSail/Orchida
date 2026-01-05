@@ -91,6 +91,7 @@ export function MultiFileDropzone({
                     width={40}
                     height={40}
                     className="h-20 w-20 rounded-md object-cover"
+                    unoptimized
                   />
                 ) : file.type.startsWith("video/") ? (
                   <video
@@ -106,6 +107,7 @@ export function MultiFileDropzone({
                       src="/icons/pdf-icon.svg"
                       alt="PDF"
                       className="h-10 w-10 rounded-md object-cover"
+                      unoptimized
                     />
                     <span className="text-sm text-gray-600">ملف PDF</span>
                   </div>
@@ -117,6 +119,7 @@ export function MultiFileDropzone({
                       src="/icons/file-icon.svg"
                       alt="File"
                       className="h-10 w-10 rounded-md object-cover"
+                      unoptimized
                     />
                     <span className="text-sm text-gray-600">ملف عام</span>
                   </div>

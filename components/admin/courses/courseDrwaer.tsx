@@ -54,6 +54,7 @@ const CourseDrwaer = ({ course, open, onOpenChange }: Props) => {
                   width={200}
                   height={200}
                   className="rounded-md object-cover mx-auto"
+                  unoptimized
                 />
                 <div>
                   <span className="font-semibold">الوصف:</span>{" "}

@@ -385,6 +385,7 @@ export function Header({
           width={isScrolled ? 60 : 70}
           height={isScrolled ? 60 : 70}
           loading="eager"
+          unoptimized
         />
       </Link>
       <div className="hidden lg:flex">
@@ -408,6 +409,7 @@ export function Header({
                       width={40}
                       height={40}
                       className="rounded-full object-cover w-10 h-10 cursor-pointer"
+                      unoptimized
                     />
                   ) : (
                     <Avatar

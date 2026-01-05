@@ -7,7 +7,7 @@ import Swal from "sweetalert2";
 import Image from "next/image";
 
 type SingleUploaderProps = {
-  bucket: "publicFiles";
+  bucket: "protectedFiles";
   onChange: (url: string) => void; // رابط واحد فقط
   initialUrl?: string;
   required?: boolean;
@@ -91,6 +91,7 @@ export function SingleUploader({
               src={fileUrl}
               alt="Uploaded"
               className="h-20 w-20 rounded-md object-cover"
+              unoptimized
             />
           )}
 

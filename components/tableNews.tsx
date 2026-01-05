@@ -70,7 +70,7 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
       if (result.isConfirmed) {
         // ✅ إذا عنده صورة نحذفها من EdgeStore
         if (item.imageUrl) {
-          await edgestore.publicFiles.delete({
+          await edgestore.protectedFiles.delete({
             url: item.imageUrl,
           });
         }
@@ -182,6 +182,7 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
                 width={120}
                 height={120}
                 className="rounded-md object-cover mx-auto"
+                unoptimized
               />
             ) : (
               <div className="w-24 h-24 bg-gray-200 rounded-md mx-auto" />
