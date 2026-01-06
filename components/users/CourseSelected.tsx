@@ -98,11 +98,11 @@ const CourseSelected = ({
             {lastInstructor?.name ?? "غير محدد"}
           </div>
           <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
-            <strong> محاور الدورة:</strong>{" "}
+            <strong className="block"> محاور الدورة:</strong>{" "}
             {coursesSelected.topics ?? "غير محدد"}
           </div>
           <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
-            <strong> اهداف الدورة:</strong>{" "}
+            <strong className="block"> اهداف الدورة:</strong>{" "}
             {coursesSelected.objectives ?? "غير محدد"}
           </div>
           <div className="p-4 border rounded-lg shadow-sm mt-5">
