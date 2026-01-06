@@ -54,8 +54,11 @@ export default function EditServiceRequestForm({
     if (!formData.clientName.trim()) return "اسم العميل مطلوب";
     if (!formData.clientEmail.includes("@"))
       return "البريد الإلكتروني غير صالح";
+    if (!formData.clientPhone.trim()) return "رقم الهاتف مطلوب";
     if (!formData.serviceId) return "يجب اختيار خدمة";
     if (!formData.description.trim()) return "الوصف مطلوب";
+    if (!formData.budget.trim()) return "الميزانية مطلوبة";
+    if (!formData.duration.trim()) return "المدة مطلوبة";
     return null;
   };
 
@@ -135,12 +138,7 @@ export default function EditServiceRequestForm({
         {/* اسم العميل */}
         <div>
           <Label className="text-lg font-semibold mb-2">اسم العميل</Label>
-          <Input
-            name="clientName"
-            disabled
-            value={formData.clientName}
-            required
-          />
+          <Input name="clientName" disabled value={formData.clientName} />
         </div>
 
         {/* البريد الإلكتروني */}
@@ -153,7 +151,6 @@ export default function EditServiceRequestForm({
             name="clientEmail"
             disabled
             value={formData.clientEmail}
-            required
           />
         </div>
 
@@ -198,7 +195,6 @@ export default function EditServiceRequestForm({
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
             rows={4}
-            required
           />
         </div>
 
