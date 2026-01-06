@@ -126,7 +126,7 @@ const AllCourses = ({
                 <Image
                   src={course.imageUrl}
                   alt={course.title}
-                  className="w-full h-full object-cover rounded-md mb-4 group-hover:scale-95 hoverEffect"
+                  className="w-full h-vh object-cover rounded-md mb-4 group-hover:scale-95 hoverEffect"
                   width={300}
                   height={200}
                   unoptimized
