@@ -162,7 +162,6 @@ export default function ServiceRequestForm({
             value={formData.clientName}
             disabled={!!session?.user}
             onChange={(e) => handleChange("clientName", e.target.value)}
-            required
           />
         </div>
 
@@ -177,7 +176,6 @@ export default function ServiceRequestForm({
             disabled={!!session?.user}
             value={formData.clientEmail}
             onChange={(e) => handleChange("clientEmail", e.target.value)}
-            required
           />
         </div>
 
@@ -190,7 +188,6 @@ export default function ServiceRequestForm({
             value={formData.clientPhone}
             onChange={(e) => handleChange("clientPhone", e.target.value)}
             dir="rtl"
-            required
           />
         </div>
 
@@ -200,7 +197,6 @@ export default function ServiceRequestForm({
           <Select
             value={formData.serviceId}
             onValueChange={(val) => handleChange("serviceId", val)}
-            required
           >
             <SelectTrigger className="w-full" dir="rtl">
               <SelectValue placeholder="-- اختر الخدمة --" />
@@ -226,7 +222,6 @@ export default function ServiceRequestForm({
             name="name"
             value={formData.name}
             onChange={(e) => handleChange("name", e.target.value)}
-            required
           />
         </div>
 
@@ -238,7 +233,6 @@ export default function ServiceRequestForm({
             value={formData.description}
             onChange={(e) => handleChange("description", e.target.value)}
             rows={4}
-            required
           />
         </div>
 
@@ -253,7 +247,6 @@ export default function ServiceRequestForm({
             name="budget"
             value={formData.budget}
             onChange={(e) => handleChange("budget", e.target.value)}
-            required
           />
         </div>
 
@@ -265,7 +258,6 @@ export default function ServiceRequestForm({
             name="duration"
             value={formData.duration}
             onChange={(e) => handleChange("duration", e.target.value)}
-            required
           />
         </div>
 

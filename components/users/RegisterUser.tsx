@@ -171,6 +171,24 @@ const RegisterUser = ({
     }
   };
 
+  const onError = (errors: FieldValues) => {
+    // Collect error messages
+    const errorMessages = Object.values(errors)
+      .map((error: any) => error.message)
+      .filter((msg) => msg);
+
+    if (errorMessages.length > 0) {
+      // Show the first error or join them
+      MySwal.fire({
+        title: "تنبيه ⚠️",
+        text: errorMessages[0] || "يرجى تعبئة الحقول المطلوبة بشكل صحيح",
+        icon: "warning",
+        confirmButtonText: "حسناً",
+        confirmButtonColor: "#f59e0b",
+      });
+    }
+  };
+
   return (
     <div className="container mx-auto p-6" dir="rtl">
       <h2 className="text-2xl font-bold mb-4 text-primary">
@@ -179,7 +197,10 @@ const RegisterUser = ({
       </h2>
 
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-5">
+        <form
+          onSubmit={form.handleSubmit(onSubmit, onError)}
+          className="space-y-5"
+        >
           <FormField
             control={form.control}
             name="studentName"
@@ -222,7 +243,7 @@ const RegisterUser = ({
             name="studentPhone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>رقم الهاتف</FormLabel>
+                <FormLabel>رقم الهاتف للتواصل </FormLabel>
                 <FormControl>
                   <Input placeholder="05XXXXXXXX" {...field} />
                 </FormControl>
@@ -269,7 +290,7 @@ const RegisterUser = ({
             name="studentCountry"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>الدولة</FormLabel>
+                <FormLabel>مكان السكن (الدولة والمدينة)</FormLabel>
                 <FormControl>
                   <Input placeholder="مثال: فلسطين" {...field} />
                 </FormControl>

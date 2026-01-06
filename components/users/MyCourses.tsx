@@ -63,11 +63,12 @@ const MyCourses = ({
         throw new Error(data?.message || "فشل إلغاء التسجيل");
       }
 
-      await Swal.fire(
-        "تم الإلغاء",
-        data.message || "تم حذف التسجيل بنجاح",
-        "success"
-      );
+      await Swal.fire({
+        title: "تم الإلغاء",
+        text: "تم إلغاء تسجيلك في الدورة بنجاح",
+        icon: "success",
+        confirmButtonText: "حسناً",
+      });
     } catch (error: any) {
       // في حال الفشل، أعد تحميل البيانات من السيرفر أو أخبر المستخدم
       await Swal.fire("خطأ", error.message || "فشل إلغاء التسجيل", "error");
