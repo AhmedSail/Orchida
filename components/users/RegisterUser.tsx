@@ -149,7 +149,20 @@ const RegisterUser = ({
         body: JSON.stringify(enrollment),
       });
 
-      if (!res.ok) throw new Error("فشل إنشاء التسجيل");
+      if (!res.ok) {
+        const errorData = await res.json();
+        if (res.status === 409) {
+          await MySwal.fire({
+            title: "تنبيه ⚠️",
+            text: errorData.message || "أنت مسجل بالفعل في هذه الشعبة",
+            icon: "warning",
+            confirmButtonText: "حسناً",
+            confirmButtonColor: "#f59e0b",
+          });
+          return; // Stop execution here
+        }
+        throw new Error(errorData.message || "فشل إنشاء التسجيل");
+      }
 
       await MySwal.fire({
         title: "تم ",

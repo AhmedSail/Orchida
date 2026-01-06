@@ -43,73 +43,94 @@ const StudentWorksHome = ({
         </h1>
       </div>
 
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-        {studentStories.map((story, i) => (
-          <motion.div
-            key={story.id}
-            custom={i}
-            initial="hidden"
-            whileInView="visible"
-            viewport={{ once: true }}
-            variants={cardVariants}
-          >
-            <Card className="shadow-md h-full flex flex-col relative">
-              {/* ✅ شارة الميدالية */}
-              <div className="absolute top-2 left-2 bg-primary text-white p-2 rounded-full shadow-lg flex items-center justify-center">
-                <FaMedal className="w-5 h-5 text-yellow-300" />
-              </div>
-
-              <CardContent className="p-4 flex flex-col">
-                <div className="flex justify-start gap-2 items-center">
-                  <h1 className="text-primary">العنوان:</h1>
-                  <h3 className="font-bold text-lg">{story.title}</h3>
+      {studentStories.length === 0 ? (
+        <motion.div
+          className="flex flex-col items-center justify-center p-10 text-center border-2 border-dashed border-gray-300 rounded-lg bg-gray-50"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.5 }}
+        >
+          <div className="text-6xl mb-4">🌟</div>
+          <h3 className="text-xl font-semibold text-gray-700 mb-2">
+            لا توجد قصص نجاح حالياً
+          </h3>
+          <p className="text-gray-500">
+            كن أول من يشارك قصة نجاحه ويحصل على وسام أوركيدة!
+          </p>
+        </motion.div>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {studentStories.map((story, i) => (
+            <motion.div
+              key={story.id}
+              custom={i}
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true }}
+              variants={cardVariants}
+            >
+              <Card className="shadow-md h-full flex flex-col relative">
+                {/* ✅ شارة الميدالية */}
+                <div className="absolute top-2 left-2 bg-primary text-white p-2 rounded-full shadow-lg flex items-center justify-center">
+                  <FaMedal className="w-5 h-5 text-yellow-300" />
                 </div>
-                <p className="text-sm text-gray-600 mb-2">
-                  👤 {story.studentName}
-                </p>
 
-                {story.type === "image" && story.mediaUrl && (
-                  <>
-                    <div className="w-full h-64 flex items-center justify-center">
-                      <Image
-                        src={story.mediaUrl}
-                        alt={story.title}
-                        className="rounded object-cover w-full h-full"
-                        width={400}
-                        height={300}
-                        unoptimized
-                        loading="lazy"
-                      />
-                    </div>
-                    {story.description && (
-                      <p className="mt-2 text-gray-700">{story.description}</p>
-                    )}
-                  </>
-                )}
+                <CardContent className="p-4 flex flex-col">
+                  <div className="flex justify-start gap-2 items-center">
+                    <h1 className="text-primary">العنوان:</h1>
+                    <h3 className="font-bold text-lg">{story.title}</h3>
+                  </div>
+                  <p className="text-sm text-gray-600 mb-2">
+                    👤 {story.studentName}
+                  </p>
 
-                {story.type === "video" && story.mediaUrl && (
-                  <>
-                    <div className="w-full h-64 flex items-center justify-center">
-                      <video
-                        src={story.mediaUrl}
-                        controls
-                        className="rounded object-cover w-full h-full"
-                      />
-                    </div>
-                    {story.description && (
-                      <p className="mt-2 text-gray-700">{story.description}</p>
-                    )}
-                  </>
-                )}
+                  {story.type === "image" && story.mediaUrl && (
+                    <>
+                      <div className="w-full h-64 flex items-center justify-center">
+                        <Image
+                          src={story.mediaUrl}
+                          alt={story.title}
+                          className="rounded object-cover w-full h-full"
+                          width={400}
+                          height={300}
+                          unoptimized
+                          loading="lazy"
+                        />
+                      </div>
+                      {story.description && (
+                        <p className="mt-2 text-gray-700">
+                          {story.description}
+                        </p>
+                      )}
+                    </>
+                  )}
 
-                {story.type === "story" && (
-                  <p className="mt-2 text-gray-700">{story.description}</p>
-                )}
-              </CardContent>
-            </Card>
-          </motion.div>
-        ))}
-      </div>
+                  {story.type === "video" && story.mediaUrl && (
+                    <>
+                      <div className="w-full h-64 flex items-center justify-center">
+                        <video
+                          src={story.mediaUrl}
+                          controls
+                          className="rounded object-cover w-full h-full"
+                        />
+                      </div>
+                      {story.description && (
+                        <p className="mt-2 text-gray-700">
+                          {story.description}
+                        </p>
+                      )}
+                    </>
+                  )}
+
+                  {story.type === "story" && (
+                    <p className="mt-2 text-gray-700">{story.description}</p>
+                  )}
+                </CardContent>
+              </Card>
+            </motion.div>
+          ))}
+        </div>
+      )}
     </section>
   );
 };
