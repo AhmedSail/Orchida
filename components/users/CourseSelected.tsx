@@ -58,7 +58,7 @@ const CourseSelected = ({
           <Image
             src={coursesSelected.imageUrl}
             alt={coursesSelected.title}
-            className="lg:h-screen w-full object-cover rounded-lg mb-6 shadow"
+            className="md:h-vh w-full object-cover rounded-lg mb-6 shadow"
             width={20}
             height={20}
             unoptimized
@@ -66,9 +66,28 @@ const CourseSelected = ({
         )}
 
         <div className="w-full">
-          <div className="flex flex-col lg:flex-row lg:justify-start items-center  justify-center text-2xl mb-10">
-            <h1>عنوان الدورة :</h1>
-            <h1>{coursesSelected.title}</h1>
+          <div className="flex flex-col lg:flex-row lg:justify-start items-center gap-4 justify-center text-2xl mb-10">
+            <h1 className="font-bold">عنوان الدورة :</h1>
+            <h1 className="text-primary font-bold">{coursesSelected.title}</h1>
+
+            {/* زر التسجيل السريع بجانب العنوان */}
+            <Button
+              size="sm"
+              variant="outline"
+              className="flex border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 px-6"
+              disabled={registerLoading || lastSection?.status === "closed"}
+              onClick={() => {
+                if (!isRegisterEnabled) return;
+                setRegisterLoading(true);
+                router.push(`/courses/${coursesSelected.id}/register`);
+              }}
+            >
+              {registerLoading
+                ? "جاري..."
+                : isRegisterEnabled
+                ? "سجل الآن"
+                : "مغلق"}
+            </Button>
           </div>
           <p className="text-gray-700 mb-6 leading-relaxed ">
             {coursesSelected.description}
@@ -78,11 +97,11 @@ const CourseSelected = ({
             <strong>👨‍🏫 المدرب:</strong>
             {lastInstructor?.name ?? "غير محدد"}
           </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
+          <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
             <strong> محاور الدورة:</strong>{" "}
             {coursesSelected.topics ?? "غير محدد"}
           </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
+          <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
             <strong> اهداف الدورة:</strong>{" "}
             {coursesSelected.objectives ?? "غير محدد"}
           </div>
