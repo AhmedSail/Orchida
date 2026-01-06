@@ -112,6 +112,7 @@ export default function NewInstructorForm({
                     placeholder="أدخل اسم المدرب"
                     {...field}
                     value={instructor?.name ?? ""}
+                    disabled
                   />
                 </FormControl>
                 <FormMessage />

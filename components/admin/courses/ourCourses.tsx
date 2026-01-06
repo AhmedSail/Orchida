@@ -104,7 +104,10 @@ const OurCourses = ({ courses, role, userId }: Props) => {
   const canOpenNewSection = (course: CourseWithSections): boolean => {
     if (course.sections.length === 0) return true;
     const lastSection = course.sections[course.sections.length - 1];
-    return lastSection.status === "closed";
+    // Allow opening new section if the current one is NOT in an active registration/approval state
+    // i.e., allow if status is: 'in_progress', 'completed', 'closed', 'cancelled'
+    const activeStatuses = ["open", "pending_approval"];
+    return !activeStatuses.includes(lastSection.status);
   };
 
   return (
