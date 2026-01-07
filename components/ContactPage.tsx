@@ -67,7 +67,7 @@ const ContactPage = ({ result }: { result: Links }) => {
           from_email: values.email,
           message: values.message,
         },
-        "R0y_2mr9nl9WpEKZc"
+        "6EiU3FO0-LttZ-aVX"
       );
       setIsSent(true);
       form.reset();
