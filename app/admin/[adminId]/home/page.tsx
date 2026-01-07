@@ -152,6 +152,44 @@ export default async function AdminHomePage() {
     studentsCountByCourse[row.courseTitle] =
       (studentsCountByCourse[row.courseTitle] || 0) + 1;
   });
+  const totalOpenEnrollmentResult = await db
+    .select({
+      total: sql<number>`CAST(COUNT(${courseEnrollments.id}) AS INTEGER)`,
+    })
+    .from(courseEnrollments)
+    .innerJoin(
+      courseSections,
+      eq(courseEnrollments.sectionId, courseSections.id)
+    )
+    .where(
+      and(
+        eq(courseSections.status, "open"),
+        eq(courseEnrollments.isCancelled, false)
+      )
+    );
+
+  const totalOpenEnrollment = totalOpenEnrollmentResult[0]?.total || 0;
+
+  const openSectionsWithCount = await db
+    .select({
+      sectionId: courseSections.id,
+      courseTitle: courses.title,
+      sectionNumber: courseSections.sectionNumber,
+      maxCapacity: courseSections.maxCapacity,
+      enrollmentCount: sql<number>`CAST(COUNT(${courseEnrollments.id}) AS INTEGER)`,
+    })
+    .from(courseSections)
+    .innerJoin(courses, eq(courseSections.courseId, courses.id))
+    .leftJoin(
+      courseEnrollments,
+      and(
+        eq(courseEnrollments.sectionId, courseSections.id),
+        eq(courseEnrollments.isCancelled, false)
+      )
+    )
+    .where(eq(courseSections.status, "open"))
+    .groupBy(courseSections.id, courses.title);
+
   return (
     <HomePage
       stats={{
@@ -165,11 +203,13 @@ export default async function AdminHomePage() {
         inProgressCourses: inProgressCourses.length,
         completedCourses: completedCourses.length,
         ClosedCourses: ClosedCourses.length,
+        totalOpenEnrollment: totalOpenEnrollment,
       }}
       studentsCountByCourse={studentsCountByCourse}
       userId={session.user.id}
       latestEnrollments={latestEnrollments}
-      enrollmentsByDay={enrollmentsByDay} // ✅ تمرير آخر 5 تسجيلات
+      enrollmentsByDay={enrollmentsByDay}
+      openSections={openSectionsWithCount}
     />
   );
 }
