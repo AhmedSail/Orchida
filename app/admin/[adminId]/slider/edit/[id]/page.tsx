@@ -35,7 +35,7 @@ const page = async ({ params }: { params: { id: string } }) => {
   }
   return (
     <div>
-      <EditPhotoToSlider slider={slider[0]} userId={session.user.id} />
+      <EditPhotoToSlider slider={slider[0]} userId={session.user.id} role={role} />
     </div>
   );
 };

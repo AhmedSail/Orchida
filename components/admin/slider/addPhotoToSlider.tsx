@@ -36,7 +36,13 @@ const sliderSchema = z.object({
 // 2) النوع المستنتج من Zod
 type SliderFormValues = z.infer<typeof sliderSchema>;
 
-export default function AddPhotoToSlider({ userId }: { userId: string }) {
+export default function AddPhotoToSlider({
+  userId,
+  role,
+}: {
+  userId: string;
+  role: string;
+}) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
   const { edgestore } = useEdgeStore();
@@ -136,7 +142,7 @@ export default function AddPhotoToSlider({ userId }: { userId: string }) {
           text: "تم إضافة السلايدر مع الصورة",
         });
         form.reset();
-        router.push(`/admin/${userId}/slider`);
+        router.push(`/${role}/${userId}/slider`);
       } else {
         const errText = await res.text();
         Swal.fire({

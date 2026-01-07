@@ -1,14 +1,21 @@
 import { db } from "@/src";
-import { news, users, courses, serviceRequests } from "@/src/db/schema";
+import {
+  users,
+  courses,
+  courseSections,
+  courseEnrollments,
+} from "@/src/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
-import { eq } from "drizzle-orm";
+import { desc, eq, inArray, sql } from "drizzle-orm";
 import { redirect } from "next/navigation";
 import { and, gte, lt } from "drizzle-orm";
-import HomePage from "@/components/admin/home/HomeCordinatorPage";
+import HomePage, {
+  CoordinatorStats,
+} from "@/components/admin/home/HomeCordinatorPage";
 
 export const metadata = {
-  title: "لوحة التحكم | لوحة المنسق",
+  title: "لوحة التحكم | لوحة المنسق", // Coordinator Dashboard
   description: "لوحة التحكم",
 };
 
@@ -30,8 +37,29 @@ export default async function AdminHomePage() {
     redirect("/");
   }
 
-  // ✅ استعلامات ديناميكية
-  const activeUsers = await db.select().from(users);
+  // ✅ Coordinator Dynamic Queries
+
+  // 1. Active Courses (using sql count for performance)
+  const activeCoursesCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(courses)
+    .where(eq(courses.isActive, true));
+
+  // 2. Active Sections (in_progress or closed) - as per user request
+  // "0 Active Sections, it should be the sections that are open and sections in progress. I don't want [open?] I want in_progress, closed"
+  // Re-reading user request: "tkon eli in_progress , cloesed"
+  const activeSectionsCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(courseSections)
+    .where(inArray(courseSections.status, ["in_progress", "closed"]));
+
+  // 3. Total Enrollments (non-cancelled)
+  const totalEnrollmentsCount = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(courseEnrollments)
+    .where(eq(courseEnrollments.isCancelled, false));
+
+  // 4. Today's Enrollments
   const now = new Date();
   const startOfDay = new Date(
     now.getFullYear(),
@@ -50,47 +78,45 @@ export default async function AdminHomePage() {
     0
   );
 
-  const todayRequests = await db
-    .select()
-    .from(serviceRequests)
+  const newEnrollmentsToday = await db
+    .select({ count: sql<number>`count(*)` })
+    .from(courseEnrollments)
     .where(
       and(
-        gte(serviceRequests.createdAt, startOfDay),
-        lt(serviceRequests.createdAt, endOfDay)
+        gte(courseEnrollments.registeredAt, startOfDay),
+        lt(courseEnrollments.registeredAt, endOfDay)
       )
     );
 
-  // const activeCourses = await db
-  //   .select()
-  //   .from(courses)
-  //   .where(eq(courses.isActive, true));
-  // const endedCourses = await db
-  //   .select()
-  //   .from(courses)
-  //   .where(eq(courses.isActive, false));
-  // const allCourses = await db.select().from(courses);
-  const activeServices = await db
-    .select()
-    .from(serviceRequests)
-    .where(eq(serviceRequests.status, "in_progress"));
-  const endedServices = await db
-    .select()
-    .from(serviceRequests)
-    .where(eq(serviceRequests.status, "completed"));
-  const allServices = await db.select().from(serviceRequests);
-  const latestNews = await db.select().from(news);
-  const serviceRequestsData = await db.select().from(serviceRequests);
+  // 5. Latest Enrollments (Last 5)
+  const latestEnrollments = await db
+    .select({
+      id: courseEnrollments.id,
+      studentName: courseEnrollments.studentName,
+      courseTitle: courses.title,
+      sectionNumber: courseSections.sectionNumber,
+      registeredAt: courseEnrollments.registeredAt,
+    })
+    .from(courseEnrollments)
+    .leftJoin(
+      courseSections,
+      eq(courseEnrollments.sectionId, courseSections.id)
+    )
+    .leftJoin(courses, eq(courseSections.courseId, courses.id))
+    .orderBy(desc(courseEnrollments.registeredAt))
+    .limit(5);
+
+  const stats: CoordinatorStats = {
+    activeCourses: Number(activeCoursesCount[0]?.count || 0),
+    openSections: Number(activeSectionsCount[0]?.count || 0), // Mapped to openSections prop
+    totalEnrollments: Number(totalEnrollmentsCount[0]?.count || 0),
+    todayEnrollments: Number(newEnrollmentsToday[0]?.count || 0),
+  };
+
   return (
     <HomePage
-      stats={{
-        activeUsers: activeUsers.length,
-        todayRequests: todayRequests.length,
-        activeServices: activeServices.length,
-        endedServices: endedServices.length,
-        allServices: allServices.length,
-      }}
-      data={latestNews}
-      serviceRequestsData={serviceRequestsData}
+      stats={stats}
+      latestEnrollments={latestEnrollments}
       userId={session.user.id}
     />
   );

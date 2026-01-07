@@ -42,9 +42,11 @@ export type Slider = InferSelectModel<typeof sliders>;
 export default function EditSliderPage({
   slider,
   userId,
+  role,
 }: {
   slider: Slider;
   userId: string;
+  role: string;
 }) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | undefined>(
@@ -133,7 +135,7 @@ export default function EditSliderPage({
           title: "تم التعديل ✅",
           text: "تم تحديث السلايدر",
         });
-        router.push(`/admin/${userId}/slider`);
+        router.push(`/${role}/${userId}/slider`);
       } else {
         Swal.fire({
           icon: "error",

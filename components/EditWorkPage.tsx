@@ -24,7 +24,15 @@ const workSchema = z.object({
 
 type WorkFormData = z.infer<typeof workSchema>;
 
-function EditWorkPage({ work, userId }: { work: any; userId: string }) {
+function EditWorkPage({
+  work,
+  userId,
+  role,
+}: {
+  work: any;
+  userId: string;
+  role: string;
+}) {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
@@ -56,7 +64,7 @@ function EditWorkPage({ work, userId }: { work: any; userId: string }) {
 
       if (res.ok) {
         Swal.fire("تم بنجاح!", "تم تحديث بيانات العمل.", "success");
-        router.push(`/admin/${userId}/works`);
+        router.push(`/${role}/${userId}/works`);
         router.refresh();
       } else {
         Swal.fire("خطأ", "حدث خطأ أثناء تحديث العمل", "error");

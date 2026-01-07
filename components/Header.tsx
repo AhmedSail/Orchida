@@ -293,6 +293,7 @@ const CollapseContent = ({
               role === "attractor" ||
               role === "coordinator" ||
               role === "instructor" ||
+              role === "content_creator" ||
               role === "user") && (
               <div>
                 <hr className="my-2" />
@@ -463,6 +464,7 @@ export function Header({
                   role === "attractor" ||
                   role === "coordinator" ||
                   role === "instructor" ||
+                  role === "content_creator" ||
                   role === "user") && (
                   <div>
                     <hr className="my-2" />

@@ -33,7 +33,7 @@ const page = async () => {
   return (
     <div>
       <h1 className="text-3xl font-bold text-primary mb-6">إضافة خبر جديد</h1>
-      <NewNewsForm userId={session.user.id} />
+      <NewNewsForm userId={session.user.id} role={role} />
     </div>
   );
 };

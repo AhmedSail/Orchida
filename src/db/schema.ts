@@ -20,6 +20,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "coordinator",
   "attractor",
   "instructor",
+  "content_creator",
 ]);
 
 export const sectionStatusEnum = pgEnum("section_status", [

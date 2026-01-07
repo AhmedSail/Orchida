@@ -25,6 +25,7 @@ import {
 } from "lucide-react";
 import { InferSelectModel } from "drizzle-orm";
 import { digitalServices } from "@/src/db/schema";
+import Image from "next/image";
 
 // ✅ Pagination UI من shadcn
 import {
@@ -124,7 +125,7 @@ export default function ServicesPage({
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead className="text-right">الأيقونة</TableHead>
+              <TableHead className="text-right">صورة الخدمة</TableHead>
               <TableHead className="text-right">اسم الخدمة</TableHead>
               <TableHead className="text-right">الوصف</TableHead>
               <TableHead className="text-right">الحالة</TableHead>
@@ -140,14 +141,27 @@ export default function ServicesPage({
               : paginatedServices.map((service) => (
                   <TableRow key={service.id}>
                     <TableCell>
+                      {/* ✅ Hybrid Render: Check Legacy Icon Map First, then Image URL */}
                       {service.icon && ICON_MAP[service.icon] ? (
                         React.createElement(ICON_MAP[service.icon], {
                           className: "w-10 h-10 text-primary",
                         })
+                      ) : service.icon ? (
+                        <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+                          <Image
+                            src={service.icon}
+                            alt={service.name}
+                            fill
+                            className="object-cover"
+                            unoptimized // Add unoptimized to handle external URLs nicely if domain config is missing
+                          />
+                        </div>
                       ) : (
-                        <span className="text-primary font-bold text-xl">
-                          ?
-                        </span>
+                        <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                          <span className="text-gray-400 font-bold text-xl">
+                            ?
+                          </span>
+                        </div>
                       )}
                     </TableCell>
                     <TableCell>{service.name}</TableCell>
@@ -215,12 +229,25 @@ export default function ServicesPage({
                 className="border rounded-lg p-4 shadow flex flex-col gap-2 bg-gray-50"
               >
                 <div className="flex items-center gap-2">
+                  {/* ✅ Mobile Hybrid Render */}
                   {service.icon && ICON_MAP[service.icon] ? (
                     React.createElement(ICON_MAP[service.icon], {
                       className: "w-8 h-8 text-primary",
                     })
+                  ) : service.icon ? (
+                    <div className="relative w-12 h-12 rounded-lg overflow-hidden border border-gray-100 shadow-sm">
+                      <Image
+                        src={service.icon}
+                        alt={service.name}
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
                   ) : (
-                    <span className="text-primary font-bold text-xl">?</span>
+                    <div className="w-12 h-12 bg-gray-100 rounded-lg flex items-center justify-center">
+                      <span className="text-gray-400 font-bold text-xl">?</span>
+                    </div>
                   )}
                   <h3 className="font-bold text-lg">{service.name}</h3>
                 </div>

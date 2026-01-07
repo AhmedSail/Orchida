@@ -35,7 +35,7 @@ export default async function LatestNewsPage() {
 
   return (
     <>
-      <LatestNews news={data} userId={session.user.id} />
+      <LatestNews news={data} userId={session.user.id} role={role} />
     </>
   );
 }

@@ -36,7 +36,11 @@ const page = async () => {
   return (
     <div>
       {session?.user?.id && (
-        <NewWorks allServices={allServices} userId={session.user.id} />
+        <NewWorks
+          allServices={allServices}
+          userId={session.user.id}
+          role={role}
+        />
       )}
     </div>
   );

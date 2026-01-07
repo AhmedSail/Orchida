@@ -53,7 +53,11 @@ const page = async () => {
 
   return (
     <div>
-      <AllWorkstable allWorks={worksWithMedia} userId={session.user.id} />
+      <AllWorkstable
+        allWorks={worksWithMedia}
+        userId={session.user.id}
+        role={role}
+      />
     </div>
   );
 };

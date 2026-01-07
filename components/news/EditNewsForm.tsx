@@ -61,9 +61,11 @@ const formSchema = z.object({
 export default function EditNewsForm({
   currentNews,
   userId,
+  role,
 }: {
   currentNews: News;
   userId: string;
+  role: string;
 }) {
   const [oldImage, setOldImage] = useState<string | null>(
     currentNews.imageUrl || null
@@ -130,7 +132,7 @@ export default function EditNewsForm({
           title: "تم التعديل بنجاح ✅",
           text: "تم تحديث الحدث",
         });
-        router.push(`/admin/${userId}/news`);
+        router.push(`/${role}/${userId}/news`);
       } else {
         Swal.fire({
           icon: "error",

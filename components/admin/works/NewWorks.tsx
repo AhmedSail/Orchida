@@ -48,9 +48,11 @@ type WorkFormValues = z.infer<typeof workSchema>;
 const NewWorks = ({
   allServices,
   userId,
+  role,
 }: {
   allServices: Services;
   userId: string;
+  role: string;
 }) => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
@@ -148,7 +150,7 @@ const NewWorks = ({
 
         // ✅✅✅ التحقق من أن المستخدم ضغط على زر "نعم"
         if (result.isConfirmed) {
-          router.push(`/admin/${userId}/works`);
+          router.push(`/${role}/${userId}/works`);
         }
       } else {
         throw new Error("فشل حفظ العمل");

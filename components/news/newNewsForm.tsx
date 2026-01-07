@@ -44,7 +44,13 @@ const formSchema = z.object({
   ]),
 });
 
-export default function NewNewsForm({ userId }: { userId: string }) {
+export default function NewNewsForm({
+  userId,
+  role,
+}: {
+  userId: string;
+  role: string;
+}) {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -100,7 +106,7 @@ export default function NewNewsForm({ userId }: { userId: string }) {
           text: "تم إضافة الحدث الجديد مع الصورة",
         });
         form.reset();
-        router.push(`/admin/${userId}/news`);
+        router.push(`/${role}/${userId}/news`);
       } else {
         Swal.fire({
           icon: "error",

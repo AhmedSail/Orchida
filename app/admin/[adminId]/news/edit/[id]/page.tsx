@@ -41,7 +41,11 @@ const page = async ({ params }: { params: { id: string } }) => {
   return (
     <div>
       <h1 className="text-3xl font-bold text-primary mb-6">تعديل الخبر</h1>
-      <EditNewsForm currentNews={result[0]} userId={session.user.id} />
+      <EditNewsForm
+        currentNews={result[0]}
+        userId={session.user.id}
+        role={role}
+      />
     </div>
   );
 };

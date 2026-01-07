@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useForm } from "react-hook-form";
 import Swal from "sweetalert2";
 import { z } from "zod";
@@ -18,22 +18,18 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 
 import { useRouter, useParams } from "next/navigation";
-import { SERVICE_ICONS } from "@/components/constant/service-icons";
 import { Service } from "./servicesPage";
+import { useEdgeStore } from "@/lib/edgestore";
+import { SingleImageDropzone } from "@/src/components/upload/single-image";
+import { UploaderProvider } from "@/src/components/upload/uploader-provider";
+import Image from "next/image";
 
 const schema = z.object({
   name: z.string().min(2, "اسم الخدمة مطلوب"),
   description: z.string().min(5, "الوصف مطلوب"),
-  icon: z.string().min(1, "يجب اختيار أيقونة"),
+  icon: z.string().min(1, "يجب رفع صورة للخدمة"),
   isActive: z.boolean(),
 });
 
@@ -45,7 +41,7 @@ export default function EditServiceForm({
   userId: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const [initialLoading, setInitialLoading] = useState(false);
+  const { edgestore } = useEdgeStore();
 
   const router = useRouter();
   const params = useParams();
@@ -84,6 +80,7 @@ export default function EditServiceForm({
 
       router.push(`/admin/${userId}/services`);
     } catch (error) {
+      console.error(error);
       Swal.fire({
         icon: "error",
         title: "خطأ",
@@ -94,14 +91,6 @@ export default function EditServiceForm({
       setLoading(false);
     }
   };
-
-  if (initialLoading) {
-    return (
-      <div className="p-6 text-center text-primary">
-        جاري تحميل بيانات الخدمة...
-      </div>
-    );
-  }
 
   return (
     <div className="mx-auto bg-white p-6 rounded-lg">
@@ -143,31 +132,74 @@ export default function EditServiceForm({
             )}
           />
 
-          {/* اختيار الأيقونة */}
+          {/* رفع صورة الخدمة */}
           <FormField
             control={form.control}
             name="icon"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>الأيقونة</FormLabel>
-                <Select
-                  onValueChange={field.onChange}
-                  defaultValue={field.value}
-                >
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الأيقونة" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {SERVICE_ICONS.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>صورة الخدمة</FormLabel>
+
+                {/* Image Uploader */}
+                <FormControl>
+                  <UploaderProvider
+                    autoUpload={true}
+                    uploadFn={async ({ file, onProgressChange }) => {
+                      const res = await edgestore.publicFiles.upload({
+                        file,
+                        onProgressChange: (progress) => {
+                          onProgressChange(progress);
+                        },
+                      });
+                      return { url: res.url };
+                    }}
+                    onUploadCompleted={(completedFile) => {
+                      if (completedFile.url) {
+                        field.onChange(completedFile.url);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col gap-4">
+                      <SingleImageDropzone
+                        width={200}
+                        height={200}
+                        dropzoneOptions={{
+                          maxSize: 1024 * 1024 * 4,
+                        }}
+                      />
+                    </div>
+                  </UploaderProvider>
+                </FormControl>
                 <FormMessage />
+
+                {/* Display Current Image Below Uploader */}
+                {field.value && field.value.startsWith("http") && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                    <p className="text-sm font-medium text-gray-700 mb-2">
+                      الصورة الحالية:
+                    </p>
+                    <div className="relative w-40 h-40 rounded-md overflow-hidden border border-gray-200 shadow-sm">
+                      <Image
+                        src={field.value}
+                        alt="Current Service Image"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                  </div>
+                )}
+                {/* Fallback for legacy text icons */}
+                {field.value && !field.value.startsWith("http") && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
+                    <p className="text-sm font-medium text-gray-700 mb-1">
+                      الأيقونة الحالية (نص):
+                    </p>
+                    <span className="text-gray-600 font-mono text-sm">
+                      {field.value}
+                    </span>
+                  </div>
+                )}
               </FormItem>
             )}
           />
