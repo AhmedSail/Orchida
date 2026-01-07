@@ -38,7 +38,7 @@ const WorksTable = ({
   userId: string | null;
 }) => {
   const router = useRouter();
-  const { edgestore } = useEdgeStore(); // ✅ استدعاء EdgeStore
+  const { edgestore } = useEdgeStore();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const itemsPerPage = 5;
   const [page, setPage] = useState(1);
@@ -62,6 +62,13 @@ const WorksTable = ({
     setPage(1);
   };
 
+  // ✅ دالة التعديل الجديدة
+  const handleUpdate = (id: string) => {
+    // يمكنك هنا توجيه المستخدم إلى صفحة التعديل
+    // أو فتح نافذة منبثقة (modal) لتعديل البيانات
+    router.push(`/admin/${userId}/works/${id}/media/edit`);
+  };
+
   const handleDelete = async (
     id: string,
     fileUrl?: string,
@@ -80,7 +87,6 @@ const WorksTable = ({
 
     if (confirm.isConfirmed) {
       try {
-        // ✅ 1. حذف الملف من EdgeStore
         if (fileUrl) {
           await edgestore.protectedFiles.delete({ url: fileUrl });
         }
@@ -92,7 +98,6 @@ const WorksTable = ({
           }
         }
 
-        // ✅ 2. حذف السجل من قاعدة البيانات عبر API
         const res = await fetch(`/api/works/${id}`, {
           method: "DELETE",
           headers: { "Content-Type": "application/json" },
@@ -142,7 +147,7 @@ const WorksTable = ({
         </Select>
       </div>
 
-      {/* ✅ جدول للديسكتوب فقط */}
+      {/* جدول للديسكتوب */}
       <div className="hidden lg:block overflow-x-auto">
         <Table>
           <TableHeader>
@@ -188,7 +193,9 @@ const WorksTable = ({
                     )}
                   </TableCell>
                   <TableCell>{work.title}</TableCell>
-                  <TableCell>{work.description || "—"}</TableCell>
+                  <TableCell className="max-w-[300px] whitespace-normal break-words">
+                    {work.description || "—"}
+                  </TableCell>
                   <TableCell>{work.category}</TableCell>
                   <TableCell>{work.priceRange || "—"}</TableCell>
                   <TableCell>{work.duration || "—"}</TableCell>
@@ -211,7 +218,15 @@ const WorksTable = ({
                       ? new Date(work.updatedAt).toLocaleDateString("ar-EG")
                       : "—"}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="flex gap-2">
+                    {/* ✅ زر التعديل الجديد */}
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleUpdate(work.id)}
+                    >
+                      تعديل
+                    </Button>
                     <Button
                       variant="destructive"
                       size="sm"
@@ -239,7 +254,7 @@ const WorksTable = ({
         </Table>
       </div>
 
-      {/* ✅ كارد للموبايل والآيباد */}
+      {/* كارد للموبايل والآيباد */}
       <div className="grid gap-4 lg:hidden">
         {paginatedWorks.length > 0 ? (
           paginatedWorks.map((work) => (
@@ -306,6 +321,14 @@ const WorksTable = ({
 
               {/* أزرار الإجراءات */}
               <div className="flex flex-col sm:flex-row gap-2 mt-2">
+                {/* ✅ زر التعديل الجديد */}
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => handleUpdate(work.id)}
+                >
+                  تعديل
+                </Button>
                 <Button
                   variant="destructive"
                   size="sm"
@@ -325,7 +348,7 @@ const WorksTable = ({
         )}
       </div>
 
-      {/* ✅ Pagination */}
+      {/* Pagination */}
       {totalPages > 1 && (
         <Pagination className="mt-6">
           <PaginationContent className="flex flex-wrap justify-center gap-2">
