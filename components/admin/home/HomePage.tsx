@@ -228,50 +228,6 @@ const HomePage = ({
         <div className="absolute top-0 right-0 -mr-20 -mt-20 size-80 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute bottom-0 left-0 -ml-10 -mb-10 size-40 rounded-full bg-black/10 blur-2xl" />
       </header>
-
-      {/* Modern Stats Sections */}
-      <div className="space-y-8">
-        {statGroups.map((group, gIdx) => (
-          <div key={gIdx} className="space-y-4">
-            <div className="flex items-center gap-2 px-1">
-              <div className="h-6 w-1 rounded-full bg-primary" />
-              <h3 className="text-lg font-bold text-slate-800">
-                {group.title}
-              </h3>
-            </div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-              {group.items.map((item, iIdx) => (
-                <motion.div key={iIdx} variants={itemVariants}>
-                  <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 overflow-hidden">
-                    <CardContent className="p-6">
-                      <div className="flex justify-between items-start">
-                        <div className="space-y-1">
-                          <p className="text-sm font-medium text-slate-500 group-hover:text-primary transition-colors">
-                            {item.label}
-                          </p>
-                          <p className="text-3xl font-black text-slate-900 tracking-tight">
-                            {item.value ?? 0}
-                          </p>
-                        </div>
-                        <div
-                          className={`p-3 rounded-xl ${item.bg} ${item.color} group-hover:scale-110 transition-transform duration-300`}
-                        >
-                          <item.icon className="size-6" />
-                        </div>
-                      </div>
-                      <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
-                        <TrendingUp className="size-3 text-emerald-500" />
-                        <span>تحديث فوري للسجلات</span>
-                      </div>
-                    </CardContent>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        ))}
-      </div>
-
       <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
         {/* Open Sections Table */}
         {openSections && openSections.length > 0 && (
@@ -417,6 +373,48 @@ const HomePage = ({
             </Card>
           </motion.div>
         )}
+      </div>
+      {/* Modern Stats Sections */}
+      <div className="space-y-8">
+        {statGroups.map((group, gIdx) => (
+          <div key={gIdx} className="space-y-4">
+            <div className="flex items-center gap-2 px-1">
+              <div className="h-6 w-1 rounded-full bg-primary" />
+              <h3 className="text-lg font-bold text-slate-800">
+                {group.title}
+              </h3>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+              {group.items.map((item, iIdx) => (
+                <motion.div key={iIdx} variants={itemVariants}>
+                  <Card className="group border-none shadow-sm hover:shadow-md transition-all duration-300 hover:-translate-y-1 overflow-hidden">
+                    <CardContent className="p-6">
+                      <div className="flex justify-between items-start">
+                        <div className="space-y-1">
+                          <p className="text-sm font-medium text-slate-500 group-hover:text-primary transition-colors">
+                            {item.label}
+                          </p>
+                          <p className="text-3xl font-black text-slate-900 tracking-tight">
+                            {item.value ?? 0}
+                          </p>
+                        </div>
+                        <div
+                          className={`p-3 rounded-xl ${item.bg} ${item.color} group-hover:scale-110 transition-transform duration-300`}
+                        >
+                          <item.icon className="size-6" />
+                        </div>
+                      </div>
+                      <div className="mt-4 flex items-center gap-1.5 text-xs text-slate-400">
+                        <TrendingUp className="size-3 text-emerald-500" />
+                        <span>تحديث فوري للسجلات</span>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          </div>
+        ))}
       </div>
 
       {/* Analytics Charts */}
