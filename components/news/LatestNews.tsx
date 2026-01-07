@@ -30,13 +30,21 @@ import { Link } from "next-view-transitions";
 
 export type News = InferSelectModel<typeof news>;
 
-const LatestNews = ({ news, userId }: { news: News[]; userId: string }) => {
+const LatestNews = ({
+  news,
+  userId,
+  role,
+}: {
+  news: News[];
+  userId: string;
+  role: string;
+}) => {
   const [pending, setPending] = useState(false);
   return (
     <div>
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary mb-6">أحدث المستجدات</h1>
-        <Link href={`/admin/${userId}/news/newNews`}>
+        <Link href={`/${role}/${userId}/news/newNews`}>
           <Button
             className={`bg-primary text-white flex items-center gap-2 disabled:${pending} `}
             onClick={() => setPending(!pending)}

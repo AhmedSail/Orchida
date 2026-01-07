@@ -17,16 +17,18 @@ export type WorkWithMedia = Work & {
 const AllWorkstable = ({
   allWorks,
   userId,
+  role,
 }: {
   allWorks: WorkWithMedia[];
   userId: string;
+  role: string;
 }) => {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
 
   const handleAddWork = () => {
     setLoading(true); // ✅ إظهار السبينر
-    router.push(`/admin/${userId}/works/new`);
+    router.push(`/${role}/${userId}/works/new`);
   };
 
   return (

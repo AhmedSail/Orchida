@@ -34,7 +34,7 @@ const page = async () => {
   }
   return (
     <div>
-      <AdminSlider data={data} userId={session.user.id} />
+      <AdminSlider data={data} userId={session.user.id} role={role} />
     </div>
   );
 };

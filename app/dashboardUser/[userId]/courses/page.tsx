@@ -4,23 +4,22 @@ import {
   courseEnrollments,
   courses,
   courseSections,
-  meetings,
   users,
 } from "@/src/db/schema";
-import { eq, and, gt, inArray } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import HomeInstructor from "@/components/instructor/HomeInstructor";
-import HomeUser from "@/components/user/dashboard/HomeUser";
 import CourseUser from "@/components/user/dashboard/CourseUser";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة الطالب",
   description: "الشعب الخاصة بك",
 };
-const Page = async ({ params }: { params: { instructorId: string } }) => {
+
+const Page = async ({ params }: { params: { userId: string } }) => {
   // ✅ جلب السيشن
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -45,7 +44,6 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
   // ✅ لو المستخدم طالب
   if (role === "user") {
     // الكورسات المسجل فيها
-    // الكورسات المسجل فيها
     const enrollments = await db
       .select({
         enrollmentId: courseEnrollments.id,
@@ -60,9 +58,6 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
       )
       .leftJoin(courses, eq(courseSections.courseId, courses.id))
       .where(eq(courseEnrollments.studentId, session.user.id));
-
-    // استخراج sectionIds
-    const sectionIds = enrollments.map((e) => e.sectionId);
 
     return <CourseUser enrollments={enrollments} userId={session.user.id} />;
   }

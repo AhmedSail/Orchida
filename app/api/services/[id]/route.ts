@@ -23,12 +23,13 @@ export async function PUT(
 
   const { id } = await context.params;
 
+  // The client uploads the image to EdgeStore and sends the URL here as body.icon
   await db
     .update(digitalServices)
     .set({
       name: body.name,
       description: body.description,
-      icon: body.icon,
+      icon: body.icon, // Saves the new image URL
       isActive: body.isActive,
       updatedAt: new Date(),
     })

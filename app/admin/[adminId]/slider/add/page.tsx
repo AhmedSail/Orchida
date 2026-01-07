@@ -33,7 +33,7 @@ const page = async () => {
   }
   return (
     <div>
-      <AddPhotoToSlider userId={session.user.id} />
+      <AddPhotoToSlider userId={session.user.id} role={role} />
     </div>
   );
 };

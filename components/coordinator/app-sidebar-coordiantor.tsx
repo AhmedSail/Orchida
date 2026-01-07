@@ -151,16 +151,6 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
                   </Link>
                 </SidebarMenuButton>
               </SidebarMenuItem>
-              <SidebarMenuItem>
-                <SidebarMenuButton asChild className="text-lg">
-                  <Link
-                    href={`/coordinator/${user.id}/courses/sections/meetings`}
-                  >
-                    <Video />
-                    <span>اعمال الطلاب</span>
-                  </Link>
-                </SidebarMenuButton>
-              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>

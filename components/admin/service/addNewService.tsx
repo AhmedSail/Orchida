@@ -17,29 +17,25 @@ import {
 
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
-import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
 import { useRouter } from "next/navigation";
-import { SERVICE_ICONS } from "@/components/constant/service-icons";
+import { useEdgeStore } from "@/lib/edgestore";
+import { SingleImageDropzone } from "@/src/components/upload/single-image";
+import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 
 const schema = z.object({
   name: z.string().min(2, "اسم الخدمة مطلوب"),
   description: z.string().min(5, "الوصف مطلوب"),
-  icon: z.string().min(1, "يجب اختيار أيقونة"),
+  icon: z.string().min(1, "يجب رفع صورة للخدمة"),
   isActive: z.boolean(),
 });
 
 export default function AddServiceForm({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { edgestore } = useEdgeStore();
   type ServiceFormType = z.infer<typeof schema>;
+
   const form = useForm({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -54,6 +50,7 @@ export default function AddServiceForm({ userId }: { userId: string }) {
     setLoading(true);
 
     try {
+      // The icon field should already contain the URL from the uploader
       const res = await fetch("/api/services", {
         method: "POST",
         body: JSON.stringify(data),
@@ -70,6 +67,7 @@ export default function AddServiceForm({ userId }: { userId: string }) {
       router.push(`/admin/${userId}/services`);
       form.reset();
     } catch (error) {
+      console.error(error);
       Swal.fire({
         icon: "error",
         title: "خطأ",
@@ -121,27 +119,43 @@ export default function AddServiceForm({ userId }: { userId: string }) {
             )}
           />
 
-          {/* اختيار الأيقونة */}
+          {/* رفع صورة الخدمة */}
           <FormField
             control={form.control}
             name="icon"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>الأيقونة</FormLabel>
-                <Select onValueChange={field.onChange}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="اختر الأيقونة" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    {SERVICE_ICONS.map((item) => (
-                      <SelectItem key={item.id} value={item.id}>
-                        {item.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <FormLabel>صورة الخدمة</FormLabel>
+                <FormControl>
+                  {/* Wrap the Dropzone with UploaderProvider */}
+                  <UploaderProvider
+                    autoUpload={true}
+                    uploadFn={async ({ file, onProgressChange }) => {
+                      // Upload using EdgeStore
+                      const res = await edgestore.publicFiles.upload({
+                        file,
+                        onProgressChange: (progress) => {
+                          onProgressChange(progress);
+                        },
+                      });
+                      return { url: res.url };
+                    }}
+                    onUploadCompleted={(completedFile) => {
+                      // Once upload is complete, set the URL to the form field
+                      if (completedFile.url) {
+                        field.onChange(completedFile.url);
+                      }
+                    }}
+                  >
+                    <SingleImageDropzone
+                      width={200}
+                      height={200}
+                      dropzoneOptions={{
+                        maxSize: 1024 * 1024 * 4, // 4MB max
+                      }}
+                    />
+                  </UploaderProvider>
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}

@@ -30,9 +30,11 @@ export type Slider = InferSelectModel<typeof sliders>;
 export default function AdminSlider({
   data,
   userId,
+  role,
 }: {
   data: Slider[];
   userId: string;
+  role: string;
 }) {
   const [sliders, setSliders] = useState<Slider[]>(data);
   const { edgestore } = useEdgeStore();
@@ -97,7 +99,7 @@ export default function AdminSlider({
       <div className="flex flex-col md:flex-row items-center justify-between mb-6 gap-4">
         <h1 className="text-2xl font-bold text-primary">📸 إدارة السلايدر</h1>
         <Button className="bg-primary text-white hover:bg-primary/80 w-full md:w-auto">
-          <Link href={`/admin/${userId}/slider/add`}>+ إضافة صورة جديدة</Link>
+          <Link href={`/${role}/${userId}/slider/add`}>+ إضافة صورة جديدة</Link>
         </Button>
       </div>
 
@@ -148,7 +150,7 @@ export default function AdminSlider({
                 </TableCell>
                 <TableCell className="text-center flex gap-2 justify-center">
                   <Button variant="outline" size="sm">
-                    <Link href={`/admin/${userId}/slider/edit/${slider.id}`}>
+                    <Link href={`/${role}/${userId}/slider/edit/${slider.id}`}>
                       تعديل
                     </Link>
                   </Button>
@@ -199,7 +201,7 @@ export default function AdminSlider({
             </p>
             <div className="flex gap-2 justify-center mt-2">
               <Button variant="outline" size="sm">
-                <Link href={`/admin/${userId}/slider/edit/${slider.id}`}>
+                <Link href={`/${role}/${userId}/slider/edit/${slider.id}`}>
                   تعديل
                 </Link>
               </Button>

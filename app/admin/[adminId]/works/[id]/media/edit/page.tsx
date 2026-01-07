@@ -36,5 +36,7 @@ export default async function Page({ params }: { params: { id: string } }) {
     return <div>العمل غير موجود</div>;
   }
 
-  return <EditWorkPage work={workRecord[0]} userId={session.user.id} />;
+  return (
+    <EditWorkPage work={workRecord[0]} userId={session.user.id} role={role} />
+  );
 }

@@ -12,14 +12,15 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 
-import HomeInstructor from "@/components/instructor/HomeInstructor";
 import HomeUser from "@/components/user/dashboard/HomeUser";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة الطالب",
   description: "لوحة التحكم",
 };
-const Page = async ({ params }: { params: { instructorId: string } }) => {
+
+const Page = async ({ params }: { params: { userId: string } }) => {
   // ✅ جلب السيشن
   const session = await auth.api.getSession({ headers: await headers() });
 
@@ -43,7 +44,6 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
   // ✅ لو المستخدم طالب
   if (role === "user") {
     // الكورسات المسجل فيها
-    // الكورسات المسجل فيها
     const enrollments = await db
       .select({
         enrollmentId: courseEnrollments.id,
@@ -63,26 +63,30 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
     const sectionIds = enrollments.map((e) => e.sectionId);
 
     // اللقاءات القادمة فقط للشُعب اللي الطالب مسجل فيها
-    const upcomingMeetings = await db
-      .select({
-        id: meetings.id,
-        sectionId: meetings.sectionId,
-        courseTitle: courses.title,
-        sectionNumber: courseSections.sectionNumber,
-        date: meetings.date,
-        startTime: meetings.startTime,
-        endTime: meetings.endTime,
-        location: meetings.location,
-      })
-      .from(meetings)
-      .leftJoin(courseSections, eq(meetings.sectionId, courseSections.id))
-      .leftJoin(courses, eq(courseSections.courseId, courses.id))
-      .where(
-        and(
-          gt(meetings.date, new Date()),
-          inArray(meetings.sectionId, sectionIds) // ✅ فلترة اللقاءات حسب الشُعب المسجل فيها الطالب
-        )
-      );
+    let upcomingMeetings: any[] = [];
+    if (sectionIds.length > 0) {
+      // Only query if there are enrolled sections to avoid SQL error with empty array
+      upcomingMeetings = await db
+        .select({
+          id: meetings.id,
+          sectionId: meetings.sectionId,
+          courseTitle: courses.title,
+          sectionNumber: courseSections.sectionNumber,
+          date: meetings.date,
+          startTime: meetings.startTime,
+          endTime: meetings.endTime,
+          location: meetings.location,
+        })
+        .from(meetings)
+        .leftJoin(courseSections, eq(meetings.sectionId, courseSections.id))
+        .leftJoin(courses, eq(courseSections.courseId, courses.id))
+        .where(
+          and(
+            gt(meetings.date, new Date()),
+            inArray(meetings.sectionId, sectionIds) // ✅ فلترة اللقاءات حسب الشُعب المسجل فيها الطالب
+          )
+        );
+    }
 
     return (
       <HomeUser
