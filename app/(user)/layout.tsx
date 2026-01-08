@@ -25,41 +25,50 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth.api.getSession({ headers: await headers() });
+  // Fetch session and company info in parallel
+  const [session, companyResult] = await Promise.all([
+    auth.api.getSession({ headers: await headers() }),
+    db
+      .select({
+        facebookUrl: companies.facebookUrl,
+        instagramUrl: companies.instagramUrl,
+        twitterUrl: companies.twitterUrl,
+        whatsappUrl: companies.whatsappUrl,
+        linkedinUrl: companies.linkedinUrl,
+        tiktokUrl: companies.tiktokUrl,
+      })
+      .from(companies)
+      .where(eq(companies.id, "orchid-company"))
+      .limit(1),
+  ]);
 
   let requests: any[] = [];
+  let user: any = null;
+
   if (session?.user?.id) {
-    requests = await db
-      .select()
-      .from(serviceRequests)
-      .where(eq(serviceRequests.clientId, session.user.id));
+    // Fetch requests and user data in parallel
+    const [requestsData, userData] = await Promise.all([
+      db
+        .select()
+        .from(serviceRequests)
+        .where(eq(serviceRequests.clientId, session.user.id)),
+      db.select().from(users).where(eq(users.id, session.user.id)),
+    ]);
+    requests = requestsData;
+    user = userData[0];
   }
-  const result = await db
-    .select({
-      facebookUrl: companies.facebookUrl,
-      instagramUrl: companies.instagramUrl,
-      twitterUrl: companies.twitterUrl,
-      whatsappUrl: companies.whatsappUrl,
-      linkedinUrl: companies.linkedinUrl,
-      tiktokUrl: companies.tiktokUrl,
-    })
-    .from(companies)
-    .where(eq(companies.id, "orchid-company"))
-    .limit(1);
-  let user: any;
-  if (session?.user?.id) {
-    user = await db.select().from(users).where(eq(users.id, session.user.id));
-  }
+
+  const result = companyResult[0];
   return (
     <div>
       <Header
         requests={requests}
         role={session?.user?.role ?? null}
-        user={user?.[0]}
+        user={user}
       />
 
       {children}
-      <Footer result={result[0]} />
+      <Footer result={result} />
     </div>
   );
 }

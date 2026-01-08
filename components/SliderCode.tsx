@@ -61,6 +61,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
             priority
             className="object-cover"
             sizes="100vw"
+            quality={80}
           />
         </motion.div>
       </AnimatePresence>
