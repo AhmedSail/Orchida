@@ -74,7 +74,7 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
               href={cleanPart}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-primary underline break-words"
+              className="text-primary underline wrap-break-word"
               key={i}
             >
               {part}
@@ -160,7 +160,7 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
             />
           </div>
         )}
-        <div className="absolute inset-0 bg-gradient-to-t from-gray-900 via-gray-900/60 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-t from-gray-900 via-gray-900/60 to-transparent" />
 
         {/* Title Content */}
         <div className="absolute bottom-0 left-0 right-0 container mx-auto px-4 py-12 md:py-16">

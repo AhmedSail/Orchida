@@ -14,7 +14,9 @@ export async function POST(req: Request) {
     id: nanoid(),
     name: body.name,
     description: body.description || "",
-    icon: body.icon || "",
+    icon: body.icon || body.smallImage || "",
+    smallImage: body.smallImage || "",
+    largeImage: body.largeImage || "",
     isActive: body.isActive ?? true,
   };
 

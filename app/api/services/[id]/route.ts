@@ -29,7 +29,9 @@ export async function PUT(
     .set({
       name: body.name,
       description: body.description,
-      icon: body.icon, // Saves the new image URL
+      icon: body.icon || body.smallImage, // Prefer body.icon if sent (legacy), otherwise smallImage
+      smallImage: body.smallImage,
+      largeImage: body.largeImage,
       isActive: body.isActive,
       updatedAt: new Date(),
     })

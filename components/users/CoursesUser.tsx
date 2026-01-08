@@ -94,7 +94,7 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
             whileHover={{ y: -5 }}
           >
             {/* Image Section */}
-            <div className="relative h-64 overflow-hidden">
+            <div className="relative h-[400px] overflow-hidden">
               {course.imageUrl ? (
                 <Image
                   src={course.imageUrl}
@@ -110,7 +110,7 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
               )}
 
               {/* Overlay Gradient */}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-60" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent opacity-60" />
 
               {/* Price Badge */}
               <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm font-bold text-primary flex items-center gap-1.5 text-sm">
@@ -120,7 +120,7 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
             </div>
 
             {/* Content Section */}
-            <div className="p-6 flex flex-col flex-grow">
+            <div className="p-6 flex flex-col grow">
               <h3 className="text-xl font-bold text-gray-900 mb-3 line-clamp-1 group-hover:text-primary transition-colors">
                 {course.title}
               </h3>

@@ -417,6 +417,8 @@ export const digitalServices = pgTable("digitalServices", {
   name: varchar("name", { length: 255 }).notNull(),
   description: text("description"),
   icon: varchar("icon", { length: 255 }),
+  smallImage: varchar("smallImage", { length: 255 }), // Added small image for service page
+  largeImage: varchar("largeImage", { length: 255 }), // Added large image for service page
   isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
