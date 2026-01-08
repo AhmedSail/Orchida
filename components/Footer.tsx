@@ -10,10 +10,10 @@ import {
   FaTwitter,
   FaWhatsapp,
 } from "react-icons/fa";
-// قم باستيراد Variants
 import { motion, Variants } from "framer-motion";
 import Image from "next/image";
 import { useIsMobile } from "../hooks/use-mobile";
+
 type Links = {
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -22,6 +22,7 @@ type Links = {
   linkedinUrl: string | null;
   tiktokUrl: string | null;
 };
+
 export default function Footer({ result }: { result: Links }) {
   const isMobile = useIsMobile();
 
@@ -34,270 +35,180 @@ export default function Footer({ result }: { result: Links }) {
   ];
 
   // Motion Variants
-  // حدد النوع Variants لكل متغير
   const footerVariants: Variants = {
-    hidden: { opacity: 0 },
+    hidden: { opacity: 0, y: 50 },
     show: {
       opacity: 1,
+      y: 0,
       transition: {
-        staggerChildren: 0.2,
-        delayChildren: 0.1,
-      },
-    },
-  };
-
-  const brandingVariants: Variants = {
-    hidden: { opacity: 0, scale: 0.8 },
-    show: {
-      opacity: 1,
-      scale: 1,
-      transition: {
-        duration: 0.5,
+        staggerChildren: 0.15,
+        duration: 0.8,
         ease: "easeOut",
       },
     },
   };
 
-  const navLinksVariants: Variants = {
+  const itemVariants: Variants = {
     hidden: { opacity: 0, y: 20 },
     show: {
       opacity: 1,
       y: 0,
-      transition: {
-        duration: 0.4,
-        ease: "easeInOut",
-      },
+      transition: { duration: 0.5, ease: "easeOut" },
     },
   };
 
-  const socialLinksVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        duration: 0.4,
-        ease: "easeInOut",
-      },
+  const socialLinks = [
+    {
+      link: result.facebookUrl,
+      label: "Facebook",
+      icon: <FaFacebook size={22} />,
     },
-  };
-
-  const bottomSectionVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-      opacity: 1,
-      transition: {
-        duration: 0.8,
-        ease: "easeIn",
-      },
+    {
+      link: result.instagramUrl,
+      label: "Instagram",
+      icon: <FaInstagram size={22} />,
     },
-  };
+    {
+      link: result.twitterUrl,
+      label: "Twitter",
+      icon: <FaTwitter size={22} />,
+    },
+    {
+      link: result.whatsappUrl,
+      label: "Whatsapp",
+      icon: <FaWhatsapp size={22} />,
+    },
+    {
+      link: result.linkedinUrl,
+      label: "LinkedIn",
+      icon: <FaLinkedinIn size={22} />,
+    },
+    { link: result.tiktokUrl, label: "TikTok", icon: <FaTiktok size={22} /> },
+  ];
 
   return (
     <motion.footer
       initial="hidden"
       whileInView="show"
-      viewport={{ amount: 0.2, once: true }}
+      viewport={{ amount: 0.1, once: true }}
       variants={footerVariants}
-      className="bg-gray-200   py-10 mt-36 text-gray-800"
+      dir="rtl"
+      className="relative bg-primary pt-24 pb-12 mt-32 text-indigo-100 overflow-hidden"
     >
-      <div className="container mx-auto">
-        <div className="container mx-auto items-center space-y-6 md:space-y-0">
-          <div className="grid grid-cols-3 max-lg:grid-cols-1 mb-10">
-            {/* Left Side - Branding */}
-            <motion.div
-              variants={brandingVariants}
-              className={`max-lg:text-center`}
-            >
-              <Link href="/" className="inline-block mb-10">
-                <motion.div whileHover={{ scale: 1.05, rotate: -5 }}>
-                  <Image
-                    src="/logoNav.svg" // ضع مسار شعارك هنا
-                    alt="Arokida Logo"
-                    width={100}
-                    height={100}
-                    className="transition-all duration-300"
-                    loading="eager"
-                    unoptimized
-                  />
-                </motion.div>
-              </Link>
+      {/* Background Decor */}
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-30">
+        <div className="absolute top-[-20%] right-[-10%] w-[50%] h-[50%] bg-white/10 blur-[120px] rounded-full" />
+        <div className="absolute bottom-[-20%] left-[-10%] w-[50%] h-[50%] bg-indigo-400/20 blur-[120px] rounded-full" />
+      </div>
 
-              <p
-                className={`w-2/3 max-lg:mx-auto md:w-full mb-10 max-md:text-md max-lg:text-lg`}
-              >
-                أروكيدة شركة تقنية تأسست عام 2019، وتعمل منذ ذلك الحين بشكل
-                مستمر لتقديم حلول رقمية متكاملة للأفراد والشركات. منذ انطلاقها،
-                ركزت الشركة على بناء بيئة عمل حديثة تجمع بين المساحات الرقمية،
-                التدريب التقني، والخدمات الاستشارية، لتكون شريكًا موثوقًا في
-                رحلة التحول الرقمي.
-              </p>
-            </motion.div>
-
-            {/* Center - Navigation Links */}
-            <motion.div className="text-center mt-10">
-              <motion.div variants={navLinksVariants} className="mb-10">
-                <h1 className="font-bold text-2xl text-primary">
-                  روابــــــــــط سريــــــعــــــــــة
-                </h1>
-              </motion.div>
-              <ul
-                className={`flex-col space-y-3 max-lg:text-lg max-md:text-sm ${
-                  isMobile ? "mt-10" : "mt-28"
-                }`}
-              >
-                {navItems.map((item, index) => (
-                  <motion.li
-                    key={index}
-                    custom={index}
-                    variants={navLinksVariants}
-                  >
-                    <Link
-                      href={item.href}
-                      className="font-semibold relative group text-lg"
-                    >
-                      {item.title}
-                      <span className="absolute  -bottom-1 left-0 w-full h-[2px] bg-primary transform scale-x-0 group-hover:scale-x-100 transition-transform duration-300 origin-left" />
-                    </Link>
-                  </motion.li>
-                ))}
-              </ul>
-            </motion.div>
-
-            {/* Right Side - Social Media Links */}
-            <motion.div className={`text-center lg:text-right mt-10`}>
+      <div className="container mx-auto px-6 relative z-10">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12 lg:gap-16 mb-20">
+          {/* Left Side - Branding */}
+          <motion.div variants={itemVariants} className="max-lg:text-center">
+            <Link href="/" className="inline-block mb-8 group">
               <motion.div
-                variants={socialLinksVariants}
-                className="mb-10 max-lg:mt-10"
+                whileHover={{ scale: 1.05, rotate: -2 }}
+                className="relative"
               >
-                <h1 className="font-bold text-2xl text-primary max-lg:text-center">
-                  تــــــــــــابعــــــــــــنا
-                </h1>
+                <Image
+                  src="/logoWhite.svg"
+                  alt="Orchida Logo"
+                  width={120}
+                  height={120}
+                  sizes="120px"
+                  loading="lazy"
+                />
               </motion.div>
-              <motion.div
-                className={`flex-col ${
-                  isMobile ? "space-y-5 mt-10" : "space-y-3 mt-28"
-                } max-lg:text-lg  max-md:text-sm text-center`}
-              >
-                {[
-                  {
-                    link: result.facebookUrl,
-                    label: "Facebook",
-                    icon: <FaFacebook size={24} />,
-                  },
-                  {
-                    ink: result.instagramUrl,
-                    label: "Instagram",
-                    icon: <FaInstagram size={24} />,
-                  },
-                  {
-                    link: result.twitterUrl,
-                    label: "Twitter",
-                    icon: <FaTwitter size={24} />,
-                  },
-                  {
-                    link: result.whatsappUrl,
-                    label: "Whatsapp",
-                    icon: <FaWhatsapp size={24} />,
-                  },
-                  {
-                    link: result.linkedinUrl,
-                    label: "LinkedIn",
-                    icon: <FaLinkedinIn size={24} />,
-                  },
-                  {
-                    link: result.tiktokUrl,
-                    label: "TikTok",
-                    icon: <FaTiktok size={24} />,
-                  },
-                ].map(({ link, label, icon }, idx) => (
-                  <motion.div
-                    key={label}
-                    custom={idx}
-                    variants={socialLinksVariants}
-                    className="text-center"
+            </Link>
+
+            <p className="text-lg leading-relaxed text-indigo-100/80 max-w-md max-lg:mx-auto">
+              أروكيدة شركة تقنية تأسست عام 2019، وتعمل منذ ذلك الحين بشكل مستمر
+              لتقديم حلول رقمية متكاملة للأفراد والشركات. منذ انطلاقها، ركزت
+              الشركة على بناء بيئة عمل حديثة تجمع بين المساحات الرقمية والخدمات
+              الاستشارية.
+            </p>
+          </motion.div>
+
+          {/* Center - Navigation Links */}
+          <motion.div variants={itemVariants} className="text-center">
+            <h3 className="text-2xl font-bold text-white mb-10 relative inline-block">
+              روابـــــــط سريـــــــعـة
+              <span className="absolute -bottom-2 right-0 w-1/2 h-1 bg-white rounded-full" />
+            </h3>
+            <ul className="flex flex-col space-y-4">
+              {navItems.map((item, index) => (
+                <li key={index}>
+                  <Link
+                    href={item.href}
+                    className="text-lg font-medium text-indigo-100 hover:text-white transition-colors duration-300 flex items-center justify-center gap-2 group"
                   >
-                    <Link
-                      href={link ?? "#"}
-                      className={`flex items-center justify-center lg:justify-end  transition duration-300 font-semibold hover:text-primary gap-3 `}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                    >
-                      {isMobile ? (
-                        <>
-                          {icon}
-                          <span className="ml-3">{label}</span>
-                        </>
-                      ) : (
-                        <>
-                          <span className="mr-3">{label}</span>
-                          {icon}
-                        </>
-                      )}
-                    </Link>
-                  </motion.div>
-                ))}
-              </motion.div>
-            </motion.div>
-          </div>
+                    <span className="w-1.5 h-1.5 rounded-full bg-white scale-0 group-hover:scale-100 transition-transform duration-300" />
+                    {item.title}
+                  </Link>
+                </li>
+              ))}
+            </ul>
+          </motion.div>
 
-          <hr className="my-12 border-t-2 border-gray-500 w-full" />
-
-          {/* Bottom Section */}
+          {/* Right Side - Social Media Links */}
           <motion.div
-            variants={bottomSectionVariants}
-            className="md:flex justify-between items-center mt-10 mb-0 pb-0 "
+            variants={itemVariants}
+            className="lg:text-left text-center"
           >
-            <div className="block mt-10">
-              <h1 className="text-gray-800 text-center">
-                &copy; {new Date().getFullYear()} جميع الحقوق محفوظة |{" "}
-                <span className="text-primary font-bold font-custom">
-                  شركة أروكيدة للتقنية
-                </span>
-              </h1>
-            </div>
-            <div className="flex justify-center space-x-6 flex-wrap">
-              {[
-                {
-                  icon: <FaFacebook size={15} />,
-                  link: result.facebookUrl,
-                },
-                {
-                  icon: <FaInstagram size={15} />,
-                  link: result.instagramUrl,
-                },
-                {
-                  icon: <FaTwitter size={15} />,
-                  link: result.twitterUrl,
-                },
-                {
-                  icon: <FaWhatsapp size={15} />,
-                  link: result.whatsappUrl,
-                },
-                {
-                  icon: <FaLinkedinIn size={15} />,
-                  link: result.linkedinUrl,
-                },
-                {
-                  icon: <FaTiktok size={15} />,
-                  link: result.tiktokUrl,
-                },
-              ].map((item, index) => (
-                <motion.a
-                  key={index}
-                  href={item.link ?? "#"}
+            <h3 className="text-2xl font-bold text-white mb-10 relative inline-block lg:float-left">
+              تــــــــــابعــــــــــنا
+              <span className="absolute -bottom-2 right-0 w-1/2 h-1 bg-white rounded-full lg:right-auto lg:left-0" />
+            </h3>
+            <div className="clear-both" />
+            <div className="grid grid-cols-2 gap-4 mt-8">
+              {socialLinks.map(({ link, label, icon }, idx) => (
+                <Link
+                  key={label}
+                  href={link ?? "#"}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="text-primary p-4 rounded-full border-2 hover:scale-110 hover:bg-primary hover:text-white transition-all duration-300 shadow-sm shadow-primary border-primary mt-5"
-                  whileHover={{ scale: 1.2, rotate: 10 }}
-                  whileTap={{ scale: 0.9 }}
-                  transition={{ duration: 0.2 }}
+                  className="flex items-center gap-3 p-3 rounded-xl bg-white/10 border border-white/10 hover:bg-white/20 hover:border-white/30 text-white transition-all duration-300 group"
                 >
-                  {item.icon}
-                </motion.a>
+                  <span className="text-white/70 group-hover:text-white transition-colors">
+                    {icon}
+                  </span>
+                  <span className="text-sm font-semibold">{label}</span>
+                </Link>
               ))}
             </div>
           </motion.div>
         </div>
+
+        <div className="h-px w-full bg-linear-to-r from-transparent via-white/20 to-transparent my-12" />
+
+        {/* Bottom Section */}
+        <motion.div
+          variants={itemVariants}
+          className="flex flex-col md:flex-row justify-between items-center gap-8"
+        >
+          <div className="text-center md:text-right">
+            <p className="text-indigo-100/70">
+              &copy; {new Date().getFullYear()} جميع الحقوق محفوظة |{" "}
+              <span className="text-white font-bold">شركة أروكيدة للتقنية</span>
+            </p>
+          </div>
+
+          <div className="flex justify-center gap-4">
+            {socialLinks.map((item, index) => (
+              <motion.a
+                key={index}
+                href={item.link ?? "#"}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-11 h-11 flex items-center justify-center rounded-full bg-white/10 border border-white/20 text-white hover:bg-white hover:text-primary transition-all duration-300 shadow-lg"
+                whileHover={{ y: -5, scale: 1.1 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                {item.icon}
+              </motion.a>
+            ))}
+          </div>
+        </motion.div>
       </div>
     </motion.footer>
   );
