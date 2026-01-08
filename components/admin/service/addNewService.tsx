@@ -26,7 +26,8 @@ import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 const schema = z.object({
   name: z.string().min(2, "اسم الخدمة مطلوب"),
   description: z.string().min(5, "الوصف مطلوب"),
-  icon: z.string().min(1, "يجب رفع صورة للخدمة"),
+  smallImage: z.string().min(1, "يجب رفع صورة صغيرة للخدمة"),
+  largeImage: z.string().min(1, "يجب رفع صورة كبيرة للخدمة"),
   isActive: z.boolean(),
 });
 
@@ -41,7 +42,8 @@ export default function AddServiceForm({ userId }: { userId: string }) {
     defaultValues: {
       name: "",
       description: "",
-      icon: "",
+      smallImage: "",
+      largeImage: "",
       isActive: true,
     },
   });
@@ -50,7 +52,6 @@ export default function AddServiceForm({ userId }: { userId: string }) {
     setLoading(true);
 
     try {
-      // The icon field should already contain the URL from the uploader
       const res = await fetch("/api/services", {
         method: "POST",
         body: JSON.stringify(data),
@@ -119,19 +120,17 @@ export default function AddServiceForm({ userId }: { userId: string }) {
             )}
           />
 
-          {/* رفع صورة الخدمة */}
+          {/* رفع صورة الخدمة الصغيرة */}
           <FormField
             control={form.control}
-            name="icon"
+            name="smallImage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>صورة الخدمة</FormLabel>
+                <FormLabel>صورة الخدمة الصغيرة (للأيقونة)</FormLabel>
                 <FormControl>
-                  {/* Wrap the Dropzone with UploaderProvider */}
                   <UploaderProvider
                     autoUpload={true}
                     uploadFn={async ({ file, onProgressChange }) => {
-                      // Upload using EdgeStore
                       const res = await edgestore.publicFiles.upload({
                         file,
                         onProgressChange: (progress) => {
@@ -141,7 +140,6 @@ export default function AddServiceForm({ userId }: { userId: string }) {
                       return { url: res.url };
                     }}
                     onUploadCompleted={(completedFile) => {
-                      // Once upload is complete, set the URL to the form field
                       if (completedFile.url) {
                         field.onChange(completedFile.url);
                       }
@@ -152,6 +150,45 @@ export default function AddServiceForm({ userId }: { userId: string }) {
                       height={200}
                       dropzoneOptions={{
                         maxSize: 1024 * 1024 * 4, // 4MB max
+                      }}
+                    />
+                  </UploaderProvider>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          {/* رفع صورة الخدمة الكبيرة */}
+          <FormField
+            control={form.control}
+            name="largeImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>صورة الخدمة الكبيرة (للصفحة الداخلية)</FormLabel>
+                <FormControl>
+                  <UploaderProvider
+                    autoUpload={true}
+                    uploadFn={async ({ file, onProgressChange }) => {
+                      const res = await edgestore.publicFiles.upload({
+                        file,
+                        onProgressChange: (progress) => {
+                          onProgressChange(progress);
+                        },
+                      });
+                      return { url: res.url };
+                    }}
+                    onUploadCompleted={(completedFile) => {
+                      if (completedFile.url) {
+                        field.onChange(completedFile.url);
+                      }
+                    }}
+                  >
+                    <SingleImageDropzone
+                      width={400} // Larger width for the larger image preview
+                      height={250}
+                      dropzoneOptions={{
+                        maxSize: 1024 * 1024 * 8, // 8MB max for larger image
                       }}
                     />
                   </UploaderProvider>

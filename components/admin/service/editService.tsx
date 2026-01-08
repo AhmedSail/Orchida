@@ -29,7 +29,8 @@ import Image from "next/image";
 const schema = z.object({
   name: z.string().min(2, "اسم الخدمة مطلوب"),
   description: z.string().min(5, "الوصف مطلوب"),
-  icon: z.string().min(1, "يجب رفع صورة للخدمة"),
+  smallImage: z.string().min(1, "يجب رفع صورة صغيرة للخدمة"),
+  largeImage: z.string().min(1, "يجب رفع صورة كبيرة للخدمة"),
   isActive: z.boolean(),
 });
 
@@ -54,7 +55,8 @@ export default function EditServiceForm({
     defaultValues: {
       name: service.name,
       description: service.description ?? "",
-      icon: service.icon ?? "",
+      smallImage: service.smallImage || service.icon || "",
+      largeImage: service.largeImage || "",
       isActive: service.isActive,
     },
   });
@@ -132,15 +134,13 @@ export default function EditServiceForm({
             )}
           />
 
-          {/* رفع صورة الخدمة */}
+          {/* رفع صورة الخدمة الصغيرة */}
           <FormField
             control={form.control}
-            name="icon"
+            name="smallImage"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>صورة الخدمة</FormLabel>
-
-                {/* Image Uploader */}
+                <FormLabel>صورة الخدمة الصغيرة (للأيقونة)</FormLabel>
                 <FormControl>
                   <UploaderProvider
                     autoUpload={true}
@@ -174,30 +174,78 @@ export default function EditServiceForm({
 
                 {/* Display Current Image Below Uploader */}
                 {field.value && field.value.startsWith("http") && (
-                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-                    <p className="text-sm font-medium text-gray-700 mb-2">
-                      الصورة الحالية:
-                    </p>
-                    <div className="relative w-40 h-40 rounded-md overflow-hidden border border-gray-200 shadow-sm">
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50 flex items-center gap-4">
+                    <div className="relative w-20 h-20 rounded-md overflow-hidden border border-gray-200">
                       <Image
                         src={field.value}
-                        alt="Current Service Image"
+                        alt="Current Small Image"
                         fill
                         className="object-cover"
                         unoptimized
                       />
                     </div>
+                    <p className="text-sm text-gray-500 italic">
+                      الصورة الصغيرة الحالية
+                    </p>
                   </div>
                 )}
-                {/* Fallback for legacy text icons */}
-                {field.value && !field.value.startsWith("http") && (
-                  <div className="mt-4 p-4 border rounded-lg bg-gray-50">
-                    <p className="text-sm font-medium text-gray-700 mb-1">
-                      الأيقونة الحالية (نص):
+              </FormItem>
+            )}
+          />
+
+          {/* رفع صورة الخدمة الكبيرة */}
+          <FormField
+            control={form.control}
+            name="largeImage"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>صورة الخدمة الكبيرة (للصفحة الداخلية)</FormLabel>
+                <FormControl>
+                  <UploaderProvider
+                    autoUpload={true}
+                    uploadFn={async ({ file, onProgressChange }) => {
+                      const res = await edgestore.publicFiles.upload({
+                        file,
+                        onProgressChange: (progress) => {
+                          onProgressChange(progress);
+                        },
+                      });
+                      return { url: res.url };
+                    }}
+                    onUploadCompleted={(completedFile) => {
+                      if (completedFile.url) {
+                        field.onChange(completedFile.url);
+                      }
+                    }}
+                  >
+                    <div className="flex flex-col gap-4">
+                      <SingleImageDropzone
+                        width={400}
+                        height={200}
+                        dropzoneOptions={{
+                          maxSize: 1024 * 1024 * 8,
+                        }}
+                      />
+                    </div>
+                  </UploaderProvider>
+                </FormControl>
+                <FormMessage />
+
+                {/* Display Current Image Below Uploader */}
+                {field.value && field.value.startsWith("http") && (
+                  <div className="mt-4 p-4 border rounded-lg bg-gray-50 flex items-center gap-4">
+                    <div className="relative w-40 h-20 rounded-md overflow-hidden border border-gray-200">
+                      <Image
+                        src={field.value}
+                        alt="Current Large Image"
+                        fill
+                        className="object-cover"
+                        unoptimized
+                      />
+                    </div>
+                    <p className="text-sm text-gray-500 italic">
+                      الصورة الكبيرة الحالية
                     </p>
-                    <span className="text-gray-600 font-mono text-sm">
-                      {field.value}
-                    </span>
                   </div>
                 )}
               </FormItem>

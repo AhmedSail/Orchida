@@ -181,13 +181,14 @@ const AllCourses = ({
                 whileHover={{ y: -5 }}
               >
                 {/* Image Section */}
-                <div className="relative h-56 w-full overflow-hidden">
+                <div className="relative h-[400px] w-full overflow-hidden">
                   {course.imageUrl ? (
                     <Image
                       src={course.imageUrl}
                       alt={course.title}
-                      fill
-                      className="object-cover transition-transform duration-700 group-hover:scale-110"
+                      width={500}
+                      height={500}
+                      className="object-cover transition-transform duration-700 group-hover:scale-110 w-full h-full"
                       unoptimized
                     />
                   ) : (
@@ -203,14 +204,14 @@ const AllCourses = ({
                 </div>
 
                 {/* Content Section */}
-                <div className="p-6 flex flex-col flex-grow">
+                <div className="p-6 flex flex-col grow">
                   <h3
                     className="text-xl font-bold text-gray-900 mb-3 line-clamp-1"
                     title={course.title}
                   >
                     {course.title}
                   </h3>
-                  <p className="text-gray-600 text-sm mb-6 line-clamp-2 flex-grow">
+                  <p className="text-gray-600 text-sm mb-6 line-clamp-2 grow">
                     {course.description || "لا يوجد وصف متاح."}
                   </p>
 
@@ -388,7 +389,7 @@ const AllCourses = ({
                         </div>
 
                         {/* Content */}
-                        <div className="p-4 flex flex-col flex-grow">
+                        <div className="p-4 flex flex-col grow">
                           <h3 className="font-bold text-gray-900 mb-1">
                             {story.title}
                           </h3>

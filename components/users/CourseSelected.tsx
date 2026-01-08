@@ -64,7 +64,7 @@ const CourseSelected = ({
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Header Image */}
-            <div className="relative h-[300px] md:h-[400px] w-full rounded-2xl overflow-hidden shadow-lg group">
+            <div className="relative h-[400px] w-full rounded-2xl overflow-hidden shadow-lg group">
               {coursesSelected.imageUrl ? (
                 <Image
                   src={coursesSelected.imageUrl}
@@ -79,7 +79,7 @@ const CourseSelected = ({
                   <BookOpen size={64} className="text-gray-400" />
                 </div>
               )}
-              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
               <h1 className="absolute bottom-6 right-6 text-3xl md:text-4xl font-bold text-white shadow-sm">
                 {coursesSelected.title}
               </h1>

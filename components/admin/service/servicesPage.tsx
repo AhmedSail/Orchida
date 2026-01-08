@@ -26,6 +26,8 @@ import {
 import { InferSelectModel } from "drizzle-orm";
 import { digitalServices } from "@/src/db/schema";
 import Image from "next/image";
+import { useEdgeStore } from "@/lib/edgestore";
+import Swal from "sweetalert2";
 
 // ✅ Pagination UI من shadcn
 import {
@@ -62,6 +64,7 @@ export default function ServicesPage({
   userId: string;
 }) {
   const router = useRouter();
+  const { edgestore } = useEdgeStore(); // Get edgestore instance
 
   // ✅ Skeleton Loading
   const [loading, setLoading] = useState(true);
@@ -81,6 +84,59 @@ export default function ServicesPage({
     const timer = setTimeout(() => setLoading(false), 800);
     return () => clearTimeout(timer);
   }, []);
+
+  const handleDelete = async (service: Service) => {
+    const result = await Swal.fire({
+      title: "هل أنت متأكد؟",
+      text: "سيتم حذف الخدمة وجميع ملفاتها نهائياً!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#dc2626",
+      cancelButtonColor: "#6b7280",
+      confirmButtonText: "نعم، احذفها",
+      cancelButtonText: "إلغاء",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        // 1. Delete images from EdgeStore if they exist and are URLs
+        if (service.smallImage && service.smallImage.startsWith("http")) {
+          await edgestore.publicFiles.delete({
+            url: service.smallImage,
+          });
+        }
+        if (service.largeImage && service.largeImage.startsWith("http")) {
+          await edgestore.publicFiles.delete({
+            url: service.largeImage,
+          });
+        }
+
+        // 2. Delete from DB
+        const res = await fetch(`/api/services/${service.id}`, {
+          method: "DELETE",
+        });
+
+        if (!res.ok) throw new Error("Failed to delete service");
+
+        Swal.fire({
+          icon: "success",
+          title: "تم الحذف",
+          text: "تم حذف الخدمة وجميع ملفاتها بنجاح",
+          confirmButtonColor: "#2563eb",
+        });
+
+        router.refresh();
+      } catch (error) {
+        console.error(error);
+        Swal.fire({
+          icon: "error",
+          title: "خطأ",
+          text: "حدث خطأ أثناء الحذف",
+          confirmButtonColor: "#dc2626",
+        });
+      }
+    }
+  };
 
   // ✅ Skeleton Component
   const SkeletonRow = () => (
@@ -194,7 +250,11 @@ export default function ServicesPage({
                       >
                         تعديل
                       </Button>
-                      <Button variant="destructive" size="sm">
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleDelete(service)}
+                      >
                         حذف
                       </Button>
                     </TableCell>
@@ -285,6 +345,7 @@ export default function ServicesPage({
                     variant="destructive"
                     size="sm"
                     className="w-full sm:w-auto"
+                    onClick={() => handleDelete(service)}
                   >
                     حذف
                   </Button>

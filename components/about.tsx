@@ -97,7 +97,7 @@ const AboutPage = ({ company }: { company: Partial<CompanyFormValues> }) => {
           className="object-cover object-center"
           unoptimized
         />
-        <div className="absolute inset-0 bg-gradient-to-b from-black/60 via-black/40 to-transparent" />
+        <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white px-4">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}

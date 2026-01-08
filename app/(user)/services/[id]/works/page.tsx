@@ -87,28 +87,17 @@ export default async function ServiceWorksPage({
       <div className="relative h-[50vh] w-full rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
-          {currentService.icon && currentService.icon.startsWith("http") ? (
-            isVideoService ? (
-              // If it's a video service, try to infer it's a video or fallback to image
-              // Since we only have 'icon' URL, we treat it as image unless specified otherwise,
-              // but for this Hero effect, an image is safer unless we have a promo video.
-              // Using the icon as the 'cover' image.
-              <Image
-                src={currentService.icon}
-                alt={currentService.name}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            ) : (
-              <Image
-                src={currentService.icon}
-                alt={currentService.name}
-                fill
-                className="object-cover"
-                unoptimized
-              />
-            )
+          {(currentService.largeImage || currentService.smallImage) &&
+          (currentService.largeImage?.startsWith("http") ||
+            currentService.smallImage?.startsWith("http")) ? (
+            <Image
+              src={currentService.largeImage || currentService.smallImage || ""}
+              alt={currentService.name}
+              width={1920}
+              height={1080}
+              className="object-cover w-full h-full"
+              unoptimized
+            />
           ) : (
             <div className="w-full h-full bg-linear-to-br from-gray-900 to-gray-800 flex items-center justify-center">
               <span className="text-9xl opacity-10">✨</span>
