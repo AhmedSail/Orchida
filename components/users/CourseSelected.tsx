@@ -1,11 +1,20 @@
 "use client";
-import { Courses } from "@/app/admin/[adminId]/courses/page";
 import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { Link } from "next-view-transitions";
 import Image from "next/image";
 import { useRouter } from "next/navigation";
+import {
+  Clock,
+  BadgeDollarSign,
+  Target,
+  Users,
+  BookOpen,
+  User as UserIcon,
+  CheckCircle2,
+  AlertCircle,
+} from "lucide-react";
+import { Courses } from "@/app/admin/[adminId]/courses/page";
 
 export type Instructor = {
   id: string | null;
@@ -42,132 +51,170 @@ const CourseSelected = ({
     lastSection?.status === "open" || lastSection?.status === "in_progress";
   const [registerLoading, setRegisterLoading] = useState(false);
   const router = useRouter();
+
   return (
-    <div className="p-6 mx-auto container" dir="rtl">
-      <motion.h1
-        className="lg:text-3xl text-xl text-center font-bold mb-6 md:text-right text-primary"
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6 }}
-      >
-        مرحبا بك في تفاصيل دورة {coursesSelected.title}
-      </motion.h1>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 border p-6 rounded-xl gap-5 shadow-primary shadow-lg place-content-center items-center">
-        {coursesSelected.imageUrl && (
-          <Image
-            src={coursesSelected.imageUrl}
-            alt={coursesSelected.title}
-            className="md:h-vh w-full object-cover rounded-lg mb-6 shadow"
-            width={20}
-            height={20}
-            unoptimized
-          />
-        )}
-
-        <div className="w-full">
-          <div className="flex flex-col lg:flex-row lg:justify-start items-center gap-4 justify-center text-2xl mb-10">
-            <h1 className="font-bold">عنوان الدورة :</h1>
-            <h1 className="text-primary font-bold">{coursesSelected.title}</h1>
-
-            {/* زر التسجيل السريع بجانب العنوان */}
-            <Button
-              size="sm"
-              variant="outline"
-              className="flex border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 px-6"
-              disabled={registerLoading || lastSection?.status === "closed"}
-              onClick={() => {
-                if (!isRegisterEnabled) return;
-                setRegisterLoading(true);
-                router.push(`/courses/${coursesSelected.id}/register`);
-              }}
-            >
-              {registerLoading
-                ? "جاري..."
-                : isRegisterEnabled
-                ? "سجل الآن"
-                : "مغلق"}
-            </Button>
-          </div>
-          <p className="text-gray-700 mb-6 leading-relaxed ">
-            {coursesSelected.description}
-          </p>
-
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
-            <strong>👨‍🏫 المدرب:</strong>
-            {lastInstructor?.name ?? "غير محدد"}
-          </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
-            <strong className="block"> محاور الدورة:</strong>{" "}
-            {coursesSelected.topics ?? "غير محدد"}
-          </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5 whitespace-pre-wrap">
-            <strong className="block"> اهداف الدورة:</strong>{" "}
-            {coursesSelected.objectives ?? "غير محدد"}
-          </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
-            <strong>⏳ عدد الساعات:</strong>{" "}
-            {coursesSelected.hours ?? "غير محدد"} ساعة
-          </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
-            <strong> سعر الدورة:</strong> {coursesSelected.price ?? "غير محدد"}{" "}
-            $
-          </div>
-          <div className="p-4 border rounded-lg shadow-sm mt-5">
-            <strong> الفئة المستهدفة:</strong>{" "}
-            {coursesSelected.targetAudience ?? "غير محدد"}
-          </div>
-
-          {/* زر التسجيل */}
-          <div className="flex flex-col justify-center items-center">
-            <Button
-              className="w-full mt-5 flex items-center justify-center gap-2"
-              disabled={registerLoading || lastSection?.status === "closed"}
-              onClick={() => {
-                if (!isRegisterEnabled) return; // 🚫 منع التنفيذ إذا الشعبة مغلقة
-                setRegisterLoading(true);
-                router.push(`/courses/${coursesSelected.id}/register`);
-              }}
-            >
-              {registerLoading ? (
-                <>
-                  <svg
-                    className="animate-spin h-5 w-5 text-white"
-                    xmlns="http://www.w3.org/2000/svg"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                  >
-                    <circle
-                      className="opacity-25"
-                      cx="12"
-                      cy="12"
-                      r="10"
-                      stroke="currentColor"
-                      strokeWidth="4"
-                    ></circle>
-                    <path
-                      className="opacity-75"
-                      fill="currentColor"
-                      d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"
-                    ></path>
-                  </svg>
-                  جاري التسجيل...
-                </>
-              ) : isRegisterEnabled ? (
-                "سجل الآن في الشعبة الجديدة"
+    <div className="min-h-screen bg-gray-50 py-12" dir="rtl">
+      <div className="container mx-auto px-4">
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+        >
+          {/* Main Content Column */}
+          <div className="lg:col-span-2 space-y-8">
+            {/* Header Image */}
+            <div className="relative h-[300px] md:h-[400px] w-full rounded-2xl overflow-hidden shadow-lg group">
+              {coursesSelected.imageUrl ? (
+                <Image
+                  src={coursesSelected.imageUrl}
+                  alt={coursesSelected.title}
+                  fill
+                  className="object-cover transition-transform duration-700 group-hover:scale-105"
+                  priority
+                  unoptimized
+                />
               ) : (
-                "التسجيل غير متاح حالياً"
+                <div className="w-full h-full bg-gray-200 flex items-center justify-center">
+                  <BookOpen size={64} className="text-gray-400" />
+                </div>
               )}
-            </Button>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent" />
+              <h1 className="absolute bottom-6 right-6 text-3xl md:text-4xl font-bold text-white shadow-sm">
+                {coursesSelected.title}
+              </h1>
+            </div>
 
-            {/* ✅ الرسالة إذا كانت الشعبة غير مفتوحة أو غير قيد التنفيذ */}
-            {!isRegisterEnabled && (
-              <p className="text-red-600 mt-3 font-semibold">
-                🚫 الشعبة مغلقة، سيتم فتح شعبة جديدة لاحقاً
+            {/* Description */}
+            <div className="bg-white p-8 rounded-2xl shadow-sm border border-gray-100">
+              <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
+                <BookOpen className="text-primary" />
+                عن الدورة
+              </h2>
+              <p className="text-gray-600 leading-relaxed text-lg text-justify">
+                {coursesSelected.description || "لا يوجد وصف متاح."}
               </p>
-            )}
+            </div>
+
+            {/* Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Topics */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
+                  <CheckCircle2 className="text-primary" size={22} />
+                  محاور الدورة
+                </h3>
+                <div className="text-gray-600 whitespace-pre-wrap leading-relaxed">
+                  {coursesSelected.topics || "غير محدد"}
+                </div>
+              </div>
+
+              {/* Objectives */}
+              <div className="bg-white p-6 rounded-2xl shadow-sm border border-gray-100">
+                <h3 className="font-bold text-gray-900 mb-4 flex items-center gap-2 text-lg">
+                  <Target className="text-primary" size={22} />
+                  أهداف الدورة
+                </h3>
+                <div className="text-gray-600 whitespace-pre-wrap leading-relaxed">
+                  {coursesSelected.objectives || "غير محدد"}
+                </div>
+              </div>
+            </div>
           </div>
-        </div>
+
+          {/* Sidebar / Sticky Action Card */}
+          <div className="lg:col-span-1">
+            <div className="sticky top-24 space-y-6">
+              <div className="bg-white p-6 rounded-2xl shadow-action border border-primary/10">
+                <div className="mb-6 space-y-4">
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3 text-gray-700 font-medium">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <BadgeDollarSign className="text-green-600" size={20} />
+                      </div>
+                      سعر الدورة
+                    </div>
+                    <span className="text-xl font-bold text-primary">
+                      {coursesSelected.price
+                        ? `${coursesSelected.price} $`
+                        : "مجاني"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3 text-gray-700 font-medium">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Clock className="text-blue-600" size={20} />
+                      </div>
+                      عدد الساعات
+                    </div>
+                    <span className="font-bold">
+                      {coursesSelected.hours
+                        ? `${coursesSelected.hours} ساعة`
+                        : "-"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3 text-gray-700 font-medium">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <UserIcon className="text-purple-600" size={20} />
+                      </div>
+                      المدرب
+                    </div>
+                    <span className="font-bold truncate max-w-[150px]">
+                      {lastInstructor?.name || "غير محدد"}
+                    </span>
+                  </div>
+
+                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                    <div className="flex items-center gap-3 text-gray-700 font-medium">
+                      <div className="p-2 bg-white rounded-lg shadow-sm">
+                        <Users className="text-orange-600" size={20} />
+                      </div>
+                      الفئة المستهدفة
+                    </div>
+                    <span className="font-bold truncate max-w-[150px]">
+                      {coursesSelected.targetAudience || "الجميع"}
+                    </span>
+                  </div>
+                </div>
+
+                <Button
+                  className={`w-full h-12 text-lg font-bold rounded-xl shadow-lg transition-all duration-300 ${
+                    !isRegisterEnabled
+                      ? "bg-gray-300 hover:bg-gray-300 text-gray-500 cursor-not-allowed"
+                      : "bg-primary hover:bg-primary/90 text-white shadow-primary/25 hover:scale-[1.02]"
+                  }`}
+                  disabled={registerLoading || !isRegisterEnabled}
+                  onClick={() => {
+                    if (!isRegisterEnabled) return;
+                    setRegisterLoading(true);
+                    router.push(`/courses/${coursesSelected.id}/register`);
+                  }}
+                >
+                  {registerLoading ? (
+                    <div className="flex items-center gap-2">
+                      <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                      جاري التسجيل...
+                    </div>
+                  ) : isRegisterEnabled ? (
+                    "سجّل الآن"
+                  ) : (
+                    "التسجيل مغلق"
+                  )}
+                </Button>
+
+                {!isRegisterEnabled && (
+                  <div className="mt-4 p-3 bg-red-50 text-red-600 text-sm font-medium rounded-lg flex items-center gap-2 border border-red-100">
+                    <AlertCircle size={16} />
+                    نعتذر، التسجيل في هذه الدورة مغلق حالياً.
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </motion.div>
       </div>
     </div>
   );

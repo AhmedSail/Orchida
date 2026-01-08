@@ -1,6 +1,5 @@
-"use client";
-
 import React, { useState } from "react";
+import Image from "next/image";
 import { motion, Variants } from "framer-motion";
 import {
   Megaphone,
@@ -95,13 +94,21 @@ export default function ServicesFound({ services }: { services: Services }) {
             variants={cardVariants}
             viewport={{ once: true }}
           >
-            {/* الأيقونة */}
-            <div className="flex items-center justify-center w-16 h-16 rounded-full bg-primary/20 mb-4 transition duration-300 group-hover:bg-white">
+            {/* الصورة أو الأيقونة */}
+            <div className="relative flex items-center justify-center w-20 h-20 rounded-full bg-primary/20 mb-4 overflow-hidden transition duration-300 group-hover:bg-white border-2 border-transparent group-hover:border-white/50">
               {service.icon && ICON_MAP[service.icon] ? (
                 React.createElement(ICON_MAP[service.icon], {
                   className:
                     "w-10 h-10 text-primary transition duration-300 group-hover:scale-110",
                 })
+              ) : service.icon ? (
+                <Image
+                  src={service.icon}
+                  alt={service.name}
+                  fill
+                  className="object-cover transition duration-300 group-hover:scale-110"
+                  unoptimized // Ensures external images load correctly
+                />
               ) : (
                 <span className="text-primary font-bold text-xl">?</span>
               )}
