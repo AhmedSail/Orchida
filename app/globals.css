@@ -6,6 +6,7 @@
   font-family: "BigVestaRegular";
   src: url("/fonts/BigVesta-Arabic-Regular.ttf");
   font-weight: normal;
+  font-display: swap;
 }
 .no-copy {
   user-select: none;

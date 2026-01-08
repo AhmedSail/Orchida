@@ -353,7 +353,7 @@ const AllCourses = ({
                               alt={story.title}
                               fill
                               className="object-cover"
-                              unoptimized
+                              sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                             />
                           ) : story.type === "video" && story.mediaUrl ? (
                             <div className="relative w-full h-full flex items-center justify-center bg-black group cursor-pointer">

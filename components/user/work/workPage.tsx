@@ -119,7 +119,7 @@ export default function WorkPage({
             fill
             className="object-cover w-full h-full scale-105 blur-[2px] opacity-60"
             priority
-            unoptimized
+            sizes="100vw"
           />
         )}
         {work.type === "video" && work.imageUrl && (
@@ -190,7 +190,7 @@ export default function WorkPage({
                         alt={work.title}
                         fill
                         className="object-cover"
-                        unoptimized
+                        sizes="(max-width: 1024px) 100vw, 60vw"
                       />
                       <div className="absolute inset-0 bg-black/20 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
                         <Button
@@ -334,7 +334,7 @@ export default function WorkPage({
                         alt={`${work.title} - ${idx + 1}`}
                         fill
                         className="object-cover transition-transform duration-700 group-hover:scale-110"
-                        unoptimized
+                        sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       />
                       <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-all duration-300 flex items-center justify-center backdrop-blur-[2px]">
                         <div className="w-14 h-14 rounded-full bg-white/20 backdrop-blur-xl flex items-center justify-center border border-white/30 transform scale-75 group-hover:scale-100 transition-transform duration-300">
@@ -499,7 +499,7 @@ export default function WorkPage({
                 alt="Fullscreen view"
                 fill
                 className="object-contain"
-                unoptimized
+                sizes="100vw"
               />
             </div>
           </div>
