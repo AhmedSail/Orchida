@@ -59,16 +59,19 @@ const HomeView = ({
         <Slider sliders={sliders} />
       </div>
 
-      <div className="p-6">
-        <motion.h2
-          className="text-2xl font-bold text-center mb-6"
-          initial={{ opacity: 0, y: -20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
+      <div className="p-6 container mx-auto">
+        <motion.div
+          initial={{ opacity: 0, x: 20 }}
+          whileInView={{ opacity: 1, x: 0 }}
           viewport={{ once: true }}
+          className="flex items-center justify-start gap-3 text-right"
+          dir="rtl"
         >
-          خدمـــــــاتــــــــــنـــــــــــــــــا
-        </motion.h2>
+          <div className="w-1.5 h-10 bg-primary rounded-full"></div>
+          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-right">
+            خدماتنا <span className="text-primary">المتميزة</span>
+          </h2>
+        </motion.div>
         <ServicesFound services={services} />
         <motion.div
           className="flex justify-center items-center mt-10"

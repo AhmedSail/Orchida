@@ -1,6 +1,5 @@
 "use client";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
 import React, { useState } from "react";
 import {
   FaFacebook,
@@ -15,8 +14,8 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
 
-import { Metadata } from "next";
 import {
   Form,
   FormControl,
@@ -24,15 +23,12 @@ import {
   FormItem,
   FormLabel,
   FormMessage,
-} from "./ui/form";
-import { Input } from "./ui/input";
-import { Textarea } from "./ui/textarea";
-import { Button } from "./ui/button";
+} from "@/components/ui/form";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| من نحن",
-};
+
 type Links = {
   facebookUrl: string | null;
   instagramUrl: string | null;
@@ -41,6 +37,7 @@ type Links = {
   linkedinUrl: string | null;
   tiktokUrl: string | null;
 };
+
 const formSchema = z.object({
   name: z.string().min(2, "الاسم مطلوب"),
   email: z.string().email("بريد إلكتروني غير صالح"),
@@ -79,232 +76,295 @@ const ContactPage = ({ result }: { result: Links }) => {
     }
   };
 
-  // Motion Variants
   const containerVariants = {
     hidden: { opacity: 0 },
     show: {
       opacity: 1,
-      transition: { staggerChildren: 0.3 },
+      transition: { staggerChildren: 0.2 },
     },
   };
 
   const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0 },
+    hidden: { opacity: 0, y: 20 },
+    show: { opacity: 1, y: 0, transition: { duration: 0.5 } },
   };
 
   return (
-    <motion.div
-      initial="hidden"
-      animate="show"
-      transition={{ duration: 1 }}
-      className="flex flex-col items-center justify-center"
-    >
+    <div className="min-h-screen" dir="rtl">
       {/* Hero Section */}
-      <motion.div
-        variants={itemVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.2 }}
-        className="relative w-full h-[300px] sm:h-[700px]" // ارتفاع مختلف للموبايل واللاب
-      >
-        <div
-          className={`relative w-full ${isMobile ? "h-[230px]" : "h-[830px]"}`}
-        >
-          <Image
-            src="/contact/contactHero.jpeg"
-            alt="ContactImg"
-            fill
-            priority
-            quality={100}
-            className="object-cover object-top"
-            unoptimized
-          />
-
-          {/* Overlay */}
-          <div
-            className={`absolute inset-0 bg-black ${
-              isMobile ? "opacity-0" : "opacity-20"
-            }`}
-          />
-        </div>
-
-        <div className={`absolute  bg-black opacity-${isMobile ? 0 : 20}`} />
-
-        <div
-          className={` font-bold absolute text-white ${
-            isMobile ? "bottom-36 text-lg" : "bottom-0  text-2xl"
-          } left-1/2 -translate-x-1/2`}
-        ></div>
-      </motion.div>
-
-      {/* Main Content */}
-      <motion.div
-        variants={containerVariants}
-        initial="hidden"
-        whileInView="show"
-        viewport={{ once: true, amount: 0.2 }}
-        className={`flex flex-col items-center justify-center ${
-          isMobile ? "" : "min-h-screen p-6"
-        } w-full max-w-7xl`}
-      >
-        <motion.h1
-          variants={itemVariants}
-          className="text-4xl font-bold mb-12 text-center"
-        >
-          اتــــــــــــــــصــــــــل بنــــــــا
-        </motion.h1>
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-12 w-full">
-          {/* Form Section */}
-          <motion.div
-            variants={itemVariants}
-            initial="hidden"
-            whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="shadow-lg rounded-lg p-8 w-full bg-white"
+      <div className="relative h-[400px] w-full bg-primary overflow-hidden">
+        <div className="absolute inset-0 bg-black/40 z-10" />
+        <Image
+          src="/contact/contactHero.jpeg"
+          alt="Contact Hero"
+          fill
+          className="object-cover"
+          unoptimized
+          priority
+        />
+        <div className="relative z-20 container mx-auto h-full flex flex-col justify-center px-4 text-white">
+          <motion.h1
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7 }}
+            className="text-4xl md:text-6xl font-bold mb-4"
           >
-            <Form {...form}>
-              <form
-                onSubmit={form.handleSubmit(onSubmit)}
-                className="space-y-6"
-              >
-                <FormField
-                  control={form.control}
-                  name="name"
-                  render={({ field }) => (
-                    <FormItem className="text-right" dir="rtl">
-                      <FormLabel>اسمك</FormLabel>
-                      <FormControl>
-                        <Input placeholder="اكتب اسمك" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem dir="rtl">
-                      <FormLabel>البريد الإلكتروني</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="email"
-                          placeholder="example@mail.com"
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="message"
-                  render={({ field }) => (
-                    <FormItem dir="rtl">
-                      <FormLabel>رسالتك</FormLabel>
-                      <FormControl>
-                        <Textarea
-                          rows={4}
-                          placeholder="اكتب رسالتك هنا..."
-                          {...field}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <motion.div
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  <Button
-                    type="submit"
-                    disabled={loading || isSent}
-                    className="w-full bg-primary text-white font-semibold py-3 rounded-md hover:bg-primary/80 transition duration-200 flex items-center justify-center"
-                  >
-                    {loading
-                      ? "جاري الإرسال..."
-                      : isSent
-                      ? "✅ تم الإرسال"
-                      : "إرسال الرسالة"}
-                  </Button>
-                </motion.div>
-              </form>
-            </Form>
-          </motion.div>
+            تواصل معنا
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.7, delay: 0.2 }}
+            className="text-lg md:text-xl text-gray-200 max-w-2xl"
+          >
+            نحن هنا للإجابة على جميع استفساراتك. لا تتردد في مراسلتنا في أي وقت.
+          </motion.p>
+        </div>
+      </div>
 
-          {/* Social Links Section */}
+      <div className="container mx-auto px-4 py-16 -mt-20 relative z-30">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Contact Info & Socials Sidebar */}
           <motion.div
             variants={containerVariants}
             initial="hidden"
             whileInView="show"
-            viewport={{ once: true, amount: 0.2 }}
-            className="flex flex-col items-center space-y-6"
+            viewport={{ once: true }}
+            className="lg:col-span-1 space-y-6"
           >
-            <motion.h2
-              variants={itemVariants}
-              className="text-3xl font-semibold"
-            >
-              تجدنــــــــا على{" "}
-            </motion.h2>
-            <motion.span variants={itemVariants} className="text-lg">
-              لا تتردد في التواصل معنا
-            </motion.span>
+            {/* Contact Info Card */}
             <motion.div
-              variants={containerVariants}
-              className="flex justify-center flex-wrap space-y-2 space-x-6 max-sm:space-x-3"
+              variants={itemVariants}
+              className="bg-primary text-white p-8 rounded-2xl shadow-xl"
             >
-              {[
-                {
-                  icon: <FaFacebook size={isMobile ? 30 : 25} />,
-                  link: result.facebookUrl,
-                },
-                {
-                  icon: <FaInstagram size={isMobile ? 30 : 25} />,
-                  link: result.instagramUrl,
-                },
-                {
-                  icon: <FaTwitter size={isMobile ? 30 : 25} />,
-                  link: result.twitterUrl,
-                },
-                {
-                  icon: <FaWhatsapp size={isMobile ? 30 : 25} />,
-                  link: result.whatsappUrl,
-                },
-                {
-                  icon: <FaLinkedinIn size={isMobile ? 30 : 25} />,
-                  link: result.linkedinUrl,
-                },
-                {
-                  icon: <FaTiktok size={isMobile ? 30 : 25} />,
-                  link: result.tiktokUrl,
-                },
-              ].map((social, idx) => (
-                <motion.a
-                  key={idx}
-                  variants={itemVariants}
-                  href={social.link ?? "#"}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className={`${
-                    isMobile
-                      ? "text-primary text-3xl"
-                      : "text-primary p-4 rounded-full border-2 border-primary hover:bg-primary hover:text-white shadow-primary hover:shadow-2xl transition-all duration-300"
-                  }`}
-                  whileHover={{ scale: 1.2, rotate: 5 }}
-                  whileTap={{ scale: 0.9 }}
-                >
-                  {social.icon}
-                </motion.a>
-              ))}
+              <h3 className="text-2xl font-bold mb-6">معلومات الاتصال</h3>
+              <div className="space-y-6">
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <MapPin size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">العنوان</h4>
+                    <p className="text-gray-200 text-sm">
+                      فلسطين، غزة، مول الرحاب
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <Phone size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">الهاتف</h4>
+                    <p className="text-gray-200 text-sm" dir="ltr">
+                      +970 59 123 4567
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <Mail size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">البريد الإلكتروني</h4>
+                    <p className="text-gray-200 text-sm">
+                      admin@orchida-ods.com
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex items-start gap-4">
+                  <div className="p-3 bg-white/10 rounded-lg backdrop-blur-sm">
+                    <Clock size={24} />
+                  </div>
+                  <div>
+                    <h4 className="font-semibold mb-1">ساعات العمل</h4>
+                    <p className="text-gray-200 text-sm">
+                      السبت - الخميس: 9:00 ص - 5:00 م
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Social Media Card */}
+            <motion.div
+              variants={itemVariants}
+              className="bg-white p-8 rounded-2xl shadow-lg border border-gray-100"
+            >
+              <h3 className="text-xl font-bold text-gray-900 mb-6 text-center">
+                تابعنا على منصات التواصل
+              </h3>
+              <div className="flex justify-center flex-wrap gap-4">
+                {[
+                  {
+                    icon: <FaFacebook size={20} />,
+                    link: result.facebookUrl,
+                    bg: "hover:bg-[#1877F2]",
+                    color: "text-[#1877F2]",
+                  },
+                  {
+                    icon: <FaInstagram size={20} />,
+                    link: result.instagramUrl,
+                    bg: "hover:bg-[#E4405F]",
+                    color: "text-[#E4405F]",
+                  },
+                  {
+                    icon: <FaTwitter size={20} />,
+                    link: result.twitterUrl,
+                    bg: "hover:bg-[#1DA1F2]",
+                    color: "text-[#1DA1F2]",
+                  },
+                  {
+                    icon: <FaWhatsapp size={20} />,
+                    link: result.whatsappUrl,
+                    bg: "hover:bg-[#25D366]",
+                    color: "text-[#25D366]",
+                  },
+                  {
+                    icon: <FaLinkedinIn size={20} />,
+                    link: result.linkedinUrl,
+                    bg: "hover:bg-[#0A66C2]",
+                    color: "text-[#0A66C2]",
+                  },
+                  {
+                    icon: <FaTiktok size={20} />,
+                    link: result.tiktokUrl,
+                    bg: "hover:bg-[#000000]",
+                    color: "text-[#000000]",
+                  },
+                ].map((social, idx) => (
+                  <motion.a
+                    key={idx}
+                    href={social.link ?? "#"}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    whileHover={{ scale: 1.1 }}
+                    whileTap={{ scale: 0.95 }}
+                    className={`nav-social-btn p-3 rounded-full border border-gray-100 shadow-sm transition-all duration-300 ${social.color} hover:text-white ${social.bg}`}
+                  >
+                    {social.icon}
+                  </motion.a>
+                ))}
+              </div>
             </motion.div>
           </motion.div>
+
+          {/* Form Section */}
+          <div className="lg:col-span-2">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="bg-white rounded-2xl shadow-xl p-8 md:p-12 border border-gray-100 h-full"
+            >
+              <div className="mb-10 text-center">
+                <span className="text-primary font-bold tracking-wider text-sm bg-primary/10 px-4 py-2 rounded-full mb-3 inline-block">
+                  راسلنا
+                </span>
+                <h2 className="text-3xl font-bold text-gray-900 mt-2">
+                  هل لديك استفسار؟
+                </h2>
+                <p className="text-gray-500 mt-2">
+                  املأ النموذج أدناه وسيتم التواصل معك في أقرب وقت ممكن.
+                </p>
+              </div>
+
+              <Form {...form}>
+                <form
+                  onSubmit={form.handleSubmit(onSubmit)}
+                  className="space-y-6"
+                >
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField
+                      control={form.control}
+                      name="name"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            الاسم الكامل
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              placeholder="أدخل اسمك هنا"
+                              {...field}
+                              className="bg-gray-50 border-gray-200 h-12 focus:bg-white transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="email"
+                      render={({ field }) => (
+                        <FormItem>
+                          <FormLabel className="text-gray-700">
+                            البريد الإلكتروني
+                          </FormLabel>
+                          <FormControl>
+                            <Input
+                              type="email"
+                              placeholder="example@mail.com"
+                              {...field}
+                              className="bg-gray-50 border-gray-200 h-12 focus:bg-white transition-colors"
+                            />
+                          </FormControl>
+                          <FormMessage />
+                        </FormItem>
+                      )}
+                    />
+                  </div>
+
+                  <FormField
+                    control={form.control}
+                    name="message"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-gray-700">الرسالة</FormLabel>
+                        <FormControl>
+                          <Textarea
+                            rows={6}
+                            placeholder="اكتب تفاصيل رسالتك هنا..."
+                            {...field}
+                            className="bg-gray-50 border-gray-200 resize-none focus:bg-white transition-colors"
+                          />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  <Button
+                    type="submit"
+                    disabled={loading || isSent}
+                    className="w-full h-14 text-lg font-bold rounded-xl shadow-lg bg-primary hover:bg-primary/90 transition-all duration-300 transform hover:-translate-y-1"
+                  >
+                    {loading ? (
+                      <div className="flex items-center gap-2">
+                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                        جاري الإرسال...
+                      </div>
+                    ) : isSent ? (
+                      "تم الإرسال بنجاح ✅"
+                    ) : (
+                      <span className="flex items-center gap-2">
+                        إرسال الرسالة
+                        <Send size={20} className="rotate-180" />
+                      </span>
+                    )}
+                  </Button>
+                </form>
+              </Form>
+            </motion.div>
+          </div>
         </div>
-      </motion.div>
-    </motion.div>
+      </div>
+    </div>
   );
 };
 
