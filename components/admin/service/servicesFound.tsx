@@ -107,7 +107,7 @@ export default function ServicesFound({ services }: { services: Services }) {
                   alt={service.name}
                   fill
                   className="object-cover transition duration-300 group-hover:scale-110"
-                  unoptimized // Ensures external images load correctly
+                  sizes="80px"
                 />
               ) : (
                 <span className="text-primary font-bold text-xl">?</span>

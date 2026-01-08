@@ -72,7 +72,7 @@ const CourseSelected = ({
                   fill
                   className="object-cover transition-transform duration-700 group-hover:scale-105"
                   priority
-                  unoptimized
+                  sizes="(max-width: 1024px) 100vw, 66vw"
                 />
               ) : (
                 <div className="w-full h-full bg-gray-200 flex items-center justify-center">

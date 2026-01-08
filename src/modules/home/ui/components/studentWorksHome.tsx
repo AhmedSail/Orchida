@@ -93,7 +93,7 @@ const StudentWorksHome = ({
                           className="rounded object-cover w-full h-full"
                           width={400}
                           height={300}
-                          unoptimized
+                          sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 33vw"
                           loading="lazy"
                         />
                       </div>

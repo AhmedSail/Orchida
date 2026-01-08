@@ -99,8 +99,9 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
                 <Image
                   src={course.imageUrl}
                   alt={course.title}
-                  fill
-                  className="object-cover transition-transform duration-700 group-hover:scale-110"
+                  width={400}
+                  height={400}
+                  className="object-cover transition-transform duration-700 group-hover:scale-110 w-full"
                   unoptimized
                 />
               ) : (

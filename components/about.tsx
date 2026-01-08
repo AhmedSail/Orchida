@@ -95,7 +95,7 @@ const AboutPage = ({ company }: { company: Partial<CompanyFormValues> }) => {
           priority
           quality={100}
           className="object-cover object-center"
-          unoptimized
+          sizes="100vw"
         />
         <div className="absolute inset-0 bg-linear-to-b from-black/60 via-black/40 to-transparent" />
         <div className="absolute inset-0 flex flex-col justify-center items-center text-center text-white px-4">
@@ -164,7 +164,7 @@ const AboutPage = ({ company }: { company: Partial<CompanyFormValues> }) => {
                   alt="Our Story"
                   fill
                   className="object-cover"
-                  unoptimized
+                  sizes="(max-width: 1024px) 100vw, 50vw"
                 />
               </div>
             </motion.div>

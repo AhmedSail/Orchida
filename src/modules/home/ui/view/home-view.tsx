@@ -1,7 +1,6 @@
 "use client";
 import { Button } from "../../../../../components/ui/button";
 import Slider from "@/components/SliderCode"; // استدعاء الكومبوننت الجديد
-import LatestNewsUser from "../components/lastEvents";
 import { motion, Variants } from "framer-motion";
 import { Link } from "next-view-transitions";
 import ServicesFound from "@/components/admin/service/servicesFound";
@@ -10,11 +9,21 @@ import { InferSelectModel } from "drizzle-orm";
 import { serviceRequests, sliders, news } from "@/src/db/schema";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
 import { Section } from "@/app/admin/[adminId]/courses/sections/[id]/edit/page";
-import CoursesUser from "@/components/users/CoursesUser";
-import { Card, CardContent } from "@/components/ui/card";
-
-import StudentWorksHome from "../components/studentWorksHome";
+import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
+import LatestNewsUser from "../components/lastEvents";
+
+const CoursesUser = dynamic(() => import("@/components/users/CoursesUser"), {
+  loading: () => <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />,
+});
+const StudentWorksHome = dynamic(
+  () => import("../components/studentWorksHome"),
+  {
+    loading: () => (
+      <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />
+    ),
+  }
+);
 export type ServiceRequests = InferSelectModel<typeof serviceRequests>;
 export type SliderType = InferSelectModel<typeof sliders>;
 export type NewsType = InferSelectModel<typeof news>;

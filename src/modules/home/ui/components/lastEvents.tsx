@@ -115,7 +115,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                       alt={item.title}
                       fill
                       className="object-cover transition-transform duration-700 group-hover:scale-105"
-                      unoptimized
+                      sizes="(max-width: 1024px) 100vw, 50vw"
                     />
                   ) : (
                     <div className="w-full h-full bg-gray-100 flex items-center justify-center text-gray-300">

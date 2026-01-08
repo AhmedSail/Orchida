@@ -60,7 +60,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
             fill
             priority
             className="object-cover"
-            unoptimized
+            sizes="100vw"
           />
         </motion.div>
       </AnimatePresence>

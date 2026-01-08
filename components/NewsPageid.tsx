@@ -155,7 +155,7 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
               alt="Background"
               fill
               className="object-cover"
-              unoptimized
+              sizes="100vw"
               priority
             />
           </div>
@@ -214,7 +214,7 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
                 height={600}
                 className="w-full h-auto object-cover"
                 priority
-                unoptimized
+                sizes="(max-width: 1024px) 100vw, 80vw"
               />
             </motion.div>
           )}

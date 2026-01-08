@@ -131,7 +131,7 @@ export default function LatestNewsHome({ allNews }: { allNews: any[] }) {
                         width={600}
                         height={300}
                         className="object-cover w-full h-48 transition-transform duration-300 group-hover:scale-105"
-                        unoptimized
+                        sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw"
                       />
                       <div
                         className={`absolute top-4 right-4 px-3 py-1 text-xs font-bold text-white rounded-full ${
