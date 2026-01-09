@@ -23,6 +23,7 @@ import Swal from "sweetalert2";
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogHeader,
   DialogTitle,
   DialogTrigger,
@@ -70,6 +71,19 @@ const StudentsTable = ({ students }: { students: Student[] }) => {
   // باجينيشن
   const [currentPage, setCurrentPage] = useState<number>(1);
   const studentsPerPage = 10;
+
+  // دالة لتصحيح روابط localhost في البيئات المختلفة
+  const formatReceiptUrl = (url: string | null | undefined) => {
+    if (!url) return null;
+    if (url.includes("localhost:3000") && typeof window !== "undefined") {
+      const currentOrigin = window.location.origin;
+      if (!currentOrigin.includes("localhost")) {
+        return url.replace("http://localhost:3000", currentOrigin);
+      }
+    }
+    return url;
+  };
+
   const [ibanValues, setIbanValues] = useState<{ [key: string]: string }>({});
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
   // دوال API
@@ -306,11 +320,15 @@ const StudentsTable = ({ students }: { students: Student[] }) => {
                   <DialogContent className="sm:max-w-lg" dir="rtl">
                     <DialogHeader>
                       <DialogTitle>إشعار الدفع</DialogTitle>
+                      <DialogDescription>
+                        معاينة صورة إشعار الدفع المرسلة من قبل الطالب{" "}
+                        {s.studentName}.
+                      </DialogDescription>
                     </DialogHeader>
                     <div className="flex justify-center">
                       {/* إذا ما ضفت الدومين في next.config.js استخدم <img> بدل Image */}
                       <Image
-                        src={s.paymentReceiptUrl}
+                        src={formatReceiptUrl(s.paymentReceiptUrl) || ""}
                         alt="إشعار الدفع"
                         className="rounded-lg w-full h-auto"
                         width={600}
@@ -441,10 +459,14 @@ const StudentsTable = ({ students }: { students: Student[] }) => {
                         <DialogContent className="sm:max-w-lg" dir="rtl">
                           <DialogHeader>
                             <DialogTitle>إشعار الدفع</DialogTitle>
+                            <DialogDescription>
+                              معاينة صورة إشعار الدفع المرسلة من قبل الطالب{" "}
+                              {s.studentName}.
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="flex justify-center">
                             <Image
-                              src={s.paymentReceiptUrl}
+                              src={formatReceiptUrl(s.paymentReceiptUrl) || ""}
                               alt="إشعار الدفع"
                               className="rounded-lg w-full h-auto"
                               width={600}
