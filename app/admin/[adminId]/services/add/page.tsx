@@ -26,10 +26,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       <AddServiceForm userId={session.user.id} />

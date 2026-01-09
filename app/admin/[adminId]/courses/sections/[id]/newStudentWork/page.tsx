@@ -32,10 +32,6 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   // جلب بيانات الشعبة والكورس
   const section = await db
     .select({

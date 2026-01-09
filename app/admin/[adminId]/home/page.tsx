@@ -33,9 +33,6 @@ export default async function AdminHomePage() {
     .limit(1);
 
   const role = userRecord[0]?.role;
-  if (role !== "admin") {
-    redirect("/");
-  }
 
   // ✅ استعلامات ديناميكية
   const activeUsers = await db.select().from(users);

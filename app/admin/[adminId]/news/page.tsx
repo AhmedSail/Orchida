@@ -28,11 +28,6 @@ export default async function LatestNewsPage() {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
-
   return (
     <>
       <LatestNews news={data} userId={session.user.id} role={role} />

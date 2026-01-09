@@ -29,10 +29,6 @@ const CalendarPage = async ({ params }: { params: { id: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   // 1. جلب بيانات الشعبة الحالية
   const currentSection = await db
     .select()

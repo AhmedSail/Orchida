@@ -16,25 +16,7 @@ const page = async () => {
 
   // ✅ جلب جميع الجلسات
   const sessionsList = await db.select().from(session);
-  const sessionUser = await auth.api.getSession({ headers: await headers() });
 
-  if (!sessionUser?.user?.id) {
-    redirect("/sign-in"); // لو مش مسجل دخول
-  }
-
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, sessionUser.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       <ControlUsers allUsers={allUsers} sessions={sessionsList} />

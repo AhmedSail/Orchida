@@ -1,29 +1,46 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
+import { auth } from "./lib/auth";
 
 export const config = {
   matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
 };
 
-export default function middleware(req: NextRequest) {
+export default async function proxy(req: NextRequest) {
   const res = NextResponse.next();
+  const pathname = req.nextUrl.pathname;
 
-  // ✅ ضبط CORS
-  res.headers.set(
-    "Access-Control-Allow-Origin",
-    process.env.NEXT_PUBLIC_BASE_URL ?? ""
+  // ✅ جلب الـ session من BetterAuth
+  const session = await auth.api.getSession({ headers: req.headers });
+
+  if (!session?.user) {
+    return NextResponse.redirect(new URL("/sign-in", req.url));
+  }
+
+  const role = session.user.role;
+  const rolePaths: Record<string, string> = {
+    admin: "/admin",
+    coordinator: "/coordinator",
+    attractor: "/attractor",
+    content_creator: "/content_creator",
+    instructor: "/instructor",
+    user: "/dashboardUser",
+  };
+
+  // ✅ تحقق فقط إذا كان المسار محمي
+  const protectedPrefixes = Object.values(rolePaths);
+  const isProtectedPath = protectedPrefixes.some((prefix) =>
+    pathname.startsWith(prefix)
   );
-  res.headers.set("Access-Control-Allow-Credentials", "true");
 
-  // ✅ ضبط الكوكيز بالصيغة الصحيحة
-  res.cookies.set("session-token", "your-session-value", {
-    path: "/", // متاح لكل المسارات
-    httpOnly: true, // يمنع الوصول من الـ JS
-    secure: true, // لازم HTTPS
-    sameSite: "none", // يسمح بالـ cross-site (مطلوب للجوال)
-    maxAge: 60 * 60 * 24, // يوم واحد (تقدر تغيره)
-    domain: ".orchida-ods.com", // ✅ مهم: يربط الكوكيز بالدومين الحقيقي
-  });
+  if (isProtectedPath) {
+    const requiredPrefix = rolePaths[role];
+    if (!requiredPrefix || !pathname.startsWith(requiredPrefix)) {
+      console.log(`Unauthorized: Role ${role} trying to access ${pathname}`);
+      return NextResponse.redirect(new URL("/", req.url));
+    }
+  }
 
+  // ✅ لو المسار عام أو الدور صحيح → كمل
   return res;
 }
