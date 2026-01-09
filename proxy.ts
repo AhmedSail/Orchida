@@ -13,11 +13,7 @@ export default async function proxy(req: NextRequest) {
   // ✅ جلب الـ session من BetterAuth
   const session = await auth.api.getSession({ headers: req.headers });
 
-  if (!session?.user) {
-    return NextResponse.redirect(new URL("/", req.url));
-  }
-
-  const role = session.user.role;
+  const role = session?.user?.role;
   const rolePaths: Record<string, string> = {
     admin: "/admin",
     coordinator: "/coordinator",
@@ -34,7 +30,7 @@ export default async function proxy(req: NextRequest) {
   );
 
   if (isProtectedPath) {
-    const requiredPrefix = rolePaths[role];
+    const requiredPrefix = rolePaths[role || "user"];
     if (!requiredPrefix || !pathname.startsWith(requiredPrefix)) {
       console.log(`Unauthorized: Role ${role} trying to access ${pathname}`);
       return NextResponse.redirect(new URL("/", req.url));
