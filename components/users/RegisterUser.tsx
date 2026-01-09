@@ -49,7 +49,7 @@ const MySwal = withReactContent(Swal);
 type FormValues = {
   studentName: string;
   studentEmail: string;
-  studentPhone?: string | "";
+  studentPhone: string;
   studentAge: number;
   studentMajor: string;
   studentCountry: string;
@@ -63,10 +63,8 @@ const schema = z.object({
   studentEmail: z.string().email("يرجى إدخال بريد إلكتروني صالح"),
   studentPhone: z
     .string()
-    .min(7, "رقم الهاتف غير صالح")
-    .max(20, "رقم الهاتف طويل جداً")
-    .optional()
-    .or(z.literal("")),
+    .min(7, "رقم الهاتف مطلوب وبحد أدنى 7 أرقام")
+    .max(20, "رقم الهاتف طويل جداً"),
   studentAge: z.number().int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
