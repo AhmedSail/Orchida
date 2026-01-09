@@ -10,8 +10,21 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  CreditCard,
+  Trash2,
+  Calendar,
+  BookOpen,
+  Hash,
+  DollarSign,
+  CheckCircle2,
+  Clock,
+  AlertCircle,
+} from "lucide-react";
 
 type MyCourse = {
   enrollmentId: string;
@@ -30,28 +43,28 @@ const MyCourses = ({
   myCourses: MyCourse[];
   userId: string | null;
 }) => {
-  // حالة محلية لإدارة الصفوف
   const [rows, setRows] = useState<MyCourse[]>(myCourses);
   const [loadingCancelId, setLoadingCancelId] = useState<string | null>(null);
   const [loadingPaymentId, setLoadingPaymentId] = useState<string | null>(null);
 
   const router = useRouter();
+
   const handleCancel = async (id: string) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
-      text: "سيتم إلغاء تسجيلك في هذه الدورة",
+      text: "سيتم إلغاء تسجيلك في هذه الدورة ولن تتمكن من التراجع",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "نعم، إلغاء التسجيل",
       cancelButtonText: "تراجع",
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#6b7280",
     });
 
     if (!result.isConfirmed) return;
 
     try {
-      setLoadingCancelId(id); // تعطيل الأزرار لهذا الصف
-      // تحديث متفائل: احذف الصف محلياً مباشرةً
-      setRows((prev) => prev.filter((r) => r.enrollmentId !== id));
+      setLoadingCancelId(id);
 
       const res = await fetch(`/api/course-enrollments/${id}`, {
         method: "DELETE",
@@ -59,9 +72,10 @@ const MyCourses = ({
       const data = await res.json();
 
       if (!res.ok) {
-        // تراجع عن التحديث المتفائل إذا فشل الطلب
         throw new Error(data?.message || "فشل إلغاء التسجيل");
       }
+
+      setRows((prev) => prev.filter((r) => r.enrollmentId !== id));
 
       await Swal.fire({
         title: "تم الإلغاء",
@@ -70,192 +84,212 @@ const MyCourses = ({
         confirmButtonText: "حسناً",
       });
     } catch (error: any) {
-      // في حال الفشل، أعد تحميل البيانات من السيرفر أو أخبر المستخدم
       await Swal.fire("خطأ", error.message || "فشل إلغاء التسجيل", "error");
     } finally {
       setLoadingCancelId(null);
     }
   };
 
-  const handlePayment = async (id: string) => {
-    const result = await Swal.fire({
-      title: "تأكيد الدفع",
-      text: "هل تريد دفع رسوم هذه الدورة الآن؟",
-      icon: "info",
-      showCancelButton: true,
-      confirmButtonText: "نعم، ادفع الآن",
-      cancelButtonText: "تراجع",
-    });
+  const getStatusBadge = (status: string) => {
+    switch (status) {
+      case "confirmed":
+        return (
+          <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 border-none flex items-center gap-1 w-fit">
+            <CheckCircle2 className="size-3" />
+            نشط
+          </Badge>
+        );
+      case "pending":
+      default:
+        return (
+          <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 border-none flex items-center gap-1 w-fit">
+            <Clock className="size-3" />
+            معلق
+          </Badge>
+        );
+    }
+  };
 
-    if (!result.isConfirmed) return;
-
-    try {
-      setLoadingPaymentId(id);
-      const res = await fetch(`/api/payments`, {
-        method: "POST",
-        body: JSON.stringify({ enrollmentId: id }),
-        headers: { "Content-Type": "application/json" },
-      });
-      const data = await res.json();
-
-      if (!res.ok) throw new Error(data?.message || "فشل عملية الدفع");
-
-      // تحديث الحالة محلياً بعد الدفع (مثال: جعلها confirmed)
-      setRows((prev) =>
-        prev.map((r) =>
-          r.enrollmentId === id ? { ...r, status: "confirmed" } : r
-        )
-      );
-
-      await Swal.fire(
-        "تم الدفع",
-        data.message || "تمت عملية الدفع بنجاح",
-        "success"
-      );
-    } catch (error: any) {
-      await Swal.fire("خطأ", error.message || "فشل عملية الدفع", "error");
-    } finally {
-      setLoadingPaymentId(null);
+  const getPaymentBadge = (status: string | null) => {
+    switch (status) {
+      case "paid":
+        return (
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none flex items-center gap-1 w-fit">
+            <DollarSign className="size-3" />
+            مدفوع
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-slate-100 text-slate-600 hover:bg-slate-100 border-none flex items-center gap-1 w-fit">
+            <Clock className="size-3" />
+            قيد الانتظار
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-rose-100 text-rose-700 hover:bg-rose-100 border-none flex items-center gap-1 w-fit">
+            <AlertCircle className="size-3" />
+            فشل الدفع
+          </Badge>
+        );
+      default:
+        return <span className="text-slate-400">—</span>;
     }
   };
 
   return (
-    <div className="p-4 container mx-auto" dir="rtl">
-      <h2 className="text-2xl text-primary font-bold mb-4">
-        دوراتي المسجل فيها
-      </h2>
-      <Table>
-        <TableHeader>
-          <TableRow>
-            <TableHead className="text-right">اسم الدورة</TableHead>
-            <TableHead className="text-right">رقم الشعبة</TableHead>
-            <TableHead className="text-right">تاريخ التسجيل</TableHead>
-            <TableHead className="text-right">سعر الدورة</TableHead>
-            <TableHead className="text-right">حالة الدفع</TableHead>
-            <TableHead className="text-right">الحالة</TableHead>
-            <TableHead className="text-right">الإجراءات</TableHead>
-          </TableRow>
-        </TableHeader>
-        <TableBody>
-          {rows.map((course) => {
-            const disabledPayment = loadingPaymentId === course.enrollmentId;
-            const disabledCancel = loadingCancelId === course.enrollmentId;
-            return (
-              <TableRow key={course.enrollmentId}>
-                <TableCell className="font-medium">
-                  {course.courseName}
-                </TableCell>
-                <TableCell className="font-medium">
-                  {course.sectionNumber}
-                </TableCell>
-                <TableCell>
-                  {new Date(course.enrolledAt).toLocaleDateString("ar-EG")}
-                </TableCell>
-                <TableCell className="font-medium">
-                  {course.price ? `${course.price}$` : "—"}
-                </TableCell>
-                <TableCell className="font-medium">
-                  {course.paymentStatus === "pending" && "قيد الانتظار"}
-                  {course.paymentStatus === "paid" && "مدفوع"}
-                  {course.paymentStatus === "failed" && "فشل الدفع"}
-                  {course.paymentStatus === "refunded" && "مسترد"}
-                </TableCell>
-                <TableCell>
-                  {course.status === "confirmed" ? "نشط" : "معلق"}
-                </TableCell>
-                <TableCell className="flex gap-2">
-                  {/* زر إلغاء التسجيل */}
-                  <Button
-                    variant="destructive"
-                    size="sm"
-                    onClick={() => handleCancel(course.enrollmentId)}
-                    disabled={disabledCancel}
-                  >
-                    {loadingCancelId === course.enrollmentId ? (
-                      <span className="flex items-center gap-2">
-                        <svg
-                          className="animate-spin h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                        >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-                          ></path>
-                        </svg>
-                        جاري الإلغاء...
-                      </span>
-                    ) : (
-                      "إلغاء التسجيل"
-                    )}
-                  </Button>
+    <div className="p-6 container mx-auto min-h-screen mt-10" dir="rtl">
+      <div className="flex items-center gap-3 mb-8">
+        <div className="p-3 bg-primary/10 rounded-2xl">
+          <BookOpen className="size-6 text-primary" />
+        </div>
+        <div>
+          <h2 className="text-3xl font-black text-slate-900">دوراتي المسجلة</h2>
+          <p className="text-slate-500 text-sm">
+            إدارة اشتراكاتك ومتابعة حالة الدفع
+          </p>
+        </div>
+      </div>
 
-                  {/* زر دفع الرسوم بنفس الأسلوب */}
-                  <Button
-                    variant="default"
-                    size="sm"
-                    onClick={() => {
-                      router.push(
-                        `/${userId}/myCourses/${course.enrollmentId}/payment`
-                      );
-                      setLoadingPaymentId(course.enrollmentId);
-                    }}
-                    disabled={disabledPayment}
-                  >
-                    {loadingPaymentId === course.enrollmentId ? (
-                      <span className="flex items-center gap-2">
-                        <svg
-                          className="animate-spin h-4 w-4 text-white"
-                          xmlns="http://www.w3.org/2000/svg"
-                          fill="none"
-                          viewBox="0 0 24 24"
+      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
+        <Table>
+          <TableHeader className="bg-slate-50/50">
+            <TableRow>
+              <TableHead className="text-right py-5 px-6 font-bold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <BookOpen className="size-4 text-slate-400" />
+                  اسم الدورة
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-bold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <Hash className="size-4 text-slate-400" />
+                  رقم الشعبة
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-bold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <Calendar className="size-4 text-slate-400" />
+                  تاريخ التسجيل
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-bold text-slate-700">
+                <div className="flex items-center gap-2">
+                  <DollarSign className="size-4 text-slate-400" />
+                  السعر
+                </div>
+              </TableHead>
+              <TableHead className="text-right font-bold text-slate-700">
+                حالة الدفع
+              </TableHead>
+              <TableHead className="text-right font-bold text-slate-700">
+                الحالة
+              </TableHead>
+              <TableHead className="text-center font-bold text-slate-700">
+                الإجراءات
+              </TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            <AnimatePresence mode="popLayout">
+              {rows.map((course) => (
+                <motion.tr
+                  key={course.enrollmentId}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, x: -20 }}
+                  className="group hover:bg-slate-50/80 transition-colors border-b border-slate-50 last:border-0"
+                >
+                  <TableCell className="py-5 px-6 font-bold text-slate-800">
+                    {course.courseName}
+                  </TableCell>
+                  <TableCell className="font-medium text-slate-600">
+                    {course.sectionNumber}#
+                  </TableCell>
+                  <TableCell className="text-slate-500 tabular-nums">
+                    {new Date(course.enrolledAt).toLocaleDateString("ar-EG", {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    })}
+                  </TableCell>
+                  <TableCell className="font-black text-primary">
+                    {course.price ? `${course.price}$` : "—"}
+                  </TableCell>
+                  <TableCell>{getPaymentBadge(course.paymentStatus)}</TableCell>
+                  <TableCell>{getStatusBadge(course.status)}</TableCell>
+                  <TableCell>
+                    <div className="flex items-center justify-center gap-3">
+                      {/* زر دفع الرسوم - يظهر فقط إذا لم يتم الدفع */}
+                      {course.paymentStatus !== "paid" && (
+                        <Button
+                          variant="default"
+                          size="sm"
+                          className="rounded-full shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-all font-bold"
+                          onClick={() => {
+                            setLoadingPaymentId(course.enrollmentId);
+                            router.push(
+                              `/${userId}/myCourses/${course.enrollmentId}/payment`
+                            );
+                          }}
+                          disabled={loadingPaymentId === course.enrollmentId}
                         >
-                          <circle
-                            className="opacity-25"
-                            cx="12"
-                            cy="12"
-                            r="10"
-                            stroke="currentColor"
-                            strokeWidth="4"
-                          ></circle>
-                          <path
-                            className="opacity-75"
-                            fill="currentColor"
-                            d="M4 12a8 8 0 018-8v4l3-3-3-3v4a8 8 0 00-8 8h4z"
-                          ></path>
-                        </svg>
-                        جاري الدفع...
-                      </span>
-                    ) : (
-                      "دفع الرسوم"
-                    )}
-                  </Button>
+                          {loadingPaymentId === course.enrollmentId ? (
+                            <Clock className="size-4 animate-spin" />
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <CreditCard className="size-4" />
+                              دفع الرسوم
+                            </div>
+                          )}
+                        </Button>
+                      )}
+
+                      {/* زر إلغاء التسجيل */}
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-full transition-colors"
+                        onClick={() => handleCancel(course.enrollmentId)}
+                        disabled={loadingCancelId === course.enrollmentId}
+                        title="إلغاء التسجيل"
+                      >
+                        {loadingCancelId === course.enrollmentId ? (
+                          <Clock className="size-4 animate-spin text-rose-600" />
+                        ) : (
+                          <Trash2 className="size-4" />
+                        )}
+                      </Button>
+                    </div>
+                  </TableCell>
+                </motion.tr>
+              ))}
+            </AnimatePresence>
+            {rows.length === 0 && (
+              <TableRow>
+                <TableCell colSpan={7} className="py-20 text-center">
+                  <div className="flex flex-col items-center gap-3">
+                    <div className="p-4 bg-slate-50 rounded-full text-slate-400">
+                      <BookOpen className="size-8" />
+                    </div>
+                    <p className="text-slate-500 font-medium">
+                      لا توجد دورات مسجل بها حالياً.
+                    </p>
+                    <Button
+                      variant="outline"
+                      onClick={() => router.push("/courses")}
+                      className="mt-2 rounded-full"
+                    >
+                      تصفح الدورات المتاحة
+                    </Button>
+                  </div>
                 </TableCell>
               </TableRow>
-            );
-          })}
-          {rows.length === 0 && (
-            <TableRow>
-              <TableCell
-                colSpan={6}
-                className="text-center text-sm text-muted-foreground"
-              >
-                لا توجد دورات مسجل بها حالياً.
-              </TableCell>
-            </TableRow>
-          )}
-        </TableBody>
-      </Table>
+            )}
+          </TableBody>
+        </Table>
+      </div>
     </div>
   );
 };

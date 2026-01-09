@@ -30,11 +30,6 @@ export default async function Page() {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
-
   // ✅ جلب بيانات الموظفين
   const data = await db.select().from(employees);
 

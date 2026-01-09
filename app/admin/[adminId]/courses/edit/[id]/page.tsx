@@ -22,19 +22,6 @@ const page = async ({ params }: { params: { id: string } }) => {
     redirect("/sign-in"); // لو مش مسجل دخول
   }
 
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "admin" && role !== "coordinator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       <EditCourseForm initialData={course[0]} userId={session.user.id} />
