@@ -25,6 +25,7 @@ import {
   ChevronLeft,
   Clock,
 } from "lucide-react";
+import Image from "next/image";
 
 type MyCourse = {
   enrollmentId: string;
@@ -383,8 +384,10 @@ const Payment = ({
                       >
                         {preview ? (
                           <div className="relative w-full aspect-video rounded-lg overflow-hidden border border-emerald-100">
-                            <img
+                            <Image
                               src={preview}
+                              width={1000}
+                              height={1000}
                               alt="Receipt preview"
                               className="size-full object-cover"
                             />

@@ -47,8 +47,10 @@ export default function NewsPageId({ FoundNews, headlines }: PageProps) {
             key={i}
             className="my-8 relative w-full h-auto max-w-4xl mx-auto rounded-xl overflow-hidden shadow-lg border border-gray-100"
           >
-            <img
+            <Image
               src={cleanPart}
+              width={1000}
+              height={1000}
               alt="Content Image"
               className="w-full h-auto object-cover"
               loading="lazy"
