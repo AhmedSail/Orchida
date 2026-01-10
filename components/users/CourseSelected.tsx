@@ -64,7 +64,7 @@ const CourseSelected = ({
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Header Image */}
-            <div className="relative aspect-[4/3] md:aspect-video lg:aspect-[4/3] w-full rounded-2xl overflow-hidden shadow-lg group">
+            <div className="relative aspect-[16/6.6] w-full rounded-2xl overflow-hidden shadow-lg group">
               {coursesSelected.imageUrl ? (
                 <Image
                   src={coursesSelected.imageUrl}

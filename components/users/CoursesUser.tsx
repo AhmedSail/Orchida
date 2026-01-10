@@ -94,13 +94,12 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
             whileHover={{ y: -5 }}
           >
             {/* Image Section */}
-            <div className="relative h-[400px] overflow-hidden">
+            <div className="relative aspect-[16/6.6] w-full overflow-hidden">
               {course.imageUrl ? (
                 <Image
                   src={course.imageUrl}
                   alt={course.title}
-                  width={400}
-                  height={400}
+                  fill
                   className="object-cover transition-transform duration-700 group-hover:scale-110 w-full"
                   unoptimized
                 />
