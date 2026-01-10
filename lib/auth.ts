@@ -2,6 +2,7 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/src"; // your drizzle instance
 import * as schema from "@/src/db/schema";
+import bcrypt from "bcryptjs";
 
 interface GoogleProfile {
   sub: string;
@@ -92,6 +93,18 @@ export const auth = betterAuth({
   emailAndPassword: {
     enabled: true,
     requireEmailVerification: true,
+    password: {
+      hash: async (password) => {
+        return await bcrypt.hash(password, 10);
+      },
+      verify: async ({ password, hash }) => {
+        // Handle bcrypt hashes
+        if (hash.startsWith("$2")) {
+          return await bcrypt.compare(password, hash);
+        }
+        return false;
+      },
+    },
 
     // ✅ هنا تضع دوال reset password
     sendResetPassword: async ({ user, url, token }, request) => {
@@ -155,6 +168,37 @@ export const auth = betterAuth({
           image: profile.picture,
           role: "user", // ✅ لو بدك تعطي دور افتراضي لمستخدم Google
         };
+      },
+    },
+  },
+  databaseHooks: {
+    user: {
+      create: {
+        after: async (user: any) => {
+          // You can add logic here if needed for new users
+        },
+      },
+    },
+    session: {
+      create: {
+        before: async (session: any) => {
+          // قبل إنشاء الجلسة، نتأكد إذا كان المستخدم زائر ونحوله لمستخدم عادي
+          const { users } = await import("@/src/db/schema");
+          const { eq } = await import("drizzle-orm");
+
+          const userData = await db
+            .select()
+            .from(users)
+            .where(eq(users.id, session.userId))
+            .limit(1);
+
+          if (userData[0] && userData[0].role === "guest") {
+            await db
+              .update(users)
+              .set({ role: "user" })
+              .where(eq(users.id, userData[0].id));
+          }
+        },
       },
     },
   },

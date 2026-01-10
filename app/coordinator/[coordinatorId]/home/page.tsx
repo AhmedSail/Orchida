@@ -4,6 +4,7 @@ import {
   courses,
   courseSections,
   courseEnrollments,
+  courseLeads,
 } from "@/src/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -106,6 +107,19 @@ export default async function AdminHomePage() {
     .orderBy(desc(courseEnrollments.registeredAt))
     .limit(5);
 
+  const latestLeads = await db
+    .select({
+      id: courseLeads.id,
+      studentName: courseLeads.studentName,
+      studentEmail: courseLeads.studentEmail,
+      createdAt: courseLeads.createdAt,
+      courseTitle: courses.title,
+    })
+    .from(courseLeads)
+    .innerJoin(courses, eq(courseLeads.courseId, courses.id))
+    .orderBy(desc(courseLeads.createdAt))
+    .limit(5);
+
   const stats: CoordinatorStats = {
     activeCourses: Number(activeCoursesCount[0]?.count || 0),
     openSections: Number(activeSectionsCount[0]?.count || 0), // Mapped to openSections prop
@@ -117,6 +131,7 @@ export default async function AdminHomePage() {
     <HomePage
       stats={stats}
       latestEnrollments={latestEnrollments}
+      latestLeads={latestLeads}
       userId={session.user.id}
     />
   );

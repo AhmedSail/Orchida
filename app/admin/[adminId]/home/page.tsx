@@ -7,6 +7,7 @@ import {
   serviceRequests,
   courseSections,
   courseEnrollments,
+  courseLeads,
 } from "@/src/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -101,25 +102,18 @@ export default async function AdminHomePage() {
   const allServices = await db.select().from(serviceRequests);
   const latestNews = await db.select().from(news);
   const serviceRequestsData = await db.select().from(serviceRequests);
-  const latestEnrollments = await db
+  const latestLeads = await db
     .select({
-      enrollmentId: courseEnrollments.id,
-      studentName: courseEnrollments.studentName,
-      studentEmail: courseEnrollments.studentEmail,
-      studentPhone: courseEnrollments.studentPhone,
-      registeredAt: courseEnrollments.registeredAt,
-      sectionId: courseSections.id,
-      sectionStatus: courseSections.status,
-      courseId: courses.id,
+      id: courseLeads.id,
+      studentName: courseLeads.studentName,
+      studentEmail: courseLeads.studentEmail,
+      studentPhone: courseLeads.studentPhone,
+      createdAt: courseLeads.createdAt,
       courseTitle: courses.title,
     })
-    .from(courseEnrollments)
-    .innerJoin(
-      courseSections,
-      eq(courseEnrollments.sectionId, courseSections.id)
-    )
-    .innerJoin(courses, eq(courseSections.courseId, courses.id))
-    .orderBy(desc(courseEnrollments.registeredAt))
+    .from(courseLeads)
+    .innerJoin(courses, eq(courseLeads.courseId, courses.id))
+    .orderBy(desc(courseLeads.createdAt))
     .limit(5);
   const enrollmentsByDay = await db
     .select({
@@ -204,7 +198,7 @@ export default async function AdminHomePage() {
       }}
       studentsCountByCourse={studentsCountByCourse}
       userId={session.user.id}
-      latestEnrollments={latestEnrollments}
+      latestLeads={latestLeads}
       enrollmentsByDay={enrollmentsByDay}
       openSections={openSectionsWithCount}
     />
