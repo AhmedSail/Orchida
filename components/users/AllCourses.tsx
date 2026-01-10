@@ -181,7 +181,7 @@ const AllCourses = ({
                 whileHover={{ y: -5 }}
               >
                 {/* Image Section */}
-                <div className="relative aspect-[4/3] w-full overflow-hidden">
+                <div className="relative aspect-[16/6.6] w-full overflow-hidden">
                   {course.imageUrl ? (
                     <Image
                       src={course.imageUrl}
