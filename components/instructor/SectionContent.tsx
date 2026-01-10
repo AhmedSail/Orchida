@@ -157,7 +157,7 @@ const SectionContent = ({
     if (confirm.isConfirmed) {
       try {
         if (fileUrl) {
-          await edgestore.protectedFiles.delete({ url: fileUrl });
+          await edgestore.publicFiles.delete({ url: fileUrl });
         }
         await fetch(`/api/content/${id}`, { method: "DELETE" });
         setContents((prev) => prev.filter((c) => c.id !== id));
@@ -185,7 +185,7 @@ const SectionContent = ({
         });
 
         // ثانياً نرفع الملف الجديد على EdgeStore
-        const resUpload = await edgestore.protectedFiles.upload({
+        const resUpload = await edgestore.publicFiles.upload({
           file: data.file,
           onProgressChange: (progress) => {
             console.log("Upload progress:", progress);

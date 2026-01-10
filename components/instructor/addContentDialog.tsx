@@ -83,7 +83,7 @@ export default function AddContentDialog({
           formData.append("textContent", data.textContent);
         }
       } else if (file) {
-        const resUpload = await edgestore.protectedFiles.upload({
+        const resUpload = await edgestore.publicFiles.upload({
           file,
           onProgressChange: (progress) => setUploadProgress(progress),
         });

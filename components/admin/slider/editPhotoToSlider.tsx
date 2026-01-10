@@ -98,12 +98,12 @@ export default function EditSliderPage({
         }
 
         if (values.imageFile) {
-          if (imageUrl) {
-            await edgestore.protectedFiles.delete({
-              url: imageUrl,
+          if (imagePreview) {
+            await edgestore.publicFiles.delete({
+              url: imagePreview,
             });
           }
-          const resUpload = await edgestore.protectedFiles.upload({
+          const resUpload = await edgestore.publicFiles.upload({
             file: values.imageFile,
             onProgressChange: (progress) => {
               // لو بدك تعمل progress bar

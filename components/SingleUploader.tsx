@@ -7,8 +7,8 @@ import Swal from "sweetalert2";
 import Image from "next/image";
 
 type SingleUploaderProps = {
-  bucket: "protectedFiles";
-  onChange: (url: string) => void; // رابط واحد فقط
+  bucket?: "publicFiles"; // افتراضياً ببليك
+  onChange: (url: string) => void;
   initialUrl?: string;
   required?: boolean;
 };
@@ -25,7 +25,7 @@ export function SingleUploader({
 
   async function handleFileUpload(file: File) {
     try {
-      const res = await edgestore[bucket].upload({
+      const res = await edgestore.publicFiles.upload({
         file,
         onProgressChange: async (p: number) => {
           setProgress(p);
@@ -50,7 +50,8 @@ export function SingleUploader({
   async function removeFile() {
     if (fileUrl) {
       try {
-        await edgestore[bucket].delete({ url: fileUrl });
+        const cleanUrl = fileUrl.trim().replace(/\s/g, "");
+        await edgestore.publicFiles.delete({ url: cleanUrl });
       } catch (err) {
         console.error("فشل حذف الملف:", err);
       }
@@ -78,7 +79,8 @@ export function SingleUploader({
         </label>
       ) : (
         <div className="relative flex items-center gap-2 rounded-lg border p-2">
-          {fileUrl.endsWith(".mp4") || fileUrl.endsWith(".mov") ? (
+          {fileUrl.toLowerCase().endsWith(".mp4") ||
+          fileUrl.toLowerCase().endsWith(".mov") ? (
             <video
               src={fileUrl}
               className="h-32 w-48 rounded-md object-cover"
@@ -86,8 +88,8 @@ export function SingleUploader({
             />
           ) : (
             <Image
-              width={40}
-              height={40}
+              width={160}
+              height={160}
               src={fileUrl}
               alt="Uploaded"
               className="h-20 w-20 rounded-md object-cover"

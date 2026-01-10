@@ -62,7 +62,7 @@ export default function AdminSlider({
     if (result.isConfirmed) {
       try {
         if (slider.imageUrl) {
-          await edgestore.protectedFiles.delete({
+          await edgestore.publicFiles.delete({
             url: slider.imageUrl,
           });
         }

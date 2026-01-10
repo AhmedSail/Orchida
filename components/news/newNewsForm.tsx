@@ -71,12 +71,8 @@ export default function NewNewsForm({
       let imageUrl = "";
 
       if (values.imageFile) {
-        const resUpload = await edgestore.protectedFiles.upload({
+        const resUpload = await edgestore.publicFiles.upload({
           file: values.imageFile,
-          onProgressChange: (progress) => {
-            // لو بدك تعمل progress bar
-            console.log("Upload progress:", progress);
-          },
         });
 
         imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
@@ -226,7 +222,7 @@ export default function NewNewsForm({
                 <UploaderProvider
                   uploadFn={async ({ file, onProgressChange, signal }) => {
                     // رفع الصورة عبر EdgeStore
-                    const res = await edgestore.protectedFiles.upload({
+                    const res = await edgestore.publicFiles.upload({
                       file,
                       signal,
                       onProgressChange,

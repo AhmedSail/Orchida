@@ -29,6 +29,7 @@ import { useRouter } from "next/navigation";
 import { MultiUploader } from "@/components/MultiUploader";
 import { SingleUploader } from "@/components/SingleUploader";
 import { Services } from "./admin/service/servicesPage";
+import { useEdgeStore } from "@/lib/edgestore";
 
 // ✅ Schema
 const workSchema = z.object({
@@ -45,27 +46,40 @@ const workSchema = z.object({
 
 type WorkFormValues = z.infer<typeof workSchema>;
 
-const NewWorks = ({
+const EditWorkForm = ({
   allServices,
   userId,
+  work,
 }: {
   allServices: Services;
   userId: string;
+  work: any;
 }) => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
+  const { edgestore } = useEdgeStore();
+
+  const getRawUrl = (url: string) => {
+    if (!url) return "";
+    if (url.includes("proxy-file?url=")) {
+      return decodeURIComponent(url.split("proxy-file?url=")[1])
+        .trim()
+        .replace(/\s/g, "");
+    }
+    return url.trim().replace(/\s/g, "");
+  };
 
   const form = useForm<WorkFormValues>({
     resolver: zodResolver(workSchema),
     defaultValues: {
-      title: "",
-      description: "",
-      category: "",
-      projectUrl: "",
-      priceRange: "",
-      duration: "",
-      imageUrl: "",
-      mediaUrls: [],
+      title: work?.title ?? "",
+      description: work?.description ?? "",
+      category: work?.category ?? "",
+      projectUrl: work?.projectUrl ?? "",
+      priceRange: work?.priceRange ?? "",
+      duration: work?.duration ?? "",
+      imageUrl: work?.imageUrl ?? "",
+      mediaUrls: work?.mediaFiles?.map((f: any) => f.url) ?? [],
     },
   });
 
@@ -114,23 +128,28 @@ const NewWorks = ({
       }
 
       const mainUrl = values.imageUrl;
-      const ext = mainUrl.split(".").pop()?.toLowerCase();
 
-      let mainType = "file";
-      if (["jpg", "jpeg", "png", "gif"].includes(ext || "")) {
-        mainType = "image";
-      } else if (["mp4", "mov", "avi"].includes(ext || "")) {
-        mainType = "video";
+      // ✅ إذا تغيرت الصورة، نحذف القديمة (بعد التنظيف)
+      if (work?.imageUrl && mainUrl !== work.imageUrl) {
+        try {
+          await edgestore.publicFiles.delete({
+            url: getRawUrl(work.imageUrl),
+          });
+        } catch (e) {
+          console.error("Failed to delete old image:", e);
+        }
       }
 
-      const res = await fetch("/api/works", {
-        method: "POST",
+      const res = await fetch(`/api/works/${work.id}`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          imageUrl: mainUrl,
-          type: mainType,
-          mediaFiles: values.mediaUrls?.map((url) => buildMediaFileObject(url)),
+          imageUrl: getRawUrl(mainUrl),
+          mediaFiles: values.mediaUrls?.map((url) => {
+            const cleaned = getRawUrl(url);
+            return buildMediaFileObject(cleaned);
+          }),
           uploaderId: userId,
         }),
       });
@@ -210,7 +229,7 @@ const NewWorks = ({
                 <FormLabel>الصورة / الفيديو الرئيسي</FormLabel>
                 <FormControl>
                   <SingleUploader
-                    bucket="protectedFiles"
+                    bucket="publicFiles"
                     onChange={(url) => field.onChange(url)} // رابط واحد فقط
                     initialUrl={field.value ?? ""}
                     required={true}
@@ -315,7 +334,7 @@ const NewWorks = ({
                 <FormLabel>📂 وسائط إضافية (صور، فيديو، ملفات)</FormLabel>
                 <FormControl>
                   <MultiUploader
-                    bucket="protectedFiles"
+                    bucket="publicFiles"
                     onChange={(files) => field.onChange(files)} // files لازم تكون [{url, type, filename, mimeType, size}, ...]
                     initialUrls={field.value}
                   />
@@ -346,4 +365,4 @@ const NewWorks = ({
   );
 };
 
-export default NewWorks;
+export default EditWorkForm;

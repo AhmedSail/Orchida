@@ -6,7 +6,7 @@ import { FileState, MultiFileDropzone } from "./multi-file-dropzone";
 import Swal from "sweetalert2";
 
 type MultiUploaderProps = {
-  bucket: "publicFiles" | "protectedFiles";
+  bucket?: "publicFiles";
   onChange: (urls: string[]) => void;
   initialUrls?: string[];
   maxFiles?: number;
@@ -33,7 +33,8 @@ export function MultiUploader({
 
     if (fileToRemove?.fileUrl) {
       try {
-        await edgestore[bucket].delete({ url: fileToRemove.fileUrl });
+        const cleanUrl = fileToRemove.fileUrl.trim().replace(/\s/g, "");
+        await edgestore.publicFiles.delete({ url: cleanUrl });
       } catch (err) {
         console.error("فشل حذف الملف من EdgeStore:", err);
       }
@@ -75,7 +76,7 @@ export function MultiUploader({
           await Promise.all(
             addedFiles.map(async (addedFileState: FileState) => {
               try {
-                const res = await edgestore[bucket].upload({
+                const res = await edgestore.publicFiles.upload({
                   file: addedFileState.file,
                   onProgressChange: async (progress: number) => {
                     updateFileProgress(addedFileState.key, progress);

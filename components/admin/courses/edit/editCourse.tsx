@@ -47,6 +47,7 @@ export default function EditCourseForm({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [preview, setPreview] = useState<string | null>(null); // 👈 معاينة الصورة الجديدة
   const router = useRouter();
+  const { edgestore } = useEdgeStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -63,33 +64,43 @@ export default function EditCourseForm({
       isActive: initialData?.isActive ?? true,
     },
   });
-  const { edgestore } = useEdgeStore();
+
+  const cleanUrl = (url: string) => {
+    if (!url) return "";
+    if (url.includes("proxy-file?url=")) {
+      return decodeURIComponent(url.split("proxy-file?url=")[1])
+        .trim()
+        .replace(/\s/g, "");
+    }
+    return url.trim().replace(/\s/g, "");
+  };
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     let imageUrl = initialData?.imageUrl ?? "";
 
     if (values.imageFile) {
-      // ✅ أولاً نحذف الصورة القديمة إذا موجودة
+      // ✅ حذف القديمة من أي بكت كانت فيه
       if (initialData?.imageUrl) {
-        await edgestore.protectedFiles.delete({
-          url: initialData.imageUrl,
-        });
+        try {
+          await edgestore.publicFiles.delete({
+            url: cleanUrl(initialData.imageUrl),
+          });
+        } catch (err) {
+          console.error("Failed to delete old image:", err);
+        }
       }
 
-      // ✅ ثم نرفع الصورة الجديدة
-      const resUpload = await edgestore.protectedFiles.upload({
+      // ✅ الرفع إلى publicFiles للحصول على رابط مباشر
+      const resUpload = await edgestore.publicFiles.upload({
         file: values.imageFile,
-        onProgressChange: (progress) => {
-          console.log("Upload progress:", progress);
-        },
       });
 
-      imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+      imageUrl = resUpload.url;
     }
 
     const payload = {
       ...values,
-      imageUrl,
+      imageUrl: cleanUrl(imageUrl), // ✅ تنظيف الرابط النهائي قبل الحفظ
     };
 
     const res = await fetch(`/api/courses/${initialData.id}`, {
