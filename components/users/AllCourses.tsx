@@ -181,14 +181,13 @@ const AllCourses = ({
                 whileHover={{ y: -5 }}
               >
                 {/* Image Section */}
-                <div className="relative h-[400px] w-full overflow-hidden">
+                <div className="relative aspect-[4/3] w-full overflow-hidden">
                   {course.imageUrl ? (
                     <Image
                       src={course.imageUrl}
                       alt={course.title}
-                      width={500}
-                      height={500}
-                      className="object-cover transition-transform duration-700 group-hover:scale-110 w-full h-full"
+                      fill
+                      className="object-cover transition-transform duration-700 group-hover:scale-110"
                       sizes="(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw"
                       unoptimized
                     />

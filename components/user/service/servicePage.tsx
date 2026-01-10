@@ -74,9 +74,9 @@ export default function ServicePage({
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="text-4xl font-extrabold text-primary sm:text-5xl mb-10 text-center"
+        className=" text-2xl md:text-4xl font-extrabold text-primary sm:text-5xl mb-10 text-center"
       >
-        خدماتنا الرقمية
+        خــــــــدمـــــــاتنا الـــــــــــــرقــــــمية
       </motion.h1>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
@@ -91,7 +91,7 @@ export default function ServicePage({
             >
               <div>
                 {/* Image/Icon Area */}
-                <div className="w-full h-48 bg-gray-50 rounded-xl mb-6 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:bg-primary/5 transition-colors duration-300">
+                <div className="w-full aspect-video bg-gray-50 rounded-xl mb-6 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:bg-primary/5 transition-colors duration-300">
                   {service.icon ? (
                     service.icon.startsWith("http") ? (
                       <div className="relative w-full h-full">

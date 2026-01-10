@@ -1,6 +1,8 @@
 import type { NextConfig } from "next";
 
 const config: NextConfig = {
+  trailingSlash: false,
+  poweredByHeader: false,
   images: {
     remotePatterns: [
       {
@@ -24,6 +26,8 @@ const config: NextConfig = {
         pathname: "**",
       },
     ],
+    // هنا مكانها الصحيح
+    qualities: [75, 80],
   },
 };
 
