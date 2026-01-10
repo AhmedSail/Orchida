@@ -70,7 +70,7 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
       if (result.isConfirmed) {
         // ✅ إذا عنده صورة نحذفها من EdgeStore
         if (item.imageUrl) {
-          await edgestore.protectedFiles.delete({
+          await edgestore.publicFiles.delete({
             url: item.imageUrl,
           });
         }

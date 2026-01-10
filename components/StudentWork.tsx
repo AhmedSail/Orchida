@@ -58,7 +58,7 @@ const StudentWorkForm = ({
     // ✅ رفع الملف على EdgeStore إذا النوع صورة أو فيديو
     if (file && type !== "story") {
       try {
-        const resUpload = await edgestore.protectedFiles.upload({
+        const resUpload = await edgestore.publicFiles.upload({
           file,
           onProgressChange: (progress) => setUploadProgress(progress),
         });

@@ -95,8 +95,18 @@ const NewWorks = ({
       type,
       filename,
       mimeType,
-      size: 0, // لو مش متاح الحجم من edgestore
+      size: 0,
     };
+  };
+
+  const getRawUrl = (url: string) => {
+    if (!url) return "";
+    if (url.includes("proxy-file?url=")) {
+      return decodeURIComponent(url.split("proxy-file?url=")[1])
+        .trim()
+        .replace(/\s/g, "");
+    }
+    return url.trim().replace(/\s/g, "");
   };
 
   // داخل ملف NewWorks.tsx
@@ -130,9 +140,11 @@ const NewWorks = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          imageUrl: mainUrl,
+          imageUrl: getRawUrl(mainUrl),
           type: mainType,
-          mediaFiles: values.mediaUrls?.map((url) => buildMediaFileObject(url)),
+          mediaFiles: values.mediaUrls?.map((url) =>
+            buildMediaFileObject(getRawUrl(url))
+          ),
           uploaderId: userId,
         }),
       });
@@ -212,7 +224,7 @@ const NewWorks = ({
                 <FormLabel>الصورة / الفيديو الرئيسي</FormLabel>
                 <FormControl>
                   <SingleUploader
-                    bucket="protectedFiles"
+                    bucket="publicFiles"
                     onChange={(url) => field.onChange(url)} // رابط واحد فقط
                     initialUrl={field.value ?? ""}
                     required={true}
@@ -317,7 +329,7 @@ const NewWorks = ({
                 <FormLabel>📂 وسائط إضافية (صور، فيديو، ملفات)</FormLabel>
                 <FormControl>
                   <MultiUploader
-                    bucket="protectedFiles"
+                    bucket="publicFiles"
                     onChange={(files) => field.onChange(files)} // files لازم تكون [{url, type, filename, mimeType, size}, ...]
                     initialUrls={field.value}
                   />

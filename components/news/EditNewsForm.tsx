@@ -94,13 +94,13 @@ export default function EditNewsForm({
       if (values.imageFile) {
         // ✅ أولاً نحذف الصورة القديمة إذا موجودة
         if (currentNews?.imageUrl) {
-          await edgestore.protectedFiles.delete({
+          await edgestore.publicFiles.delete({
             url: currentNews.imageUrl,
           });
         }
 
         // ✅ ثم نرفع الصورة الجديدة
-        const resUpload = await edgestore.protectedFiles.upload({
+        const resUpload = await edgestore.publicFiles.upload({
           file: values.imageFile,
           onProgressChange: (progress) => {
             console.log("Upload progress:", progress);
@@ -255,7 +255,7 @@ export default function EditNewsForm({
                 <UploaderProvider
                   uploadFn={async ({ file, onProgressChange, signal }) => {
                     // رفع الصورة عبر EdgeStore
-                    const res = await edgestore.protectedFiles.upload({
+                    const res = await edgestore.publicFiles.upload({
                       file,
                       signal,
                       onProgressChange,

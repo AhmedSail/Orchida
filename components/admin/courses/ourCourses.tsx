@@ -74,7 +74,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
 
     try {
       if (course.imageUrl) {
-        await edgestore.protectedFiles.delete({
+        await edgestore.publicFiles.delete({
           url: course.imageUrl,
         });
       }

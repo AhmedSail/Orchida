@@ -230,7 +230,7 @@ const EditCompanyInfo = ({
                 <FormLabel>الصورة / الفيديو الرئيسي</FormLabel>
                 <FormControl>
                   <MultiUploader
-                    bucket="protectedFiles"
+                    bucket="publicFiles"
                     onChange={(urls) => field.onChange(urls[0] ?? "")} // نخزن رابط واحد فقط
                     initialUrls={field.value ? [field.value] : []} // نحول string إلى array
                     maxFiles={1}

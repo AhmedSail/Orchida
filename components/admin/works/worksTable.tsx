@@ -87,13 +87,19 @@ const WorksTable = ({
 
     if (confirm.isConfirmed) {
       try {
+        const cleanUrl = (url: string) => url.trim().replace(/\s/g, "");
+
         if (fileUrl) {
-          await edgestore.protectedFiles.delete({ url: fileUrl });
+          await edgestore.publicFiles.delete({
+            url: cleanUrl(fileUrl),
+          });
         }
         if (mediaFiles && mediaFiles.length > 0) {
           for (const file of mediaFiles) {
             if (file.url) {
-              await edgestore.protectedFiles.delete({ url: file.url });
+              await edgestore.publicFiles.delete({
+                url: cleanUrl(file.url),
+              });
             }
           }
         }
@@ -193,7 +199,7 @@ const WorksTable = ({
                     )}
                   </TableCell>
                   <TableCell>{work.title}</TableCell>
-                  <TableCell className="max-w-[300px] whitespace-normal break-words">
+                  <TableCell className="max-w-[300px] whitespace-normal wrap-break-word">
                     {work.description || "—"}
                   </TableCell>
                   <TableCell>{work.category}</TableCell>

@@ -134,7 +134,7 @@ const Payment = ({
     try {
       setLoading(true);
 
-      const uploadRes = await edgestore.protectedFiles.upload({
+      const uploadRes = await edgestore.publicFiles.upload({
         file: receipt,
       });
       const receiptUrl = uploadRes.url;

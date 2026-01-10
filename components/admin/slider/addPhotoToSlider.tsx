@@ -97,7 +97,7 @@ export default function AddPhotoToSlider({
         }
 
         if (values.imageFile) {
-          const resUpload = await edgestore.protectedFiles.upload({
+          const resUpload = await edgestore.publicFiles.upload({
             file: values.imageFile,
             onProgressChange: (progress) => {
               // لو بدك تعمل progress bar
