@@ -138,11 +138,19 @@ export default async function AdminHomePage() {
     )
     .innerJoin(courses, eq(courseSections.courseId, courses.id));
 
-  const studentsCountByCourse: Record<string, number> = {};
-  enrollmentsWithCourse.forEach((row) => {
-    studentsCountByCourse[row.courseTitle] =
-      (studentsCountByCourse[row.courseTitle] || 0) + 1;
+  const leadsWithCourse = await db
+    .select({
+      courseTitle: courses.title,
+    })
+    .from(courseLeads)
+    .innerJoin(courses, eq(courseLeads.courseId, courses.id));
+
+  const leadsCountByCourse: Record<string, number> = {};
+  leadsWithCourse.forEach((row) => {
+    leadsCountByCourse[row.courseTitle] =
+      (leadsCountByCourse[row.courseTitle] || 0) + 1;
   });
+
   const totalOpenEnrollmentResult = await db
     .select({
       total: sql<number>`CAST(COUNT(${courseEnrollments.id}) AS INTEGER)`,
@@ -167,7 +175,8 @@ export default async function AdminHomePage() {
       courseTitle: courses.title,
       sectionNumber: courseSections.sectionNumber,
       maxCapacity: courseSections.maxCapacity,
-      enrollmentCount: sql<number>`CAST(COUNT(${courseEnrollments.id}) AS INTEGER)`,
+      enrollmentCount: sql<number>`CAST(COUNT(DISTINCT ${courseEnrollments.id}) AS INTEGER)`,
+      leadsCount: sql<number>`CAST(COUNT(DISTINCT ${courseLeads.id}) AS INTEGER)`,
     })
     .from(courseSections)
     .innerJoin(courses, eq(courseSections.courseId, courses.id))
@@ -178,6 +187,7 @@ export default async function AdminHomePage() {
         eq(courseEnrollments.isCancelled, false)
       )
     )
+    .leftJoin(courseLeads, eq(courseLeads.sectionId, courseSections.id))
     .where(eq(courseSections.status, "open"))
     .groupBy(courseSections.id, courses.title);
 
@@ -194,9 +204,8 @@ export default async function AdminHomePage() {
         inProgressCourses: inProgressCourses.length,
         completedCourses: completedCourses.length,
         ClosedCourses: ClosedCourses.length,
-        totalOpenEnrollment: totalOpenEnrollment,
       }}
-      studentsCountByCourse={studentsCountByCourse}
+      leadsCountByCourse={leadsCountByCourse}
       userId={session.user.id}
       latestLeads={latestLeads}
       enrollmentsByDay={enrollmentsByDay}

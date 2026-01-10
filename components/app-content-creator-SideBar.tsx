@@ -9,6 +9,7 @@ import {
   LogOut,
   User as UserIcon,
   Settings,
+  UserPlus,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,11 @@ export function AppContentCreatorSidebar({ user }: { user: User }) {
       title: "معرض الأعمال",
       icon: ImagesIcon,
       url: `/content_creator/${user.id}/works`,
+    },
+    {
+      title: "المهتمين والطلبات",
+      icon: UserPlus,
+      url: `/content_creator/${user.id}/leads`,
     },
   ];
 

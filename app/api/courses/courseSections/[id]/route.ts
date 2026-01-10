@@ -33,16 +33,31 @@ export async function PUT(
 ) {
   const params = await context.params;
   try {
-    const { status } = await req.json();
+    const values = await req.json();
 
+    // نحدث كل الحقول المرسلة من الفورم
     const updated = await db
       .update(courseSections)
-      .set({ status })
+      .set({
+        instructorId: values.instructorId,
+        startDate: values.startDate ? new Date(values.startDate) : null,
+        endDate: values.endDate ? new Date(values.endDate) : null,
+        maxCapacity: values.maxCapacity,
+        location: values.location,
+        courseType: values.courseType,
+        status: values.status,
+        notes: values.notes,
+      })
       .where(eq(courseSections.id, params.id))
       .returning();
 
+    if (!updated.length) {
+      return NextResponse.json({ error: "فشل تحديث الشعبة" }, { status: 400 });
+    }
+
     return NextResponse.json(updated[0]);
   } catch (error) {
+    console.error("PUT Error:", error);
     return NextResponse.json({ error: "فشل في تعديل الشعبة" }, { status: 500 });
   }
 }
