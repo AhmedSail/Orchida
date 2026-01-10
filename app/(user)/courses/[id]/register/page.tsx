@@ -36,13 +36,32 @@ const page = async ({ params }: { params: { id: string } }) => {
     .orderBy(desc(courseSections.createdAt))
     .limit(1);
 
+  if (!coursesSelected[0]) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[60vh] text-center p-6">
+        <h2 className="text-2xl font-bold text-zinc-800 mb-2">
+          عذراً، الكورس غير موجود
+        </h2>
+        <p className="text-zinc-500">
+          يبدو أنك تتبع رابطاً غير صحيح أو أن الدورة لم تعد متوفرة.
+        </p>
+        <button
+          onClick={() => window.history.back()}
+          className="mt-4 text-primary font-bold underline"
+        >
+          العودة للخلف
+        </button>
+      </div>
+    );
+  }
+
   return (
     <div>
       <RegisterUser
         lastSectionRaw={lastSectionRaw[0]}
-        user={session?.user!}
+        user={session?.user as any}
         coursesSelected={coursesSelected[0]}
-        allUsers={allUsers}
+        allUsers={allUsers as any}
       />
     </div>
   );

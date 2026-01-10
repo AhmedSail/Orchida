@@ -17,6 +17,7 @@ import {
   User as UserIcon,
   LogOut,
   AppWindow,
+  Users2,
 } from "lucide-react";
 
 import {
@@ -46,6 +47,11 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
       title: "الرئيسية",
       icon: Home,
       url: `/coordinator/${user.id}/home`,
+    },
+    {
+      title: "إدارة المهتمين (Leads)",
+      icon: Users2,
+      url: `/coordinator/${user.id}/leads`,
     },
     {
       title: "الدورات المتاحة",

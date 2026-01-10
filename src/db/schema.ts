@@ -21,6 +21,7 @@ export const userRoleEnum = pgEnum("user_role", [
   "attractor",
   "instructor",
   "content_creator",
+  "guest",
 ]);
 
 export const sectionStatusEnum = pgEnum("section_status", [
@@ -610,6 +611,40 @@ export const verification = pgTable("verification", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+
+// ✅ جدول المهتمين (Leads) للتسجيل السريع بدون تسجيل دخول
+export const courseLeads = pgTable("courseLeads", {
+  id: text("id").primaryKey(),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id),
+  sectionId: text("sectionId").references(() => courseSections.id),
+  studentId: text("studentId").references(() => users.id),
+  studentName: varchar("studentName", { length: 255 }).notNull(),
+  studentPhone: varchar("studentPhone", { length: 20 }).notNull(),
+  studentEmail: varchar("studentEmail", { length: 320 }),
+  studentAge: integer("studentAge"),
+  studentMajor: varchar("studentMajor", { length: 255 }),
+  studentCountry: varchar("studentCountry", { length: 255 }),
+  notes: text("notes"),
+  status: varchar("status", { length: 50 }).default("new"), // new, contacted, interested, registered
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const courseLeadsRelations = relations(courseLeads, ({ one }) => ({
+  course: one(courses, {
+    fields: [courseLeads.courseId],
+    references: [courses.id],
+  }),
+  section: one(courseSections, {
+    fields: [courseLeads.sectionId],
+    references: [courseSections.id],
+  }),
+  student: one(users, {
+    fields: [courseLeads.studentId],
+    references: [users.id],
+  }),
+}));
 
 // 3. Relations Definitions
 

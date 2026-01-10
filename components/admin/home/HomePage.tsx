@@ -2,6 +2,8 @@
 import DashboardCharts from "@/components/DashboardCharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import React from "react";
+import { format } from "date-fns";
+import { ar } from "date-fns/locale";
 import { motion } from "framer-motion";
 import {
   Users,
@@ -29,15 +31,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 
-interface Enrollment {
-  enrollmentId: string;
+interface Lead {
+  id: string;
   studentName: string;
-  studentEmail: string;
+  studentEmail: string | null;
   studentPhone: string | null;
-  registeredAt: Date;
-  sectionId: string;
-  sectionStatus: string;
-  courseId: string;
+  createdAt: Date;
   courseTitle: string;
 }
 
@@ -58,7 +57,7 @@ interface Props {
   studentsCountByCourse?: Record<string, number>;
   loading?: boolean;
   userId?: string;
-  latestEnrollments?: Enrollment[];
+  latestLeads?: Lead[];
   enrollmentsByDay?: { day: string; count: number }[];
   openSections?: {
     sectionId: string;
@@ -74,7 +73,7 @@ const HomePage = ({
   studentsCountByCourse,
   loading,
   userId,
-  latestEnrollments,
+  latestLeads,
   enrollmentsByDay,
   openSections,
 }: Props) => {
@@ -308,8 +307,8 @@ const HomePage = ({
           </motion.div>
         )}
 
-        {/* Latest Enrollments */}
-        {latestEnrollments && latestEnrollments.length > 0 && (
+        {/* Latest Leads */}
+        {latestLeads && latestLeads.length > 0 && (
           <motion.div variants={itemVariants}>
             <Card className="border-none shadow-sm h-full flex flex-col overflow-hidden">
               <CardHeader className="border-b bg-white/50 px-6 py-4">
@@ -319,35 +318,35 @@ const HomePage = ({
                       <History className="size-5 text-amber-600" />
                     </div>
                     <CardTitle className="text-xl font-bold">
-                      آخر المسجلين
+                      أحدث طلبات التسجيل (Leads)
                     </CardTitle>
                   </div>
                   <Badge
                     variant="outline"
                     className="border-amber-200 text-amber-700"
                   >
-                    تحديث مباشر
+                    بانتظار المراجعة
                   </Badge>
                 </div>
               </CardHeader>
               <CardContent className="p-0 grow overflow-auto lg:max-h-[500px]">
                 <div className="divide-y divide-slate-100">
-                  {latestEnrollments.map((enr) => (
+                  {latestLeads.map((lead: Lead) => (
                     <div
-                      key={enr.enrollmentId}
+                      key={lead.id}
                       className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group"
                     >
                       <div className="flex gap-4 items-center">
                         <div className="size-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
-                          {enr.studentName.charAt(0)}
+                          {lead.studentName.charAt(0)}
                         </div>
                         <div className="space-y-0.5">
                           <p className="font-bold text-slate-900 leading-tight">
-                            {enr.studentName}
+                            {lead.studentName}
                           </p>
                           <div className="flex items-center gap-2 text-xs text-slate-400">
                             <Mail className="size-3" />
-                            <span>{enr.studentEmail}</span>
+                            <span>{lead.studentEmail}</span>
                           </div>
                         </div>
                       </div>
@@ -356,14 +355,13 @@ const HomePage = ({
                           variant="secondary"
                           className="text-[10px] px-2 py-0 h-5 bg-slate-100 text-slate-600 border-none truncate max-w-[120px]"
                         >
-                          {enr.courseTitle}
+                          {lead.courseTitle}
                         </Badge>
                         <span className="text-[10px] text-slate-400 flex items-center gap-1">
                           <Clock className="size-3" />
-                          {new Date(enr.registeredAt).toLocaleDateString(
-                            "ar-EG",
-                            { day: "numeric", month: "short" }
-                          )}
+                          {format(new Date(lead.createdAt), "dd MMM yyyy", {
+                            locale: ar,
+                          })}
                         </span>
                       </div>
                     </div>
