@@ -7,11 +7,12 @@ export default function Loading() {
       {/* اللوجو */}
       <Image
         src="/logoLoading.webp"
-        alt="Logo"
+        alt="logoLoading"
         width={200}
         height={200}
-        className="block mx-auto animate-bounce"
+        className="block mx-auto animate-bounce h-full w-52"
         unoptimized
+        loading="eager"
       />
 
       {/* كلمة أوركيدة حرف حرف */}

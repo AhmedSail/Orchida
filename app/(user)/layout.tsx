@@ -15,11 +15,6 @@ const tajawal = Tajawal({
   variable: "--font-tajawal",
 });
 
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوركيدة",
-};
-
 export default async function RootLayout({
   children,
 }: Readonly<{

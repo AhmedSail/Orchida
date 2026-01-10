@@ -84,7 +84,7 @@ export default async function ServiceWorksPage({
       </div>
 
       {/* Hero Section - Full Width Video/Image Style (Like Work Page Hero) */}
-      <div className="relative h-[50vh] w-full rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
+      <div className="relative h-[280px] sm:h-[400px] lg:h-[50vh] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
           {(currentService.largeImage || currentService.smallImage) &&
@@ -93,9 +93,10 @@ export default async function ServiceWorksPage({
             <Image
               src={currentService.largeImage || currentService.smallImage || ""}
               alt={currentService.name}
-              width={1920}
-              height={1080}
+              fill // استخدمنا fill بدلاً من تحديد الأبعاد يدوياً لتملأ الحاوية h-[50vh]
+              priority // لتسريع تحميل صورة الـ Hero
               className="object-cover w-full h-full"
+              sizes="100vw"
               unoptimized
             />
           ) : (
@@ -108,24 +109,23 @@ export default async function ServiceWorksPage({
         </div>
 
         {/* Content Over Media */}
-        <div className="absolute bottom-0 left-0 right-0 p-8 sm:p-12 text-white">
-          <div className="flex flex-col md:flex-row items-end md:items-center justify-between gap-6">
-            <div className="space-y-4 max-w-3xl">
-              <div className="flex items-center gap-3 mb-2">
-                <span className="bg-primary text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
+        <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-12 text-white">
+          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
+            <div className="space-y-2 md:space-y-4 max-w-3xl">
+              <div className="flex items-center gap-2 mb-1">
+                <span className="bg-primary text-white text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full uppercase tracking-wider">
                   {serviceWorks.length} أعمال
                 </span>
                 {isVideoService && (
-                  <span className="bg-white/20 backdrop-blur-md text-white border border-white/20 text-xs font-bold px-3 py-1 rounded-full">
+                  <span className="bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full">
                     <PlayCircle className="w-3 h-3 inline mr-1" />
-                    موشن جرافيك
                   </span>
                 )}
               </div>
-              <h1 className="text-4xl md:text-6xl font-black leading-tight drop-shadow-lg">
+              <h1 className="text-2xl md:text-6xl font-black leading-tight drop-shadow-lg">
                 {currentService.name}
               </h1>
-              <p className="text-lg md:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed opacity-90 font-light">
+              <p className="text-sm md:text-xl text-gray-200 line-clamp-1 md:line-clamp-3 leading-relaxed opacity-90 font-light">
                 {currentService.description ||
                   "استكشف أحدث أعمالنا الإبداعية في هذا القسم."}
               </p>
@@ -133,8 +133,15 @@ export default async function ServiceWorksPage({
 
             <Button
               asChild
+              size="sm"
+              className="md:hidden bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-6 py-4 font-bold text-sm shadow-xl transition-transform hover:scale-105"
+            >
+              <Link href="/serviceRequest">اطلب الآن</Link>
+            </Button>
+            <Button
+              asChild
               size="lg"
-              className="bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-8 py-6 font-bold text-lg shadow-xl transition-transform hover:scale-105"
+              className="hidden md:flex bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-8 py-6 font-bold text-lg shadow-xl transition-transform hover:scale-105"
             >
               <Link href="/serviceRequest">اطلب الخدمة الآن</Link>
             </Button>

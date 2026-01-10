@@ -3,17 +3,20 @@ import type { NextRequest } from "next/server";
 import { auth } from "./lib/auth";
 
 export const config = {
-  matcher: ["/((?!api|_next/static|_next/image|favicon.ico).*)"],
+  // تشغيل الميدلوير على كل المسارات ما عدا الملفات الثابتة والـ API
+  matcher: [
+    "/((?!api|_next/static|_next/image|favicon.ico|logoLoading.webp|logo.svg).*)",
+  ],
 };
 
 export default async function proxy(req: NextRequest) {
-  const res = NextResponse.next();
   const pathname = req.nextUrl.pathname;
 
-  // ✅ جلب الـ session من BetterAuth
+  // جلب الجلسة (Session) باستخدام BetterAuth
   const session = await auth.api.getSession({ headers: req.headers });
-
   const role = session?.user?.role;
+
+  // تعريف المسارات المحمية لكل دور
   const rolePaths: Record<string, string> = {
     admin: "/admin",
     coordinator: "/coordinator",
@@ -23,20 +26,35 @@ export default async function proxy(req: NextRequest) {
     user: "/dashboardUser",
   };
 
-  // ✅ تحقق فقط إذا كان المسار محمي
   const protectedPrefixes = Object.values(rolePaths);
   const isProtectedPath = protectedPrefixes.some((prefix) =>
     pathname.startsWith(prefix)
   );
 
+  // إذا كان المسار محمياً
   if (isProtectedPath) {
-    const requiredPrefix = rolePaths[role || "user"];
-    if (!requiredPrefix || !pathname.startsWith(requiredPrefix)) {
-      console.log(`Unauthorized: Role ${role} trying to access ${pathname}`);
-      return NextResponse.redirect(new URL("/", req.url));
+    // 1. إذا لم يكن هناك تسجيل دخول -> توجيه لصفحة تسجيل الدخول
+    if (!session) {
+      const signInUrl = new URL("/sign-in", req.url);
+      signInUrl.searchParams.set("callbackURL", pathname);
+      return NextResponse.redirect(signInUrl);
+    }
+
+    // 2. التحقق من صلاحية الدور للوصول لهذا المسار
+    const userDashboardPrefix = rolePaths[role as string];
+
+    // إذا كان يحاول الدخول لمسار محمي لا يخص دوره (مثلاً يوزر يحاول دخول أدمن)
+    if (!userDashboardPrefix || !pathname.startsWith(userDashboardPrefix)) {
+      console.log(
+        `Unauthorized access attempt: Role [${role}] tried to access [${pathname}]`
+      );
+
+      // توجيه لصفحة لوحة التحكم الخاصة به أو للرئيسية
+      const fallbackUrl = "/";
+      return NextResponse.redirect(new URL(fallbackUrl, req.url));
     }
   }
 
-  // ✅ لو المسار عام أو الدور صحيح → كمل
-  return res;
+  // إذا كان المسار عاماً أو الصلاحيات صحيحة
+  return NextResponse.next();
 }

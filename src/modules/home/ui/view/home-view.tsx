@@ -12,6 +12,10 @@ import { Section } from "@/app/admin/[adminId]/courses/sections/[id]/edit/page";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import LatestNewsUser from "../components/lastEvents";
+import Head from "next/head";
+<Head>
+  <link rel="canonical" href="https://www.orchida-ods.com/" />
+</Head>;
 
 const CoursesUser = dynamic(() => import("@/components/users/CoursesUser"), {
   loading: () => <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />,

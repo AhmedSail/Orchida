@@ -2,7 +2,6 @@ import { betterAuth } from "better-auth";
 import { drizzleAdapter } from "better-auth/adapters/drizzle";
 import { db } from "@/src"; // your drizzle instance
 import * as schema from "@/src/db/schema";
-import { sendEmail } from "./email";
 
 interface GoogleProfile {
   sub: string;
@@ -51,6 +50,7 @@ export const auth = betterAuth({
   },
   emailVerification: {
     sendVerificationEmail: async ({ user, url, token }, request) => {
+      const { sendEmail } = await import("./email");
       // HTML email template مع شعار وهيدر
       const htmlContent = `
       <div style="font-family: Arial, sans-serif; text-align: center; padding: 20px;">
@@ -95,6 +95,7 @@ export const auth = betterAuth({
 
     // ✅ هنا تضع دوال reset password
     sendResetPassword: async ({ user, url, token }, request) => {
+      const { sendEmail } = await import("./email");
       await sendEmail({
         to: user.email,
         subject: "إعادة تعيين كلمة المرور",
