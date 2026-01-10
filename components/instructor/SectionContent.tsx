@@ -22,6 +22,22 @@ import EditModuleDialog from "./EditModuleDialog";
 import EditChapterDialog from "./EditChapterDialog";
 import { useEdgeStore } from "@/lib/edgestore";
 import EditContentDialog from "./EditContentDialog";
+import { motion, AnimatePresence } from "framer-motion";
+import {
+  Package,
+  Book,
+  FileInput,
+  Eye,
+  Edit3,
+  Trash2,
+  Plus,
+  Video,
+  FileText,
+  HelpCircle,
+  ChevronRight,
+  GripVertical,
+} from "lucide-react";
+import { Badge } from "../ui/badge";
 
 interface Props {
   modules: AllModules[];
@@ -59,31 +75,41 @@ const SectionContent = ({
 
   const handleModuleAdded = (newModule: AllModules) => {
     setModules((prev) => [...prev, newModule]);
-    Swal.fire("نجاح ✅", "تمت إضافة الوحدة بنجاح", "success");
+    Swal.fire({
+      title: "تمت الإضافة بنجاح",
+      text: "تم إنشاء الوحدة التدريبية الجديدة",
+      icon: "success",
+      confirmButtonColor: "#3b82f6",
+    });
   };
 
   const handleChapterAdded = (newChapter: AllChapters) => {
     setChapters((prev) => [...prev, newChapter]);
-    Swal.fire("نجاح ✅", "تمت إضافة الفصل بنجاح", "success");
+    Swal.fire({
+      title: "تمت إضافة الفصل",
+      icon: "success",
+      confirmButtonColor: "#10b981",
+    });
   };
 
   const handleDeleteModule = async (id: string) => {
     const confirm = await Swal.fire({
       title: "هل أنت متأكد؟",
-      text: "سيتم حذف الوحدة وكل الفصول والمحتويات المرتبطة بها",
+      text: "سيؤدي هذا لحذف كافة الفصول والمحتويات المرتبطة بهذه الوحدة!",
       icon: "warning",
       showCancelButton: true,
+      confirmButtonColor: "#ef4444",
       confirmButtonText: "نعم، احذفها",
-      cancelButtonText: "إلغاء",
+      cancelButtonText: "تراجع",
     });
 
     if (confirm.isConfirmed) {
       try {
         await fetch(`/api/modules/${id}`, { method: "DELETE" });
         setModules((prev) => prev.filter((m) => m.id !== id));
-        Swal.fire("تم الحذف ✅", "تم حذف الوحدة بنجاح", "success");
+        Swal.fire("تم الحذف", "تمت إزالة الوحدة بنجاح", "success");
       } catch {
-        Swal.fire("خطأ ❌", "فشل حذف الوحدة", "error");
+        Swal.fire("خطأ", "لم نتمكن من الحذف حالياً", "error");
       }
     }
   };
@@ -100,9 +126,9 @@ const SectionContent = ({
       });
       const updated = await res.json();
       setModules((prev) => prev.map((m) => (m.id === id ? updated : m)));
-      Swal.fire("تم التعديل ✅", "تم تعديل الوحدة بنجاح", "success");
+      Swal.fire("تم التحديث", "تم حفظ التعديلات بنجاح", "success");
     } catch {
-      Swal.fire("خطأ ❌", "فشل تعديل الوحدة", "error");
+      Swal.fire("خطأ", "فشل في تحديث البيانات", "error");
     }
   };
 
@@ -118,40 +144,38 @@ const SectionContent = ({
       });
       const updated = await res.json();
       setChapters((prev) => prev.map((c) => (c.id === id ? updated : c)));
-      Swal.fire("تم التعديل ✅", "تم تعديل الفصل بنجاح", "success");
+      Swal.fire("تم التعديل", "تم تعديل الفصل بنجاح", "success");
     } catch {
-      Swal.fire("خطأ ❌", "فشل تعديل الفصل", "error");
+      Swal.fire("خطأ", "فشل التعديل", "error");
     }
   };
 
   const handleDeleteChapter = async (id: string) => {
     const confirm = await Swal.fire({
-      title: "هل أنت متأكد؟",
-      text: "سيتم حذف الفصل وكل المحتويات المرتبطة به",
+      title: "حذف الفصل؟",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "نعم، احذفه",
-      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: "نعم",
     });
 
     if (confirm.isConfirmed) {
       try {
         await fetch(`/api/chapters/${id}`, { method: "DELETE" });
         setChapters((prev) => prev.filter((c) => c.id !== id));
-        Swal.fire("تم الحذف ✅", "تم حذف الفصل بنجاح", "success");
+        Swal.fire("تم الحذف", "تمت إزالة الفصل", "success");
       } catch {
-        Swal.fire("خطأ ❌", "فشل حذف الفصل", "error");
+        Swal.fire("خطأ", "فشل الحذف", "error");
       }
     }
   };
 
   const handleDeleteContent = async (id: string, fileUrl?: string) => {
     const confirm = await Swal.fire({
-      title: "هل أنت متأكد؟",
+      title: "حذف المحتوى؟",
       icon: "warning",
       showCancelButton: true,
-      confirmButtonText: "نعم، احذف",
-      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
     });
 
     if (confirm.isConfirmed) {
@@ -161,9 +185,9 @@ const SectionContent = ({
         }
         await fetch(`/api/content/${id}`, { method: "DELETE" });
         setContents((prev) => prev.filter((c) => c.id !== id));
-        Swal.fire("تم الحذف ✅", "تم حذف المحتوى بنجاح", "success");
+        Swal.fire("تم!", "تم حذف المحتوى", "success");
       } catch (error) {
-        Swal.fire("خطأ ❌", "فشل حذف المحتوى", "error");
+        Swal.fire("خطأ", "فشل الحذف", "error");
       }
     }
   };
@@ -172,72 +196,83 @@ const SectionContent = ({
     try {
       let fileUrl: string | null = null;
       let attachmentName: string | null = null;
-      let contentType = null; // القيمة الافتراضية من الفورم
+      let contentType = null;
 
       if (data.file) {
-        // أولاً نطلب من السيرفر حذف الملف القديم
         await fetch(`/api/content/${id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            removeFile: true,
-          }),
+          body: JSON.stringify({ removeFile: true }),
         });
 
-        // ثانياً نرفع الملف الجديد على EdgeStore
         const resUpload = await edgestore.publicFiles.upload({
           file: data.file,
-          onProgressChange: (progress) => {
-            console.log("Upload progress:", progress);
-          },
         });
 
         fileUrl = resUpload.url;
         attachmentName = data.file.name;
-
-        // ✅ تحديد نوع المحتوى حسب نوع الملف
-        const mimeType = data.file.type; // مثل image/png أو video/mp4 أو application/pdf
-        if (mimeType.startsWith("image/")) {
-          contentType = "image";
-        } else if (mimeType.startsWith("video/")) {
-          contentType = "video";
-        } else {
-          contentType = "attachment"; // أي نوع آخر يعتبر مرفق
-        }
+        const mimeType = data.file.type;
+        if (mimeType.startsWith("image/")) contentType = "image";
+        else if (mimeType.startsWith("video/")) contentType = "video";
+        else contentType = "attachment";
       } else {
-        // لو ما في ملف جديد، نخلي النوع من الفورم
         contentType = data.contentType;
       }
 
-      // ✅ إرسال البيانات النهائية للـ API
       const res = await fetch(`/api/content/${id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           title: data.title,
           description: data.description,
-          contentType, // النوع الجديد حسب الملف
+          contentType,
           fileUrl,
           attachmentName,
-          removeFile: data.removeFile, // لو المستخدم اختار حذف بدون رفع جديد
+          removeFile: data.removeFile,
         }),
       });
 
-      if (!res.ok) {
-        throw new Error("فشل تحديث المحتوى");
-      }
-
-      const updated = await res.json();
-      console.log("✅ تم تحديث المحتوى:", updated);
+      if (!res.ok) throw new Error();
+      Swal.fire("تم التحديث", "تم تعديل المحتوى بنجاح", "success");
+      window.location.reload(); // Refresh to get latest data
     } catch (err) {
-      console.error("❌ خطأ أثناء التحديث:", err);
+      Swal.fire("خطأ", "فشل التحديث", "error");
+    }
+  };
+
+  const getContentIcon = (type: string) => {
+    switch (type) {
+      case "video":
+        return <Video className="size-5 text-blue-500" />;
+      case "image":
+        return <Book className="size-5 text-emerald-500" />;
+      case "attachment":
+        return <FileText className="size-5 text-orange-500" />;
+      default:
+        return <HelpCircle className="size-5 text-slate-400" />;
     }
   };
 
   return (
-    <div>
-      <div>
-        <Button onClick={() => setActiveModules(true)}>➕ اضافة وحدة</Button>
+    <div className="space-y-6" dir="rtl">
+      {/* Top Action Bar */}
+      <div className="flex justify-between items-center p-6 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm">
+        <div className="space-y-1">
+          <h3 className="text-xl font-black text-slate-800 dark:text-white">
+            إدارة الوحدات
+          </h3>
+          <p className="text-sm text-slate-500 font-medium">
+            قم بتنظيم محتوى الدورة التدريبية
+          </p>
+        </div>
+        <Button
+          onClick={() => setActiveModules(true)}
+          className="rounded-2xl h-12 px-6 bg-primary hover:bg-primary/90 text-white font-black flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95"
+        >
+          <Plus className="size-5" />
+          إضافة وحدة جديدة
+        </Button>
+
         {activeModules && (
           <AddModuleDialog
             userId={userId}
@@ -250,35 +285,55 @@ const SectionContent = ({
         )}
       </div>
 
-      <Accordion type="single" collapsible className="w-full mt-4">
+      {/* Modules List */}
+      <Accordion type="single" collapsible className="space-y-4">
         {modules.map((module) => (
-          <AccordionItem key={module.id} value={module.id}>
-            <AccordionTrigger className="text-2xl hover:no-underline">
-              <div className="flex items-center gap-3 text-start w-full">
-                <span className="text-3xl">📦</span>
-                <div className="flex-grow">
-                  <h1 className="font-semibold">{module.title}</h1>
-                  <p className="text-sm text-gray-500 font-normal">
+          <AccordionItem
+            key={module.id}
+            value={module.id}
+            className="border-none bg-white dark:bg-black/20 rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800/50 shadow-sm hover:shadow-md transition-all"
+          >
+            <AccordionTrigger className="px-6 py-6 hover:no-underline group">
+              <div className="flex items-center gap-5 text-right w-full">
+                <div className="size-14 rounded-2xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
+                  <Package className="size-8" />
+                </div>
+                <div className="grow text-right">
+                  <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
+                    {module.title}
+                  </h4>
+                  <p className="text-sm text-slate-500 font-medium line-clamp-1">
                     {module.description}
                   </p>
                 </div>
               </div>
             </AccordionTrigger>
-            <AccordionContent className="text-lg space-y-4 pt-4">
-              <div className="flex gap-2 border-b pb-4">
+
+            <AccordionContent className="px-6 pb-6 pt-2">
+              <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-2xl border border-slate-100 dark:border-zinc-800 mb-6">
                 <Button
-                  variant="outline"
+                  variant="ghost"
                   size="sm"
                   onClick={() => setEditModuleId(module.id)}
+                  className="h-9 px-4 rounded-xl font-bold gap-2 text-slate-600 hover:text-primary transition-colors"
                 >
-                  ✏️ تعديل الوحدة
+                  <Edit3 className="size-4" /> تعديل
                 </Button>
+                <div className="w-[1px] h-4 bg-slate-200 dark:bg-zinc-800" />
                 <Button
-                  variant="destructive"
+                  variant="ghost"
                   size="sm"
                   onClick={() => handleDeleteModule(module.id)}
+                  className="h-9 px-4 rounded-xl font-bold gap-2 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
                 >
-                  🗑️ حذف الوحدة
+                  <Trash2 className="size-4" /> حذف
+                </Button>
+                <div className="grow" />
+                <Button
+                  onClick={() => setActiveChapterModuleId(module.id)}
+                  className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold gap-2"
+                >
+                  <Plus className="size-4" /> إضافة فصل جديد
                 </Button>
               </div>
 
@@ -293,10 +348,6 @@ const SectionContent = ({
                 />
               )}
 
-              <Button onClick={() => setActiveChapterModuleId(module.id)}>
-                ➕ اضافة فصل
-              </Button>
-
               {activeChapterModuleId === module.id && (
                 <AddChapterDialog
                   active={true}
@@ -306,10 +357,11 @@ const SectionContent = ({
                 />
               )}
 
+              {/* Chapters List */}
               <Accordion
                 type="single"
                 collapsible
-                className="ml-4 border-l pl-4"
+                className="space-y-3 mr-8 border-r-2 border-slate-100 dark:border-zinc-800 pr-4"
               >
                 {chapters
                   .filter((ch) => ch.moduleId === module.id)
@@ -317,34 +369,51 @@ const SectionContent = ({
                     <AccordionItem
                       key={chapter.id}
                       value={chapter.id}
-                      className="border-b-0"
+                      className="border-none bg-slate-50/50 dark:bg-zinc-900/30 rounded-2xl border border-slate-100 dark:border-zinc-800/50 overflow-hidden"
                     >
-                      <AccordionTrigger className="text-lg hover:no-underline">
-                        <div className="flex items-center gap-3 text-start w-full">
-                          <span className="text-xl">📖</span>
-                          <div className="">
-                            <h2 className="font-medium">{chapter.title}</h2>
-                            <p className="text-xs text-gray-500 font-normal">
-                              {chapter.description}
+                      <AccordionTrigger className="px-5 py-4 hover:no-underline group/ch">
+                        <div className="flex items-center gap-4 text-right w-full">
+                          <div className="size-10 rounded-xl bg-white dark:bg-zinc-950 flex items-center justify-center text-slate-400 group-hover/ch:text-emerald-500 group-hover/ch:shadow-lg group-hover/ch:shadow-emerald-500/10 transition-all">
+                            <Book className="size-5" />
+                          </div>
+                          <div className="grow text-right">
+                            <h5 className="font-bold text-slate-800 dark:text-zinc-200">
+                              {chapter.title}
+                            </h5>
+                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
+                              {chapter.description?.slice(0, 50)}...
                             </p>
                           </div>
                         </div>
                       </AccordionTrigger>
-                      <AccordionContent className="space-y-3 pt-3">
-                        <div className="flex gap-2 border-b pb-3">
+
+                      <AccordionContent className="px-5 pb-5">
+                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 dark:border-zinc-800 pb-4 mt-2">
                           <Button
-                            variant="outline"
+                            variant="ghost"
                             size="sm"
                             onClick={() => setEditChapterId(chapter.id)}
+                            className="h-8 px-3 rounded-lg text-[11px] font-black text-slate-500 gap-1.5 hover:bg-white transition-all"
                           >
-                            ✏️ تعديل الفصل
+                            <Edit3 className="size-3" /> تعديل الفصل
                           </Button>
                           <Button
-                            variant="destructive"
+                            variant="ghost"
                             size="sm"
                             onClick={() => handleDeleteChapter(chapter.id)}
+                            className="h-8 px-3 rounded-lg text-[11px] font-black text-red-400 gap-1.5 hover:bg-red-50 transition-all"
                           >
-                            🗑️ حذف الفصل
+                            <Trash2 className="size-3" /> حذف
+                          </Button>
+                          <div className="grow" />
+                          <Button
+                            size="sm"
+                            onClick={() =>
+                              setActiveContentChapterId(chapter.id)
+                            }
+                            className="h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black gap-1.5 shadow-md shadow-emerald-500/10"
+                          >
+                            <Plus className="size-3" /> إضافة درس
                           </Button>
                         </div>
 
@@ -359,13 +428,6 @@ const SectionContent = ({
                           />
                         )}
 
-                        <Button
-                          size="sm"
-                          onClick={() => setActiveContentChapterId(chapter.id)}
-                        >
-                          ➕ إضافة محتوى
-                        </Button>
-
                         {activeContentChapterId === chapter.id && (
                           <AddContentDialog
                             active={true}
@@ -374,82 +436,78 @@ const SectionContent = ({
                           />
                         )}
 
+                        {/* Lessons List */}
                         <div className="space-y-2">
-                          {contents
-                            .filter((c) => c.chapterId === chapter.id)
-                            .map((content) => (
-                              <div
-                                key={content.id}
-                                className="border rounded p-3 bg-gray-50 flex justify-between items-center"
-                              >
-                                <div>
-                                  <h3 className="font-semibold">
-                                    {content.title}
-                                  </h3>
-                                  <p className="text-sm text-gray-500">
-                                    {content.description}
-                                  </p>
-                                </div>
-                                <div className="flex gap-2">
-                                  <Button
-                                    size="sm"
-                                    onClick={() => setActiveContent(content)}
-                                  >
-                                    👁️
-                                  </Button>
-                                  <Button
-                                    variant="outline"
-                                    size="sm"
-                                    onClick={() => setEditContentId(content.id)}
-                                  >
-                                    ✏️
-                                  </Button>
-                                  {editContentId === content.id && (
-                                    <EditContentDialog
-                                      active={true}
-                                      setActive={() => setEditContentId(null)}
-                                      content={content}
-                                      onUpdate={handleUpdateContent}
-                                    />
-                                  )}
-                                  <Button
-                                    variant="destructive"
-                                    size="sm"
-                                    onClick={() =>
-                                      handleDeleteContent(
-                                        content.id,
-                                        content.videoUrl ||
-                                          content.imageUrl ||
-                                          content.attachmentUrl ||
-                                          undefined
-                                      )
-                                    }
-                                  >
-                                    🗑️
-                                  </Button>
-                                </div>
-                              </div>
-                            ))}
+                          <AnimatePresence mode="popLayout">
+                            {contents
+                              .filter((c) => c.chapterId === chapter.id)
+                              .map((content, idx) => (
+                                <motion.div
+                                  layout
+                                  key={content.id}
+                                  initial={{ opacity: 0, x: -10 }}
+                                  animate={{ opacity: 1, x: 0 }}
+                                  transition={{ delay: idx * 0.05 }}
+                                  className="group/item flex items-center justify-between p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all"
+                                >
+                                  <div className="flex items-center gap-4">
+                                    <div className="size-10 rounded-xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center group-hover/item:scale-110 transition-transform shadow-sm">
+                                      {getContentIcon(content.contentType)}
+                                    </div>
+                                    <div className="space-y-0.5">
+                                      <h6 className="font-bold text-sm text-slate-800 dark:text-zinc-200">
+                                        {content.title}
+                                      </h6>
+                                      <div className="flex items-center gap-2">
+                                        <Badge
+                                          variant="outline"
+                                          className="text-[8px] px-1.5 py-0 rounded-md font-black uppercase text-slate-400 border-slate-100"
+                                        >
+                                          {content.contentType}
+                                        </Badge>
+                                      </div>
+                                    </div>
+                                  </div>
+                                  <div className="flex gap-2 opacity-100 md:opacity-0 group-hover/item:opacity-100 transition-opacity">
+                                    <Button
+                                      size="sm"
+                                      variant="secondary"
+                                      onClick={() => setActiveContent(content)}
+                                      className="size-9 p-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 shadow-sm"
+                                    >
+                                      <Eye className="size-4" />
+                                    </Button>
+                                    <Button
+                                      variant="outline"
+                                      size="sm"
+                                      onClick={() =>
+                                        setEditContentId(content.id)
+                                      }
+                                      className="size-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
+                                    >
+                                      <Edit3 className="size-4" />
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      size="sm"
+                                      onClick={() =>
+                                        handleDeleteContent(
+                                          content.id,
+                                          content.videoUrl ||
+                                            content.imageUrl ||
+                                            content.attachmentUrl ||
+                                            undefined
+                                        )
+                                      }
+                                      className="size-9 p-0 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border-none shadow-sm"
+                                    >
+                                      <Trash2 className="size-4" />
+                                    </Button>
+                                  </div>
+                                </motion.div>
+                              ))}
+                          </AnimatePresence>
                         </div>
-
-                        {editContentId && (
-                          <EditContentDialog
-                            active={true}
-                            setActive={() => setEditContentId(null)}
-                            content={
-                              contents.find((c) => c.id === editContentId)!
-                            }
-                            onUpdate={handleUpdateContent}
-                          />
-                        )}
-
-                        {activeContent && (
-                          <ViewContentDialog
-                            active={true}
-                            setActive={() => setActiveContent(null)}
-                            content={activeContent}
-                          />
-                        )}
                       </AccordionContent>
                     </AccordionItem>
                   ))}
@@ -458,6 +516,24 @@ const SectionContent = ({
           </AccordionItem>
         ))}
       </Accordion>
+
+      {/* Global Dialogs */}
+      {editContentId && (
+        <EditContentDialog
+          active={true}
+          setActive={() => setEditContentId(null)}
+          content={contents.find((c) => c.id === editContentId)!}
+          onUpdate={handleUpdateContent}
+        />
+      )}
+
+      {activeContent && (
+        <ViewContentDialog
+          active={true}
+          setActive={() => setActiveContent(null)}
+          content={activeContent}
+        />
+      )}
     </div>
   );
 };
