@@ -52,9 +52,8 @@ interface Props {
     inProgressCourses: number;
     completedCourses: number;
     ClosedCourses: number;
-    totalOpenEnrollment: number;
   };
-  studentsCountByCourse?: Record<string, number>;
+  leadsCountByCourse?: Record<string, number>;
   loading?: boolean;
   userId?: string;
   latestLeads?: Lead[];
@@ -64,13 +63,14 @@ interface Props {
     courseTitle: string;
     sectionNumber: number;
     enrollmentCount: number;
+    leadsCount: number;
     maxCapacity: number;
   }[];
 }
 
 const HomePage = ({
   stats,
-  studentsCountByCourse,
+  leadsCountByCourse,
   loading,
   userId,
   latestLeads,
@@ -172,13 +172,6 @@ const HomePage = ({
           color: "text-slate-500",
           bg: "bg-slate-50",
         },
-        {
-          label: "إجمالي المسجلين حالياً",
-          value: stats?.totalOpenEnrollment,
-          icon: Users2,
-          color: "text-violet-600",
-          bg: "bg-violet-50",
-        },
       ],
     },
   ];
@@ -259,6 +252,7 @@ const HomePage = ({
                       </TableHead>
                       <TableHead className="text-center">الشعبة</TableHead>
                       <TableHead className="text-center">المسجلين</TableHead>
+                      <TableHead className="text-center">المهتمين</TableHead>
                       <TableHead className="text-center">الحالة</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -281,6 +275,16 @@ const HomePage = ({
                             </span>
                             <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
                               من أصل {sec.maxCapacity}
+                            </span>
+                          </div>
+                        </TableCell>
+                        <TableCell className="text-center">
+                          <div className="flex flex-col items-center gap-1">
+                            <span className="font-black text-amber-600 text-base leading-none">
+                              {sec.leadsCount}
+                            </span>
+                            <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
+                              طلب
                             </span>
                           </div>
                         </TableCell>
@@ -432,7 +436,7 @@ const HomePage = ({
           <CardContent className="p-8">
             <DashboardCharts
               stats={stats}
-              studentsCountByCourse={studentsCountByCourse}
+              leadsCountByCourse={leadsCountByCourse}
               enrollmentsByDay={enrollmentsByDay}
             />
           </CardContent>

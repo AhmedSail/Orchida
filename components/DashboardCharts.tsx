@@ -30,13 +30,13 @@ interface Props {
     completedCourses: number;
     ClosedCourses: number;
   };
-  studentsCountByCourse?: Record<string, number>;
+  leadsCountByCourse?: Record<string, number>;
   enrollmentsByDay?: { day: string; count: number }[]; // ✅ التسجيلات اليومية
 }
 
 const DashboardCharts = ({
   stats,
-  studentsCountByCourse,
+  leadsCountByCourse,
   enrollmentsByDay,
 }: Props) => {
   // ✅ Pie chart لحالة الخدمات
@@ -45,15 +45,15 @@ const DashboardCharts = ({
     { name: "مكتملة", value: stats?.endedServices || 0 },
   ];
 
-  // ✅ توزيع الطلاب على الكورسات
-  const studentDistribution =
-    studentsCountByCourse &&
-    Object.entries(studentsCountByCourse).map(([courseTitle, count]) => ({
+  // ✅ توزيع المهتمين على الكورسات
+  const leadDistribution =
+    leadsCountByCourse &&
+    Object.entries(leadsCountByCourse).map(([courseTitle, count]) => ({
       course:
         courseTitle.length > 15
           ? courseTitle.substring(0, 15) + "..."
           : courseTitle,
-      students: count,
+      leads: count,
     }));
 
   // ✅ نسبة إكمال الكورسات
@@ -73,9 +73,9 @@ const DashboardCharts = ({
           <p className="font-bold text-slate-800 mb-1">
             {label || payload[0].name}
           </p>
-          <p className="text-primary font-black">
+          <p className="text-amber-600 font-black">
             {payload[0].value}{" "}
-            <span className="text-[10px] text-slate-400 font-normal">سجل</span>
+            <span className="text-[10px] text-slate-400 font-normal">مهتم</span>
           </p>
         </div>
       );
@@ -89,19 +89,19 @@ const DashboardCharts = ({
       <div className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <h3 className="text-lg font-bold text-slate-700">
-            توزيع المسجلين حسب الدورة
+            توزيع المهتمين حسب الدورة
           </h3>
           <Badge variant="outline" className="text-[10px] opacity-60">
-            Bar Chart
+            Leads Distribution
           </Badge>
         </div>
         <div className="h-[300px] w-full bg-slate-50/50 rounded-2xl p-4">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={studentDistribution || []}>
+            <BarChart data={leadDistribution || []}>
               <defs>
                 <linearGradient id="barGradient" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="0%" stopColor="#675795" stopOpacity={1} />
-                  <stop offset="100%" stopColor="#897baa" stopOpacity={0.8} />
+                  <stop offset="0%" stopColor="#d97706" stopOpacity={1} />
+                  <stop offset="100%" stopColor="#f59e0b" stopOpacity={0.8} />
                 </linearGradient>
               </defs>
               <CartesianGrid
@@ -126,7 +126,7 @@ const DashboardCharts = ({
                 cursor={{ fill: "#f1f5f9" }}
               />
               <Bar
-                dataKey="students"
+                dataKey="leads"
                 fill="url(#barGradient)"
                 radius={[6, 6, 0, 0]}
                 barSize={35}

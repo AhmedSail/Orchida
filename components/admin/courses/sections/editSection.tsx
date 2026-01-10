@@ -204,6 +204,38 @@ export default function EditSectionForm({
             )}
           />
 
+          {/* الحالة - فقط إذا كان هناك خيارات متاحة */}
+          {statusOptions.length > 0 && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>حالة الشعبة</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      dir="rtl"
+                    >
+                      <SelectTrigger dir="rtl" className="w-full">
+                        <SelectValue placeholder="اختر الحالة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {statusOptions.map((opt) => (
+                          <SelectItem key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
+
           {/* تاريخ البداية */}
           <FormField
             control={form.control}

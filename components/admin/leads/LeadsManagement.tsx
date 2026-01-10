@@ -65,6 +65,7 @@ const LeadsManagement = () => {
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
+  const [filterCourseId, setFilterCourseId] = useState("all");
 
   const fetchLeads = async () => {
     try {
@@ -177,8 +178,14 @@ const LeadsManagement = () => {
       lead.course.title.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesStatus =
       filterStatus === "all" || lead.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const matchesCourse =
+      filterCourseId === "all" || lead.courseId === filterCourseId;
+    return matchesSearch && matchesStatus && matchesCourse;
   });
+
+  const uniqueCourses = Array.from(
+    new Map(leads.map((l) => [l.courseId, l.course.title])).entries()
+  ).map(([id, title]) => ({ id, title }));
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -250,19 +257,36 @@ const LeadsManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-        <div className="flex items-center gap-2 w-full md:w-auto">
-          <Filter className="w-5 h-5 text-zinc-400 mr-2" />
-          <select
-            className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-48"
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">كل الحالات</option>
-            <option value="new">جديد</option>
-            <option value="contacted">تم التواصل</option>
-            <option value="interested">مهتم</option>
-            <option value="registered">مسجل</option>
-          </select>
+        <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <Filter className="w-5 h-5 text-zinc-400 mr-2" />
+            <select
+              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-44"
+              value={filterStatus}
+              onChange={(e) => setFilterStatus(e.target.value)}
+            >
+              <option value="all">كل الحالات</option>
+              <option value="new">جديد</option>
+              <option value="contacted">تم التواصل</option>
+              <option value="interested">مهتم</option>
+              <option value="registered">مسجل</option>
+            </select>
+          </div>
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <GraduationCap className="w-5 h-5 text-zinc-400 mr-2 md:mr-0" />
+            <select
+              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-56"
+              value={filterCourseId}
+              onChange={(e) => setFilterCourseId(e.target.value)}
+            >
+              <option value="all">كل الدورات</option>
+              {uniqueCourses.map((course) => (
+                <option key={course.id} value={course.id}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
       </div>
 
@@ -476,6 +500,7 @@ const LeadsManagement = () => {
                           onClick={() => {
                             setSearchTerm("");
                             setFilterStatus("all");
+                            setFilterCourseId("all");
                           }}
                         >
                           إعادة تعيين الفلاتر
