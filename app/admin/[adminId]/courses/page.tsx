@@ -1,13 +1,13 @@
 import React from "react";
 import { db } from "@/src";
-import { courses, courseSections, users } from "@/src/db/schema";
+import { courses, courseSections, users, courseLeads } from "@/src/db/schema";
 
 import { inArray, InferSelectModel } from "drizzle-orm";
 
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import OurCourses from "@/components/admin/courses/ourCourses";
 import { CourseWithSections } from "@/app/coordinator/[coordinatorId]/courses/page";
 import { Metadata } from "next";
@@ -27,7 +27,19 @@ const page = async () => {
     .from(courseSections)
     .where(inArray(courseSections.courseId, courseIds));
 
-  // 4. دمج الدورات مع الشعب الخاصة بها
+  // 4. جلب عدد المهتمين لكل دورة
+  const leadsCounts = await db
+    .select({
+      courseId: courseLeads.courseId,
+      count: sql<number>`CAST(count(${courseLeads.id}) AS INTEGER)`,
+    })
+    .from(courseLeads)
+    .where(inArray(courseLeads.courseId, courseIds))
+    .groupBy(courseLeads.courseId);
+
+  const leadsMap = new Map(leadsCounts.map((l) => [l.courseId, l.count]));
+
+  // 5. دمج الدورات مع الشعب الخاصة بها وعدد المهتمين
   const coursesWithSections: CourseWithSections[] = allCourses.map((course) => {
     // فلترة الشعب الخاصة بالدورة الحالية
     const courseSections = allSections
@@ -41,6 +53,7 @@ const page = async () => {
     return {
       ...course,
       sections: courseSections,
+      leadsCount: leadsMap.get(course.id) || 0,
     };
   });
   const session = await auth.api.getSession({ headers: await headers() });

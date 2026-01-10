@@ -344,11 +344,11 @@ export function AppSidebar({ user }: { user: User }) {
                                 },
                                 {
                                   label: "شعب مكتملة",
-                                  url: `/admin/${user.id}/courses/sections/completed_section`,
+                                  url: `/admin/${user.id}/courses/sections/completedSection`,
                                 },
                                 {
                                   label: "شعب ملغاة",
-                                  url: `/admin/${user.id}/courses/sections/cancelled_section`,
+                                  url: `/admin/${user.id}/courses/sections/cancelledSection`,
                                 },
                               ].map((sec) => (
                                 <Link

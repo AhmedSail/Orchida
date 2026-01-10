@@ -27,6 +27,10 @@ export async function GET() {
 
 export async function POST(req: Request) {
   try {
+    const { headers: authHeaders } = await import("next/headers");
+    const { auth } = await import("@/lib/auth");
+    const session = await auth.api.getSession({ headers: await authHeaders() });
+
     const body = await req.json();
 
     if (!body.studentEmail || !body.studentPhone || !body.studentName) {
@@ -36,14 +40,15 @@ export async function POST(req: Request) {
       );
     }
 
-    // 1. التأكد من وجود المستخدم مسبقاً وما إذا كان "user" حقيقي وليس "guest"
+    // 1. التأكد من وجود المستخدم مسبقاً
     const existingUser = await db
       .select()
       .from(users)
       .where(eq(users.email, body.studentEmail))
       .limit(1);
 
-    if (existingUser[0] && existingUser[0].role !== "guest") {
+    // إذا لم يكن هناك سيشن، وكان المستخدم موجوداً برول غير زائر، نطلب منه تسجيل الدخول
+    if (!session?.user && existingUser[0] && existingUser[0].role !== "guest") {
       return NextResponse.json(
         {
           message:
@@ -76,10 +81,10 @@ export async function POST(req: Request) {
       );
     }
 
-    let userId = existingUser[0]?.id;
+    let userId = session?.user?.id || existingUser[0]?.id;
 
-    if (!existingUser[0]) {
-      // 3. إنشاء مستخدم جديد بدور "guest" إذا لم يكن موجوداً
+    if (!userId) {
+      // 3. إنشاء مستخدم جديد بدور "guest" إذا لم يكن موجوداً ولم يكن هناك سيشن
       userId = uuidv4();
       const hashedPassword = await bcrypt.hash(body.studentPhone, 10);
 
@@ -119,10 +124,13 @@ export async function POST(req: Request) {
 
     await db.insert(courseLeads).values(lead);
 
+    const successMessage = session?.user
+      ? "تم تسجيل اهتمامك بنجاح! سنتواصل معك قريباً لتأكيد الحجز."
+      : "تم تسجيل اهتمامك بنجاح! تم إنشاء حساب زائر لك (إذا لم يكن لديك واحد)، يمكنك استخدامه بكلمة مرور هي رقم هاتفك.";
+
     return NextResponse.json(
       {
-        message:
-          "تم تسجيل اهتمامك بنجاح! تم إنشاء حساب زائر لك (إذا لم يكن لديك واحد)، يمكنك استخدامه بكلمة مرور هي رقم هاتفك.",
+        message: successMessage,
         lead,
       },
       { status: 201 }

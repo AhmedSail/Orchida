@@ -311,17 +311,35 @@ const RegisterUser = ({
                 ماذا سيحدث بعد التسجيل؟
               </h3>
               <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                <li className="flex items-start gap-2 italic">
-                  <span>•</span> سيتم إنشاء حساب "زائر" لك تلقائياً بمجرد إرسال
-                  النموذج.
-                </li>
-                <li className="flex items-start gap-2 italic">
-                  <span>•</span> ستتمكن من تسجيل الدخول رقم هاتفك هو كلمة
-                  المرور.
-                </li>
-                <li className="flex items-start gap-2 italic">
-                  <span>•</span> سيتواصل معك فريقنا لتأكيد التسجيل والدفع.
-                </li>
+                {user ? (
+                  <>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> سيتم تسجيل اهتمامك بالدورة باستخدام حسابك
+                      الحالي.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> سنتواصل معك لتأكيد التسجيل النهائي والدفع.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> يمكنك متابعة حالة طلبك من لوحة التحكم
+                      الخاصة بك.
+                    </li>
+                  </>
+                ) : (
+                  <>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> سيتم إنشاء حساب "زائر" لك تلقائياً بمجرد
+                      إرسال النموذج.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> ستتمكن من تسجيل الدخول رقم هاتفك هو كلمة
+                      المرور.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> سيتواصل معك فريقنا لتأكيد التسجيل والدفع.
+                    </li>
+                  </>
+                )}
               </ul>
             </div>
           </div>
