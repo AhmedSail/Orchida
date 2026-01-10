@@ -64,7 +64,7 @@ const CourseSelected = ({
           {/* Main Content Column */}
           <div className="lg:col-span-2 space-y-8">
             {/* Header Image */}
-            <div className="relative h-[400px] w-full rounded-2xl overflow-hidden shadow-lg group">
+            <div className="relative aspect-[4/3] md:aspect-video lg:aspect-[4/3] w-full rounded-2xl overflow-hidden shadow-lg group">
               {coursesSelected.imageUrl ? (
                 <Image
                   src={coursesSelected.imageUrl}
@@ -81,7 +81,7 @@ const CourseSelected = ({
                 </div>
               )}
               <div className="absolute inset-0 bg-linear-to-t from-black/60 to-transparent" />
-              <h1 className="absolute bottom-6 right-6 text-3xl md:text-4xl font-bold text-white shadow-sm">
+              <h1 className="absolute bottom-6 right-6 text-2xl md:text-4xl font-bold text-white shadow-sm leading-tight">
                 {coursesSelected.title}
               </h1>
             </div>
