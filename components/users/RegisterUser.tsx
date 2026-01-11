@@ -34,6 +34,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
 import { User } from "../user/edit-profile";
 import { useRouter, usePathname } from "next/navigation";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 // types
 type Section = {
@@ -60,10 +67,7 @@ const MySwal = withReactContent(Swal);
 const schema = z.object({
   studentName: z.string().min(2, "الاسم مطلوب وبحد أدنى حرفين"),
   studentEmail: z.string().email("يرجى إدخال بريد إلكتروني صالح"),
-  studentPhone: z
-    .string()
-    .min(7, "رقم الهاتف مطلوب وبحد أدنى 7 أرقام")
-    .max(20, "رقم الهاتف طويل جداً"),
+  studentPhone: z.string().length(9, "رقم الهاتف يجب أن يتكون من 9 أرقام فقط"),
   studentAge: z.number({ message: "يرجى إدخال عمر صالح" }).int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
@@ -87,6 +91,8 @@ const RegisterUser = ({
   const router = useRouter();
   const pathname = usePathname();
 
+  const [countryCode, setCountryCode] = useState("+970");
+
   const form = useForm<FormValues>({
     resolver: zodResolver(schema),
     defaultValues: {
@@ -109,6 +115,7 @@ const RegisterUser = ({
         courseId: coursesSelected.id,
         sectionId: lastSectionRaw.sectionId,
         ...values,
+        studentPhone: `${countryCode}${values.studentPhone}`,
       };
 
       const res = await fetch("/api/course-leads", {
@@ -426,7 +433,7 @@ const RegisterUser = ({
                       </h3>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className=" gap-6">
                       <FormField
                         control={form.control}
                         name="studentPhone"
@@ -436,40 +443,35 @@ const RegisterUser = ({
                               رقم الواتساب
                             </FormLabel>
                             <FormControl>
-                              <div className="relative">
-                                <Input
-                                  placeholder="05XXXXXXXX"
-                                  className={inputStyles}
-                                  {...field}
-                                />
-                                <Phone className={iconStyles} />
-                              </div>
-                            </FormControl>
-                            <FormMessage className="text-xs" />
-                          </FormItem>
-                        )}
-                      />
-                      <FormField
-                        control={form.control}
-                        name="studentAge"
-                        render={({ field }) => (
-                          <FormItem className="group">
-                            <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
-                              العمر
-                            </FormLabel>
-                            <FormControl>
-                              <div className="relative">
-                                <Input
-                                  type="number"
-                                  placeholder="مثلاً 22"
-                                  className={inputStyles}
-                                  {...field}
-                                  value={field.value ?? ""}
-                                  onChange={(e) =>
-                                    field.onChange(e.target.valueAsNumber)
-                                  }
-                                />
-                                <Calendar className={iconStyles} />
+                              <div className="relative flex items-center gap-2">
+                                <div className="relative w-full">
+                                  <Input
+                                    placeholder="5XXXXXXXX"
+                                    className={`${inputStyles} text-left`}
+                                    {...field}
+                                    dir="ltr"
+                                    maxLength={9}
+                                  />
+                                  <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-primary transition-colors" />
+                                </div>
+                                <div>
+                                  <Select
+                                    onValueChange={setCountryCode}
+                                    defaultValue={countryCode}
+                                  >
+                                    <SelectTrigger className="h-12 bg-white/50 dark:bg-zinc-900/50 border-zinc-200 dark:border-zinc-800 rounded-2xl">
+                                      <SelectValue placeholder="الكود" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      <SelectItem value="+970">
+                                        +970 (PS)
+                                      </SelectItem>
+                                      <SelectItem value="+972">
+                                        +972 (IL)
+                                      </SelectItem>
+                                    </SelectContent>
+                                  </Select>
+                                </div>
                               </div>
                             </FormControl>
                             <FormMessage className="text-xs" />
@@ -477,6 +479,33 @@ const RegisterUser = ({
                         )}
                       />
                     </div>
+                    <FormField
+                      control={form.control}
+                      name="studentAge"
+                      render={({ field }) => (
+                        <FormItem className="group">
+                          <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
+                            العمر
+                          </FormLabel>
+                          <FormControl>
+                            <div className="relative">
+                              <Input
+                                type="number"
+                                placeholder="مثلاً 22"
+                                className={inputStyles}
+                                {...field}
+                                value={field.value ?? ""}
+                                onChange={(e) =>
+                                  field.onChange(e.target.valueAsNumber)
+                                }
+                              />
+                              <Calendar className={iconStyles} />
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   {/* Section 3: Professional Info */}
