@@ -20,15 +20,21 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
 import { useEdgeStore } from "@/lib/edgestore";
+import {
+  Edit,
+  Trash2,
+  Eye,
+  Filter,
+  Calendar,
+  DollarSign,
+  Clock,
+  Tag,
+  CheckCircle,
+  XCircle,
+  PlayCircle,
+  ImageIcon,
+} from "lucide-react";
 
 const WorksTable = ({
   allWorks,
@@ -40,7 +46,7 @@ const WorksTable = ({
   const router = useRouter();
   const { edgestore } = useEdgeStore();
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const itemsPerPage = 5;
+  const itemsPerPage = 6;
   const [page, setPage] = useState(1);
 
   const categories = Array.from(new Set(allWorks.map((w) => w.category)));
@@ -62,10 +68,7 @@ const WorksTable = ({
     setPage(1);
   };
 
-  // ✅ دالة التعديل الجديدة
   const handleUpdate = (id: string) => {
-    // يمكنك هنا توجيه المستخدم إلى صفحة التعديل
-    // أو فتح نافذة منبثقة (modal) لتعديل البيانات
     router.push(`/admin/${userId}/works/${id}/media/edit`);
   };
 
@@ -134,255 +137,222 @@ const WorksTable = ({
   };
 
   return (
-    <div className="p-4 sm:p-6 bg-white rounded-lg shadow space-y-4">
-      {/* فلترة */}
-      <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <span className="font-semibold">فلترة حسب الفئة:</span>
-        <Select value={selectedCategory} onValueChange={handleCategoryChange}>
-          <SelectTrigger className="w-full sm:w-[200px]">
-            <SelectValue placeholder="اختر الفئة" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">الكل</SelectItem>
-            {categories.map((cat) => (
-              <SelectItem key={cat} value={cat}>
-                {cat}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+    <div className="space-y-6" dir="rtl">
+      {/* Header Section */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h2 className="text-2xl font-bold text-gray-900 mb-1">
+              إدارة الأعمال
+            </h2>
+            <p className="text-gray-500 text-sm">
+              إجمالي الأعمال: {filteredWorks.length}
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <Filter className="text-gray-400" size={20} />
+            <Select
+              value={selectedCategory}
+              onValueChange={handleCategoryChange}
+            >
+              <SelectTrigger className="w-full sm:w-[220px] bg-gray-50 border-gray-200">
+                <SelectValue placeholder="اختر الفئة" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">جميع الفئات</SelectItem>
+                {categories.map((cat) => (
+                  <SelectItem key={cat} value={cat}>
+                    {cat}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
       </div>
 
-      {/* جدول للديسكتوب */}
-      <div className="hidden lg:block overflow-x-auto">
-        <Table>
-          <TableHeader>
-            <TableRow dir="rtl" className="text-right">
-              <TableHead className="text-right">الصورة الرئيسية</TableHead>
-              <TableHead className="text-right">العنوان</TableHead>
-              <TableHead className="text-right">الوصف</TableHead>
-              <TableHead className="text-right">الفئة</TableHead>
-              <TableHead className="text-right">النطاق السعري</TableHead>
-              <TableHead className="text-right">المدة</TableHead>
-              <TableHead className="text-right">الحالة</TableHead>
-              <TableHead className="text-right">تاريخ الإنشاء</TableHead>
-              <TableHead className="text-right">آخر تحديث</TableHead>
-              <TableHead className="text-right">الإجراءات</TableHead>
-            </TableRow>
-          </TableHeader>
-          <TableBody>
-            {paginatedWorks.length > 0 ? (
-              paginatedWorks.map((work) => (
-                <TableRow key={work.id} className="text-right">
-                  <TableCell>
-                    {work.imageUrl ? (
-                      work.type === "image" ? (
-                        <Image
-                          src={work.imageUrl}
-                          alt={work.title}
-                          width={100}
-                          height={60}
-                          className="object-cover rounded"
-                          unoptimized
-                        />
-                      ) : (
-                        <video
-                          src={work.imageUrl}
-                          controls
-                          className="w-[100px] h-[60px] rounded"
-                        />
-                      )
-                    ) : (
-                      <div className="w-[100px] h-[60px] bg-gray-200 rounded flex items-center justify-center text-xs text-gray-500">
-                        لا يوجد
-                      </div>
-                    )}
-                  </TableCell>
-                  <TableCell>{work.title}</TableCell>
-                  <TableCell className="max-w-[300px] whitespace-normal wrap-break-word">
-                    {work.description || "—"}
-                  </TableCell>
-                  <TableCell>{work.category}</TableCell>
-                  <TableCell>{work.priceRange || "—"}</TableCell>
-                  <TableCell>{work.duration || "—"}</TableCell>
-                  <TableCell>
-                    {work.isActive ? (
-                      <span className="text-green-600 font-semibold">نشط</span>
-                    ) : (
-                      <span className="text-red-600 font-semibold">
-                        غير نشط
-                      </span>
-                    )}
-                  </TableCell>
-                  <TableCell>
-                    {work.createdAt
-                      ? new Date(work.createdAt).toLocaleDateString("ar-EG")
-                      : "—"}
-                  </TableCell>
-                  <TableCell>
-                    {work.updatedAt
-                      ? new Date(work.updatedAt).toLocaleDateString("ar-EG")
-                      : "—"}
-                  </TableCell>
-                  <TableCell className="flex gap-2">
-                    {/* ✅ زر التعديل الجديد */}
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleUpdate(work.id)}
-                    >
-                      تعديل
-                    </Button>
-                    <Button
-                      variant="destructive"
-                      size="sm"
-                      onClick={() =>
-                        handleDelete(
-                          work.id,
-                          work.imageUrl ?? "",
-                          work.mediaFiles
-                        )
-                      }
-                    >
-                      حذف
-                    </Button>
-                  </TableCell>
-                </TableRow>
-              ))
-            ) : (
-              <TableRow>
-                <TableCell colSpan={10} className="text-center text-gray-500">
-                  لا توجد أعمال مسجلة حالياً
-                </TableCell>
-              </TableRow>
-            )}
-          </TableBody>
-        </Table>
-      </div>
-
-      {/* كارد للموبايل والآيباد */}
-      <div className="grid gap-4 lg:hidden">
+      {/* Works Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {paginatedWorks.length > 0 ? (
           paginatedWorks.map((work) => (
             <div
               key={work.id}
-              className="border rounded-lg p-4 shadow flex flex-col gap-2"
+              className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group"
             >
-              {work.imageUrl ? (
-                work.type === "image" ? (
-                  <Image
-                    src={work.imageUrl}
-                    alt={work.title}
-                    width={400}
-                    height={200}
-                    className="object-cover rounded"
-                    unoptimized
-                  />
+              {/* Image Section */}
+              <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
+                {work.imageUrl ? (
+                  work.type === "video" ? (
+                    <div className="relative w-full h-full">
+                      <video
+                        src={work.imageUrl}
+                        className="w-full h-full object-cover"
+                        muted
+                        controls
+                        autoPlay
+                      />
+                    </div>
+                  ) : (
+                    <Image
+                      src={work.imageUrl}
+                      alt={work.title}
+                      fill
+                      className="object-cover group-hover:scale-105 transition-transform duration-500"
+                      unoptimized
+                    />
+                  )
                 ) : (
-                  <video
-                    src={work.imageUrl}
-                    controls
-                    className="w-full h-[200px] rounded"
-                  />
-                )
-              ) : (
-                <div className="w-full h-[200px] bg-gray-200 rounded flex items-center justify-center text-sm text-gray-500">
-                  لا يوجد صورة
-                </div>
-              )}
-
-              <h3 className="font-bold text-lg">{work.title}</h3>
-              <p className="text-gray-600">{work.description || "—"}</p>
-              <p>
-                <span className="font-semibold">الفئة:</span> {work.category}
-              </p>
-              <p>
-                <span className="font-semibold">النطاق السعري:</span>{" "}
-                {work.priceRange || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">المدة:</span>{" "}
-                {work.duration || "—"}
-              </p>
-              <p>
-                <span className="font-semibold">الحالة:</span>{" "}
-                {work.isActive ? (
-                  <span className="text-green-600 font-semibold">نشط</span>
-                ) : (
-                  <span className="text-red-600 font-semibold">غير نشط</span>
+                  <div className="w-full h-full flex items-center justify-center">
+                    <ImageIcon className="w-12 h-12 text-gray-300" />
+                  </div>
                 )}
-              </p>
-              <p>
-                <span className="font-semibold">تاريخ الإنشاء:</span>{" "}
-                {work.createdAt
-                  ? new Date(work.createdAt).toLocaleDateString("ar-EG")
-                  : "—"}
-              </p>
-              <p>
-                <span className="font-semibold">آخر تحديث:</span>{" "}
-                {work.updatedAt
-                  ? new Date(work.updatedAt).toLocaleDateString("ar-EG")
-                  : "—"}
-              </p>
 
-              {/* أزرار الإجراءات */}
-              <div className="flex flex-col sm:flex-row gap-2 mt-2">
-                {/* ✅ زر التعديل الجديد */}
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => handleUpdate(work.id)}
-                >
-                  تعديل
-                </Button>
-                <Button
-                  variant="destructive"
-                  size="sm"
-                  onClick={() =>
-                    handleDelete(work.id, work.imageUrl ?? "", work.mediaFiles)
-                  }
-                >
-                  حذف
-                </Button>
+                {/* Status Badge */}
+                <div className="absolute top-3 left-3">
+                  {work.isActive ? (
+                    <span className="inline-flex items-center gap-1 bg-green-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                      <CheckCircle size={12} />
+                      نشط
+                    </span>
+                  ) : (
+                    <span className="inline-flex items-center gap-1 bg-red-500 text-white text-xs font-bold px-3 py-1 rounded-full shadow-lg">
+                      <XCircle size={12} />
+                      غير نشط
+                    </span>
+                  )}
+                </div>
+
+                {/* Category Badge */}
+                <div className="absolute top-3 right-3">
+                  <span className="inline-flex items-center gap-1 bg-white/90 backdrop-blur-sm text-gray-700 text-xs font-bold px-3 py-1 rounded-full shadow-sm">
+                    <Tag size={12} />
+                    {work.category}
+                  </span>
+                </div>
+              </div>
+
+              {/* Content Section */}
+              <div className="p-5 space-y-4">
+                {/* Title */}
+                <h3 className="font-bold text-lg text-gray-900 line-clamp-1">
+                  {work.title}
+                </h3>
+
+                {/* Description */}
+                <p className="text-gray-600 text-sm line-clamp-2 leading-relaxed">
+                  {work.description || "لا يوجد وصف متاح"}
+                </p>
+
+                {/* Details Grid */}
+                <div className="grid grid-cols-2 gap-3 pt-3 border-t border-gray-100">
+                  {work.priceRange && (
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <DollarSign size={14} className="text-green-600" />
+                      <span className="truncate">{work.priceRange}</span>
+                    </div>
+                  )}
+                  {work.duration && (
+                    <div className="flex items-center gap-2 text-xs text-gray-600">
+                      <Clock size={14} className="text-blue-600" />
+                      <span className="truncate">{work.duration}</span>
+                    </div>
+                  )}
+                  <div className="flex items-center gap-2 text-xs text-gray-500 col-span-2">
+                    <Calendar size={14} className="text-gray-400" />
+                    <span>
+                      {work.createdAt
+                        ? new Date(work.createdAt).toLocaleDateString("ar-EG")
+                        : "—"}
+                    </span>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="flex gap-2 pt-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2 hover:bg-blue-50 hover:text-blue-600 hover:border-blue-200"
+                    onClick={() => handleUpdate(work.id)}
+                  >
+                    <Edit size={14} />
+                    تعديل
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="flex-1 gap-2 hover:bg-red-50 hover:text-red-600 hover:border-red-200"
+                    onClick={() =>
+                      handleDelete(
+                        work.id,
+                        work.imageUrl ?? "",
+                        work.mediaFiles
+                      )
+                    }
+                  >
+                    <Trash2 size={14} />
+                    حذف
+                  </Button>
+                </div>
               </div>
             </div>
           ))
         ) : (
-          <div className="text-center text-gray-500">
-            لا توجد أعمال مسجلة حالياً
+          <div className="col-span-full">
+            <div className="bg-white rounded-2xl border-2 border-dashed border-gray-200 p-12 text-center">
+              <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <ImageIcon className="w-8 h-8 text-gray-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                لا توجد أعمال
+              </h3>
+              <p className="text-gray-500 text-sm">
+                لم يتم العثور على أعمال في هذه الفئة
+              </p>
+            </div>
           </div>
         )}
       </div>
 
       {/* Pagination */}
       {totalPages > 1 && (
-        <Pagination className="mt-6">
-          <PaginationContent className="flex flex-wrap justify-center gap-2">
-            {page > 1 && (
-              <PaginationItem>
-                <PaginationPrevious onClick={() => setPage(page - 1)} />
-              </PaginationItem>
-            )}
-            {Array.from({ length: totalPages }).map((_, i) => {
-              const pageNum = i + 1;
-              return (
-                <PaginationItem key={i}>
-                  <PaginationLink
-                    isActive={pageNum === page}
-                    onClick={() => setPage(pageNum)}
-                  >
-                    {pageNum}
-                  </PaginationLink>
+        <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-4">
+          <Pagination>
+            <PaginationContent className="flex flex-wrap justify-center gap-2">
+              {page > 1 && (
+                <PaginationItem>
+                  <PaginationPrevious
+                    onClick={() => setPage(page - 1)}
+                    className="cursor-pointer"
+                  />
                 </PaginationItem>
-              );
-            })}
-            {page < totalPages && (
-              <PaginationItem>
-                <PaginationNext onClick={() => setPage(page + 1)} />
-              </PaginationItem>
-            )}
-          </PaginationContent>
-        </Pagination>
+              )}
+              {Array.from({ length: totalPages }).map((_, i) => {
+                const pageNum = i + 1;
+                return (
+                  <PaginationItem key={i}>
+                    <PaginationLink
+                      isActive={pageNum === page}
+                      onClick={() => setPage(pageNum)}
+                      className="cursor-pointer"
+                    >
+                      {pageNum}
+                    </PaginationLink>
+                  </PaginationItem>
+                );
+              })}
+              {page < totalPages && (
+                <PaginationItem>
+                  <PaginationNext
+                    onClick={() => setPage(page + 1)}
+                    className="cursor-pointer"
+                  />
+                </PaginationItem>
+              )}
+            </PaginationContent>
+          </Pagination>
+        </div>
       )}
     </div>
   );

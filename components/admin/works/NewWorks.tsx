@@ -150,22 +150,21 @@ const NewWorks = ({
       });
 
       if (res.ok) {
-        // ✅✅✅  التعديل هنا: إعادة زر التأكيد والشرط
         const result = await Swal.fire({
           icon: "success",
           title: "تم الحفظ بنجاح ✅",
           text: "هل تريد الانتقال إلى صفحة الأعمال الآن؟",
-          showCancelButton: true, // إظهار زر الإلغاء
+          showCancelButton: true,
           confirmButtonText: "نعم، انتقل الآن",
           cancelButtonText: "لا، ابق هنا",
         });
 
-        // ✅✅✅ التحقق من أن المستخدم ضغط على زر "نعم"
         if (result.isConfirmed) {
           router.push(`/${role}/${userId}/works`);
         }
       } else {
-        throw new Error("فشل حفظ العمل");
+        const errorData = await res.json();
+        throw new Error(errorData.error || "فشل حفظ العمل");
       }
     } catch (error) {
       Swal.fire({
