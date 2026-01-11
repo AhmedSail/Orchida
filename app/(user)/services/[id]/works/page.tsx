@@ -8,10 +8,40 @@ import { Link } from "next-view-transitions";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import Image from "next/image";
 
-export const metadata = {
-  title: "معرض الأعمال",
-  description: "معرض أعمالنا",
-};
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+
+  const service = await db
+    .select({ name: digitalServices.name })
+    .from(digitalServices)
+    .where(eq(digitalServices.id, id))
+    .limit(1);
+
+  if (!service[0]) {
+    return {
+      title: "معرض الأعمال",
+    };
+  }
+
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+
+  return {
+    title: `معرض أعمال ${service[0].name}`,
+    description: `استكشف أحدث أعمالنا في مجال ${service[0].name}.`,
+    alternates: {
+      canonical: `${baseUrl}/services/${id}/works`,
+    },
+    openGraph: {
+      title: `معرض أعمال ${service[0].name}`,
+      description: `استكشف أحدث أعمالنا في مجال ${service[0].name}.`,
+      url: `${baseUrl}/services/${id}/works`,
+    },
+  };
+}
 
 export default async function ServiceWorksPage({
   params,
@@ -84,7 +114,7 @@ export default async function ServiceWorksPage({
       </div>
 
       {/* Hero Section - Full Width Video/Image Style (Like Work Page Hero) */}
-      <div className="relative aspect-[5/2] md:aspect-[5/2.5] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
+      <div className="relative aspect-[5/2] md:aspect-[5/2] w-full rounded-3xl md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
           {(currentService.largeImage || currentService.smallImage) &&

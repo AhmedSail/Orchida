@@ -5,7 +5,10 @@ import { eq, and, isNull } from "drizzle-orm";
 
 export const metadata = {
   title: "اوركيدة | الخدمات الرقمية",
-  description: "خدماتنا",
+  description: "اكتشف خدماتنا الرقمية المتنوعة في التصميم، التطوير، والتسويق.",
+  alternates: {
+    canonical: "https://orchida-ods.com/services",
+  },
 };
 
 const page = async () => {
