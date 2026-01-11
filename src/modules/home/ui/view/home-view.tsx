@@ -94,7 +94,7 @@ const HomeView = ({
           viewport={{ once: true }}
         >
           <Button className="w-1/3 hover:bg-white hover:text-primary hover:shadow-primary hover:shadow">
-            <Link href="/services">أطلب الان</Link>
+            <Link href="/services">تصفح كل الخدمات</Link>
           </Button>
         </motion.div>
       </div>
