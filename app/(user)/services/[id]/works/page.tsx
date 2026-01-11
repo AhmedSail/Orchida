@@ -84,7 +84,7 @@ export default async function ServiceWorksPage({
       </div>
 
       {/* Hero Section - Full Width Video/Image Style (Like Work Page Hero) */}
-      <div className="relative aspect-[5/2] md:aspect-[5/2.5] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
+      <div className="relative aspect-[5/2] md:aspect-[5/2] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
           {(currentService.largeImage || currentService.smallImage) &&
