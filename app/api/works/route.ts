@@ -1,5 +1,6 @@
 import { db } from "@/src/db";
 import { mediaFiles, works } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { v4 as uuidv4 } from "uuid";
@@ -7,6 +8,20 @@ import { v4 as uuidv4 } from "uuid";
 export async function POST(req: Request) {
   try {
     const body = await req.json();
+
+    // ✅ التحقق من وجود عنوان مطابق تماماً
+    const existingWork = await db
+      .select()
+      .from(works)
+      .where(eq(works.title, body.title))
+      .limit(1);
+
+    if (existingWork.length > 0) {
+      return NextResponse.json(
+        { error: "يوجد عمل بنفس العنوان بالفعل. الرجاء اختيار عنوان مختلف." },
+        { status: 409 }
+      );
+    }
 
     // إدخال العمل
     const [newWork] = await db
