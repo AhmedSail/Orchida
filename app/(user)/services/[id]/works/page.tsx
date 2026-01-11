@@ -84,7 +84,7 @@ export default async function ServiceWorksPage({
       </div>
 
       {/* Hero Section - Full Width Video/Image Style (Like Work Page Hero) */}
-      <div className="relative h-[280px] sm:h-[400px] lg:h-[50vh] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
+      <div className="relative aspect-[5/2] md:aspect-[5/1.5] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
           {(currentService.largeImage || currentService.smallImage) &&
@@ -93,8 +93,8 @@ export default async function ServiceWorksPage({
             <Image
               src={currentService.largeImage || currentService.smallImage || ""}
               alt={currentService.name}
-              fill // استخدمنا fill بدلاً من تحديد الأبعاد يدوياً لتملأ الحاوية h-[50vh]
-              priority // لتسريع تحميل صورة الـ Hero
+              fill
+              priority
               className="object-cover w-full h-full"
               sizes="100vw"
               unoptimized
@@ -104,47 +104,42 @@ export default async function ServiceWorksPage({
               <span className="text-9xl opacity-10">✨</span>
             </div>
           )}
-          {/* Overlay Gradient */}
-          <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/50 to-transparent" />
+          {/* Overlay Gradient - Stronger on mobile for readability */}
+          <div className="absolute inset-0 bg-linear-to-t from-black/95 via-black/40 to-transparent" />
         </div>
 
         {/* Content Over Media */}
-        <div className="absolute bottom-0 left-0 right-0 p-5 sm:p-12 text-white">
-          <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 md:gap-6">
-            <div className="space-y-2 md:space-y-4 max-w-3xl">
+        <div className="absolute bottom-0 left-0 right-0 p-6 sm:p-12 text-white">
+          <div className="flex flex-col md:flex-row items-start md:items-end justify-between gap-6">
+            <div className="space-y-3 md:space-y-4 max-w-3xl">
               <div className="flex items-center gap-2 mb-1">
-                <span className="bg-primary text-white text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full uppercase tracking-wider">
+                <span className="bg-primary text-white text-[10px] md:text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
                   {serviceWorks.length} أعمال
                 </span>
                 {isVideoService && (
-                  <span className="bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] md:text-xs font-bold px-2 py-0.5 md:px-3 md:py-1 rounded-full">
+                  <span className="bg-white/20 backdrop-blur-md text-white border border-white/20 text-[10px] md:text-xs font-bold px-3 py-1 rounded-full">
                     <PlayCircle className="w-3 h-3 inline mr-1" />
+                    فيديو
                   </span>
                 )}
               </div>
-              <h1 className="text-2xl md:text-6xl font-black leading-tight drop-shadow-lg">
+              <h1 className="text-3xl hidden md:block md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-lg">
                 {currentService.name}
               </h1>
-              <p className="text-sm md:text-xl text-gray-200 line-clamp-1 md:line-clamp-3 leading-relaxed opacity-90 font-light">
+              <p className="text-sm hidden md:block md:text-lg lg:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed opacity-95 font-light max-w-2xl">
                 {currentService.description ||
                   "استكشف أحدث أعمالنا الإبداعية في هذا القسم."}
               </p>
             </div>
 
-            <Button
-              asChild
-              size="sm"
-              className="md:hidden bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-6 py-4 font-bold text-sm shadow-xl transition-transform hover:scale-105"
-            >
-              <Link href="/serviceRequest">اطلب الآن</Link>
-            </Button>
-            <Button
-              asChild
-              size="lg"
-              className="hidden md:flex bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-8 py-6 font-bold text-lg shadow-xl transition-transform hover:scale-105"
-            >
-              <Link href="/serviceRequest">اطلب الخدمة الآن</Link>
-            </Button>
+            <div className="w-full md:w-auto flex flex-col gap-3">
+              <Button
+                asChild
+                className="w-[40%] md:w-auto bg-white text-black hover:bg-gray-100 hover:text-primary rounded-full px-8 md:py-6 py-5 font-bold text-sm md:text-xl shadow-xl transition-all hover:scale-105 active:scale-95"
+              >
+                <Link href="/serviceRequest">اطلب الخدمة الآن</Link>
+              </Button>
+            </div>
           </div>
         </div>
       </div>
