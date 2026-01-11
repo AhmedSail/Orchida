@@ -2,6 +2,15 @@ import ContactPage from "@/components/ContactPage";
 import { db } from "@/src/db";
 import { companies } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "اتصل بنا | أوركيدة للخدمات الرقمية والأكاديمية",
+  description: "تواصل معنا لأي استفسارات أو طلبات خدمات. نحن هنا لمساعدتك.",
+  alternates: {
+    canonical: "https://orchida-ods.com/contact",
+  },
+};
 
 const page = async () => {
   const result = await db

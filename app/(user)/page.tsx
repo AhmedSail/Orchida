@@ -14,6 +14,16 @@ import {
 } from "@/src/db/schema";
 import { db } from "@/src";
 import { eq, inArray } from "drizzle-orm";
+import { Metadata } from "next";
+
+export const metadata: Metadata = {
+  title: "أوركيدة للخدمات الرقمية والأكاديمية | الرئيسية",
+  description:
+    "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم. نقدم خدمات البرمجة، التصميم، التسويق، ودورات تدريبية احترافية.",
+  alternates: {
+    canonical: "https://orchida-ods.com",
+  },
+};
 
 const page = async () => {
   // ✅ جلب جميع البيانات بالتوازي لتحسين الأداء

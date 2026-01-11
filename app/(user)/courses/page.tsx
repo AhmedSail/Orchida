@@ -5,8 +5,12 @@ import { eq, desc, sql } from "drizzle-orm";
 
 import { Metadata } from "next";
 export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| الدورات",
+  title: "أوركيدة | الدورات التدريبية",
+  description:
+    "تصفح دوراتنا التدريبية المتميزة في مختلف المجالات التقنية والإبداعية.",
+  alternates: {
+    canonical: "https://orchida-ods.com/courses",
+  },
 };
 
 const page = async () => {

@@ -1,9 +1,19 @@
 import { MetadataRoute } from "next";
+import { db } from "@/src/db";
+import { digitalServices, courses, works } from "@/src/db/schema";
 
-export default function sitemap(): MetadataRoute.Sitemap {
+export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
 
-  return [
+  // Fetch all dynamic IDs
+  const allServices = await db
+    .select({ id: digitalServices.id })
+    .from(digitalServices);
+  const allCourses = await db.select({ id: courses.id }).from(courses);
+  const allWorks = await db.select({ id: works.id }).from(works);
+
+  // Static routes
+  const routes: MetadataRoute.Sitemap = [
     {
       url: baseUrl,
       lastModified: new Date(),
@@ -35,4 +45,49 @@ export default function sitemap(): MetadataRoute.Sitemap {
       priority: 0.9,
     },
   ];
+
+  // Dynamic routes: Services
+  allServices.forEach((service) => {
+    routes.push({
+      url: `${baseUrl}/services/${service.id}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+    // Works filtered by service
+    routes.push({
+      url: `${baseUrl}/services/${service.id}/works`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+  });
+
+  // Dynamic routes: Courses
+  allCourses.forEach((course) => {
+    routes.push({
+      url: `${baseUrl}/courses/${course.id}`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.8,
+    });
+    routes.push({
+      url: `${baseUrl}/courses/${course.id}/register`,
+      lastModified: new Date(),
+      changeFrequency: "weekly",
+      priority: 0.7,
+    });
+  });
+
+  // Dynamic routes: Individual Work Pages
+  allWorks.forEach((work) => {
+    routes.push({
+      url: `${baseUrl}/workPage/${work.id}`,
+      lastModified: new Date(),
+      changeFrequency: "monthly",
+      priority: 0.7,
+    });
+  });
+
+  return routes;
 }

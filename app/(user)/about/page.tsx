@@ -5,8 +5,12 @@ import { db } from "@/src/db";
 import { companies } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| عن اوركيدة",
+  title: "من نحن | أوركيدة للخدمات الرقمية والأكاديمية",
+  description:
+    "تعرف على شركة أوركيدة، رؤيتنا، رسالتنا، وفريقنا المتميز في تقديم الحلول الرقمية والدورات التدريبية.",
+  alternates: {
+    canonical: "https://orchida-ods.com/about",
+  },
 };
 
 type CompanyFormValues = {
