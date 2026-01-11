@@ -84,7 +84,7 @@ export default async function ServiceWorksPage({
       </div>
 
       {/* Hero Section - Full Width Video/Image Style (Like Work Page Hero) */}
-      <div className="relative aspect-[5/2] md:aspect-[5/1.5] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
+      <div className="relative aspect-[5/2] md:aspect-[5/2.5] w-full rounded-[1.5rem] md:rounded-[2.5rem] overflow-hidden shadow-2xl mb-12 border border-black/5">
         {/* Background Media */}
         <div className="absolute inset-0">
           {(currentService.largeImage || currentService.smallImage) &&
@@ -123,13 +123,6 @@ export default async function ServiceWorksPage({
                   </span>
                 )}
               </div>
-              <h1 className="text-3xl hidden md:block md:text-5xl lg:text-6xl font-black leading-tight drop-shadow-lg">
-                {currentService.name}
-              </h1>
-              <p className="text-sm hidden md:block md:text-lg lg:text-xl text-gray-200 line-clamp-2 md:line-clamp-3 leading-relaxed opacity-95 font-light max-w-2xl">
-                {currentService.description ||
-                  "استكشف أحدث أعمالنا الإبداعية في هذا القسم."}
-              </p>
             </div>
 
             <div className="w-full md:w-auto flex flex-col gap-3">
@@ -148,7 +141,7 @@ export default async function ServiceWorksPage({
       <div className="flex items-center gap-3 mb-8 px-2">
         <div className="h-8 w-1.5 bg-primary rounded-full"></div>
         <h2 className="text-3xl font-black text-gray-900 tracking-tight">
-          أحدث الأعمال المنجزة
+          معرض اعمال {currentService.name}
         </h2>
       </div>
 
