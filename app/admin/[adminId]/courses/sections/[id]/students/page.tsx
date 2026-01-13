@@ -48,6 +48,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       studentName: courseEnrollments.studentName,
       studentEmail: courseEnrollments.studentEmail,
       studentPhone: courseEnrollments.studentPhone,
+      studentMajor: courseEnrollments.studentMajor,
+      studentCountry: courseEnrollments.studentCountry,
       paymentStatus: courseEnrollments.paymentStatus,
       confirmationStatus: courseEnrollments.confirmationStatus,
       registeredAt: courseEnrollments.registeredAt,
