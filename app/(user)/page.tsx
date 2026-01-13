@@ -45,6 +45,7 @@ const page = async () => {
           createdAt: courses.createdAt,
           updatedAt: courses.updatedAt,
           approvedAt: courses.approvedAt,
+          currency: courses.currency,
           sectionId: courseSections.id,
           sectionNumber: courseSections.sectionNumber,
           startDate: courseSections.startDate,
@@ -82,6 +83,7 @@ const page = async () => {
     createdAt: row.createdAt,
     updatedAt: row.updatedAt,
     approvedAt: row.approvedAt,
+    currency: row.currency,
     // ممكن تضيف sections كمصفوفة منفصلة لو بدك
   }));
 
