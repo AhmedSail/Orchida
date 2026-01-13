@@ -105,9 +105,7 @@ export const useMeetingScheduler = (
         if (!res.ok) {
           console.error("Failed to archive past meetings in the database.");
         } else {
-          console.log(
-            `${meetingIdsToArchive.length} past meetings have been archived successfully.`
-          );
+         
           router.refresh();
         }
       } catch (error) {
@@ -721,9 +719,9 @@ export const useMeetingScheduler = (
             setSectionMeetings((prev) =>
               prev.filter((ev) => ev.id !== meeting.id)
             );
-            console.log(`Meeting ${meeting.id} deleted successfully`);
+            
           } else {
-            console.error(`Failed to delete meeting ${meeting.id}`);
+           
           }
         } catch (error) {
           console.error("Error deleting meeting:", error);

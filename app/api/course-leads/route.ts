@@ -118,7 +118,7 @@ export async function POST(req: Request) {
       studentAge: body.studentAge || null,
       studentMajor: body.studentMajor || null,
       studentCountry: body.studentCountry || null,
-      status: "new",
+      status: body.status || "new",
       notes: body.notes || null,
     };
 

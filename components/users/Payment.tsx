@@ -7,7 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import Swal from "sweetalert2";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 import { useRouter } from "next/navigation";
 import { motion } from "framer-motion";
 import {
@@ -74,7 +74,7 @@ const Payment = ({
   const [receipt, setReceipt] = useState<File | null>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const { edgestore } = useEdgeStore();
+
   const router = useRouter();
 
   const paymentInfo: Record<Currency, { iban: string; phone: string }> = {
@@ -134,10 +134,7 @@ const Payment = ({
     try {
       setLoading(true);
 
-      const uploadRes = await edgestore.publicFiles.upload({
-        file: receipt,
-      });
-      const receiptUrl = uploadRes.url;
+      const receiptUrl = await uploadToR2(receipt);
 
       const paymentRes = await fetch("/api/payments", {
         method: "POST",

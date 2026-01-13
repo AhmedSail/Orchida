@@ -13,7 +13,7 @@ export const metadata: Metadata = {
 };
 const page = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
-  console.log(id);
+  
 
   const course = await db.select().from(courses).where(eq(courses.id, id));
   const session = await auth.api.getSession({ headers: await headers() });

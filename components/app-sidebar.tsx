@@ -286,12 +286,7 @@ export function AppSidebar({ user }: { user: User }) {
                       >
                         دوراتنا المتوفرة
                       </Link>
-                      <Link
-                        href={`/admin/${user.id}/leads`}
-                        className="text-sm py-2.5 px-3 rounded-lg hover:text-primary hover:bg-primary/5 transition-all font-bold text-primary bg-primary/5"
-                      >
-                        إدارة المهتمين (Leads)
-                      </Link>
+
                       <Link
                         href={`/admin/${user.id}/courses/sections/meetings`}
                         className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all"

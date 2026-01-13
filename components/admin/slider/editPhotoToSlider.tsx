@@ -22,7 +22,7 @@ import { sliders } from "@/src/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import Image from "next/image";
 import { uploadToCloudinary } from "@/utils/cloudinary";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 
 // ✅ Zod schema
 const sliderSchema = z.object({
@@ -54,7 +54,7 @@ export default function EditSliderPage({
   );
   const router = useRouter();
   const { id } = useParams();
-  const { edgestore } = useEdgeStore();
+
   // 👇 Tell TypeScript that the resolver works with SliderFormValues
   const form = useForm<SliderFormValues>({
     resolver: zodResolver(sliderSchema) as any, // safe cast – we know the types line‑up
@@ -99,19 +99,9 @@ export default function EditSliderPage({
 
         if (values.imageFile) {
           if (imagePreview) {
-            await edgestore.publicFiles.delete({
-              url: imagePreview,
-            });
+            await deleteFromR2(imagePreview);
           }
-          const resUpload = await edgestore.publicFiles.upload({
-            file: values.imageFile,
-            onProgressChange: (progress) => {
-              // لو بدك تعمل progress bar
-              console.log("Upload progress:", progress);
-            },
-          });
-
-          imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+          imageUrl = await uploadToR2(values.imageFile, (progress) => {});
         }
       }
       const payload = {

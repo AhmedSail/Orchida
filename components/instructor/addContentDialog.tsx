@@ -22,7 +22,7 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 
 const contentSchema = z.object({
   title: z.string().min(2, "العنوان مطلوب"),
@@ -56,7 +56,7 @@ export default function AddContentDialog({
   });
 
   const [file, setFile] = React.useState<File>();
-  const { edgestore } = useEdgeStore();
+
   const [uploadProgress, setUploadProgress] = React.useState<number>(0);
 
   const contentType = form.watch("contentType");
@@ -83,11 +83,10 @@ export default function AddContentDialog({
           formData.append("textContent", data.textContent);
         }
       } else if (file) {
-        const resUpload = await edgestore.publicFiles.upload({
-          file,
-          onProgressChange: (progress) => setUploadProgress(progress),
-        });
-        formData.append("fileUrl", resUpload.url);
+        const url = await uploadToR2(file, (progress) =>
+          setUploadProgress(progress)
+        );
+        formData.append("fileUrl", url);
         if (data.attachmentName) {
           formData.append("attachmentName", data.attachmentName);
         }

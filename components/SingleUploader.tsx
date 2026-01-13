@@ -1,13 +1,12 @@
 "use client";
 
-import { useEdgeStore } from "@/lib/edgestore";
 import { useState } from "react";
 import { UploadCloudIcon, X } from "lucide-react";
 import Swal from "sweetalert2";
 import Image from "next/image";
 
 type SingleUploaderProps = {
-  bucket?: "publicFiles"; // افتراضياً ببليك
+  bucket?: "publicFiles"; // Kept for compatibility but unused
   onChange: (url: string) => void;
   initialUrl?: string;
   required?: boolean;
@@ -21,22 +20,44 @@ export function SingleUploader({
 }: SingleUploaderProps) {
   const [fileUrl, setFileUrl] = useState<string>(initialUrl);
   const [progress, setProgress] = useState<number | "COMPLETE" | "ERROR">(0);
-  const { edgestore } = useEdgeStore();
 
   async function handleFileUpload(file: File) {
+    setProgress(0);
     try {
-      const res = await edgestore.publicFiles.upload({
-        file,
-        onProgressChange: async (p: number) => {
-          setProgress(p);
-          if (p === 100) {
-            setProgress("COMPLETE");
+      const url = await new Promise<string>((resolve, reject) => {
+        const xhr = new XMLHttpRequest();
+        xhr.open("POST", "/api/upload/r2");
+
+        xhr.upload.onprogress = (event) => {
+          if (event.lengthComputable) {
+            const percentComplete = (event.loaded / event.total) * 100;
+            setProgress(percentComplete);
           }
-        },
+        };
+
+        xhr.onload = () => {
+          if (xhr.status === 200) {
+            try {
+              const response = JSON.parse(xhr.responseText);
+              resolve(response.url);
+            } catch (e) {
+              reject(e);
+            }
+          } else {
+            reject(new Error("Upload failed"));
+          }
+        };
+
+        xhr.onerror = () => reject(new Error("Upload failed"));
+
+        const formData = new FormData();
+        formData.append("file", file);
+        xhr.send(formData);
       });
 
-      setFileUrl(res.url);
-      onChange(res.url); // ✅ تحديث الفورم بالرابط النهائي
+      setFileUrl(url);
+      setProgress("COMPLETE");
+      onChange(url);
     } catch (err) {
       setProgress("ERROR");
       Swal.fire({
@@ -50,14 +71,17 @@ export function SingleUploader({
   async function removeFile() {
     if (fileUrl) {
       try {
-        const cleanUrl = fileUrl.trim().replace(/\s/g, "");
-        await edgestore.publicFiles.delete({ url: cleanUrl });
+        await fetch("/api/upload/r2", {
+          method: "DELETE",
+          body: JSON.stringify({ url: fileUrl }),
+          headers: { "Content-Type": "application/json" },
+        });
       } catch (err) {
         console.error("فشل حذف الملف:", err);
       }
     }
     setFileUrl("");
-    onChange(""); // ✅ تفريغ الفورم
+    onChange("");
   }
 
   return (
@@ -93,7 +117,7 @@ export function SingleUploader({
               src={fileUrl}
               alt="Uploaded"
               className="h-20 w-20 rounded-md object-cover"
-              unoptimized
+              unoptimized={false} // Use optimized images if possible, or keep unoptimized if R2 domain is not configured in next.config
             />
           )}
 
@@ -109,6 +133,7 @@ export function SingleUploader({
           <button
             onClick={removeFile}
             className="ml-auto rounded-md p-1 text-gray-400 hover:bg-gray-100 hover:text-gray-600"
+            type="button" // Ensure it doesn't submit forms
           >
             <X className="h-4 w-4" />
           </button>

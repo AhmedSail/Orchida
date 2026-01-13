@@ -50,11 +50,6 @@ export function AppContentCreatorSidebar({ user }: { user: User }) {
       icon: ImagesIcon,
       url: `/content_creator/${user.id}/works`,
     },
-    {
-      title: "المهتمين والطلبات",
-      icon: UserPlus,
-      url: `/content_creator/${user.id}/leads`,
-    },
   ];
 
   const NavItem = ({ item }: { item: (typeof menuItems)[0] }) => (

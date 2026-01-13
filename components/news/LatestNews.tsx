@@ -24,7 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import Image from "next/image";
-import { useEdgeStore } from "@/lib/edgestore";
+
 import TableNews from "../tableNews";
 import { Link } from "next-view-transitions";
 

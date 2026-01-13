@@ -36,7 +36,7 @@ import CourseDrwaer from "./courseDrwaer";
 import CourseDialog from "./courseDialog";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { CourseWithSections } from "@/app/coordinator/[coordinatorId]/courses/page";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 
 interface Props {
   courses: CourseWithSections[];
@@ -86,7 +86,6 @@ const OurCourses = ({ courses, role, userId }: Props) => {
     setIsOpen(true);
   };
 
-  const { edgestore } = useEdgeStore();
   const handleDelete = async (course: CourseWithSections) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
@@ -103,9 +102,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
 
     try {
       if (course.imageUrl) {
-        await edgestore.publicFiles.delete({
-          url: course.imageUrl,
-        });
+        await deleteFromR2(course.imageUrl);
       }
       const res = await fetch(`/api/courses/${course.id}`, {
         method: "DELETE",
@@ -253,7 +250,12 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                         </div>
                         <div className="flex items-center gap-1 text-sm font-bold text-zinc-900">
                           <DollarSign className="w-4 h-4 text-emerald-500" />
-                          {course.price?.toString() || "0"} $
+                          {course.price?.toString() || "0"}{" "}
+                          {course.currency === "ILS"
+                            ? "₪"
+                            : course.currency === "USD"
+                            ? "$"
+                            : "JOD"}
                         </div>
                       </div>
                     </TableCell>
@@ -382,7 +384,12 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                   {course.title}
                 </h3>
                 <div className="text-lg font-black text-primary">
-                  {course.price?.toString()} $
+                  {course.price?.toString()}{" "}
+                  {course.currency === "ILS"
+                    ? "₪"
+                    : course.currency === "USD"
+                    ? "$"
+                    : "JOD"}
                 </div>
               </div>
 

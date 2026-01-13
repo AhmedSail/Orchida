@@ -19,7 +19,7 @@ import { v4 as uuidv4 } from "uuid";
 import Swal from "sweetalert2";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 
 // 1) Zod schema أولاً
 const sliderSchema = z.object({
@@ -45,7 +45,7 @@ export default function AddPhotoToSlider({
 }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
+
   // 3) useForm مضبوط بنفس النوع
   const form = useForm<SliderFormValues>({
     resolver: zodResolver(sliderSchema) as any,
@@ -97,15 +97,7 @@ export default function AddPhotoToSlider({
         }
 
         if (values.imageFile) {
-          const resUpload = await edgestore.publicFiles.upload({
-            file: values.imageFile,
-            onProgressChange: (progress) => {
-              // لو بدك تعمل progress bar
-              console.log("Upload progress:", progress);
-            },
-          });
-
-          imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+          imageUrl = await uploadToR2(values.imageFile, (progress) => {});
         }
       }
 

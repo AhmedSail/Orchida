@@ -18,7 +18,7 @@ export async function PUT(request: Request) {
     // --- بداية التعديل الرئيسي ---
 
     // 1. سجل البيانات الخام التي تصل من الواجهة الأمامية
-    console.log("Raw data received for update:", body);
+   
 
     // 2. تحويل التاريخ من سلسلة نصية إلى كائن Date (هذا هو الحل الأرجح)
     if (dataToUpdate.date && typeof dataToUpdate.date === "string") {
@@ -31,9 +31,6 @@ export async function PUT(request: Request) {
 
     // 3. إضافة حقل updatedAt لتتبعه
     dataToUpdate.updatedAt = new Date();
-
-    // 4. سجل البيانات بعد تنظيفها وقبل إرسالها لقاعدة البيانات
-    console.log("Cleaned data being sent to DB:", dataToUpdate);
 
     // --- نهاية التعديل الرئيسي ---
 

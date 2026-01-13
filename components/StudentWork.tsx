@@ -14,7 +14,7 @@ import {
 } from "@/components/ui/select";
 
 // استدعاء hook الخاص بـ EdgeStore
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 import { useRouter } from "next/navigation";
 
 interface StudentWorkFormProps {
@@ -42,7 +42,6 @@ const StudentWorkForm = ({
   const [description, setDescription] = useState("");
   const [file, setFile] = useState<File | null>(null);
 
-  const { edgestore } = useEdgeStore();
   const [uploadProgress, setUploadProgress] = useState<number>(0);
   const router = useRouter();
   const handleSubmit = async (e: React.FormEvent) => {
@@ -58,13 +57,12 @@ const StudentWorkForm = ({
     // ✅ رفع الملف على EdgeStore إذا النوع صورة أو فيديو
     if (file && type !== "story") {
       try {
-        const resUpload = await edgestore.publicFiles.upload({
-          file,
-          onProgressChange: (progress) => setUploadProgress(progress),
-        });
-        fileUrl = resUpload.url; // الرابط النهائي من EdgeStore
+        const url = await uploadToR2(file, (progress) =>
+          setUploadProgress(progress)
+        );
+        fileUrl = url; // الرابط النهائي من R2
       } catch (err) {
-        Swal.fire("❌ خطأ", "فشل رفع الملف على EdgeStore", "error");
+        Swal.fire("❌ خطأ", "فشل رفع الملف على R2", "error");
         return;
       }
     }

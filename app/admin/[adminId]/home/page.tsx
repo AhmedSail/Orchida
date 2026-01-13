@@ -189,7 +189,12 @@ export default async function AdminHomePage() {
     )
     .leftJoin(courseLeads, eq(courseLeads.sectionId, courseSections.id))
     .where(eq(courseSections.status, "open"))
-    .groupBy(courseSections.id, courses.title);
+    .groupBy(
+      courseSections.id,
+      courses.title,
+      courseSections.sectionNumber,
+      courseSections.maxCapacity
+    );
 
   return (
     <HomePage

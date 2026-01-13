@@ -29,7 +29,7 @@ import { useRouter } from "next/navigation";
 import { MultiUploader } from "@/components/MultiUploader";
 import { SingleUploader } from "@/components/SingleUploader";
 import { Services } from "./admin/service/servicesPage";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 
 // ✅ Schema
 const workSchema = z.object({
@@ -57,7 +57,6 @@ const EditWorkForm = ({
 }) => {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
 
   const getRawUrl = (url: string) => {
     if (!url) return "";
@@ -132,9 +131,7 @@ const EditWorkForm = ({
       // ✅ إذا تغيرت الصورة، نحذف القديمة (بعد التنظيف)
       if (work?.imageUrl && mainUrl !== work.imageUrl) {
         try {
-          await edgestore.publicFiles.delete({
-            url: getRawUrl(work.imageUrl),
-          });
+          await deleteFromR2(getRawUrl(work.imageUrl));
         } catch (e) {
           console.error("Failed to delete old image:", e);
         }

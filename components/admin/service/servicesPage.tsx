@@ -26,7 +26,7 @@ import {
 import { InferSelectModel } from "drizzle-orm";
 import { digitalServices } from "@/src/db/schema";
 import Image from "next/image";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 import Swal from "sweetalert2";
 
 // ✅ Pagination UI من shadcn
@@ -64,7 +64,6 @@ export default function ServicesPage({
   userId: string;
 }) {
   const router = useRouter();
-  const { edgestore } = useEdgeStore(); // Get edgestore instance
 
   // ✅ Skeleton Loading
   const [loading, setLoading] = useState(true);
@@ -99,16 +98,12 @@ export default function ServicesPage({
 
     if (result.isConfirmed) {
       try {
-        // 1. Delete images from EdgeStore if they exist and are URLs
+        // 1. Delete images from R2 if they exist and are URLs
         if (service.smallImage && service.smallImage.startsWith("http")) {
-          await edgestore.publicFiles.delete({
-            url: service.smallImage,
-          });
+          await deleteFromR2(service.smallImage);
         }
         if (service.largeImage && service.largeImage.startsWith("http")) {
-          await edgestore.publicFiles.delete({
-            url: service.largeImage,
-          });
+          await deleteFromR2(service.largeImage);
         }
 
         // 2. Delete from DB

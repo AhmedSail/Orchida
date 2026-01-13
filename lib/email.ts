@@ -28,7 +28,6 @@ export async function sendEmail({
 
   try {
     const result = await client.sendTransacEmail(email);
-    console.log("✅ Email sent:", result.body.messageId);
   } catch (err) {
     console.error("❌ Email sending failed:", err);
   }

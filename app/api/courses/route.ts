@@ -30,6 +30,7 @@ export async function POST(req: Request) {
       topics: body.topics,
       objectives: body.objectives,
       isActive: body.isActive,
+      currency: body.currency,
     });
 
     return NextResponse.json({
