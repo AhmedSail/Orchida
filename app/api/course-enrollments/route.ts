@@ -49,6 +49,22 @@ export async function POST(req: Request) {
     // إدخال البيانات في قاعدة البيانات
     await db.insert(courseEnrollments).values(enrollment);
 
+    // إرسال رسالة تأكيد عبر SMS
+    if (enrollment.studentPhone) {
+      try {
+        const { sendSMS } = await import("@/lib/sms");
+        await sendSMS({
+          mobile: enrollment.studentPhone,
+          text: `تم تسجيلك بنجاح في دورتنا في أوركيدة. أهلاً بك!`,
+        });
+      } catch (smsError) {
+        console.error(
+          "SMS sending failed, but enrollment was created:",
+          smsError
+        );
+      }
+    }
+
     return NextResponse.json(
       { message: "تم تسجيل الطالب بنجاح", enrollment },
       { status: 201 }

@@ -53,8 +53,12 @@ import {
   Users,
   MessageSquare,
   Sparkles,
+  Send,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
 
 type Student = {
   id: string;
@@ -109,6 +113,83 @@ const StudentsTable = ({
 
   const [ibanValues, setIbanValues] = useState<{ [key: string]: string }>({});
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
+
+  // SMS States
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [smsMessage, setSmsMessage] = useState<string>("");
+  const [isSendingSms, setIsSendingSms] = useState(false);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === currentStudents.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(currentStudents.map((s) => s.id));
+    }
+  };
+
+  const toggleSelectStudent = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSendBulkSMS = async () => {
+    if (selectedIds.length === 0) {
+      Swal.fire("تنبيه", "يرجى اختيار طالب واحد على الأقل", "warning");
+      return;
+    }
+    if (!smsMessage.trim()) {
+      Swal.fire("تنبيه", "يرجى كتابة نص الرسالة", "warning");
+      return;
+    }
+
+    const result = await Swal.fire({
+      title: "إرسال رسائل جماعية؟",
+      text: `سيتم إرسال الرسالة إلى ${selectedIds.length} طالب.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "نعم، أرسل الآن",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#10b981",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSendingSms(true);
+    try {
+      const selectedMobiles = studentList
+        .filter((s) => selectedIds.includes(s.id) && s.studentPhone)
+        .map((s) => s.studentPhone as string);
+
+      if (selectedMobiles.length === 0) {
+        Swal.fire("خطأ", "الطلاب المختارون ليس لديهم أرقام هواتف", "error");
+        return;
+      }
+
+      const res = await fetch("/api/sms/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobiles: selectedMobiles,
+          text: smsMessage,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        Swal.fire("تم بنجاح!", data.message, "success");
+        setSmsMessage("");
+        setSelectedIds([]);
+      } else {
+        const error = await res.json();
+        Swal.fire("فشل!", error.message || "فشل إرسال الرسائل", "error");
+      }
+    } catch (error) {
+      Swal.fire("خطأ", "حدث خطأ أثناء الاتصال بالسيرفر", "error");
+    } finally {
+      setIsSendingSms(false);
+    }
+  };
 
   const handleUpdateEnrollment = async (
     id: string,
@@ -440,6 +521,45 @@ const StudentsTable = ({
         </div>
       </div>
 
+      {/* SMS Sending Panel */}
+      <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 space-y-4">
+        <div className="flex items-center gap-2 text-emerald-600 mb-2">
+          <MessageSquare className="w-5 h-5" />
+          <h2 className="font-bold">إرسال رسائل SMS جماعية</h2>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Textarea
+              placeholder="اكتب نص الرسالة هنا..."
+              className="rounded-xl border-gray-200 min-h-[100px] resize-none focus:ring-emerald-500"
+              value={smsMessage}
+              onChange={(e) => setSmsMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col justify-end gap-2 text-right">
+            <div className="text-sm text-gray-500 mb-2">
+              المختارون:{" "}
+              <span className="font-bold text-emerald-600">
+                {selectedIds.length}
+              </span>{" "}
+              طالب
+            </div>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl gap-2 h-12 px-8 shadow-lg shadow-emerald-100"
+              disabled={isSendingSms || selectedIds.length === 0}
+              onClick={handleSendBulkSMS}
+            >
+              {isSendingSms ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+              إرسال الرسالة
+            </Button>
+          </div>
+        </div>
+      </div>
+
       {/* Tabs & Filters */}
       <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
         <div className="flex flex-col lg:flex-row justify-between gap-4">
@@ -561,6 +681,15 @@ const StudentsTable = ({
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>
+              <TableHead className="w-12 py-4">
+                <Checkbox
+                  checked={
+                    currentStudents.length > 0 &&
+                    selectedIds.length === currentStudents.length
+                  }
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead className="text-right py-4">الطالب</TableHead>
               <TableHead className="text-right">الاتصال</TableHead>
               <TableHead className="text-right">التاريخ</TableHead>
@@ -575,8 +704,17 @@ const StudentsTable = ({
               currentStudents.map((s) => (
                 <TableRow
                   key={s.id}
-                  className="hover:bg-blue-50/20 transition-colors"
+                  className={cn(
+                    "hover:bg-blue-50/20 transition-colors",
+                    selectedIds.includes(s.id) && "bg-emerald-50/30"
+                  )}
                 >
+                  <TableCell>
+                    <Checkbox
+                      checked={selectedIds.includes(s.id)}
+                      onCheckedChange={() => toggleSelectStudent(s.id)}
+                    />
+                  </TableCell>
                   <TableCell>
                     <div className="flex flex-col">
                       <span className="font-bold text-gray-900 flex items-center gap-1">
