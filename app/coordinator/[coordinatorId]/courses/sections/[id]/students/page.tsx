@@ -47,6 +47,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       studentName: courseEnrollments.studentName,
       studentEmail: courseEnrollments.studentEmail,
       studentPhone: courseEnrollments.studentPhone,
+      studentMajor: courseEnrollments.studentMajor,
+      studentCountry: courseEnrollments.studentCountry,
       paymentStatus: courseEnrollments.paymentStatus,
       confirmationStatus: courseEnrollments.confirmationStatus,
       registeredAt: courseEnrollments.registeredAt,
@@ -58,11 +60,18 @@ const Page = async ({ params }: { params: { id: string } }) => {
     .from(courseEnrollments)
     .where(eq(courseEnrollments.sectionId, param.id));
 
+  // ✅ مواءمة البيانات مع نوع Student المتوقع في StudentsTable
+  const studentsWithType = students.map((s) => ({
+    ...s,
+    type: "registered" as const,
+  }));
+
   // ✅ جلب بيانات الشعبة والدورة
   const sectionInfo = await db
     .select({
       sectionNumber: courseSections.sectionNumber,
       courseTitle: courses.title,
+      courseId: courseSections.courseId,
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
@@ -95,7 +104,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
   }
 
   // ✅ عدد الطلاب
-  const studentCount = students.length;
+  const studentCount = studentsWithType.length;
 
   return (
     <div className="p-6 space-y-6">
@@ -105,7 +114,11 @@ const Page = async ({ params }: { params: { id: string } }) => {
       </h1>
 
       {/* جدول الطلاب */}
-      <StudentsTable students={students} />
+      <StudentsTable
+        students={studentsWithType}
+        currentSectionId={param.id}
+        courseId={sectionInfo[0]?.courseId || ""}
+      />
     </div>
   );
 };
