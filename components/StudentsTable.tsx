@@ -17,6 +17,7 @@ import {
   DropdownMenuSub,
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
+  DropdownMenuSeparator,
 } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import Swal from "sweetalert2";
@@ -38,130 +39,238 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import {
+  Search,
+  Filter,
+  Trash2,
+  Eye,
+  CheckCircle,
+  Clock,
+  AlertCircle,
+  MoreVertical,
+  UserCheck,
+  UserPlus,
+  Users,
+  MessageSquare,
+  Sparkles,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Student = {
   id: string;
   studentId: string | null;
   studentName: string;
-  studentEmail: string;
+  studentEmail: string | null;
   studentPhone: string | null;
-  paymentStatus: "pending" | "paid" | "failed" | "refunded"; // 👈 أضف refunded
-  confirmationStatus: "pending" | "confirmed" | "rejected"; // 👈 أضف rejected
+  paymentStatus: "pending" | "paid" | "failed" | "refunded";
+  confirmationStatus: "pending" | "confirmed" | "rejected";
   registeredAt: Date | string;
   paymentReceiptUrl?: string | null;
   isReceiptUploaded?: boolean;
   IBAN: string | null;
+  type: "registered" | "interested";
+  status?: string | null; // for leads
+  notes?: string | null;
+  studentMajor?: string | null;
+  studentCountry?: string | null;
+  isSuggested?: boolean;
+  previousStatus?: string | null;
+  originalSectionNumber?: number | null;
 };
 
-const StudentsTable = ({ students }: { students: Student[] }) => {
-  // بيانات
+const StudentsTable = ({
+  students,
+  currentSectionId,
+  courseId,
+}: {
+  students: Student[];
+  currentSectionId: string;
+  courseId: string;
+}) => {
   const [studentList, setStudentList] = useState<Student[]>(students);
-  const [globalNote, setGlobalNote] = useState("");
+  const [activeTab, setActiveTab] = useState<
+    "all" | "registered" | "interested"
+  >("all");
+
   // فلترة وفرز
   const [filterPayment, setFilterPayment] = useState<
     "all" | "paid" | "pending" | "failed"
   >("all");
+  const [filterLeadStatus, setFilterLeadStatus] = useState<string>("all");
   const [sortBy, setSortBy] = useState<
-    "name_asc" | "name_desc" | "date_asc" | "date_desc"
-  >("name_asc");
+    "name_asc" | "name_desc" | "date_asc" | "date_desc" | "status_asc"
+  >("date_desc");
   const [searchName, setSearchName] = useState<string>("");
-  const [dateFrom, setDateFrom] = useState<string>("");
-  const [dateTo, setDateTo] = useState<string>("");
   const [showIBAN, setShowIBAN] = useState(false);
+
   // باجينيشن
   const [currentPage, setCurrentPage] = useState<number>(1);
   const studentsPerPage = 10;
 
-  // دالة لتصحيح روابط localhost في البيئات المختلفة
-  const formatReceiptUrl = (url: string | null | undefined) => {
-    if (!url) return null;
-    if (url.includes("localhost:3000") && typeof window !== "undefined") {
-      const currentOrigin = window.location.origin;
-      if (!currentOrigin.includes("localhost")) {
-        return url.replace("http://localhost:3000", currentOrigin);
-      }
-    }
-    return url;
-  };
-
   const [ibanValues, setIbanValues] = useState<{ [key: string]: string }>({});
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
-  // دوال API
+
   const handleUpdateEnrollment = async (
     id: string,
-    updates: {
-      paymentStatus?: Student["paymentStatus"];
-      confirmationStatus?: Student["confirmationStatus"];
-      IBAN?: string; // أضف هذا
-      notes?: string;
-    }
+    updates: Partial<Student>
   ) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
-      text: "سيتم تعديل بيانات الطالب!",
-      icon: "warning",
+      text: "سيتم تحديث بيانات الطالب!",
+      icon: "question",
       showCancelButton: true,
-      confirmButtonText: "نعم، عدل",
+      confirmButtonText: "نعم، حدّث",
       cancelButtonText: "إلغاء",
+      confirmButtonColor: "#3b82f6",
     });
     if (!result.isConfirmed) return;
 
+    const student = studentList.find((s) => s.id === id);
+    if (!student) return;
+
     try {
-      const res = await fetch(`/api/course-enrollments/${id}`, {
-        method: "PUT",
+      const isLead = student.type === "interested";
+      let endpoint = isLead
+        ? `/api/course-leads/${id}`
+        : `/api/course-enrollments/${id}`;
+      let method = isLead ? "PATCH" : "PUT";
+      let bodyData: any = { ...updates };
+
+      // إذا كان "مقترح"، ننشئ له سجل جديد في هذه الشعبة بدلاً من تعديل القديم
+      if (isLead && student.isSuggested) {
+        endpoint = `/api/course-leads`;
+        method = "POST";
+        bodyData = {
+          ...updates,
+          studentName: student.studentName,
+          studentEmail: student.studentEmail,
+          studentPhone: student.studentPhone,
+          sectionId: currentSectionId,
+          courseId: courseId,
+          status: updates.status || student.status,
+          notes: updates.notes || student.notes,
+        };
+      }
+
+      const res = await fetch(endpoint, {
+        method,
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(updates),
+        body: JSON.stringify(bodyData),
       });
 
       if (res.ok) {
-        Swal.fire("تم التحديث!", "تم تعديل البيانات بنجاح.", "success");
+        const data = await res.json();
+        const newId = data.lead?.id || id;
+
+        Swal.fire({
+          icon: "success",
+          title: "تم التحديث!",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+
         setStudentList((prev) =>
-          prev.map((s) => (s.id === id ? { ...s, ...updates } : s))
+          prev.map((s) =>
+            s.id === id
+              ? {
+                  ...s,
+                  ...updates,
+                  id: newId,
+                  isSuggested: false,
+                  // إذا كان مقترح وتم تحديثه، يصبح طالب حقيقي في هذه الشعبة
+                }
+              : s
+          )
         );
       } else {
-        Swal.fire("خطأ!", "فشل في تعديل البيانات.", "error");
+        Swal.fire("خطأ!", "فشل في تحديث البيانات.", "error");
       }
     } catch {
       Swal.fire("خطأ!", "حدث خطأ أثناء الاتصال بالسيرفر.", "error");
     }
   };
 
-  const handleDeleteEnrollment = async (id: string) => {
+  const handleDelete = async (
+    id: string,
+    type: "registered" | "interested"
+  ) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
-      text: "سيتم حذف تسجيل الطالب نهائياً!",
+      text: "سيتم حذف البيانات نهائياً!",
       icon: "warning",
       showCancelButton: true,
       confirmButtonText: "نعم، احذف",
       cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
     });
     if (!result.isConfirmed) return;
 
     try {
-      const res = await fetch(`/api/course-enrollments/${id}`, {
-        method: "DELETE",
-      });
+      const endpoint =
+        type === "interested"
+          ? `/api/course-leads/${id}`
+          : `/api/course-enrollments/${id}`;
+      const res = await fetch(endpoint, { method: "DELETE" });
       if (res.ok) {
-        Swal.fire("تم الحذف!", "تم حذف تسجيل الطالب بنجاح.", "success");
+        Swal.fire("تم الحذف!", "تم الحذف بنجاح.", "success");
         setStudentList((prev) => prev.filter((s) => s.id !== id));
       } else {
-        Swal.fire("خطأ!", "فشل في حذف التسجيل.", "error");
+        Swal.fire("خطأ!", "فشل في الحذف.", "error");
       }
     } catch {
       Swal.fire("خطأ!", "حدث خطأ أثناء الاتصال بالسيرفر.", "error");
     }
   };
 
-  // تطبيق الفلترة والفرز
-  const filteredSorted = useMemo(() => {
-    const normalizeDate = (d: Date | string) =>
-      typeof d === "string" ? new Date(d) : d;
+  const convertLeadToRegistered = async (lead: Student) => {
+    // Logic to convert interested to registered
+    const result = await Swal.fire({
+      title: "تحويل الطالب؟",
+      text: "سيتم تحويل الطالب من مهتم إلى مسجل رسمي في الدورة.",
+      icon: "info",
+      showCancelButton: true,
+      confirmButtonText: "نعم، قم بالتحويل",
+      cancelButtonText: "إلغاء",
+    });
 
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/course-leads/${lead.id}`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          targetSectionId: lead.isSuggested ? currentSectionId : undefined,
+        }),
+      });
+      if (res.ok) {
+        Swal.fire("تم التحويل!", "تم تسجيل الطالب بنجاح.", "success");
+        // Reload list or update state
+        setStudentList((prev) =>
+          prev.map((s) => (s.id === lead.id ? { ...s, type: "registered" } : s))
+        );
+      }
+    } catch (e) {
+      Swal.fire("خطأ", "حدث خطأ أثناء التحويل", "error");
+    }
+  };
+
+  const filteredSorted = useMemo(() => {
     let data = [...studentList];
 
-    // فلترة الدفع
+    // تبويب
+    if (activeTab !== "all") {
+      data = data.filter((s) => s.type === activeTab);
+    }
+
+    // فلترة الدفع (للمسجلين)
     if (filterPayment !== "all") {
       data = data.filter((s) => s.paymentStatus === filterPayment);
+    }
+
+    // فلترة حالة الطلب (للمهتمين)
+    if (filterLeadStatus !== "all") {
+      data = data.filter((s) => s.status === filterLeadStatus);
     }
 
     // بحث بالاسم
@@ -170,457 +279,607 @@ const StudentsTable = ({ students }: { students: Student[] }) => {
       data = data.filter((s) => s.studentName.toLowerCase().includes(q));
     }
 
-    // فلترة التاريخ
-    if (dateFrom) {
-      const from = new Date(dateFrom);
-      data = data.filter((s) => normalizeDate(s.registeredAt) >= from);
-    }
-    if (dateTo) {
-      const to = new Date(dateTo);
-      // نهاية اليوم
-      to.setHours(23, 59, 59, 999);
-      data = data.filter((s) => normalizeDate(s.registeredAt) <= to);
-    }
-
     // فرز
     data.sort((a, b) => {
+      const dateA = new Date(a.registeredAt).getTime();
+      const dateB = new Date(b.registeredAt).getTime();
+
       if (sortBy === "name_asc")
         return a.studentName.localeCompare(b.studentName, "ar");
       if (sortBy === "name_desc")
         return b.studentName.localeCompare(a.studentName, "ar");
-      const da = normalizeDate(a.registeredAt).getTime();
-      const db = normalizeDate(b.registeredAt).getTime();
-      if (sortBy === "date_asc") return da - db;
-      return db - da; // date_desc
+      if (sortBy === "date_asc") return dateA - dateB;
+      if (sortBy === "status_asc") {
+        const statusA =
+          a.type === "interested" ? a.status || "" : a.paymentStatus;
+        const statusB =
+          b.type === "interested" ? b.status || "" : b.paymentStatus;
+        return statusA.localeCompare(statusB, "ar");
+      }
+      return dateB - dateA;
     });
 
     return data;
-  }, [studentList, filterPayment, searchName, dateFrom, dateTo, sortBy]);
+  }, [
+    studentList,
+    activeTab,
+    filterPayment,
+    filterLeadStatus,
+    searchName,
+    sortBy,
+  ]);
 
-  // حساب الصفحة الحالية
   const totalPages = Math.ceil(filteredSorted.length / studentsPerPage) || 1;
-  const indexOfLast = currentPage * studentsPerPage;
-  const indexOfFirst = indexOfLast - studentsPerPage;
-  const currentStudents = filteredSorted.slice(indexOfFirst, indexOfLast);
+  const currentStudents = filteredSorted.slice(
+    (currentPage - 1) * studentsPerPage,
+    currentPage * studentsPerPage
+  );
 
-  // لضمان بقاء currentPage ضمن الحدود عند تغيير الفلاتر
-  React.useEffect(() => {
-    if (currentPage > totalPages) {
-      setCurrentPage(1);
+  const getStatusBadge = (status: string | null | undefined, type: string) => {
+    if (type === "interested") {
+      switch (status) {
+        case "new":
+          return (
+            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+              جديد
+            </Badge>
+          );
+        case "contacted":
+          return (
+            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+              تم التواصل
+            </Badge>
+          );
+        case "interested":
+          return (
+            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
+              مهتم
+            </Badge>
+          );
+        case "no_response":
+          return (
+            <Badge className="bg-red-100 text-red-700 border-red-200">
+              لم يرد
+            </Badge>
+          );
+        case "high_price":
+          return (
+            <Badge className="bg-zinc-100 text-zinc-700 border-zinc-200">
+              السعر مرتفع
+            </Badge>
+          );
+        case "wants_online":
+          return (
+            <Badge className="bg-cyan-100 text-cyan-700 border-cyan-200">
+              يريد أونلاين
+            </Badge>
+          );
+        case "future_course":
+          return (
+            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
+              الدورة القادمة
+            </Badge>
+          );
+        case "cancel_reg":
+          return (
+            <Badge className="bg-rose-100 text-rose-700 border-rose-200">
+              إلغاء التسجيل
+            </Badge>
+          );
+        case "far_location":
+          return (
+            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+              المكان بعيد
+            </Badge>
+          );
+        default:
+          return (
+            <Badge className="bg-gray-100 text-gray-700 border-gray-200">
+              {status || "غير محدد"}
+            </Badge>
+          );
+      }
     }
-  }, [totalPages, currentPage]);
+
+    switch (status) {
+      case "paid":
+        return (
+          <Badge className="bg-emerald-100 text-emerald-700 border-emerald-200">
+            مدفوع
+          </Badge>
+        );
+      case "pending":
+        return (
+          <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+            معلق
+          </Badge>
+        );
+      case "failed":
+        return (
+          <Badge className="bg-red-100 text-red-700 border-red-200">فشل</Badge>
+        );
+      default:
+        return <Badge variant="outline">{status}</Badge>;
+    }
+  };
 
   return (
-    <div className="space-y-4">
-      <Button variant="outline" onClick={() => setShowIBAN((prev) => !prev)}>
-        {showIBAN ? "إخفاء الايبان" : "رفع الايبان"}
-      </Button>
-      {/* أدوات الفلترة والفرز */}
-      <div
-        className="flex lg:flex-wrap max-lg:flex-col gap-4 lg:items-end"
-        dir="rtl"
-      >
-        <div className="flex flex-col">
-          <Label>بحث بالاسم</Label>
-          <Input
-            value={searchName}
-            onChange={(e) => setSearchName(e.target.value)}
-            placeholder="ابحث عن طالب..."
-            className="mt-1"
-          />
+    <div className="space-y-6" dir="rtl">
+      {/* Header Cards / Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+          <div className="bg-blue-50 p-3 rounded-xl text-blue-600">
+            <Users className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm">الكل</p>
+            <p className="text-2xl font-bold">{studentList.length}</p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+          <div className="bg-emerald-50 p-3 rounded-xl text-emerald-600">
+            <UserCheck className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm">مسجلين</p>
+            <p className="text-2xl font-bold">
+              {studentList.filter((s) => s.type === "registered").length}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex items-center gap-4">
+          <div className="bg-amber-50 p-3 rounded-xl text-amber-600">
+            <UserPlus className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm">مهتمين</p>
+            <p className="text-2xl font-bold">
+              {studentList.filter((s) => s.type === "interested").length}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs & Filters */}
+      <div className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-4">
+        <div className="flex flex-col lg:flex-row justify-between gap-4">
+          <div className="flex bg-gray-50 p-1 rounded-xl w-fit">
+            <button
+              onClick={() => setActiveTab("all")}
+              className={cn(
+                "px-6 py-2 rounded-lg text-sm font-medium transition-all",
+                activeTab === "all"
+                  ? "bg-white shadow-sm text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              الكل
+            </button>
+            <button
+              onClick={() => setActiveTab("registered")}
+              className={cn(
+                "px-6 py-2 rounded-lg text-sm font-medium transition-all",
+                activeTab === "registered"
+                  ? "bg-white shadow-sm text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              المسجلين
+            </button>
+            <button
+              onClick={() => setActiveTab("interested")}
+              className={cn(
+                "px-6 py-2 rounded-lg text-sm font-medium transition-all",
+                activeTab === "interested"
+                  ? "bg-white shadow-sm text-blue-600"
+                  : "text-gray-500 hover:text-gray-700"
+              )}
+            >
+              المهتمين
+            </button>
+          </div>
+
+          <div className="flex gap-2">
+            <div className="relative group">
+              <Search className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 group-focus-within:text-blue-500 transition-colors" />
+              <Input
+                placeholder="ابحث بالاسم..."
+                className="pr-10 bg-gray-50 border-none rounded-xl focus-visible:ring-1 focus-visible:ring-blue-500 w-[250px]"
+                value={searchName}
+                onChange={(e) => setSearchName(e.target.value)}
+              />
+            </div>
+            <Button
+              variant="outline"
+              className="rounded-xl border-gray-200"
+              onClick={() => setShowIBAN(!showIBAN)}
+            >
+              {showIBAN ? "إخفاء IBAN" : "رفع IBAN"}
+            </Button>
+          </div>
         </div>
 
-        <div className="flex flex-col">
-          <Label>فلترة الدفع</Label>
+        <div className="flex flex-wrap gap-4 items-center text-sm border-t pt-4">
+          <div className="flex items-center gap-2">
+            <Filter className="w-4 h-4 text-gray-400" />
+            <span className="text-gray-500">فلترة:</span>
+          </div>
+
           <Select
             value={filterPayment}
             onValueChange={(v: any) => setFilterPayment(v)}
           >
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="اختر حالة الدفع" />
+            <SelectTrigger className="h-9 w-[130px] rounded-lg border-gray-200">
+              <SelectValue placeholder="حالة الدفع" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">الكل</SelectItem>
+              <SelectItem value="all">كل الحالات</SelectItem>
               <SelectItem value="paid">مدفوع</SelectItem>
-              <SelectItem value="pending">معلق</SelectItem>
+              <SelectItem value="pending">بانتظار</SelectItem>
               <SelectItem value="failed">فشل</SelectItem>
             </SelectContent>
           </Select>
-        </div>
 
-        <div className="flex flex-col">
-          <Label>الفرز</Label>
-          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
-            <SelectTrigger className="mt-1">
-              <SelectValue placeholder="اختر طريقة الفرز" />
+          <Select
+            value={filterLeadStatus}
+            onValueChange={(v: any) => setFilterLeadStatus(v)}
+          >
+            <SelectTrigger className="h-9 w-[150px] rounded-lg border-gray-200">
+              <SelectValue placeholder="حالة المهتمين" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="name_asc">الاسم تصاعدي</SelectItem>
-              <SelectItem value="name_desc">الاسم تنازلي</SelectItem>
-              <SelectItem value="date_asc">التاريخ أقدم أولاً</SelectItem>
-              <SelectItem value="date_desc">التاريخ أحدث أولاً</SelectItem>
+              <SelectItem value="all">كل حالات المهتمين</SelectItem>
+              <SelectItem value="new">جديد</SelectItem>
+              <SelectItem value="contacted">تم التواصل</SelectItem>
+              <SelectItem value="no_response">لم يرد</SelectItem>
+              <SelectItem value="high_price">السعر مرتفع</SelectItem>
+              <SelectItem value="wants_online">يريد أونلاين</SelectItem>
+              <SelectItem value="future_course">الدورة القادمة</SelectItem>
+              <SelectItem value="far_location">المكان بعيد</SelectItem>
+              <SelectItem value="cancel_reg">يريد إلغاء التسجيل</SelectItem>
+              <SelectItem value="interested">مهتم</SelectItem>
+            </SelectContent>
+          </Select>
+
+          <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
+            <SelectTrigger className="h-9 w-[160px] rounded-lg border-gray-200">
+              <SelectValue placeholder="ترتيب حسب" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="date_desc">الأحدث أولاً</SelectItem>
+              <SelectItem value="date_asc">الأقدم أولاً</SelectItem>
+              <SelectItem value="name_asc">الاسم (أ - ي)</SelectItem>
+              <SelectItem value="name_desc">الاسم (ي - أ)</SelectItem>
+              <SelectItem value="status_asc">حالة الطالب</SelectItem>
             </SelectContent>
           </Select>
         </div>
-
-        <div className="flex flex-col">
-          <Label>من تاريخ</Label>
-          <Input
-            type="date"
-            value={dateFrom}
-            onChange={(e) => setDateFrom(e.target.value)}
-            className="mt-1"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <Label>إلى تاريخ</Label>
-          <Input
-            type="date"
-            value={dateTo}
-            onChange={(e) => setDateTo(e.target.value)}
-            className="mt-1"
-          />
-        </div>
       </div>
 
-      {/* كاردز للموبايل والآيباد */}
-      <div className="grid gap-4 lg:hidden">
-        {currentStudents.map((s) => (
-          <div key={s.id} className="border rounded-lg p-4 shadow-sm">
-            <div className="flex items-center justify-between">
-              <h3 className="font-bold">{s.studentName}</h3>
-              <Badge
-                variant={
-                  s.paymentStatus === "paid"
-                    ? "default"
-                    : s.paymentStatus === "pending"
-                    ? "secondary"
-                    : "destructive"
-                }
-              >
-                {s.paymentStatus}
-              </Badge>
-            </div>
-            <p className="text-sm text-gray-600">{s.studentEmail}</p>
-            <p className="text-sm text-gray-600">{s.studentPhone ?? "-"}</p>
-            <p className="text-sm mt-2">
-              تاريخ التسجيل:{" "}
-              {new Date(s.registeredAt).toLocaleDateString("ar-EG")}
-            </p>
-
-            <div className="mt-3 flex flex-wrap gap-2">
-              {s.isReceiptUploaded && s.paymentReceiptUrl ? (
-                <Dialog>
-                  <DialogTrigger asChild>
-                    <Button variant="outline" size="sm">
-                      إشعار الدفع
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="sm:max-w-lg" dir="rtl">
-                    <DialogHeader>
-                      <DialogTitle>إشعار الدفع</DialogTitle>
-                      <DialogDescription>
-                        معاينة صورة إشعار الدفع المرسلة من قبل الطالب{" "}
-                        {s.studentName}.
-                      </DialogDescription>
-                    </DialogHeader>
-                    <div className="flex justify-center">
-                      {/* إذا ما ضفت الدومين في next.config.js استخدم <img> بدل Image */}
-                      <Image
-                        src={formatReceiptUrl(s.paymentReceiptUrl) || ""}
-                        alt="إشعار الدفع"
-                        className="rounded-lg w-full h-auto"
-                        width={600}
-                        height={400}
-                        unoptimized
-                      />
-                    </div>
-                  </DialogContent>
-                </Dialog>
-              ) : (
-                <Button variant="outline" size="sm" disabled>
-                  لا يوجد إشعار
-                </Button>
-              )}
-
-              <DropdownMenu dir="rtl">
-                <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm">
-                    خيارات
-                  </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent>
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      تغيير حالة الدفع
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            paymentStatus: "paid",
-                          })
-                        }
-                      >
-                        مدفوع
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            paymentStatus: "pending",
-                          })
-                        }
-                      >
-                        معلق
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            paymentStatus: "failed",
-                          })
-                        }
-                      >
-                        فشل
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuSub>
-                    <DropdownMenuSubTrigger>
-                      تغيير حالة التأكيد
-                    </DropdownMenuSubTrigger>
-                    <DropdownMenuSubContent>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            confirmationStatus: "confirmed",
-                          })
-                        }
-                      >
-                        مؤكد
-                      </DropdownMenuItem>
-                      <DropdownMenuItem
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            confirmationStatus: "pending",
-                          })
-                        }
-                      >
-                        بانتظار
-                      </DropdownMenuItem>
-                    </DropdownMenuSubContent>
-                  </DropdownMenuSub>
-
-                  <DropdownMenuItem
-                    className="text-red-600"
-                    onClick={() => handleDeleteEnrollment(s.id)}
-                  >
-                    حذف التسجيل
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
-            </div>
-          </div>
-        ))}
-      </div>
-
-      {/* جدول للديسكتوب */}
-      <div className="hidden lg:block">
+      {/* Table Desktop */}
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hidden lg:block">
         <Table>
-          <TableHeader>
+          <TableHeader className="bg-gray-50/50">
             <TableRow>
-              <TableHead className="text-right">الاسم</TableHead>
-              <TableHead className="text-right">البريد الإلكتروني</TableHead>
-              <TableHead className="text-right">الهاتف</TableHead>
+              <TableHead className="text-right py-4">الطالب</TableHead>
+              <TableHead className="text-right">الاتصال</TableHead>
+              <TableHead className="text-right">التاريخ</TableHead>
               <TableHead className="text-right">إشعار الدفع</TableHead>
-              <TableHead className="text-right">حالة الدفع</TableHead>
-              <TableHead className="text-right">حالة التأكيد</TableHead>
-              <TableHead className="text-right">تاريخ التسجيل</TableHead>
+              <TableHead className="text-right">الحالة</TableHead>
               {showIBAN && <TableHead className="text-right">IBAN</TableHead>}
-              <TableHead className="text-right">خيارات</TableHead>
+              <TableHead className="text-center">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
             {currentStudents.length > 0 ? (
               currentStudents.map((s) => (
-                <TableRow key={s.id}>
-                  <TableCell>{s.studentName}</TableCell>
-                  <TableCell>{s.studentEmail}</TableCell>
-                  <TableCell>{s.studentPhone ?? "-"}</TableCell>
+                <TableRow
+                  key={s.id}
+                  className="hover:bg-blue-50/20 transition-colors"
+                >
+                  <TableCell>
+                    <div className="flex flex-col">
+                      <span className="font-bold text-gray-900 flex items-center gap-1">
+                        {s.studentName}
+                        {s.isSuggested && (
+                          <Badge className="bg-purple-50 text-purple-600 border-purple-100 text-[10px] py-0 h-4 px-1 gap-1">
+                            <Sparkles className="w-2 h-2" /> مقترح
+                          </Badge>
+                        )}
+                      </span>
+                      <span className="text-xs text-blue-600 bg-blue-50 w-fit px-2 py-0.5 rounded-full mt-1">
+                        {s.type === "registered" ? "مسجل" : "مهتم"}
+                      </span>
+                      {s.isSuggested && (
+                        <div className="flex items-center gap-1 mt-1 text-[10px]">
+                          <span className="text-gray-400">
+                            كان في شعبة {s.originalSectionNumber}:
+                          </span>
+                          {getStatusBadge(s.previousStatus, "interested")}
+                        </div>
+                      )}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex flex-col gap-1 text-sm text-gray-600">
+                      <span>{s.studentEmail || "-"}</span>
+                      <span dir="ltr" className="text-right">
+                        {s.studentPhone || "-"}
+                      </span>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-600">
+                      {new Date(s.registeredAt).toLocaleDateString("ar-EG")}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     {s.isReceiptUploaded && s.paymentReceiptUrl ? (
                       <Dialog>
                         <DialogTrigger asChild>
-                          <Button variant="outline" size="sm">
-                            عرض إشعار الدفع
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="text-blue-600 hover:text-blue-700 hover:bg-blue-50 gap-2"
+                          >
+                            <Eye className="w-4 h-4" /> عرض
                           </Button>
                         </DialogTrigger>
-                        <DialogContent className="sm:max-w-lg" dir="rtl">
+                        <DialogContent className="max-w-2xl" dir="rtl">
                           <DialogHeader>
-                            <DialogTitle>إشعار الدفع</DialogTitle>
-                            <DialogDescription>
-                              معاينة صورة إشعار الدفع المرسلة من قبل الطالب{" "}
-                              {s.studentName}.
-                            </DialogDescription>
+                            <DialogTitle>
+                              إشعار الدفع - {s.studentName}
+                            </DialogTitle>
                           </DialogHeader>
-                          <div className="flex justify-center">
+                          <div className="relative aspect-video w-full overflow-hidden rounded-xl border">
                             <Image
-                              src={formatReceiptUrl(s.paymentReceiptUrl) || ""}
-                              alt="إشعار الدفع"
-                              className="rounded-lg w-full h-auto"
-                              width={600}
-                              height={400}
+                              src={s.paymentReceiptUrl}
+                              alt="Receipt"
+                              fill
+                              className="object-contain bg-gray-50"
                               unoptimized
                             />
                           </div>
                         </DialogContent>
                       </Dialog>
                     ) : (
-                      <span className="text-gray-500">لم يتم رفع إشعار</span>
+                      <span className="text-gray-400 text-xs italic">
+                        لا يوجد
+                      </span>
                     )}
                   </TableCell>
                   <TableCell>
-                    <Badge
-                      variant={
-                        s.paymentStatus === "paid"
-                          ? "default"
-                          : s.paymentStatus === "pending"
-                          ? "secondary"
-                          : "destructive"
-                      }
-                    >
-                      {s.paymentStatus}
-                    </Badge>
+                    {getStatusBadge(
+                      s.type === "interested" ? s.status : s.paymentStatus,
+                      s.type
+                    )}
                   </TableCell>
-                  <TableCell>{s.confirmationStatus}</TableCell>
 
-                  <TableCell>
-                    {new Date(s.registeredAt).toLocaleDateString("ar-EG")}
-                  </TableCell>
                   {showIBAN && (
-                    <TableCell className="flex gap-2">
-                      <input
-                        type="text"
-                        value={ibanValues[s.id] ?? s.IBAN ?? ""}
-                        placeholder="أدخل IBAN"
-                        className="border rounded px-2 py-1 w-full text-sm"
-                        disabled={!!s.IBAN && !editMode[s.id]} // إذا فيه IBAN ومش في وضع تعديل → disabled
-                        onChange={(e) =>
-                          setIbanValues((prev) => ({
-                            ...prev,
-                            [s.id]: e.target.value,
-                          }))
-                        }
-                      />
-                      <Button
-                        size="sm"
-                        onClick={() =>
-                          handleUpdateEnrollment(s.id, {
-                            IBAN: ibanValues[s.id],
-                          })
-                        }
-                      >
-                        حفظ
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() =>
-                          setEditMode((prev) => ({
-                            ...prev,
-                            [s.id]: !prev[s.id],
-                          }))
-                        }
-                      >
-                        {editMode[s.id] ? "إلغاء" : "تعديل"}
-                      </Button>
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <input
+                          className="bg-gray-50 border-none rounded-lg px-3 py-1 text-sm w-[150px] focus:ring-1 focus:ring-blue-500"
+                          placeholder="أدخل IBAN"
+                          value={ibanValues[s.id] ?? s.IBAN ?? ""}
+                          onChange={(e) =>
+                            setIbanValues({
+                              ...ibanValues,
+                              [s.id]: e.target.value,
+                            })
+                          }
+                        />
+                        <Button
+                          size="icon"
+                          variant="ghost"
+                          className="h-8 w-8 text-emerald-600"
+                          onClick={() =>
+                            handleUpdateEnrollment(s.id, {
+                              IBAN: ibanValues[s.id],
+                            })
+                          }
+                        >
+                          <CheckCircle className="w-4 h-4" />
+                        </Button>
+                      </div>
                     </TableCell>
                   )}
+
                   <TableCell>
-                    <DropdownMenu dir="rtl">
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" size="sm">
-                          خيارات
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent>
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            تغيير حالة الدفع
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateEnrollment(s.id, {
-                                  paymentStatus: "paid",
-                                })
-                              }
-                            >
-                              مدفوع
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateEnrollment(s.id, {
-                                  paymentStatus: "pending",
-                                })
-                              }
-                            >
-                              معلق
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateEnrollment(s.id, {
-                                  paymentStatus: "failed",
-                                })
-                              }
-                            >
-                              فشل
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                    <div className="flex justify-center gap-2">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8 rounded-full hover:bg-gray-100"
+                          >
+                            <MoreVertical className="w-4 h-4 text-gray-500" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-[200px]">
+                          {s.type === "interested" && (
+                            <>
+                              <DropdownMenuItem
+                                className="text-blue-600 gap-2 font-bold"
+                                onClick={() => convertLeadToRegistered(s)}
+                              >
+                                <UserCheck className="w-4 h-4" /> تحويل لمسجل
+                              </DropdownMenuItem>
 
-                        <DropdownMenuSub>
-                          <DropdownMenuSubTrigger>
-                            تغيير حالة التأكيد
-                          </DropdownMenuSubTrigger>
-                          <DropdownMenuSubContent>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateEnrollment(s.id, {
-                                  confirmationStatus: "confirmed",
-                                })
-                              }
-                            >
-                              مؤكد
-                            </DropdownMenuItem>
-                            <DropdownMenuItem
-                              onClick={() =>
-                                handleUpdateEnrollment(s.id, {
-                                  confirmationStatus: "pending",
-                                })
-                              }
-                            >
-                              بانتظار
-                            </DropdownMenuItem>
-                          </DropdownMenuSubContent>
-                        </DropdownMenuSub>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="gap-2">
+                                  تحديث حالة الطلب
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "new",
+                                      })
+                                    }
+                                  >
+                                    جديد
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "contacted",
+                                      })
+                                    }
+                                  >
+                                    تم التواصل
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "no_response",
+                                      })
+                                    }
+                                  >
+                                    لم يرد
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "high_price",
+                                      })
+                                    }
+                                  >
+                                    السعر مرتفع
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "wants_online",
+                                      })
+                                    }
+                                  >
+                                    يريد أونلاين
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "future_course",
+                                      })
+                                    }
+                                  >
+                                    الدورة القادمة
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "far_location",
+                                      })
+                                    }
+                                  >
+                                    المكان بعيد
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "cancelled",
+                                      })
+                                    }
+                                  >
+                                    ألغى
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "cancel_reg",
+                                      })
+                                    }
+                                  >
+                                    يريد إلغاء التسجيل
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "interested",
+                                      })
+                                    }
+                                  >
+                                    مهتم
+                                  </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                            </>
+                          )}
 
-                        <DropdownMenuItem
-                          className="text-red-600"
-                          onClick={() => handleDeleteEnrollment(s.id)}
-                        >
-                          حذف التسجيل
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
+                          {s.type === "registered" && (
+                            <>
+                              <DropdownMenuSub>
+                                <DropdownMenuSubTrigger className="gap-2">
+                                  تدرج الحالة
+                                </DropdownMenuSubTrigger>
+                                <DropdownMenuSubContent>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        paymentStatus: "paid",
+                                      })
+                                    }
+                                  >
+                                    مدفوع
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        paymentStatus: "pending",
+                                      })
+                                    }
+                                  >
+                                    معلق
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        paymentStatus: "failed",
+                                      })
+                                    }
+                                  >
+                                    فشل
+                                  </DropdownMenuItem>
+                                </DropdownMenuSubContent>
+                              </DropdownMenuSub>
+                            </>
+                          )}
+
+                          <DropdownMenuItem
+                            className="gap-2 text-blue-600"
+                            onClick={() => {
+                              Swal.fire({
+                                title: "ملاحظات الطالب",
+                                text: s.notes || "لا يوجد ملاحظات",
+                                icon: "info",
+                                confirmButtonText: "إغلاق",
+                              });
+                            }}
+                          >
+                            <MessageSquare className="w-4 h-4" /> عرض الملاحظات
+                          </DropdownMenuItem>
+
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-red-600 gap-2 cursor-pointer"
+                            onClick={() => handleDelete(s.id, s.type)}
+                          >
+                            <Trash2 className="w-4 h-4" /> حذف البيانات
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
                   </TableCell>
                 </TableRow>
               ))
             ) : (
               <TableRow>
-                <TableCell colSpan={8} className="text-center text-gray-500">
-                  لا يوجد طلاب مسجلين
+                <TableCell colSpan={8} className="text-center py-20">
+                  <div className="flex flex-col items-center gap-2 text-gray-400">
+                    <AlertCircle className="w-10 h-10 opacity-20" />
+                    <p>لا يوجد نتائج مطابقة للبحث</p>
+                  </div>
                 </TableCell>
               </TableRow>
             )}
@@ -628,25 +887,108 @@ const StudentsTable = ({ students }: { students: Student[] }) => {
         </Table>
       </div>
 
-      {/* باجينيشن */}
-      <div className="flex flex-wrap items-center justify-center gap-3">
-        <Button
-          variant="outline"
-          disabled={currentPage === 1}
-          onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-        >
-          السابق
-        </Button>
-        <span className="text-sm">
-          صفحة {currentPage} من {totalPages}
-        </span>
-        <Button
-          variant="outline"
-          disabled={currentPage === totalPages}
-          onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-        >
-          التالي
-        </Button>
+      {/* Mobile Grid */}
+      <div className="lg:hidden grid gap-4">
+        {currentStudents.map((s) => (
+          <div
+            key={s.id}
+            className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 space-y-3"
+          >
+            <div className="flex justify-between items-start">
+              <div>
+                <h4 className="font-bold text-gray-900 flex items-center gap-1">
+                  {s.studentName}
+                  {s.isSuggested && (
+                    <Sparkles className="w-3 h-3 text-purple-500" />
+                  )}
+                </h4>
+                <div className="flex flex-wrap gap-1 mt-1">
+                  <Badge variant="outline" className="text-[10px] h-5">
+                    {s.type === "registered" ? "مسجل" : "مهتم"}
+                  </Badge>
+                  {s.isSuggested && (
+                    <div className="flex items-center gap-1 text-[9px] bg-purple-50 text-purple-700 px-2 rounded-full border border-purple-100">
+                      <span>{s.originalSectionNumber} ←</span>
+                      {getStatusBadge(s.previousStatus, "interested")}
+                    </div>
+                  )}
+                </div>
+              </div>
+              {getStatusBadge(
+                s.type === "interested" ? s.status : s.paymentStatus,
+                s.type
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 bg-gray-50 rounded-xl p-3">
+              <div className="flex flex-col">
+                <span className="text-gray-400">الإيميل</span>
+                <span className="truncate">{s.studentEmail || "-"}</span>
+              </div>
+              <div className="flex flex-col">
+                <span className="text-gray-400">الهاتف</span>
+                <span>{s.studentPhone || "-"}</span>
+              </div>
+            </div>
+
+            <div className="flex justify-between items-center bg-gray-50 px-3 py-2 rounded-xl">
+              <span className="text-xs text-gray-400">تاريخ التسجيل</span>
+              <span className="text-xs font-medium">
+                {new Date(s.registeredAt).toLocaleDateString("ar-EG")}
+              </span>
+            </div>
+
+            <div className="flex gap-2">
+              {s.isReceiptUploaded && (
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl h-9 text-xs gap-2"
+                >
+                  <Eye className="w-3 h-3" /> عرض الإيصال
+                </Button>
+              )}
+              <Button
+                variant="destructive"
+                className="bg-red-50 text-red-600 hover:bg-red-100 border-none rounded-xl h-9 px-3"
+                onClick={() => handleDelete(s.id, s.type)}
+              >
+                <Trash2 className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        ))}
+      </div>
+
+      {/* Pagination */}
+      <div className="flex items-center justify-between bg-white p-4 rounded-2xl shadow-sm border border-gray-100">
+        <p className="text-sm text-gray-500">
+          عرض {(currentPage - 1) * studentsPerPage + 1} إلى{" "}
+          {Math.min(currentPage * studentsPerPage, filteredSorted.length)} من{" "}
+          {filteredSorted.length} طالب
+        </p>
+        <div className="flex gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-lg h-9"
+            disabled={currentPage === 1}
+            onClick={() => setCurrentPage((p) => p - 1)}
+          >
+            السابق
+          </Button>
+          <div className="flex items-center px-4 text-sm font-medium">
+            {currentPage}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            className="rounded-lg h-9"
+            disabled={currentPage === totalPages}
+            onClick={() => setCurrentPage((p) => p + 1)}
+          >
+            التالي
+          </Button>
+        </div>
       </div>
     </div>
   );

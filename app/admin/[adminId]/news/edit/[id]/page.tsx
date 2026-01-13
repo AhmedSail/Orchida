@@ -15,7 +15,7 @@ const page = async ({ params }: { params: { id: string } }) => {
   const { id } = await params;
   // ✅ جلب الخبر من قاعدة البيانات مباشرة (Server Component)
   const result = await db.select().from(news).where(eq(news.id, id));
-  console.log(result);
+
   if (!result.length) {
     return <div>الخبر غير موجود ❌</div>;
   }

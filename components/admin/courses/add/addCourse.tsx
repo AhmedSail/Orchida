@@ -15,18 +15,26 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 
 const formSchema = z.object({
   title: z.string().min(3, "العنوان مطلوب"),
   description: z.string().optional(),
-  imageFile: z.instanceof(File).optional(), // 👈 هنا التغيير
-  duration: z.string(),
-  hours: z.number(),
+  imageFile: z.instanceof(File).optional(),
+  duration: z.string().min(1, "المدة مطلوبة"),
+  hours: z.number().min(0, "عدد الساعات يجب أن يكون 0 أو أكثر"),
   price: z.string().optional(),
+  currency: z.enum(["ILS", "USD", "JOD"]),
   targetAudience: z.string().optional(),
   topics: z.string().optional(),
   objectives: z.string().optional(),
@@ -40,17 +48,18 @@ export default function AddCourseForm({ userId }: { userId: string }) {
     defaultValues: {
       title: "",
       description: "",
-      imageFile: undefined, // 👈 بدل string فارغ
+      imageFile: undefined,
       duration: "",
       hours: 0,
       price: "",
+      currency: "ILS",
       targetAudience: "",
       topics: "",
       objectives: "",
       isActive: true,
     },
   });
-  const { edgestore } = useEdgeStore();
+
   const router = useRouter();
 
   async function onSubmit(values: z.infer<typeof formSchema>) {
@@ -58,15 +67,9 @@ export default function AddCourseForm({ userId }: { userId: string }) {
     let imageUrl = "";
 
     if (values.imageFile) {
-      const resUpload = await edgestore.publicFiles.upload({
-        file: values.imageFile,
-        onProgressChange: (progress) => {
-          // لو بدك تعمل progress bar
-          console.log("Upload progress:", progress);
-        },
+      imageUrl = await uploadToR2(values.imageFile, (progress) => {
+        // لو بدك تعمل progress bar
       });
-
-      imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
     }
 
     const payload = {
@@ -150,7 +153,7 @@ export default function AddCourseForm({ userId }: { userId: string }) {
                     accept="image/*"
                     onChange={(e) => {
                       const file = e.target.files?.[0];
-                      field.onChange(file); // نخزن الملف في الفورم
+                      field.onChange(file);
                     }}
                   />
                 </FormControl>
@@ -191,7 +194,10 @@ export default function AddCourseForm({ userId }: { userId: string }) {
                     type="number"
                     placeholder="مثال: 40"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value ?? 0}
+                    onChange={(e) =>
+                      field.onChange(e.target.valueAsNumber || 0)
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -199,20 +205,48 @@ export default function AddCourseForm({ userId }: { userId: string }) {
             )}
           />
 
-          {/* السعر */}
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>السعر $</FormLabel>
-                <FormControl>
-                  <Input type="text" placeholder="300$" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* السعر والعملة */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>السعر</FormLabel>
+                  <FormControl>
+                    <Input type="text" placeholder="مثال: 300" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>العملة</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر العملة" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ILS">₪ - شيكل</SelectItem>
+                      <SelectItem value="USD">$ - دولار</SelectItem>
+                      <SelectItem value="JOD"> JOD - دينار</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           {/* الفئة المستهدفة */}
           <FormField
@@ -282,13 +316,8 @@ export default function AddCourseForm({ userId }: { userId: string }) {
             )}
           />
 
-          <Button
-            type="submit"
-            className="w-full"
-            onClick={form.handleSubmit(onSubmit)}
-            disabled={isSubmitting}
-          >
-            إضافة الدورة
+          <Button type="submit" className="w-full" disabled={isSubmitting}>
+            {isSubmitting ? "جاري الإضافة..." : "إضافة الدورة"}
           </Button>
         </form>
       </Form>

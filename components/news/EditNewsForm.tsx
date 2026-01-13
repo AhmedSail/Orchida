@@ -21,7 +21,7 @@ import { useRouter } from "next/navigation";
 import { FaSpinner } from "react-icons/fa";
 import { Checkbox } from "@/components/ui/checkbox"; // ✅ Checkbox
 import Image from "next/image";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 import { SingleImageDropzone } from "@/src/components/upload/single-image";
 
@@ -84,7 +84,7 @@ export default function EditNewsForm({
   });
 
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoading(true);
@@ -94,20 +94,11 @@ export default function EditNewsForm({
       if (values.imageFile) {
         // ✅ أولاً نحذف الصورة القديمة إذا موجودة
         if (currentNews?.imageUrl) {
-          await edgestore.publicFiles.delete({
-            url: currentNews.imageUrl,
-          });
+          await deleteFromR2(currentNews.imageUrl);
         }
 
         // ✅ ثم نرفع الصورة الجديدة
-        const resUpload = await edgestore.publicFiles.upload({
-          file: values.imageFile,
-          onProgressChange: (progress) => {
-            console.log("Upload progress:", progress);
-          },
-        });
-
-        imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+        imageUrl = await uploadToR2(values.imageFile, (progress) => {});
       }
 
       const payload = {
@@ -255,16 +246,12 @@ export default function EditNewsForm({
                 <UploaderProvider
                   uploadFn={async ({ file, onProgressChange, signal }) => {
                     // رفع الصورة عبر EdgeStore
-                    const res = await edgestore.publicFiles.upload({
-                      file,
-                      signal,
-                      onProgressChange,
-                    });
+                    const url = await uploadToR2(file, onProgressChange);
                     // نخزن الملف في الفورم
                     field.onChange(file);
                     // إذا بدك تحفظ الرابط مباشرةً:
                     // field.onChange(res.url);
-                    return res;
+                    return { url };
                   }}
                   autoUpload
                 >

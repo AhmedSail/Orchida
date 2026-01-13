@@ -42,6 +42,9 @@ export async function POST(
 ) {
   try {
     const { id } = await context.params;
+    const body = await req.json().catch(() => ({}));
+    const targetSectionId = body.targetSectionId;
+
     // جلب بيانات الـ Lead
     const lead = await db.query.courseLeads.findFirst({
       where: eq(courseLeads.id, id),
@@ -51,7 +54,9 @@ export async function POST(
       return NextResponse.json({ message: "الطلب غير موجود" }, { status: 404 });
     }
 
-    if (!lead.sectionId) {
+    const finalSectionId = targetSectionId || lead.sectionId;
+
+    if (!finalSectionId) {
       return NextResponse.json(
         { message: "يجب تحديد شعبة أولاً لتحويل الطلب" },
         { status: 400 }
@@ -62,7 +67,7 @@ export async function POST(
     const enrollmentId = uuidv4();
     await db.insert(courseEnrollments).values({
       id: enrollmentId,
-      sectionId: lead.sectionId,
+      sectionId: finalSectionId!,
       studentId: lead.studentId,
       studentName: lead.studentName,
       studentEmail: lead.studentEmail!,

@@ -20,7 +20,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 import {
   Edit,
   Trash2,
@@ -44,7 +44,7 @@ const WorksTable = ({
   userId: string | null;
 }) => {
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
+
   const [selectedCategory, setSelectedCategory] = useState<string>("all");
   const itemsPerPage = 6;
   const [page, setPage] = useState(1);
@@ -93,16 +93,12 @@ const WorksTable = ({
         const cleanUrl = (url: string) => url.trim().replace(/\s/g, "");
 
         if (fileUrl) {
-          await edgestore.publicFiles.delete({
-            url: cleanUrl(fileUrl),
-          });
+          await deleteFromR2(cleanUrl(fileUrl));
         }
         if (mediaFiles && mediaFiles.length > 0) {
           for (const file of mediaFiles) {
             if (file.url) {
-              await edgestore.publicFiles.delete({
-                url: cleanUrl(file.url),
-              });
+              await deleteFromR2(cleanUrl(file.url));
             }
           }
         }
@@ -181,7 +177,7 @@ const WorksTable = ({
               className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden hover:shadow-lg transition-all duration-300 group"
             >
               {/* Image Section */}
-              <div className="relative aspect-[16/10] overflow-hidden bg-gray-100">
+              <div className="relative aspect-16/10 overflow-hidden bg-gray-100">
                 {work.imageUrl ? (
                   work.type === "video" ? (
                     <div className="relative w-full h-full">

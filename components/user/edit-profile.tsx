@@ -121,8 +121,6 @@ export default function EditProfilePage({
   };
 
   const onSubmit = async (values: z.infer<typeof schema>) => {
-    console.log("VALUES BEFORE SEND:", values);
-
     const res = await fetch(`/api/user/${id}`, {
       method: "PUT",
       headers: {

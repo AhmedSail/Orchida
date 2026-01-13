@@ -24,7 +24,7 @@ import {
   PaginationPrevious,
 } from "@/components/ui/pagination";
 import Image from "next/image";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 
 export type News = InferSelectModel<typeof news>;
 
@@ -55,7 +55,7 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
     promotion: "عرض ترويجي",
     alert: "تنبيه",
   };
-  const { edgestore } = useEdgeStore();
+
   const deleteNews = async (item: News) => {
     Swal.fire({
       title: "هل أنت متأكد؟",
@@ -70,9 +70,7 @@ const TableNews = ({ news, userId }: { news: News[]; userId: string }) => {
       if (result.isConfirmed) {
         // ✅ إذا عنده صورة نحذفها من EdgeStore
         if (item.imageUrl) {
-          await edgestore.publicFiles.delete({
-            url: item.imageUrl,
-          });
+          await deleteFromR2(item.imageUrl);
         }
 
         // ✅ حذف الخبر من قاعدة البيانات

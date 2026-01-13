@@ -23,7 +23,7 @@ import {
   PaginationNext,
   PaginationPrevious,
 } from "@/components/ui/pagination";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2 } from "@/lib/r2-client";
 
 export type Slider = InferSelectModel<typeof sliders>;
 
@@ -37,7 +37,7 @@ export default function AdminSlider({
   role: string;
 }) {
   const [sliders, setSliders] = useState<Slider[]>(data);
-  const { edgestore } = useEdgeStore();
+
   const itemsPerPage = 5;
   const [page, setPage] = useState(1);
 
@@ -62,9 +62,7 @@ export default function AdminSlider({
     if (result.isConfirmed) {
       try {
         if (slider.imageUrl) {
-          await edgestore.publicFiles.delete({
-            url: slider.imageUrl,
-          });
+          await deleteFromR2(slider.imageUrl);
         }
         const res = await fetch(`/api/slider/${slider.id}`, {
           method: "DELETE",

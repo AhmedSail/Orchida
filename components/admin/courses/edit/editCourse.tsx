@@ -15,20 +15,28 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { Checkbox } from "@/components/ui/checkbox";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
 import Image from "next/image";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 
 const formSchema = z.object({
   title: z.string().min(3, "العنوان مطلوب"),
   description: z.string().optional(),
   imageFile: z.instanceof(File).optional(),
-  duration: z.string(),
-  hours: z.number().min(1, "عدد الساعات مطلوب"),
+  duration: z.string().min(1, "المدة مطلوبة"),
+  hours: z.number().min(0, "عدد الساعات يجب أن يكون 0 أو أكثر"),
   price: z.string().optional(),
+  currency: z.enum(["ILS", "USD", "JOD"]),
   targetAudience: z.string().optional(),
   topics: z.string().optional(),
   objectives: z.string().optional(),
@@ -45,9 +53,8 @@ export default function EditCourseForm({
   userId,
 }: EditCourseFormProps) {
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [preview, setPreview] = useState<string | null>(null); // 👈 معاينة الصورة الجديدة
+  const [preview, setPreview] = useState<string | null>(null);
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -58,6 +65,7 @@ export default function EditCourseForm({
       duration: initialData?.duration ?? "",
       hours: initialData?.hours ?? 0,
       price: initialData?.price ?? "",
+      currency: (initialData?.currency as any) ?? "ILS",
       targetAudience: initialData?.targetAudience ?? "",
       topics: initialData?.topics ?? "",
       objectives: initialData?.objectives ?? "",
@@ -82,20 +90,14 @@ export default function EditCourseForm({
       // ✅ حذف القديمة من أي بكت كانت فيه
       if (initialData?.imageUrl) {
         try {
-          await edgestore.publicFiles.delete({
-            url: cleanUrl(initialData.imageUrl),
-          });
+          await deleteFromR2(cleanUrl(initialData.imageUrl));
         } catch (err) {
           console.error("Failed to delete old image:", err);
         }
       }
 
       // ✅ الرفع إلى publicFiles للحصول على رابط مباشر
-      const resUpload = await edgestore.publicFiles.upload({
-        file: values.imageFile,
-      });
-
-      imageUrl = resUpload.url;
+      imageUrl = await uploadToR2(values.imageFile);
     }
 
     const payload = {
@@ -244,7 +246,10 @@ export default function EditCourseForm({
                     type="number"
                     placeholder="مثال: 40"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    value={field.value ?? 0}
+                    onChange={(e) =>
+                      field.onChange(e.target.valueAsNumber || 0)
+                    }
                   />
                 </FormControl>
                 <FormMessage />
@@ -252,19 +257,48 @@ export default function EditCourseForm({
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="price"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>السعر $</FormLabel>
-                <FormControl>
-                  <Input placeholder="300$" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {/* السعر والعملة */}
+          <div className="grid grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="price"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>السعر</FormLabel>
+                  <FormControl>
+                    <Input type="text" placeholder="مثال: 300" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+
+            <FormField
+              control={form.control}
+              name="currency"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>العملة</FormLabel>
+                  <Select
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                  >
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="اختر العملة" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="ILS">₪ - شيكل</SelectItem>
+                      <SelectItem value="USD">$ - دولار</SelectItem>
+                      <SelectItem value="JOD"> JOD - دينار</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
           <FormField
             control={form.control}

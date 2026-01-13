@@ -48,11 +48,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
       icon: Home,
       url: `/coordinator/${user.id}/home`,
     },
-    {
-      title: "إدارة المهتمين (Leads)",
-      icon: Users2,
-      url: `/coordinator/${user.id}/leads`,
-    },
+
     {
       title: "الدورات المتاحة",
       icon: FaGraduationCap,

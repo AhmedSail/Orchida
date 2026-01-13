@@ -59,8 +59,6 @@ const page = async ({ params }: { params: { instructorId: string } }) => {
     .where(eq(instructors.id, session?.user.id))
     .limit(1);
 
-  console.log("Meetings:", meetingofInstructor);
-
   return (
     <div>
       <CelenderOfDoctor

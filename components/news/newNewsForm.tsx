@@ -20,7 +20,7 @@ import {
 import { Textarea } from "@/components/ui/textarea";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 import { SingleImageDropzone } from "@/src/components/upload/single-image";
 import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 
@@ -63,7 +63,7 @@ export default function NewNewsForm({
   });
   const router = useRouter();
   const [loading, setLoading] = useState(false); // ✅ حالة التحميل
-  const { edgestore } = useEdgeStore();
+
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     try {
       setLoading(true); // ✅ إظهار السبينر
@@ -71,11 +71,7 @@ export default function NewNewsForm({
       let imageUrl = "";
 
       if (values.imageFile) {
-        const resUpload = await edgestore.publicFiles.upload({
-          file: values.imageFile,
-        });
-
-        imageUrl = resUpload.url; // الرابط النهائي من EdgeStore
+        imageUrl = await uploadToR2(values.imageFile);
       }
 
       // ✅ إرسال البيانات
@@ -222,16 +218,12 @@ export default function NewNewsForm({
                 <UploaderProvider
                   uploadFn={async ({ file, onProgressChange, signal }) => {
                     // رفع الصورة عبر EdgeStore
-                    const res = await edgestore.publicFiles.upload({
-                      file,
-                      signal,
-                      onProgressChange,
-                    });
+                    const url = await uploadToR2(file, onProgressChange);
                     // نخزن الملف في الفورم
                     field.onChange(file);
                     // إذا بدك تحفظ الرابط مباشرةً:
                     // field.onChange(res.url);
-                    return res;
+                    return { url };
                   }}
                   autoUpload
                 >

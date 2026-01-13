@@ -21,7 +21,7 @@ import { Button } from "@/components/ui/button";
 
 import { useRouter, useParams } from "next/navigation";
 import { Service } from "./servicesPage";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 import { SingleImageDropzone } from "@/src/components/upload/single-image";
 import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 import Image from "next/image";
@@ -42,7 +42,6 @@ export default function EditServiceForm({
   userId: string;
 }) {
   const [loading, setLoading] = useState(false);
-  const { edgestore } = useEdgeStore();
 
   const router = useRouter();
   const params = useParams();
@@ -145,13 +144,8 @@ export default function EditServiceForm({
                   <UploaderProvider
                     autoUpload={true}
                     uploadFn={async ({ file, onProgressChange }) => {
-                      const res = await edgestore.publicFiles.upload({
-                        file,
-                        onProgressChange: (progress) => {
-                          onProgressChange(progress);
-                        },
-                      });
-                      return { url: res.url };
+                      const url = await uploadToR2(file, onProgressChange);
+                      return { url };
                     }}
                     onUploadCompleted={(completedFile) => {
                       if (completedFile.url) {
@@ -204,13 +198,8 @@ export default function EditServiceForm({
                   <UploaderProvider
                     autoUpload={true}
                     uploadFn={async ({ file, onProgressChange }) => {
-                      const res = await edgestore.publicFiles.upload({
-                        file,
-                        onProgressChange: (progress) => {
-                          onProgressChange(progress);
-                        },
-                      });
-                      return { url: res.url };
+                      const url = await uploadToR2(file, onProgressChange);
+                      return { url };
                     }}
                     onUploadCompleted={(completedFile) => {
                       if (completedFile.url) {

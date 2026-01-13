@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
 import "./globals.css";
 import { ViewTransitions } from "next-view-transitions";
-import { EdgeStoreProvider } from "@/lib/edgestore";
 
 const tajawal = Tajawal({
   subsets: ["arabic"],
@@ -32,9 +31,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${tajawal.variable} antialiased`}>
-        <ViewTransitions>
-          <EdgeStoreProvider>{children}</EdgeStoreProvider>
-        </ViewTransitions>
+        <ViewTransitions>{children}</ViewTransitions>
       </body>
     </html>
   );

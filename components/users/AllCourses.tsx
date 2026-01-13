@@ -24,6 +24,7 @@ export type UserCourse = {
   imageUrl: string | null;
   hours: number | null;
   price: string | null;
+  currency: string | null;
   duration: string | null;
   createdAt: Date;
   updatedAt: Date;
@@ -199,7 +200,15 @@ const AllCourses = ({
                   {/* Price Badge */}
                   <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm flex items-center gap-1 text-primary">
                     <BadgeDollarSign size={16} />
-                    {course.price ? `${course.price} $` : "مجاني"}
+                    {course.price
+                      ? `${course.price} ${
+                          course.currency === "ILS"
+                            ? "₪"
+                            : course.currency === "USD"
+                            ? "$"
+                            : " JOD"
+                        }`
+                      : "مجاني"}
                   </div>
                 </div>
 

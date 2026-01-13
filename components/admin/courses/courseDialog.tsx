@@ -58,7 +58,12 @@ const CourseDialog = ({ course, open, onOpenChange }: Props) => {
                 </div>
                 <div>
                   <span className="font-semibold">السعر:</span>{" "}
-                  {course.price ?? "—"} $
+                  {course.price ?? "—"}{" "}
+                  {course.currency === "ILS"
+                    ? "₪"
+                    : course.currency === "USD"
+                    ? "$"
+                    : "JOD"}
                 </div>
                 <div>
                   <span className="font-semibold">المدة:</span>{" "}

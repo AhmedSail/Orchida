@@ -41,6 +41,7 @@ export async function PUT(
         duration: body.duration,
         hours: body.hours,
         price: body.price,
+        currency: body.currency,
         targetAudience: body.targetAudience,
         topics: body.topics,
         objectives: body.objectives,

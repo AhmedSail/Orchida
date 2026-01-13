@@ -19,7 +19,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
-import { useEdgeStore } from "@/lib/edgestore";
+import { uploadToR2 } from "@/lib/r2-client";
 import { SingleImageDropzone } from "@/src/components/upload/single-image";
 import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 
@@ -34,7 +34,7 @@ const schema = z.object({
 export default function AddServiceForm({ userId }: { userId: string }) {
   const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { edgestore } = useEdgeStore();
+
   type ServiceFormType = z.infer<typeof schema>;
 
   const form = useForm({
@@ -131,13 +131,8 @@ export default function AddServiceForm({ userId }: { userId: string }) {
                   <UploaderProvider
                     autoUpload={true}
                     uploadFn={async ({ file, onProgressChange }) => {
-                      const res = await edgestore.publicFiles.upload({
-                        file,
-                        onProgressChange: (progress) => {
-                          onProgressChange(progress);
-                        },
-                      });
-                      return { url: res.url };
+                      const url = await uploadToR2(file, onProgressChange);
+                      return { url };
                     }}
                     onUploadCompleted={(completedFile) => {
                       if (completedFile.url) {
@@ -170,13 +165,8 @@ export default function AddServiceForm({ userId }: { userId: string }) {
                   <UploaderProvider
                     autoUpload={true}
                     uploadFn={async ({ file, onProgressChange }) => {
-                      const res = await edgestore.publicFiles.upload({
-                        file,
-                        onProgressChange: (progress) => {
-                          onProgressChange(progress);
-                        },
-                      });
-                      return { url: res.url };
+                      const url = await uploadToR2(file, onProgressChange);
+                      return { url };
                     }}
                     onUploadCompleted={(completedFile) => {
                       if (completedFile.url) {

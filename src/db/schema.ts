@@ -120,6 +120,7 @@ export const courses = pgTable("courses", {
   duration: text("duration"), // مدة الدورة (بالأيام أو الأسابيع)
   hours: integer("hours"), // عدد الساعات الفعلية للدورة
   price: decimal("price", { precision: 10, scale: 2 }),
+  currency: varchar("currency", { length: 20 }).default("ILS").notNull(), // ILS, USD, JOD
 
   isActive: boolean("isActive").default(true).notNull(), // نشط أو لا
 

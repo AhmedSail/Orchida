@@ -20,7 +20,7 @@ import AddContentDialog from "./addContentDialog";
 import ViewContentDialog from "./viewContentDialog";
 import EditModuleDialog from "./EditModuleDialog";
 import EditChapterDialog from "./EditChapterDialog";
-import { useEdgeStore } from "@/lib/edgestore";
+import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 import EditContentDialog from "./EditContentDialog";
 import { motion, AnimatePresence } from "framer-motion";
 import {
@@ -71,7 +71,6 @@ const SectionContent = ({
   const [editModuleId, setEditModuleId] = useState<string | null>(null);
   const [editChapterId, setEditChapterId] = useState<string | null>(null);
   const [editContentId, setEditContentId] = useState<string | null>(null);
-  const { edgestore } = useEdgeStore();
 
   const handleModuleAdded = (newModule: AllModules) => {
     setModules((prev) => [...prev, newModule]);
@@ -181,7 +180,7 @@ const SectionContent = ({
     if (confirm.isConfirmed) {
       try {
         if (fileUrl) {
-          await edgestore.publicFiles.delete({ url: fileUrl });
+          await deleteFromR2(fileUrl);
         }
         await fetch(`/api/content/${id}`, { method: "DELETE" });
         setContents((prev) => prev.filter((c) => c.id !== id));
@@ -205,11 +204,9 @@ const SectionContent = ({
           body: JSON.stringify({ removeFile: true }),
         });
 
-        const resUpload = await edgestore.publicFiles.upload({
-          file: data.file,
-        });
+        const url = await uploadToR2(data.file);
 
-        fileUrl = resUpload.url;
+        fileUrl = url;
         attachmentName = data.file.name;
         const mimeType = data.file.type;
         if (mimeType.startsWith("image/")) contentType = "image";
@@ -319,7 +316,7 @@ const SectionContent = ({
                 >
                   <Edit3 className="size-4" /> تعديل
                 </Button>
-                <div className="w-[1px] h-4 bg-slate-200 dark:bg-zinc-800" />
+                <div className="w-px h-4 bg-slate-200 dark:bg-zinc-800" />
                 <Button
                   variant="ghost"
                   size="sm"

@@ -45,10 +45,6 @@ export default async function proxy(req: NextRequest) {
 
     // إذا كان يحاول الدخول لمسار محمي لا يخص دوره (مثلاً يوزر يحاول دخول أدمن)
     if (!userDashboardPrefix || !pathname.startsWith(userDashboardPrefix)) {
-      console.log(
-        `Unauthorized access attempt: Role [${role}] tried to access [${pathname}]`
-      );
-
       // توجيه لصفحة لوحة التحكم الخاصة به أو للرئيسية
       const fallbackUrl = "/";
       return NextResponse.redirect(new URL(fallbackUrl, req.url));

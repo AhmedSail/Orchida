@@ -1,6 +1,5 @@
 "use client";
 
-import { useEdgeStore } from "@/lib/edgestore";
 import { useEffect, useState } from "react";
 import { FileState, MultiFileDropzone } from "./multi-file-dropzone";
 import Swal from "sweetalert2";
@@ -22,21 +21,25 @@ export function MultiUploader({
 }: MultiUploaderProps) {
   const [fileStates, setFileStates] = useState<FileState[]>([]);
   const [completedUrls, setCompletedUrls] = useState<string[]>(initialUrls);
-  const { edgestore } = useEdgeStore();
+
   useEffect(() => {
     // عند كل تغيير في قائمة الروابط المكتملة،
     // قم بإبلاغ الفورم الرئيسي (NewWorks) بالقائمة الجديدة.
     onChange(completedUrls);
   }, [completedUrls]);
+
   async function removeFile(key: string) {
     const fileToRemove = fileStates.find((f) => f.key === key);
 
     if (fileToRemove?.fileUrl) {
       try {
-        const cleanUrl = fileToRemove.fileUrl.trim().replace(/\s/g, "");
-        await edgestore.publicFiles.delete({ url: cleanUrl });
+        await fetch("/api/upload/r2", {
+          method: "DELETE",
+          body: JSON.stringify({ url: fileToRemove.fileUrl }),
+          headers: { "Content-Type": "application/json" },
+        });
       } catch (err) {
-        console.error("فشل حذف الملف من EdgeStore:", err);
+        console.error("فشل حذف الملف:", err);
       }
     }
 
@@ -76,28 +79,51 @@ export function MultiUploader({
           await Promise.all(
             addedFiles.map(async (addedFileState: FileState) => {
               try {
-                const res = await edgestore.publicFiles.upload({
-                  file: addedFileState.file,
-                  onProgressChange: async (progress: number) => {
-                    updateFileProgress(addedFileState.key, progress);
-                    if (progress === 100) {
-                      await new Promise((resolve) => setTimeout(resolve, 1000));
-                      updateFileProgress(addedFileState.key, "COMPLETE");
+                const url = await new Promise<string>((resolve, reject) => {
+                  const xhr = new XMLHttpRequest();
+                  xhr.open("POST", "/api/upload/r2");
+
+                  xhr.upload.onprogress = (event) => {
+                    if (event.lengthComputable) {
+                      const percentComplete =
+                        (event.loaded / event.total) * 100;
+                      updateFileProgress(addedFileState.key, percentComplete);
                     }
-                  },
+                  };
+
+                  xhr.onload = () => {
+                    if (xhr.status === 200) {
+                      try {
+                        const response = JSON.parse(xhr.responseText);
+                        resolve(response.url);
+                      } catch (e) {
+                        reject(e);
+                      }
+                    } else {
+                      reject(new Error("Upload failed"));
+                    }
+                  };
+
+                  xhr.onerror = () => reject(new Error("Upload failed"));
+
+                  const formData = new FormData();
+                  formData.append("file", addedFileState.file);
+                  xhr.send(formData);
                 });
 
                 // تحديث حالة الملف بالرابط الجديد
                 setFileStates((prev) =>
                   prev.map((f) =>
                     f.key === addedFileState.key
-                      ? { ...f, fileUrl: res.url }
+                      ? { ...f, fileUrl: url } // url is already the string
                       : f
                   )
                 );
 
+                updateFileProgress(addedFileState.key, "COMPLETE");
+
                 // إضافة الرابط إلى قائمة المكتملة
-                setCompletedUrls((prevUrls) => [...prevUrls, res.url]);
+                setCompletedUrls((prevUrls) => [...prevUrls, url]);
               } catch (err) {
                 updateFileProgress(addedFileState.key, "ERROR");
                 Swal.fire({

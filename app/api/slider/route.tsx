@@ -10,7 +10,6 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    console.log("BODY:", body); // ✅ للتأكد أن imageUrl جاي
 
     const { id, title, imageUrl, description, isActive, order } = body;
 

@@ -220,7 +220,8 @@ const HomePage = ({
         <div className="absolute top-0 right-0 -mr-20 -mt-20 size-80 rounded-full bg-white/10 blur-3xl" />
         <div className="absolute bottom-0 left-0 -ml-10 -mb-10 size-40 rounded-full bg-black/10 blur-2xl" />
       </header>
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8">
+
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
         {/* Open Sections Table */}
         {openSections && openSections.length > 0 && (
           <motion.div variants={itemVariants}>
@@ -311,71 +312,28 @@ const HomePage = ({
           </motion.div>
         )}
 
-        {/* Latest Leads */}
-        {latestLeads && latestLeads.length > 0 && (
-          <motion.div variants={itemVariants}>
-            <Card className="border-none shadow-sm h-full flex flex-col overflow-hidden">
-              <CardHeader className="border-b bg-white/50 px-6 py-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2">
-                    <div className="p-2 bg-amber-100 rounded-lg">
-                      <History className="size-5 text-amber-600" />
-                    </div>
-                    <CardTitle className="text-xl font-bold">
-                      أحدث طلبات التسجيل (Leads)
-                    </CardTitle>
-                  </div>
-                  <Badge
-                    variant="outline"
-                    className="border-amber-200 text-amber-700"
-                  >
-                    بانتظار المراجعة
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="p-0 grow overflow-auto lg:max-h-[500px]">
-                <div className="divide-y divide-slate-100">
-                  {latestLeads.map((lead: Lead) => (
-                    <div
-                      key={lead.id}
-                      className="p-4 hover:bg-slate-50 transition-colors flex items-center justify-between group"
-                    >
-                      <div className="flex gap-4 items-center">
-                        <div className="size-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-500 font-bold group-hover:bg-amber-100 group-hover:text-amber-600 transition-colors">
-                          {lead.studentName.charAt(0)}
-                        </div>
-                        <div className="space-y-0.5">
-                          <p className="font-bold text-slate-900 leading-tight">
-                            {lead.studentName}
-                          </p>
-                          <div className="flex items-center gap-2 text-xs text-slate-400">
-                            <Mail className="size-3" />
-                            <span>{lead.studentEmail}</span>
-                          </div>
-                        </div>
-                      </div>
-                      <div className="text-right flex flex-col items-end gap-2">
-                        <Badge
-                          variant="secondary"
-                          className="text-[10px] px-2 py-0 h-5 bg-slate-100 text-slate-600 border-none truncate max-w-[120px]"
-                        >
-                          {lead.courseTitle}
-                        </Badge>
-                        <span className="text-[10px] text-slate-400 flex items-center gap-1">
-                          <Clock className="size-3" />
-                          {format(new Date(lead.createdAt), "dd MMM yyyy", {
-                            locale: ar,
-                          })}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </motion.div>
-        )}
+        {/* Analytics Charts - Moved into grid for balance */}
+        <motion.div variants={itemVariants}>
+          <Card className="border-none shadow-sm bg-white overflow-hidden h-full">
+            <CardHeader className="border-b px-6 py-4">
+              <div className="flex items-center gap-2">
+                <TrendingUp className="size-5 text-primary" />
+                <CardTitle className="text-xl font-bold">
+                  تحليلات الأداء
+                </CardTitle>
+              </div>
+            </CardHeader>
+            <CardContent className="p-6">
+              <DashboardCharts
+                stats={stats}
+                leadsCountByCourse={leadsCountByCourse}
+                enrollmentsByDay={enrollmentsByDay}
+              />
+            </CardContent>
+          </Card>
+        </motion.div>
       </div>
+
       {/* Modern Stats Sections */}
       <div className="space-y-8">
         {statGroups.map((group, gIdx) => (
@@ -418,30 +376,6 @@ const HomePage = ({
           </div>
         ))}
       </div>
-
-      {/* Analytics Charts */}
-      <motion.div variants={itemVariants}>
-        <Card className="border-none shadow-sm bg-white overflow-hidden">
-          <CardHeader className="border-b px-8 py-6">
-            <div className="flex items-center gap-2">
-              <TrendingUp className="size-6 text-primary" />
-              <CardTitle className="text-2xl font-black">
-                تحليلات الأداء والبيانات
-              </CardTitle>
-            </div>
-            <p className="text-slate-400 text-sm">
-              تمثيل بياني لتوزيع الطلاب والخدمات على مدار الوقت
-            </p>
-          </CardHeader>
-          <CardContent className="p-8">
-            <DashboardCharts
-              stats={stats}
-              leadsCountByCourse={leadsCountByCourse}
-              enrollmentsByDay={enrollmentsByDay}
-            />
-          </CardContent>
-        </Card>
-      </motion.div>
     </motion.div>
   );
 };
