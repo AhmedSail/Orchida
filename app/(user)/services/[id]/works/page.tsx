@@ -98,7 +98,7 @@ export default async function ServiceWorksPage({
     .orderBy(works.createdAt);
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12" dir="rtl">
+    <div className="min-h-screen py-12" dir="rtl">
       <div className="container mx-auto px-4">
         {/* Navigation Back */}
         <div className="mb-8">
