@@ -50,6 +50,7 @@ export interface LeadSummary {
   studentName: string;
   studentEmail: string | null;
   courseTitle: string;
+  status: string | null;
   createdAt: Date;
 }
 
@@ -223,6 +224,66 @@ const HomeCordinatorPage = ({
             )}
           </CardContent>
         </Card>
+
+        {/* Latest Leads Section */}
+        <Card className="border-none shadow-sm hover:shadow-md transition-shadow duration-300 overflow-hidden flex flex-col">
+          <CardHeader className="bg-white px-8 py-6 border-b border-slate-100">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-50 rounded-xl">
+                  <History className="size-5 text-blue-600" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl font-bold text-slate-800">
+                    آخر المهتمين
+                  </CardTitle>
+                </div>
+              </div>
+              <Button
+                variant="ghost"
+                size="sm"
+                className="gap-2 text-blue-600 font-bold"
+                asChild
+              >
+                <Link href={`/coordinator/${userId}/leads`}>
+                  كل المهتمين <ArrowUpRight className="size-4" />
+                </Link>
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent className="p-0 grow">
+            {latestLeads && latestLeads.length > 0 ? (
+              <div className="divide-y divide-slate-100">
+                {latestLeads.map((lead) => (
+                  <div
+                    key={lead.id}
+                    className="flex items-center gap-4 p-5 hover:bg-slate-50 transition-colors"
+                  >
+                    <div className="size-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 font-bold">
+                      {lead.studentName.charAt(0)}
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-bold text-slate-900 truncate">
+                        {lead.studentName}
+                      </h4>
+                      <p className="text-sm text-slate-500 truncate">
+                        {lead.courseTitle}
+                      </p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1 text-right">
+                      <StatusBadge status={lead.status} />
+                      <span className="text-[10px] text-slate-400 font-medium">
+                        {new Date(lead.createdAt).toLocaleDateString("ar-EG")}
+                      </span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <EmptyState icon={History} text="لا يوجد مهتمين مؤخراً" />
+            )}
+          </CardContent>
+        </Card>
       </div>
     </motion.div>
   );
@@ -280,6 +341,50 @@ function EmptyState({ icon: Icon, text }: { icon: any; text: string }) {
       </div>
       <p className="text-sm font-medium">{text}</p>
     </div>
+  );
+}
+
+function StatusBadge({ status }: { status: string | null }) {
+  const statusConfig: Record<string, { label: string; class: string }> = {
+    new: { label: "جديد", class: "bg-blue-100 text-blue-700 border-blue-200" },
+    future_course: {
+      label: "يريد القادمة",
+      class: "bg-purple-100 text-purple-700 border-purple-200",
+    },
+    wants_online: {
+      label: "يريد أونلاين",
+      class: "bg-indigo-100 text-indigo-700 border-indigo-200",
+    },
+    high_price: {
+      label: "سعر مرتفع",
+      class: "bg-orange-100 text-orange-700 border-orange-200",
+    },
+    no_response: {
+      label: "لم يرد",
+      class: "bg-slate-100 text-slate-700 border-slate-200",
+    },
+    far_location: {
+      label: "المكان بعيد",
+      class: "bg-gray-100 text-gray-700 border-gray-200",
+    },
+    cancel_reg: {
+      label: "إلغاء تسجيل",
+      class: "bg-red-100 text-red-700 border-red-200",
+    },
+  };
+
+  const config = (status && statusConfig[status]) || {
+    label: status || "جديد",
+    class: "bg-slate-100 text-slate-700 border-slate-200",
+  };
+
+  return (
+    <Badge
+      variant="outline"
+      className={`text-[10px] py-0 px-2 ${config.class}`}
+    >
+      {config.label}
+    </Badge>
   );
 }
 

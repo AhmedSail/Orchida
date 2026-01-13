@@ -519,19 +519,21 @@ const ControlUsers = ({
           </div>
 
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button
-              onClick={saveRole}
-              className="w-full h-14 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 transition-all active:scale-95"
-            >
-              تأكيد وحفظ التغييرات
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => setOpen(false)}
-              className="w-full h-14 rounded-2xl font-bold text-slate-500"
-            >
-              إلغاء
-            </Button>
+            <div className="flex flex-col w-full gap-2">
+              <Button
+                onClick={saveRole}
+                className="w-full h-14 rounded-2xl font-black text-lg bg-primary hover:bg-primary/90 text-white shadow-xl shadow-primary/20 transition-all active:scale-95"
+              >
+                تأكيد وحفظ التغييرات
+              </Button>
+              <Button
+                variant="ghost"
+                onClick={() => setOpen(false)}
+                className="w-full h-14 rounded-2xl font-bold text-slate-500"
+              >
+                إلغاء
+              </Button>
+            </div>
           </DialogFooter>
         </DialogContent>
       </Dialog>

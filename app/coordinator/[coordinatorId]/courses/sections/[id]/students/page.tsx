@@ -6,8 +6,9 @@ import {
   courses,
   meetings,
   users,
+  courseLeads,
 } from "@/src/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -66,17 +67,137 @@ const Page = async ({ params }: { params: { id: string } }) => {
     type: "registered" as const,
   }));
 
-  // ✅ جلب بيانات الشعبة والدورة
-  const sectionInfo = await db
+  // ✅ جلب بيانات الدورة للشعبة الحالية
+  const currentSection = await db.query.courseSections.findFirst({
+    where: eq(courseSections.id, param.id),
+    with: {
+      course: true,
+    },
+  });
+
+  if (!currentSection) {
+    redirect("/");
+  }
+
+  // ✅ جلب المهتمين في هذه الشعبة
+  const currentLeads = await db
     .select({
-      sectionNumber: courseSections.sectionNumber,
-      courseTitle: courses.title,
-      courseId: courseSections.courseId,
+      id: courseLeads.id,
+      studentId: courseLeads.studentId,
+      studentName: courseLeads.studentName,
+      studentEmail: courseLeads.studentEmail,
+      studentPhone: courseLeads.studentPhone,
+      registeredAt: courseLeads.createdAt,
+      notes: courseLeads.notes,
+      status: courseLeads.status,
+      studentMajor: courseLeads.studentMajor,
+      studentCountry: courseLeads.studentCountry,
     })
-    .from(courseSections)
-    .leftJoin(courses, eq(courseSections.courseId, courses.id))
-    .where(eq(courseSections.id, param.id))
-    .limit(1);
+    .from(courseLeads)
+    .where(eq(courseLeads.sectionId, param.id));
+
+  // ✅ جلب المهتمين من الشعب السابقة لنفس الدورة
+  const potentialStatuses = [
+    "new",
+    "future_course",
+    "wants_online",
+    "high_price",
+    "no_response",
+    "far_location",
+    "cancel_reg",
+  ];
+
+  const allLeadsForCourse = await db
+    .select({
+      id: courseLeads.id,
+      studentId: courseLeads.studentId,
+      studentName: courseLeads.studentName,
+      studentEmail: courseLeads.studentEmail,
+      studentPhone: courseLeads.studentPhone,
+      registeredAt: courseLeads.createdAt,
+      notes: courseLeads.notes,
+      status: courseLeads.status,
+      studentMajor: courseLeads.studentMajor,
+      studentCountry: courseLeads.studentCountry,
+      sectionId: courseLeads.sectionId,
+      originalSectionNumber: courseSections.sectionNumber,
+    })
+    .from(courseLeads)
+    .leftJoin(courseSections, eq(courseLeads.sectionId, courseSections.id))
+    .where(
+      and(
+        eq(courseLeads.courseId, currentSection.courseId),
+        ne(courseLeads.sectionId, param.id),
+        inArray(courseLeads.status, potentialStatuses)
+      )
+    )
+    .orderBy(sql`${courseLeads.createdAt} DESC`);
+
+  const negativeStatuses = [
+    "no_response",
+    "high_price",
+    "far_location",
+    "cancel_reg",
+  ];
+
+  const negativeStats = await db
+    .select({
+      email: courseLeads.studentEmail,
+      count: sql<number>`count(*)`.as("count"),
+    })
+    .from(courseLeads)
+    .where(
+      and(
+        eq(courseLeads.courseId, currentSection.courseId),
+        inArray(courseLeads.status, negativeStatuses)
+      )
+    )
+    .groupBy(courseLeads.studentEmail);
+
+  const negativeMap = new Map(
+    negativeStats.map((s) => [s.email, Number(s.count)])
+  );
+
+  const seenEmails = new Set();
+  const latestLeadsPerStudent = allLeadsForCourse.filter((lead) => {
+    if (!lead.studentEmail || seenEmails.has(lead.studentEmail)) return false;
+    seenEmails.add(lead.studentEmail);
+    return true;
+  });
+
+  const filteredOldLeads = latestLeadsPerStudent.filter((lead: any) => {
+    const totalNegative = negativeMap.get(lead.studentEmail) || 0;
+    if (negativeStatuses.includes(lead.status) && totalNegative >= 2)
+      return false;
+
+    const existsInCurrent =
+      students.some((e: any) => e.studentEmail === lead.studentEmail) ||
+      currentLeads.some((l: any) => l.studentEmail === lead.studentEmail);
+    return !existsInCurrent;
+  });
+
+  // ✅ دمج الكل في قائمة واحدة
+  const allStudents = [
+    ...students.map((s: any) => ({ ...s, type: "registered" as const })),
+    ...currentLeads.map((l: any) => ({
+      ...l,
+      type: "interested" as const,
+      paymentStatus: "pending" as const,
+      confirmationStatus: "pending" as const,
+      IBAN: null,
+    })),
+    ...filteredOldLeads.map((l: any) => ({
+      ...l,
+      type: "interested" as const,
+      paymentStatus: "pending" as const,
+      confirmationStatus: "pending" as const,
+      IBAN: null,
+      isSuggested: true,
+      previousStatus: l.status,
+      originalSectionNumber: l.originalSectionNumber,
+      status: "new",
+    })),
+  ];
 
   // ✅ جلب اللقاءات الخاصة بالشعبة
   const sectionMeetings = await db
@@ -109,15 +230,15 @@ const Page = async ({ params }: { params: { id: string } }) => {
   return (
     <div className="p-6 space-y-6">
       <h1 className="md:text-2xl font-bold">
-        الطلاب المسجلين في {sectionInfo[0]?.courseTitle} - الشعبة{" "}
-        {sectionInfo[0]?.sectionNumber}
+        الطلاب في {currentSection.course.title} - الشعبة{" "}
+        {currentSection.sectionNumber} (إجمالي: {allStudents.length})
       </h1>
 
       {/* جدول الطلاب */}
       <StudentsTable
-        students={studentsWithType}
+        students={allStudents}
         currentSectionId={param.id}
-        courseId={sectionInfo[0]?.courseId || ""}
+        courseId={currentSection.courseId}
       />
     </div>
   );
