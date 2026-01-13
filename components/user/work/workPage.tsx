@@ -107,7 +107,7 @@ export default function WorkPage({
     : [];
 
   return (
-    <div dir="rtl" className="min-h-screen bg-stone-50/50 dark:bg-zinc-950">
+    <div dir="rtl" className="min-h-screen">
       {/* Hero Section - A Cinematic Backdrop */}
       <div className="relative h-[70vh] w-full overflow-hidden">
         <div className="absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-white dark:to-zinc-950 z-10" />

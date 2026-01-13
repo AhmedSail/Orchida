@@ -85,7 +85,7 @@ const AboutPage = ({ company }: { company: Partial<CompanyFormValues> }) => {
   ];
 
   return (
-    <div className="min-h-screen bg-gray-50 font-sans" dir="rtl">
+    <div className="min-h-screen font-sans" dir="rtl">
       {/* Hero Section */}
       <div className="relative h-[400px] md:h-[500px] w-full overflow-hidden">
         <Image
