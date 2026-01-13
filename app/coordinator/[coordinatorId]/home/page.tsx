@@ -112,6 +112,7 @@ export default async function AdminHomePage() {
       id: courseLeads.id,
       studentName: courseLeads.studentName,
       studentEmail: courseLeads.studentEmail,
+      status: courseLeads.status,
       createdAt: courseLeads.createdAt,
       courseTitle: courses.title,
     })
