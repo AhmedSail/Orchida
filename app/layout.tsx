@@ -21,6 +21,19 @@ export const metadata: Metadata = {
   alternates: {
     canonical: "./",
   },
+  openGraph: {
+    title: "اوركيدة",
+    description: "خدمات أوركيدة الرقمية والأكاديمية",
+    url: baseUrl,
+    siteName: "اوركيدة",
+    locale: "ar_SA",
+    type: "website",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "اوركيدة",
+    description: "خدمات أوركيدة الرقمية والأكاديمية",
+  },
 };
 
 export default function RootLayout({
@@ -29,7 +42,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="ar" dir="rtl">
       <body className={`${tajawal.variable} antialiased`}>
         <ViewTransitions>{children}</ViewTransitions>
       </body>
