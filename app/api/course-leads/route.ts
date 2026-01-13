@@ -124,19 +124,6 @@ export async function POST(req: Request) {
 
     await db.insert(courseLeads).values(lead);
 
-    // 5. إرسال رسالة ترحيبية عبر SMS (اختياري)
-    if (lead.studentPhone) {
-      try {
-        const { sendSMS } = await import("@/lib/sms");
-        await sendSMS({
-          mobile: lead.studentPhone,
-          text: `أهلاً بك ${lead.studentName} في أوركيدة، تم استلام طلبك بنجاح وسنتواصل معك قريباً.`,
-        });
-      } catch (smsError) {
-        console.error("SMS sending failed, but lead was created:", smsError);
-      }
-    }
-
     const successMessage = session?.user
       ? "تم تسجيل اهتمامك بنجاح! سنتواصل معك قريباً لتأكيد الحجز."
       : "تم تسجيل اهتمامك بنجاح! تم إنشاء حساب زائر لك (إذا لم يكن لديك واحد)، يمكنك استخدامه بكلمة مرور هي رقم هاتفك.";
