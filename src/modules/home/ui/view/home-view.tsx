@@ -42,6 +42,7 @@ type UserCourse = {
   createdAt: Date;
   updatedAt: Date;
   approvedAt: Date | null;
+  currency: string | null;
 };
 const HomeView = ({
   services,

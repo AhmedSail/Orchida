@@ -23,6 +23,7 @@ type UserCourse = {
   createdAt: Date;
   updatedAt: Date;
   approvedAt: Date | null;
+  currency: string | null;
 };
 
 const containerVariants: Variants = {
@@ -115,7 +116,15 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
               {/* Price Badge */}
               <div className="absolute top-4 right-4 bg-white/95 backdrop-blur-sm px-3 py-1.5 rounded-lg shadow-sm font-bold text-primary flex items-center gap-1.5 text-sm">
                 <BadgeDollarSign size={16} />
-                {course.price ? `${course.price} $` : "مجاني"}
+                {course.price
+                  ? `${course.price} ${
+                      course.currency === "ILS"
+                        ? "₪"
+                        : course.currency === "USD"
+                        ? "$"
+                        : "JOD"
+                    }`
+                  : "مجاني"}
               </div>
             </div>
 
