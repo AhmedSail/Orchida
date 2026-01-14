@@ -209,7 +209,7 @@ async function uploadPartWithProgress(
  * الملفات أكبر من 50MB تستخدم الرفع المجزأ
  */
 export function shouldUseMultipartUpload(file: File): boolean {
-  return file.size > 50 * 1024 * 1024; // 50MB
+  return file.size > 4.5 * 1024 * 1024; // 4.5MB - لتجنب حدود السيرفر (Error 413)
 }
 
 /**
