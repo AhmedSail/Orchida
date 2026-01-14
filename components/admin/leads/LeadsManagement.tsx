@@ -24,6 +24,9 @@ import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
 import { format } from "date-fns";
 import { ar } from "date-fns/locale";
+import { useSearchParams } from "next/navigation";
+import { XCircle, CheckCircle } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 import {
   DropdownMenu,
@@ -51,6 +54,8 @@ type Lead = {
   studentCountry: string | null;
   notes: string | null;
   status: string;
+  isActive: boolean;
+  nonResponseCount: number;
   createdAt: string;
   course: {
     title: string;
@@ -59,6 +64,9 @@ type Lead = {
     sectionNumber: number;
   } | null;
 };
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Send } from "lucide-react";
 
 const LeadsManagement = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -67,12 +75,89 @@ const LeadsManagement = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCourseId, setFilterCourseId] = useState("all");
 
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [smsMessage, setSmsMessage] = useState("");
+  const [isSendingSms, setIsSendingSms] = useState(false);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredLeads.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredLeads.map((l) => l.id));
+    }
+  };
+
+  const toggleSelectLead = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSendBulkSMS = async () => {
+    if (selectedIds.length === 0) {
+      MySwal.fire("تنبيه", "يرجى اختيار شخص واحد على الأقل", "warning");
+      return;
+    }
+    if (!smsMessage.trim()) {
+      MySwal.fire("تنبيه", "يرجى كتابة نص الرسالة", "warning");
+      return;
+    }
+
+    const result = await MySwal.fire({
+      title: "إرسال رسائل جماعية؟",
+      text: `سيتم إرسال الرسالة إلى ${selectedIds.length} شخص.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "نعم، أرسل الآن",
+      cancelButtonText: "إلغاء",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSendingSms(true);
+    try {
+      const selectedMobiles = leads
+        .filter((l) => selectedIds.includes(l.id) && l.studentPhone)
+        .map((l) => l.studentPhone);
+
+      const res = await fetch("/api/sms/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobiles: selectedMobiles,
+          text: smsMessage,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        MySwal.fire("تم بنجاح!", data.message, "success");
+        setSmsMessage("");
+        setSelectedIds([]);
+      } else {
+        const error = await res.json();
+        MySwal.fire("فشل!", error.message, "error");
+      }
+    } catch (error) {
+      MySwal.fire("خطأ", "فشل في الاتصال بالسيرفر", "error");
+    } finally {
+      setIsSendingSms(false);
+    }
+  };
+
+  const searchParams = useSearchParams();
+
   const fetchLeads = async () => {
     try {
       setLoading(true);
       const res = await fetch("/api/course-leads");
       const data = await res.json();
       setLeads(data);
+
+      const courseId = searchParams.get("courseId");
+      if (courseId) {
+        setFilterCourseId(courseId);
+      }
     } catch (error) {
       console.error("Error fetching leads:", error);
     } finally {
@@ -82,30 +167,34 @@ const LeadsManagement = () => {
 
   useEffect(() => {
     fetchLeads();
-  }, []);
+  }, [searchParams]);
 
-  const updateStatus = async (id: string, newStatus: string) => {
+  const updateLeadField = async (id: string, field: string, value: any) => {
     try {
       const res = await fetch(`/api/course-leads/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus }),
+        body: JSON.stringify({ [field]: value }),
       });
       if (res.ok) {
         setLeads(
-          leads.map((l) => (l.id === id ? { ...l, status: newStatus } : l))
+          leads.map((l) => (l.id === id ? { ...l, [field]: value } : l))
         );
         MySwal.fire({
           icon: "success",
           title: "تم التحديث",
-          text: "تم تغيير حالة الطلب بنجاح",
+          text: "تم تحديث البيانات بنجاح",
           timer: 1500,
           showConfirmButton: false,
         });
       }
     } catch (error) {
-      console.error("Error updating status:", error);
+      console.error("Error updating lead:", error);
     }
+  };
+
+  const updateStatus = async (id: string, newStatus: string) => {
+    await updateLeadField(id, "status", newStatus);
   };
 
   const convertToEnrollment = async (lead: Lead) => {
@@ -211,6 +300,18 @@ const LeadsManagement = () => {
         return (
           <Badge className="bg-green-100 text-green-700 hover:bg-green-100 border-none px-3 py-1 rounded-full">
             <UserPlus className="w-3 h-3 ml-1" /> مسجل
+          </Badge>
+        );
+      case "busy_morning":
+        return (
+          <Badge className="bg-orange-100 text-orange-700 hover:bg-orange-100 border-none px-3 py-1 rounded-full">
+            <Clock className="w-3 h-3 ml-1" /> مشغول فترة صباحية
+          </Badge>
+        );
+      case "busy_evening":
+        return (
+          <Badge className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 border-none px-3 py-1 rounded-full">
+            <Clock className="w-3 h-3 ml-1" /> مشغول فترة مسائية
           </Badge>
         );
       default:
@@ -330,12 +431,64 @@ const LeadsManagement = () => {
         ))}
       </div>
 
+      {/* SMS Sending Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white dark:bg-zinc-950 p-6 rounded-[32px] border border-emerald-100 dark:border-emerald-900/30 shadow-xl space-y-4"
+      >
+        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
+          <MessageSquare className="w-5 h-5" />
+          <h2 className="font-black">إرسال رسائل SMS جماعية للمهتمين</h2>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Textarea
+              placeholder="اكتب نص الرسالة هنا..."
+              className="rounded-2xl border-zinc-200 dark:border-zinc-800 min-h-[100px] bg-zinc-50 dark:bg-zinc-900 resize-none focus:ring-emerald-500"
+              value={smsMessage}
+              onChange={(e) => setSmsMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col justify-end gap-2 text-right">
+            <div className="text-sm text-zinc-500 mb-2">
+              المختارون:{" "}
+              <span className="font-black text-emerald-600">
+                {selectedIds.length}
+              </span>{" "}
+              شخص
+            </div>
+            <Button
+              className="bg-emerald-600 hover:bg-emerald-700 text-white rounded-2xl gap-2 h-12 px-8 shadow-lg shadow-emerald-100 dark:shadow-none"
+              disabled={isSendingSms || selectedIds.length === 0}
+              onClick={handleSendBulkSMS}
+            >
+              {isSendingSms ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+              إرسال الرسالة
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Table */}
       <div className="bg-white dark:bg-zinc-950 rounded-5xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
             <thead>
               <tr className="bg-zinc-50 dark:bg-zinc-900/50 border-b border-zinc-100 dark:border-zinc-800">
+                <th className="px-6 py-5 w-12">
+                  <Checkbox
+                    checked={
+                      filteredLeads.length > 0 &&
+                      selectedIds.length === filteredLeads.length
+                    }
+                    onCheckedChange={toggleSelectAll}
+                  />
+                </th>
                 <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400">
                   الطالب
                 </th>
@@ -347,6 +500,12 @@ const LeadsManagement = () => {
                 </th>
                 <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400">
                   الحالة
+                </th>
+                <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400 text-center">
+                  عدم الاستجابة
+                </th>
+                <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400 text-center">
+                  نشط
                 </th>
                 <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400">
                   التاريخ
@@ -365,8 +524,18 @@ const LeadsManagement = () => {
                       initial={{ opacity: 0 }}
                       animate={{ opacity: 1 }}
                       exit={{ opacity: 0 }}
-                      className="hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors group"
+                      className={cn(
+                        "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors group",
+                        selectedIds.includes(lead.id) &&
+                          "bg-emerald-50/30 dark:bg-emerald-500/5"
+                      )}
                     >
+                      <td className="px-6 py-5">
+                        <Checkbox
+                          checked={selectedIds.includes(lead.id)}
+                          onCheckedChange={() => toggleSelectLead(lead.id)}
+                        />
+                      </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-col">
                           <span className="font-bold text-zinc-900 dark:text-white">
@@ -409,6 +578,71 @@ const LeadsManagement = () => {
                       </td>
                       <td className="px-6 py-5">
                         {getStatusBadge(lead.status)}
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <div className="flex items-center justify-center gap-2">
+                          <button
+                            onClick={() =>
+                              updateLeadField(
+                                lead.id,
+                                "nonResponseCount",
+                                Math.max(0, lead.nonResponseCount - 1)
+                              )
+                            }
+                            className="size-6 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-600"
+                          >
+                            -
+                          </button>
+                          <span
+                            className={`font-bold ${
+                              lead.nonResponseCount > 2
+                                ? "text-red-600"
+                                : lead.nonResponseCount > 0
+                                ? "text-amber-600"
+                                : "text-zinc-400"
+                            }`}
+                          >
+                            {lead.nonResponseCount}
+                          </span>
+                          <button
+                            onClick={() =>
+                              updateLeadField(
+                                lead.id,
+                                "nonResponseCount",
+                                lead.nonResponseCount + 1
+                              )
+                            }
+                            className="size-6 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-600"
+                          >
+                            +
+                          </button>
+                        </div>
+                        {lead.nonResponseCount > 0 && (
+                          <button
+                            onClick={() =>
+                              updateLeadField(lead.id, "nonResponseCount", 0)
+                            }
+                            className="text-[10px] text-zinc-400 hover:text-primary mt-1 underline"
+                          >
+                            تصفير
+                          </button>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 text-center">
+                        <button
+                          onClick={() =>
+                            updateLeadField(lead.id, "isActive", !lead.isActive)
+                          }
+                          className={`transition-colors ${
+                            lead.isActive ? "text-green-600" : "text-zinc-300"
+                          }`}
+                        >
+                          {lead.isActive ? (
+                            <CheckCircle className="w-6 h-6" />
+                          ) : (
+                            <XCircle className="w-6 h-6" />
+                          )}
+                        </button>
                       </td>
                       <td className="px-6 py-5 text-sm text-zinc-500">
                         {format(new Date(lead.createdAt), "dd MMM yyyy", {
@@ -458,6 +692,22 @@ const LeadsManagement = () => {
                               >
                                 <CheckCircle2 className="w-4 h-4" /> مهتم
                                 بالاشتراك
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="rounded-xl gap-2 cursor-pointer"
+                                onClick={() =>
+                                  updateStatus(lead.id, "busy_morning")
+                                }
+                              >
+                                <Clock className="w-4 h-4" /> مشغول فترة صباحية
+                              </DropdownMenuItem>
+                              <DropdownMenuItem
+                                className="rounded-xl gap-2 cursor-pointer"
+                                onClick={() =>
+                                  updateStatus(lead.id, "busy_evening")
+                                }
+                              >
+                                <Clock className="w-4 h-4" /> مشغول فترة مسائية
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem

@@ -260,14 +260,18 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-5 text-center">
-                      <div className="inline-flex flex-col items-center p-2 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30">
-                        <span className="text-lg font-black text-amber-600 block leading-none">
-                          {course.leadsCount || 0}
-                        </span>
-                        <span className="text-[10px] text-amber-500 font-bold uppercase mt-1">
-                          مهتم
-                        </span>
-                      </div>
+                      <Link
+                        href={`/admin/${userId}/leads?courseId=${course.id}`}
+                      >
+                        <div className="inline-flex flex-col items-center p-2 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 hover:scale-105 transition-transform cursor-pointer">
+                          <span className="text-lg font-black text-amber-600 block leading-none">
+                            {course.leadsCount || 0}
+                          </span>
+                          <span className="text-[10px] text-amber-500 font-bold uppercase mt-1">
+                            مهتم
+                          </span>
+                        </div>
+                      </Link>
                     </TableCell>
                     <TableCell className="px-6 py-5 text-center">
                       {course.isActive ? (

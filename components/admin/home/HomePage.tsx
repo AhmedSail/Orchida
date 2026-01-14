@@ -263,31 +263,42 @@ const HomePage = ({
                         key={sec.sectionId}
                         className="group hover:bg-slate-50/80 transition-colors"
                       >
-                        <TableCell className="px-6 py-4 font-bold text-slate-700">
-                          {sec.courseTitle}
+                        <TableCell className="px-6 py-4">
+                          <a
+                            href={`/admin/${userId}/courses/sections/${sec.sectionId}/students`}
+                            className="font-bold text-slate-700 hover:text-primary transition-colors underline-offset-4 hover:underline"
+                          >
+                            {sec.courseTitle}
+                          </a>
                         </TableCell>
                         <TableCell className="text-center text-slate-500">
                           {sec.sectionNumber}#
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="flex flex-col items-center gap-1">
+                          <a
+                            href={`/admin/${userId}/courses/sections/${sec.sectionId}/students`}
+                            className="flex flex-col items-center gap-1 hover:scale-105 transition-transform cursor-pointer"
+                          >
                             <span className="font-black text-primary text-base leading-none">
                               {sec.enrollmentCount}
                             </span>
                             <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
                               من أصل {sec.maxCapacity}
                             </span>
-                          </div>
+                          </a>
                         </TableCell>
                         <TableCell className="text-center">
-                          <div className="flex flex-col items-center gap-1">
+                          <a
+                            href={`/admin/${userId}/leads?courseId=${sec.sectionId}`}
+                            className="flex flex-col items-center gap-1 hover:scale-105 transition-transform cursor-pointer"
+                          >
                             <span className="font-black text-amber-600 text-base leading-none">
                               {sec.leadsCount}
                             </span>
                             <span className="text-[10px] text-slate-400 uppercase tracking-tighter">
                               طلب
                             </span>
-                          </div>
+                          </a>
                         </TableCell>
                         <TableCell className="text-center">
                           {sec.enrollmentCount >= sec.maxCapacity ? (

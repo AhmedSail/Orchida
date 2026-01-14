@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
 import { DbSection } from "../coordinator/AddNewMeeting";
@@ -53,6 +53,91 @@ function formatDateToYMD(d: Date | string): string {
   return `${year}-${month}-${day}`;
 }
 
+// --- دالة توليد PDF ---
+async function exportToPDF(meetings: CalendarEvent[], sectionNumber: number) {
+  // استخدام html2pdf أو jspdf
+  const content = `
+    <html dir="rtl">
+      <head>
+        <style>
+          body { font-family: Arial, sans-serif; padding: 20px; }
+          h1 { color: #675795; text-align: center; }
+          table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+          th, td { border: 1px solid #ddd; padding: 12px; text-align: right; }
+          th { background: #675795; color: white; }
+          tr:nth-child(even) { background: #f9f9f9; }
+        </style>
+      </head>
+      <body>
+        <h1>جدول لقاءات الشعبة ${sectionNumber}</h1>
+        <table>
+          <thead>
+            <tr>
+              <th>رقم اللقاء</th>
+              <th>التاريخ</th>
+              <th>وقت البداية</th>
+              <th>وقت النهاية</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${meetings
+              .sort(
+                (a, b) =>
+                  new Date(a.start).getTime() - new Date(b.start).getTime()
+              )
+              .map(
+                (m, i) => `
+                <tr>
+                  <td>${i + 1}</td>
+                  <td>${m.start.split("T")[0]}</td>
+                  <td>${m.start.split("T")[1]}</td>
+                  <td>${m.end.split("T")[1]}</td>
+                </tr>
+              `
+              )
+              .join("")}
+          </tbody>
+        </table>
+        <p style="text-align: center; margin-top: 30px; color: #666;">
+          تم التصدير بتاريخ: ${new Date().toLocaleDateString("ar-EG")}
+        </p>
+      </body>
+    </html>
+  `;
+
+  const printWindow = window.open("", "_blank");
+  if (printWindow) {
+    printWindow.document.write(content);
+    printWindow.document.close();
+    printWindow.print();
+  }
+}
+
+// --- دالة تصدير Excel ---
+function exportToExcel(meetings: CalendarEvent[], sectionNumber: number) {
+  const csvContent = [
+    ["رقم اللقاء", "التاريخ", "وقت البداية", "وقت النهاية"].join(","),
+    ...meetings
+      .sort((a, b) => new Date(a.start).getTime() - new Date(b.start).getTime())
+      .map((m, i) =>
+        [
+          i + 1,
+          m.start.split("T")[0],
+          m.start.split("T")[1],
+          m.end.split("T")[1],
+        ].join(",")
+      ),
+  ].join("\n");
+
+  const blob = new Blob(["\ufeff" + csvContent], {
+    type: "text/csv;charset=utf-8;",
+  });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = `جدول_الشعبة_${sectionNumber}.csv`;
+  link.click();
+}
+
 // --- الخطاف المخصص (Custom Hook) ---
 export const useMeetingScheduler = (
   section: DbSection,
@@ -66,35 +151,29 @@ export const useMeetingScheduler = (
   const [nextMeetingNumber, setNextMeetingNumber] = useState<number>(1);
   const [hasExistingMeetings, setHasExistingMeetings] =
     useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+
+  // ✅ أرشفة اللقاءات القديمة تلقائياً
   useEffect(() => {
     const archivePastMeetings = async () => {
-      // 1. تحديد تاريخ اليوم (بدون معلومات الوقت)
       const today = new Date();
       today.setHours(0, 0, 0, 0);
 
-      // 2. فلترة اللقاءات التي انتهت قبل اليوم الحالي
       const pastMeetingsToArchive = AllMeetings.filter((jm) => {
-        if (jm.meetings.sectionId !== section.id) {
-          return false;
-        }
+        if (jm.meetings.sectionId !== section.id) return false;
         const meetingDate = new Date(jm.meetings.date);
         meetingDate.setHours(0, 0, 0, 0);
         return meetingDate < today;
       });
 
-      // 3. إذا لم يكن هناك لقاءات قديمة، لا تفعل شيئاً
-      if (pastMeetingsToArchive.length === 0) {
-        return;
-      }
+      if (pastMeetingsToArchive.length === 0) return;
 
-      // 4. استدعاء API لتحديث اللقاءات القديمة كـ archived
       try {
         const meetingIdsToArchive = pastMeetingsToArchive.map(
           (jm) => jm.meetings.id
         );
-
         const res = await fetch(
-          `/api/courses/courseSections/meetings/bulk-archive`, // 👈 API جديد للأرشفة
+          `/api/courses/courseSections/meetings/bulk-archive`,
           {
             method: "PUT",
             headers: { "Content-Type": "application/json" },
@@ -102,10 +181,7 @@ export const useMeetingScheduler = (
           }
         );
 
-        if (!res.ok) {
-          console.error("Failed to archive past meetings in the database.");
-        } else {
-         
+        if (res.ok) {
           router.refresh();
         }
       } catch (error) {
@@ -117,9 +193,9 @@ export const useMeetingScheduler = (
     };
 
     archivePastMeetings();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [section.id]); // يتم تشغيل هذا التأثير مرة واحدة عند تحميل المكون
-  // --- نهاية التعديل ---
+  }, [section.id, AllMeetings, router]);
+
+  // ✅ تحديث الأحداث عند تغيير البيانات (useEffect واحد فقط بدلاً من اثنين)
   useEffect(() => {
     const otherMeetings: CalendarEvent[] = AllMeetings.filter(
       (jm) => jm.meetings.sectionId !== section.id
@@ -157,6 +233,7 @@ export const useMeetingScheduler = (
     setHasExistingMeetings(currentMeetings.length > 0);
   }, [AllMeetings, section.id]);
 
+  // ✅ تحديث combinedEvents عند تغيير sectionMeetings
   useEffect(() => {
     const otherMeetings: CalendarEvent[] = AllMeetings.filter(
       (jm) => jm.meetings.sectionId !== section.id
@@ -175,22 +252,134 @@ export const useMeetingScheduler = (
     setCombinedEvents([...otherMeetings, ...sectionMeetings]);
   }, [sectionMeetings, AllMeetings, section.id]);
 
-  const chooseDaysGroup = async () => {
-    // ... (الكود هنا لم يتغير)
-  };
+  // ✅ دالة اختيار أيام الأسبوع للجدولة اليدوية (تم إصلاحها)
+  const chooseDaysGroup = useCallback(async () => {
+    const { value: selectedDays } = await Swal.fire({
+      title: "اختر أيام الأسبوع للجدولة",
+      html: `
+        <p class="text-sm text-gray-600 mb-4">اختر الأيام التي تريد جدولة اللقاءات فيها</p>
+        <div class="grid grid-cols-2 gap-3 text-right">
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="6"> السبت
+          </label>
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="0"> الأحد
+          </label>
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="1"> الاثنين
+          </label>
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="2"> الثلاثاء
+          </label>
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="3"> الأربعاء
+          </label>
+          <label class="flex items-center gap-2 p-2 border rounded-lg hover:bg-gray-50 cursor-pointer">
+            <input type="checkbox" class="swal2-checkbox-days" value="4"> الخميس
+          </label>
+        </div>
+        <div class="mt-4 p-3 bg-blue-50 rounded-lg">
+          <p class="text-sm text-blue-800">
+            💡 <strong>نصيحة:</strong> بعد اختيار الأيام، انقر على أي يوم في التقويم لإضافة لقاء
+          </p>
+        </div>
+      `,
+      showCancelButton: true,
+      confirmButtonText: "تأكيد الاختيار",
+      cancelButtonText: "إلغاء",
+      preConfirm: () => {
+        const days = Array.from(
+          document.querySelectorAll<HTMLInputElement>(
+            ".swal2-checkbox-days:checked"
+          )
+        ).map((cb) => parseInt(cb.value));
 
-  // 📍 المسار: src/components/MeetingScheduler/useMeetingScheduler.ts
+        if (days.length === 0) {
+          Swal.showValidationMessage("الرجاء اختيار يوم واحد على الأقل");
+          return null;
+        }
+        return days;
+      },
+    });
 
-  // ... (باقي الكود في الملف يبقى كما هو)
+    if (selectedDays) {
+      const dayNames: Record<number, string> = {
+        0: "الأحد",
+        1: "الاثنين",
+        2: "الثلاثاء",
+        3: "الأربعاء",
+        4: "الخميس",
+        5: "الجمعة",
+        6: "السبت",
+      };
 
-  const handleAutoSchedule = async () => {
+      Swal.fire({
+        icon: "success",
+        title: "تم اختيار الأيام",
+        html: `
+          <p>الأيام المختارة: <strong>${selectedDays
+            .map((d: number) => dayNames[d])
+            .join("، ")}</strong></p>
+          <p class="mt-2 text-sm text-gray-600">الآن انقر على أي من هذه الأيام في التقويم لإضافة لقاء</p>
+        `,
+        timer: 3000,
+        timerProgressBar: true,
+      });
+    }
+  }, []);
+
+  // ✅ الجدولة التلقائية
+  const handleAutoSchedule = useCallback(async () => {
+    // ✅ إذا كان هناك لقاءات موجودة، اعرض خيارات للمستخدم
     if (hasExistingMeetings) {
-      Swal.fire(
-        "لا يمكن المتابعة",
-        "هذه الشعبة لديها بالفعل لقاءات مجدولة. لا يمكن إجراء جدولة تلقائية مرة أخرى.",
-        "warning"
-      );
-      return;
+      const { value: choice } = await Swal.fire({
+        title: "يوجد لقاءات مجدولة مسبقاً",
+        html: `
+          <p class="text-gray-600 mb-4">هذه الشعبة لديها <strong>${sectionMeetings.length}</strong> لقاء مجدول مسبقاً.</p>
+          <p class="text-sm text-gray-500">ماذا تريد أن تفعل؟</p>
+        `,
+        icon: "question",
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: "➕ إضافة لقاءات جديدة",
+        denyButtonText: "🗑️ حذف الموجودة وإعادة الجدولة",
+        cancelButtonText: "إلغاء",
+        confirmButtonColor: "#10b981",
+        denyButtonColor: "#ef4444",
+      });
+
+      if (choice === undefined) return; // المستخدم ألغى
+
+      // إذا اختار حذف اللقاءات الموجودة
+      if (choice === false) {
+        const { isConfirmed } = await Swal.fire({
+          title: "⚠️ تأكيد الحذف",
+          text: `هل أنت متأكد من حذف جميع اللقاءات الـ ${sectionMeetings.length} الموجودة؟`,
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          confirmButtonText: "نعم، احذف وأعد الجدولة",
+          cancelButtonText: "إلغاء",
+        });
+
+        if (!isConfirmed) return;
+
+        // حذف جميع اللقاءات الموجودة
+        try {
+          const meetingIds = sectionMeetings.map((m) => m.id).filter(Boolean);
+          await fetch(`/api/courses/courseSections/meetings/bulk-delete`, {
+            method: "DELETE",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ ids: meetingIds }),
+          });
+          setSectionMeetings([]);
+          setNextMeetingNumber(1);
+        } catch (error) {
+          Swal.fire("خطأ", "فشل حذف اللقاءات الموجودة", "error");
+          return;
+        }
+      }
+      // إذا اختار الإضافة، نكمل بشكل طبيعي
     }
 
     if (courseHours <= 0) {
@@ -206,21 +395,20 @@ export const useMeetingScheduler = (
       title: "جدولة تلقائية للقاءات",
       html: `
         <p class="text-sm text-gray-600 mb-2">أدخل تفاصيل الجدولة ليتم توزيع اللقاءات تلقائياً.</p>
-        <div id="swal-days-container" class="flex justify-center gap-2 mb-3">
-          <label><input type="checkbox" class="swal2-checkbox" value="6"> السبت</label>
-          <label><input type="checkbox" class="swal2-checkbox" value="0"> الأحد</label>
-          <label><input type="checkbox" class="swal2-checkbox" value="1"> الاثنين</label>
-          <label><input type="checkbox" class="swal2-checkbox" value="2"> الثلاثاء</label>
-          <label><input type="checkbox" class="swal2-checkbox" value="3"> الأربعاء</label>
-          <label><input type="checkbox" class="swal2-checkbox" value="4"> الخميس</label>
+        <div id="swal-days-container" class="grid grid-cols-3 gap-2 mb-3">
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="6"> السبت</label>
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="0"> الأحد</label>
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="1"> الاثنين</label>
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="2"> الثلاثاء</label>
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="3"> الأربعاء</label>
+          <label class="flex items-center gap-1 text-sm"><input type="checkbox" class="swal2-checkbox" value="4"> الخميس</label>
         </div>
         <input id="swal-start-date" type="date" class="swal2-input" placeholder="تاريخ بدء الجدولة">
         <input id="swal-start-time" type="time" class="swal2-input" value="09:00">
         <input id="swal-total-meetings" type="number" class="swal2-input" placeholder="عدد اللقاءات الإجمالي (مثال: 15)">
         <div class="mt-3 p-3 bg-blue-50 rounded">
           <p class="text-sm text-blue-800">
-            <strong>عدد الساعات في الكورس:</strong> ${courseHours} ساعة  
-
+            <strong>عدد الساعات في الكورس:</strong> ${courseHours} ساعة<br>
             <strong>عدد الساعات لكل لقاء:</strong> سيتم حسابه تلقائياً
           </p>
         </div>
@@ -243,8 +431,8 @@ export const useMeetingScheduler = (
           (document.getElementById("swal-total-meetings") as HTMLInputElement)
             .value
         );
-        // ✅ تحقق أن تاريخ بداية الجدولة >= تاريخ بداية الشعبة
-        const sectionStartDate = new Date(section.startDate ?? ""); // تاريخ بداية الشعبة من DB
+
+        const sectionStartDate = new Date(section.startDate ?? "");
         const chosenStartDate = new Date(startDate);
 
         if (chosenStartDate < sectionStartDate) {
@@ -288,6 +476,8 @@ export const useMeetingScheduler = (
 
     if (!formValues) return;
 
+    setIsLoading(true);
+
     const {
       selectedDays,
       startDate,
@@ -299,11 +489,12 @@ export const useMeetingScheduler = (
     let currentDate = new Date(startDate);
     let meetingsCount = 0;
     let safetyBreak = 0;
-    let conflictFoundAndReported = false; // متغير لمنع تكرار رسالة الخطأ
+    let conflictFoundAndReported = false;
 
     while (meetingsCount < totalMeetings && !conflictFoundAndReported) {
       safetyBreak++;
       if (safetyBreak > 365) {
+        setIsLoading(false);
         Swal.fire(
           "خطأ",
           "فشل توليد الجدول. قد تكون الأيام المختارة غير كافية أو هناك تعارضات كثيرة.",
@@ -323,13 +514,9 @@ export const useMeetingScheduler = (
       const isWithinWorkHours = startTime >= "08:00" && endTime <= "20:00";
 
       if (isValidDay && isWithinWorkHours) {
-        // --- بداية التعديل الرئيسي ---
-        // 1. استخدم `find` بدلاً من `some` للحصول على تفاصيل اللقاء المتعذر
         const conflictingEvent = combinedEvents.find((event) => {
           const eventDate = event.start.split("T")[0];
-          if (eventDate !== dateStr) {
-            return false;
-          }
+          if (eventDate !== dateStr) return false;
           const existingStart = new Date(event.start).getTime();
           const existingEnd = new Date(event.end).getTime();
           const newStart = startDateTime.getTime();
@@ -337,14 +524,11 @@ export const useMeetingScheduler = (
           return newStart < existingEnd && newEnd > existingStart;
         });
 
-        // 2. تحقق مما إذا تم العثور على تعارض
         if (conflictingEvent) {
-          // 3. ابحث عن تفاصيل اللقاء الأصلي من `AllMeetings`
           const originalMeetingDetails = AllMeetings.find(
             (jm) => jm.meetings.id === conflictingEvent.id
           );
-
-          // 4. اعرض رسالة خطأ واضحة ومفصلة
+          setIsLoading(false);
           Swal.fire({
             title: "⚠️ تعارض في المواعيد!",
             html: `
@@ -368,10 +552,8 @@ export const useMeetingScheduler = (
             icon: "warning",
             confirmButtonText: "حسناً",
           });
-          conflictFoundAndReported = true; // أوقف الحلقة
-          // --- نهاية التعديل الرئيسي ---
+          conflictFoundAndReported = true;
         } else {
-          // لا يوجد تعارض، أضف اللقاء
           generatedMeetings.push({
             courseId: section.courseId,
             sectionId: section.id,
@@ -386,24 +568,23 @@ export const useMeetingScheduler = (
         }
       }
 
-      // انتقل إلى اليوم التالي فقط إذا لم يتم إيقاف الحلقة
       if (!conflictFoundAndReported) {
         currentDate.setDate(currentDate.getDate() + 1);
       }
     }
 
-    // لا تستمر إذا تم العثور على تعارض أو لم يتم توليد أي لقاءات
     if (conflictFoundAndReported || generatedMeetings.length === 0) {
+      setIsLoading(false);
       return;
     }
 
-    // ... (باقي الكود الخاص بعرض ومراجعة وحفظ اللقاءات يبقى كما هو)
     const reviewHtml = generatedMeetings
       .map((m) => `<li>${m.date} (${m.startTime} - ${m.endTime})</li>`)
       .join("");
+
     const { isConfirmed } = await Swal.fire({
       title: `تم توليد ${generatedMeetings.length} لقاء بنجاح`,
-      html: `<p>هل تود حفظ هذه اللقاءات؟</p><ul class="text-right list-disc pr-5 mt-3">${reviewHtml}</ul>`,
+      html: `<p>هل تود حفظ هذه اللقاءات؟</p><ul class="text-right list-disc pr-5 mt-3 max-h-60 overflow-y-auto">${reviewHtml}</ul>`,
       icon: "success",
       showCancelButton: true,
       confirmButtonText: "نعم، حفظ الكل",
@@ -442,207 +623,306 @@ export const useMeetingScheduler = (
         );
       }
     }
-  };
-  const handleManualAdd = async (arg: { dateStr: string }) => {
-    const dateStr = arg.dateStr;
+    setIsLoading(false);
+  }, [
+    hasExistingMeetings,
+    courseHours,
+    section,
+    combinedEvents,
+    AllMeetings,
+    nextMeetingNumber,
+    router,
+    userId,
+  ]);
 
-    const { value: formValues } = await Swal.fire({
-      title: `إضافة لقاء يدوي`,
-      html: `
+  // ✅ إضافة لقاء يدوي (مع تأكيد قبل الحفظ)
+  const handleManualAdd = useCallback(
+    async (arg: { dateStr: string }) => {
+      const dateStr = arg.dateStr;
+
+      const { value: formValues } = await Swal.fire({
+        title: `إضافة لقاء يدوي`,
+        html: `
         <p class="text-sm text-gray-600 mb-2">أدخل تفاصيل اللقاء ليوم ${dateStr}</p>
         <input id="swal-title" class="swal2-input" placeholder="عنوان اللقاء (اختياري)">
         <input id="swal-start-time" type="time" class="swal2-input" value="09:00">
         <input id="swal-end-time" type="time" class="swal2-input" value="11:00">
         <input id="swal-location" class="swal2-input" placeholder="الموقع (اختياري)">
       `,
-      focusConfirm: false,
-      showCancelButton: true,
-      confirmButtonText: "حفظ اللقاء",
-      cancelButtonText: "إلغاء",
-      preConfirm: () => {
-        const selectedDays = Array.from(
-          document.querySelectorAll<HTMLInputElement>(".swal2-checkbox:checked")
-        ).map((cb) => parseInt(cb.value));
-        const startDate = (
-          document.getElementById("swal-start-date") as HTMLInputElement
-        ).value;
-        const startTime = (
-          document.getElementById("swal-start-time") as HTMLInputElement
-        ).value;
-        const totalMeetings = parseInt(
-          (document.getElementById("swal-total-meetings") as HTMLInputElement)
-            .value
-        );
-        // ✅ تحقق أن تاريخ بداية الجدولة >= تاريخ بداية الشعبة
-        const sectionStartDate = new Date(section.startDate ?? ""); // تاريخ بداية الشعبة من DB
-        const chosenStartDate = new Date(startDate);
+        focusConfirm: false,
+        showCancelButton: true,
+        confirmButtonText: "حفظ اللقاء",
+        cancelButtonText: "إلغاء",
+        preConfirm: () => {
+          const title = (
+            document.getElementById("swal-title") as HTMLInputElement
+          ).value;
+          const startTime = (
+            document.getElementById("swal-start-time") as HTMLInputElement
+          ).value;
+          const endTime = (
+            document.getElementById("swal-end-time") as HTMLInputElement
+          ).value;
+          const location = (
+            document.getElementById("swal-location") as HTMLInputElement
+          ).value;
 
-        if (chosenStartDate < sectionStartDate) {
-          Swal.showValidationMessage(
-            `تاريخ بداية الجدولة (${startDate}) يجب أن يكون بعد أو يساوي تاريخ بداية الشعبة (${formatDateToYMD(
-              sectionStartDate
-            )}).`
-          );
-          return null;
-        }
-        if (
-          !selectedDays.length ||
-          !startDate ||
-          !startTime ||
-          !totalMeetings
-        ) {
-          Swal.showValidationMessage("الرجاء إدخال جميع الحقول المطلوبة.");
-          return null;
-        }
-        if (totalMeetings <= 0) {
-          Swal.showValidationMessage("يجب أن يكون عدد اللقاءات أكبر من صفر.");
-          return null;
-        }
-        if (totalMeetings > courseHours) {
-          Swal.showValidationMessage(
-            `عدد اللقاءات (${totalMeetings}) لا يمكن أن يكون أكبر من عدد الساعات في الكورس (${courseHours}).`
-          );
-          return null;
-        }
+          if (!startTime || !endTime) {
+            Swal.showValidationMessage("الرجاء إدخال وقت البداية والنهاية.");
+            return null;
+          }
 
-        const hoursPerMeeting = Math.ceil(courseHours / totalMeetings);
-        return {
-          selectedDays,
-          startDate,
-          startTime,
-          totalMeetings,
-          hoursPerMeeting,
-        };
-      },
-    });
+          if (startTime >= endTime) {
+            Swal.showValidationMessage(
+              "وقت النهاية يجب أن يكون بعد وقت البداية."
+            );
+            return null;
+          }
 
-    if (!formValues) return;
+          const sectionStartDate = new Date(section.startDate ?? "");
+          sectionStartDate.setHours(0, 0, 0, 0);
+          const chosenDate = new Date(dateStr);
+          chosenDate.setHours(0, 0, 0, 0);
 
-    const { title, startTime, endTime, location } = formValues;
+          if (chosenDate < sectionStartDate) {
+            Swal.showValidationMessage(
+              `التاريخ المختار (${dateStr}) يجب أن يكون بعد أو يساوي تاريخ بداية الشعبة (${formatDateToYMD(
+                sectionStartDate
+              )}).`
+            );
+            return null;
+          }
 
-    // التحقق من التعارض
-    const startDateTime = new Date(`${dateStr}T${startTime}`).getTime();
-    const endDateTime = new Date(`${dateStr}T${endTime}`).getTime();
-
-    const conflictingEvent = combinedEvents.find((event) => {
-      const eventDate = event.start.split("T")[0];
-      if (eventDate !== dateStr) return false;
-
-      const existingStart = new Date(event.start).getTime();
-      const existingEnd = new Date(event.end).getTime();
-      return startDateTime < existingEnd && endDateTime > existingStart;
-    });
-
-    if (conflictingEvent) {
-      Swal.fire(
-        "خطأ",
-        "يوجد تعارض مع لقاء آخر في نفس الوقت والتاريخ.",
-        "error"
-      );
-      return;
-    }
-
-    // تجهيز بيانات اللقاء الجديد
-    const newMeetingData = {
-      courseId: section.courseId,
-      sectionId: section.id,
-      instructorId: section.instructorId,
-      meetingNumber: nextMeetingNumber,
-      date: dateStr,
-      startTime,
-      endTime,
-      location,
-      // استخدم العنوان المدخل أو عنوان افتراضي
-      title: title || `لقاء ${nextMeetingNumber}`,
-    };
-
-    // حفظ اللقاء في قاعدة البيانات
-    try {
-      const res = await fetch("/api/courses/courseSections/meetings/add", {
-        // 👈 افترضنا وجود هذا الـ API
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(newMeetingData),
+          return { title, startTime, endTime, location };
+        },
       });
 
-      if (!res.ok) {
-        const errorData = await res.json();
-        throw new Error(errorData.message || "فشل حفظ اللقاء.");
+      if (!formValues) return;
+
+      const { title, startTime, endTime, location } = formValues;
+
+      // التحقق من التعارض
+      const startDateTime = new Date(`${dateStr}T${startTime}`).getTime();
+      const endDateTime = new Date(`${dateStr}T${endTime}`).getTime();
+
+      const conflictingEvent = combinedEvents.find((event) => {
+        const eventDate = event.start.split("T")[0];
+        if (eventDate !== dateStr) return false;
+        const existingStart = new Date(event.start).getTime();
+        const existingEnd = new Date(event.end).getTime();
+        return startDateTime < existingEnd && endDateTime > existingStart;
+      });
+
+      if (conflictingEvent) {
+        Swal.fire(
+          "خطأ",
+          "يوجد تعارض مع لقاء آخر في نفس الوقت والتاريخ.",
+          "error"
+        );
+        return;
       }
 
-      const savedMeeting: Meeting = await res.json();
+      // ✅ تأكيد قبل الحفظ
+      const { isConfirmed } = await Swal.fire({
+        title: "تأكيد إضافة اللقاء",
+        html: `
+        <div class="text-right">
+          <p><strong>التاريخ:</strong> ${dateStr}</p>
+          <p><strong>الوقت:</strong> ${startTime} - ${endTime}</p>
+          ${location ? `<p><strong>الموقع:</strong> ${location}</p>` : ""}
+          <p><strong>رقم اللقاء:</strong> ${nextMeetingNumber}</p>
+        </div>
+      `,
+        icon: "question",
+        showCancelButton: true,
+        confirmButtonText: "نعم، أضف اللقاء",
+        cancelButtonText: "إلغاء",
+      });
 
-      // تحديث الحالة في الواجهة
-      const newCalendarEvent: CalendarEvent = {
-        id: savedMeeting.id.toString(),
-        title: newMeetingData.title,
-        start: `${formatDateToYMD(savedMeeting.date)}T${
-          savedMeeting.startTime
-        }`,
-        end: `${formatDateToYMD(savedMeeting.date)}T${savedMeeting.endTime}`,
-        extendedProps: {
-          isCurrentSection: true,
-          sectionId: savedMeeting.sectionId,
-        },
+      if (!isConfirmed) return;
+
+      setIsLoading(true);
+
+      const newMeetingData = {
+        courseId: section.courseId,
+        sectionId: section.id,
+        instructorId: section.instructorId,
+        meetingNumber: nextMeetingNumber,
+        date: dateStr,
+        startTime,
+        endTime,
+        location,
+        title: title || `لقاء ${nextMeetingNumber}`,
       };
 
-      setSectionMeetings((prev) => [...prev, newCalendarEvent]);
-      Swal.fire("تم الحفظ!", "تمت إضافة اللقاء بنجاح.", "success");
-      router.push(`/coordinator/${userId}/courses/sections/meetings`);
-    } catch (error: any) {
-      Swal.fire("خطأ", error.message, "error");
-    }
-  };
-  const handleEventClick = async (arg: {
-    event: {
-      id: string;
-      startStr: string;
-      endStr: string;
-      title: string;
-      extendedProps: any;
-    };
-  }) => {
-    const clickedEventId = arg.event.id;
-    const originalMeeting = AllMeetings.find(
-      (jm) => jm.meetings.id === clickedEventId
-    )?.meetings;
+      try {
+        const res = await fetch("/api/courses/courseSections/meetings/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(newMeetingData),
+        });
 
-    if (!originalMeeting) {
-      Swal.fire("خطأ", "لم يتم العثور على تفاصيل هذا اللقاء.", "error");
-      return;
-    }
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "فشل حفظ اللقاء.");
+        }
 
-    // لا تسمح بتعديل لقاءات الشعب الأخرى
-    if (originalMeeting.sectionId !== section.id) {
-      Swal.fire({
-        title: "معلومات اللقاء",
+        const savedMeeting: Meeting = await res.json();
+
+        const newCalendarEvent: CalendarEvent = {
+          id: savedMeeting.id.toString(),
+          title: newMeetingData.title,
+          start: `${formatDateToYMD(savedMeeting.date)}T${
+            savedMeeting.startTime
+          }`,
+          end: `${formatDateToYMD(savedMeeting.date)}T${savedMeeting.endTime}`,
+          extendedProps: {
+            isCurrentSection: true,
+            sectionId: savedMeeting.sectionId,
+          },
+        };
+
+        setSectionMeetings((prev) => [...prev, newCalendarEvent]);
+        setNextMeetingNumber((prev) => prev + 1);
+        Swal.fire("تم الحفظ!", "تمت إضافة اللقاء بنجاح.", "success");
+        router.refresh();
+      } catch (error: any) {
+        Swal.fire("خطأ", error.message, "error");
+      }
+      setIsLoading(false);
+    },
+    [combinedEvents, section, nextMeetingNumber, router]
+  );
+
+  // ✅ نسخ لقاء موجود
+  const handleDuplicateMeeting = useCallback(
+    async (meetingId: string) => {
+      const originalMeeting = AllMeetings.find(
+        (jm) => jm.meetings.id === meetingId
+      )?.meetings;
+      if (!originalMeeting) return;
+
+      const { value: newDate } = await Swal.fire({
+        title: "نسخ اللقاء",
         html: `
-              <div class="text-right">
-                <p><strong>اللقاء:</strong> ${arg.event.title}</p>
-                <p><strong>التاريخ:</strong> ${new Date(
-                  arg.event.startStr
-                ).toLocaleDateString("ar-EG")}</p>
-                <p><strong>الوقت:</strong> ${new Date(
-                  arg.event.startStr
-                ).toLocaleTimeString("ar-EG", {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                })} - ${new Date(arg.event.endStr).toLocaleTimeString("ar-EG", {
-          hour: "2-digit",
-          minute: "2-digit",
-        })}</p>
-                <hr class="my-2">
-                <p class="text-sm text-gray-500">هذا اللقاء يخص شعبة أخرى ولا يمكنك تعديله.</p>
-              </div>
-            `,
-        icon: "info",
+        <p class="text-sm text-gray-600 mb-2">اختر تاريخ جديد للقاء المنسوخ</p>
+        <input id="swal-new-date" type="date" class="swal2-input" value="${formatDateToYMD(
+          new Date()
+        )}">
+      `,
+        showCancelButton: true,
+        confirmButtonText: "نسخ",
+        cancelButtonText: "إلغاء",
+        preConfirm: () => {
+          return (document.getElementById("swal-new-date") as HTMLInputElement)
+            .value;
+        },
       });
-      return;
-    }
 
-    const { value: formValues } = await Swal.fire({
-      title: "تعديل اللقاء",
-      html: `
+      if (!newDate) return;
+
+      setIsLoading(true);
+
+      try {
+        const res = await fetch("/api/courses/courseSections/meetings/add", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            courseId: originalMeeting.courseId,
+            sectionId: originalMeeting.sectionId,
+            instructorId: originalMeeting.instructorId,
+            meetingNumber: nextMeetingNumber,
+            date: newDate,
+            startTime: originalMeeting.startTime,
+            endTime: originalMeeting.endTime,
+            location: originalMeeting.location,
+          }),
+        });
+
+        if (!res.ok) throw new Error("فشل نسخ اللقاء");
+
+        const savedMeeting: Meeting = await res.json();
+        const newEvent: CalendarEvent = {
+          id: savedMeeting.id.toString(),
+          title: `لقاء ${savedMeeting.meetingNumber}`,
+          start: `${formatDateToYMD(savedMeeting.date)}T${
+            savedMeeting.startTime
+          }`,
+          end: `${formatDateToYMD(savedMeeting.date)}T${savedMeeting.endTime}`,
+          extendedProps: {
+            isCurrentSection: true,
+            sectionId: savedMeeting.sectionId,
+          },
+        };
+
+        setSectionMeetings((prev) => [...prev, newEvent]);
+        setNextMeetingNumber((prev) => prev + 1);
+        Swal.fire("تم!", "تم نسخ اللقاء بنجاح", "success");
+        router.refresh();
+      } catch (error: any) {
+        Swal.fire("خطأ", error.message, "error");
+      }
+      setIsLoading(false);
+    },
+    [AllMeetings, nextMeetingNumber, router]
+  );
+
+  // ✅ النقر على حدث (تعديل/حذف/نسخ) - تم إصلاح منطق الحذف
+  const handleEventClick = useCallback(
+    async (arg: {
+      event: {
+        id: string;
+        startStr: string;
+        endStr: string;
+        title: string;
+        extendedProps: any;
+      };
+    }) => {
+      const clickedEventId = arg.event.id;
+      const originalMeeting = AllMeetings.find(
+        (jm) => jm.meetings.id === clickedEventId
+      )?.meetings;
+
+      if (!originalMeeting) {
+        Swal.fire("خطأ", "لم يتم العثور على تفاصيل هذا اللقاء.", "error");
+        return;
+      }
+
+      // لا تسمح بتعديل لقاءات الشعب الأخرى
+      if (originalMeeting.sectionId !== section.id) {
+        Swal.fire({
+          title: "معلومات اللقاء",
+          html: `
+          <div class="text-right">
+            <p><strong>اللقاء:</strong> ${arg.event.title}</p>
+            <p><strong>التاريخ:</strong> ${new Date(
+              arg.event.startStr
+            ).toLocaleDateString("ar-EG")}</p>
+            <p><strong>الوقت:</strong> ${new Date(
+              arg.event.startStr
+            ).toLocaleTimeString("ar-EG", {
+              hour: "2-digit",
+              minute: "2-digit",
+            })} - ${new Date(arg.event.endStr).toLocaleTimeString("ar-EG", {
+            hour: "2-digit",
+            minute: "2-digit",
+          })}</p>
+            <hr class="my-2">
+            <p class="text-sm text-gray-500">هذا اللقاء يخص شعبة أخرى ولا يمكنك تعديله.</p>
+          </div>
+        `,
+          icon: "info",
+        });
+        return;
+      }
+
+      const {
+        value: formValues,
+        isDenied,
+        isDismissed,
+      } = await Swal.fire({
+        title: "تعديل اللقاء",
+        html: `
         <input id="swal-date" type="date" class="swal2-input" value="${formatDateToYMD(
           originalMeeting.date
         )}">
@@ -656,184 +936,333 @@ export const useMeetingScheduler = (
           originalMeeting.location || ""
         }">
       `,
-      focusConfirm: false,
-      showCancelButton: true,
-      showDenyButton: true, // 👈 زر الحذف
-      confirmButtonText: "حفظ التعديلات",
-      cancelButtonText: "إلغاء",
-      denyButtonText: "🗑️ حذف اللقاء",
-      preConfirm: () => {
-        const date = (document.getElementById("swal-date") as HTMLInputElement)
-          .value;
-        const startTime = (
-          document.getElementById("swal-start-time") as HTMLInputElement
-        ).value;
-        const endTime = (
-          document.getElementById("swal-end-time") as HTMLInputElement
-        ).value;
-        const location = (
-          document.getElementById("swal-location") as HTMLInputElement
-        ).value;
+        focusConfirm: false,
+        showCancelButton: true,
+        showDenyButton: true,
+        confirmButtonText: "حفظ التعديلات",
+        cancelButtonText: "إلغاء",
+        denyButtonText: "🗑️ حذف اللقاء",
+        footer:
+          '<button id="swal-copy-btn" class="text-blue-600 hover:underline">📋 نسخ هذا اللقاء</button>',
+        didOpen: () => {
+          const copyBtn = document.getElementById("swal-copy-btn");
+          if (copyBtn) {
+            copyBtn.addEventListener("click", () => {
+              Swal.close();
+              handleDuplicateMeeting(clickedEventId);
+            });
+          }
+        },
+        preConfirm: () => {
+          const date = (
+            document.getElementById("swal-date") as HTMLInputElement
+          ).value;
+          const startTime = (
+            document.getElementById("swal-start-time") as HTMLInputElement
+          ).value;
+          const endTime = (
+            document.getElementById("swal-end-time") as HTMLInputElement
+          ).value;
+          const location = (
+            document.getElementById("swal-location") as HTMLInputElement
+          ).value;
 
-        if (!date || !startTime || !endTime) {
-          Swal.showValidationMessage("الرجاء إدخال جميع الحقول المطلوبة.");
-          return null;
-        }
-        if (startTime >= endTime) {
-          Swal.showValidationMessage(
-            "وقت النهاية يجب أن يكون بعد وقت البداية."
-          );
-          return null;
-        }
-        return { date, startTime, endTime, location };
-      },
-    });
-
-    // --- منطق الحذف ---
-    if (formValues === false) {
-      // ✅ تحقق أن تاريخ بداية الجدولة >= تاريخ بداية الشعبة
-      // احسب تاريخ اليوم (بدون وقت)
-      const today = new Date();
-      today.setHours(0, 0, 0, 0);
-
-      // فلترة اللقاءات القديمة
-      const pastMeetings = sectionMeetings.filter((event) => {
-        const eventDate = new Date(event.start.split("T")[0]); // نفترض أن start فيه التاريخ
-        return eventDate < today;
+          if (!date || !startTime || !endTime) {
+            Swal.showValidationMessage("الرجاء إدخال جميع الحقول المطلوبة.");
+            return null;
+          }
+          if (startTime >= endTime) {
+            Swal.showValidationMessage(
+              "وقت النهاية يجب أن يكون بعد وقت البداية."
+            );
+            return null;
+          }
+          return { date, startTime, endTime, location };
+        },
       });
 
-      // لو فيه لقاءات قديمة، احذفها من DB
-      for (const meeting of pastMeetings) {
-        try {
-          const res = await fetch(
-            `/api/courses/courseSections/meetings/delete`,
-            {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: meeting.id }),
-            }
-          );
+      // ✅ منطق الحذف المُصلح - فقط نحذف اللقاء المحدد بعد التأكيد
+      if (isDenied) {
+        const { isConfirmed } = await Swal.fire({
+          title: "هل أنت متأكد؟",
+          text: "سيتم حذف هذا اللقاء نهائياً!",
+          icon: "warning",
+          showCancelButton: true,
+          confirmButtonColor: "#d33",
+          cancelButtonColor: "#3085d6",
+          confirmButtonText: "نعم، احذفه!",
+          cancelButtonText: "إلغاء",
+        });
 
-          if (res.ok) {
+        if (isConfirmed) {
+          setIsLoading(true);
+          try {
+            const res = await fetch(
+              `/api/courses/courseSections/meetings/delete`,
+              {
+                method: "DELETE",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ id: clickedEventId }),
+              }
+            );
+
+            if (!res.ok) throw new Error("فشل حذف اللقاء.");
+
             // تحديث الواجهة
             setSectionMeetings((prev) =>
-              prev.filter((ev) => ev.id !== meeting.id)
+              prev.filter((event) => event.id !== clickedEventId)
             );
-            
-          } else {
-           
+
+            // ✅ تحديث أرقام اللقاءات بعد الحذف
+            await updateMeetingNumbers();
+
+            Swal.fire("تم الحذف!", "تم حذف اللقاء بنجاح.", "success");
+            router.refresh();
+          } catch (error: any) {
+            Swal.fire("خطأ", error.message, "error");
           }
-        } catch (error) {
-          console.error("Error deleting meeting:", error);
+          setIsLoading(false);
         }
+        return;
       }
-      const { isConfirmed } = await Swal.fire({
-        title: "هل أنت متأكد؟",
-        text: "سيتم حذف هذا اللقاء نهائياً!",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonColor: "#d33",
-        cancelButtonColor: "#3085d6",
-        confirmButtonText: "نعم، احذفه!",
-        cancelButtonText: "إلغاء",
+
+      // إذا أغلق المستخدم النافذة
+      if (isDismissed || !formValues) return;
+
+      const { date, startTime, endTime, location } = formValues;
+
+      // التحقق من التعارض (مع تجاهل اللقاء الحالي)
+      const startDateTime = new Date(`${date}T${startTime}`).getTime();
+      const endDateTime = new Date(`${date}T${endTime}`).getTime();
+
+      const conflictingEvent = combinedEvents.find((event) => {
+        if (event.id === clickedEventId) return false;
+        const eventDate = event.start.split("T")[0];
+        if (eventDate !== date) return false;
+        const existingStart = new Date(event.start).getTime();
+        const existingEnd = new Date(event.end).getTime();
+        return startDateTime < existingEnd && endDateTime > existingStart;
       });
 
-      if (isConfirmed) {
-        try {
-          // افترضنا وجود هذا الـ API
-          const res = await fetch(
-            `/api/courses/courseSections/meetings/delete`,
-            {
-              method: "DELETE",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({ id: clickedEventId }),
-            }
-          );
-
-          if (!res.ok) throw new Error("فشل حذف اللقاء.");
-
-          // تحديث الواجهة
-          setSectionMeetings((prev) =>
-            prev.filter((event) => event.id !== clickedEventId)
-          );
-          Swal.fire("تم الحذف!", "تم حذف اللقاء بنجاح.", "success");
-          router.push(`/coordinator/${userId}/courses/sections/meetings`);
-        } catch (error: any) {
-          Swal.fire("خطأ", error.message, "error");
-        }
+      if (conflictingEvent) {
+        Swal.fire(
+          "خطأ في التعديل",
+          "الوقت الجديد يتعارض مع لقاء آخر.",
+          "error"
+        );
+        return;
       }
+
+      setIsLoading(true);
+
+      try {
+        const res = await fetch(`/api/courses/courseSections/meetings/update`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: clickedEventId,
+            date,
+            startTime,
+            endTime,
+            location,
+          }),
+        });
+
+        if (!res.ok) throw new Error("فشل تحديث اللقاء.");
+        const updatedMeeting: Meeting = await res.json();
+
+        setSectionMeetings((prev) =>
+          prev.map((event) =>
+            event.id === clickedEventId
+              ? {
+                  ...event,
+                  start: `${date}T${startTime}`,
+                  end: `${date}T${endTime}`,
+                  title:
+                    `لقاء ${updatedMeeting.meetingNumber} - ${location}`.trim(),
+                }
+              : event
+          )
+        );
+        Swal.fire("تم التحديث!", "تم تعديل اللقاء بنجاح.", "success");
+        router.refresh();
+      } catch (error: any) {
+        Swal.fire("خطأ", error.message, "error");
+      }
+      setIsLoading(false);
+    },
+    [AllMeetings, section, combinedEvents, handleDuplicateMeeting, router]
+  );
+
+  // ✅ تحديث أرقام اللقاءات بعد الحذف
+  const updateMeetingNumbers = useCallback(async () => {
+    // سيتم تحديث الأرقام في الخلفية عند الـ refresh
+    // يمكن إضافة API خاص لإعادة ترقيم اللقاءات إذا لزم الأمر
+  }, []);
+
+  // ✅ حذف جميع اللقاءات (bulk delete)
+  const handleDeleteAllMeetings = useCallback(async () => {
+    if (sectionMeetings.length === 0) {
+      Swal.fire("تنبيه", "لا توجد لقاءات لحذفها", "info");
       return;
     }
 
-    // --- منطق التعديل ---
-    if (!formValues) return; // إذا أغلق المستخدم النافذة
-
-    const { date, startTime, endTime, location } = formValues;
-
-    // التحقق من التعارض (مع تجاهل اللقاء الحالي)
-    const startDateTime = new Date(`${date}T${startTime}`).getTime();
-    const endDateTime = new Date(`${date}T${endTime}`).getTime();
-
-    const conflictingEvent = combinedEvents.find((event) => {
-      if (event.id === clickedEventId) return false; // 👈 تجاهل اللقاء نفسه
-      const eventDate = event.start.split("T")[0];
-      if (eventDate !== date) return false;
-
-      const existingStart = new Date(event.start).getTime();
-      const existingEnd = new Date(event.end).getTime();
-      return startDateTime < existingEnd && endDateTime > existingStart;
+    const { isConfirmed } = await Swal.fire({
+      title: "⚠️ تحذير!",
+      html: `
+        <p class="text-red-600 font-bold">هل أنت متأكد من حذف جميع اللقاءات؟</p>
+        <p class="mt-2">سيتم حذف <strong>${sectionMeetings.length}</strong> لقاء نهائياً!</p>
+        <p class="text-sm text-gray-500 mt-2">هذا الإجراء لا يمكن التراجع عنه.</p>
+      `,
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#d33",
+      cancelButtonColor: "#3085d6",
+      confirmButtonText: "نعم، احذف الكل!",
+      cancelButtonText: "إلغاء",
     });
 
-    if (conflictingEvent) {
-      Swal.fire("خطأ في التعديل", "الوقت الجديد يتعارض مع لقاء آخر.", "error");
-      return;
-    }
+    if (!isConfirmed) return;
 
-    // حفظ التعديلات في قاعدة البيانات
+    setIsLoading(true);
+
     try {
-      // افترضنا وجود هذا الـ API
-      const res = await fetch(`/api/courses/courseSections/meetings/update`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          id: clickedEventId,
-          date,
-          startTime,
-          endTime,
-          location,
-        }),
-      });
+      const meetingIds = sectionMeetings.map((m) => m.id).filter(Boolean);
 
-      if (!res.ok) throw new Error("فشل تحديث اللقاء.");
-      const updatedMeeting: Meeting = await res.json();
-
-      setSectionMeetings((prev) =>
-        prev.map((event) =>
-          event.id === clickedEventId
-            ? {
-                ...event,
-                start: `${date}T${startTime}`,
-                end: `${date}T${endTime}`,
-                title:
-                  `لقاء ${updatedMeeting.meetingNumber} - ${location}`.trim(),
-              }
-            : event
-        )
+      // ✅ استخدام bulk-delete بدلاً من حذف واحد تلو الآخر
+      const res = await fetch(
+        `/api/courses/courseSections/meetings/bulk-delete`,
+        {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ids: meetingIds }),
+        }
       );
-      Swal.fire("تم التحديث!", "تم تعديل اللقاء بنجاح.", "success");
-      router.push(`/coordinator/${userId}/courses/sections/meetings`);
+
+      if (!res.ok) throw new Error("فشل حذف اللقاءات");
+
+      setSectionMeetings([]);
+      setNextMeetingNumber(1);
+      setHasExistingMeetings(false);
+
+      Swal.fire("تم الحذف!", "تم حذف جميع اللقاءات بنجاح.", "success");
+      router.refresh();
     } catch (error: any) {
       Swal.fire("خطأ", error.message, "error");
     }
-  };
-  // ... (باقي الكود في الملف يبقى كما هو)
+    setIsLoading(false);
+  }, [sectionMeetings, router]);
+
+  // ✅ تصدير الجدول
+  const handleExport = useCallback(
+    async (format: "pdf" | "excel") => {
+      if (sectionMeetings.length === 0) {
+        Swal.fire("تنبيه", "لا توجد لقاءات للتصدير", "info");
+        return;
+      }
+
+      if (format === "pdf") {
+        exportToPDF(sectionMeetings, section.sectionNumber);
+      } else {
+        exportToExcel(sectionMeetings, section.sectionNumber);
+      }
+
+      Swal.fire({
+        icon: "success",
+        title: "تم التصدير!",
+        text: `تم تصدير الجدول بصيغة ${format === "pdf" ? "PDF" : "Excel"}`,
+        timer: 2000,
+        timerProgressBar: true,
+      });
+    },
+    [sectionMeetings, section.sectionNumber]
+  );
+
+  // ✅ دعم السحب والإفلات لنقل اللقاءات
+  const handleEventDrop = useCallback(
+    async (arg: {
+      event: { id: string; startStr: string; endStr: string };
+      revert: () => void;
+    }) => {
+      const { event, revert } = arg;
+      const newDate = event.startStr.split("T")[0];
+      const newStartTime = event.startStr.split("T")[1]?.slice(0, 5) || "09:00";
+      const newEndTime = event.endStr.split("T")[1]?.slice(0, 5) || "11:00";
+
+      const originalMeeting = AllMeetings.find(
+        (jm) => jm.meetings.id === event.id
+      )?.meetings;
+      if (!originalMeeting || originalMeeting.sectionId !== section.id) {
+        revert();
+        return;
+      }
+
+      // التحقق من التعارض
+      const startDateTime = new Date(event.startStr).getTime();
+      const endDateTime = new Date(event.endStr).getTime();
+
+      const conflictingEvent = combinedEvents.find((e) => {
+        if (e.id === event.id) return false;
+        const eventDate = e.start.split("T")[0];
+        if (eventDate !== newDate) return false;
+        const existingStart = new Date(e.start).getTime();
+        const existingEnd = new Date(e.end).getTime();
+        return startDateTime < existingEnd && endDateTime > existingStart;
+      });
+
+      if (conflictingEvent) {
+        revert();
+        Swal.fire("خطأ", "يوجد تعارض مع لقاء آخر في هذا الموعد.", "error");
+        return;
+      }
+
+      try {
+        const res = await fetch(`/api/courses/courseSections/meetings/update`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            id: event.id,
+            date: newDate,
+            startTime: newStartTime,
+            endTime: newEndTime,
+            location: originalMeeting.location,
+          }),
+        });
+
+        if (!res.ok) {
+          revert();
+          throw new Error("فشل تحديث موعد اللقاء.");
+        }
+
+        Swal.fire({
+          icon: "success",
+          title: "تم النقل!",
+          text: "تم تحديث موعد اللقاء بنجاح",
+          timer: 2000,
+          timerProgressBar: true,
+        });
+        router.refresh();
+      } catch (error: any) {
+        revert();
+        Swal.fire("خطأ", error.message, "error");
+      }
+    },
+    [AllMeetings, section, combinedEvents, router]
+  );
 
   return {
     combinedEvents,
+    sectionMeetings,
     hasExistingMeetings,
+    isLoading,
+    nextMeetingNumber,
     handleAutoSchedule,
     chooseDaysGroup,
     handleManualAdd,
     handleEventClick,
+    handleDeleteAllMeetings,
+    handleExport,
+    handleEventDrop,
+    handleDuplicateMeeting,
   };
 };

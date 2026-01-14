@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { db } from "@/src/db";
-import { courseSections } from "@/src/db/schema";
+import { courseSections, courseLeads } from "@/src/db/schema";
 
 // ========== GET شعبة واحدة ==========
 export async function GET(
@@ -35,7 +35,15 @@ export async function PUT(
   try {
     const values = await req.json();
 
-    // نحدث كل الحقول المرسلة من الفورم
+    // 1. جلب الحالة الحالية للشعبة قبل التحديث
+    const currentSection = await db.query.courseSections.findFirst({
+      where: eq(courseSections.id, params.id),
+    });
+
+    const oldStatus = currentSection?.status;
+    const newStatus = values.status;
+
+    // 2. تحديث الشعبة
     const updated = await db
       .update(courseSections)
       .set({
@@ -45,7 +53,7 @@ export async function PUT(
         maxCapacity: values.maxCapacity,
         location: values.location,
         courseType: values.courseType,
-        status: values.status,
+        status: newStatus,
         notes: values.notes,
       })
       .where(eq(courseSections.id, params.id))
@@ -53,6 +61,24 @@ export async function PUT(
 
     if (!updated.length) {
       return NextResponse.json({ error: "فشل تحديث الشعبة" }, { status: 400 });
+    }
+
+    // 3. التحقق مما إذا كانت الحالة تغيرت إلى "بدأت" أو "مغلقة" أو "مكتملة"
+    const isTerminatingStatus = (status: string) =>
+      ["in_progress", "closed", "completed"].includes(status);
+
+    if (
+      isTerminatingStatus(newStatus) &&
+      !isTerminatingStatus(oldStatus || "")
+    ) {
+      // زيادة عداد عدم الاستجابة لكل المهتمين بهذه الشعبة الذين لم يتم تحويلهم (ما زالوا في فئة المهتمين)
+      await db
+        .update(courseLeads)
+        .set({
+          nonResponseCount: sql`${courseLeads.nonResponseCount} + 1`,
+          isActive: false, // تعطيل الطلب لهذه الشعبة لأنه انتهى وقت التسجيل فيها
+        })
+        .where(eq(courseLeads.sectionId, params.id));
     }
 
     return NextResponse.json(updated[0]);

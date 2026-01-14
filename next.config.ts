@@ -34,6 +34,11 @@ const config: NextConfig = {
     // هنا مكانها الصحيح
     qualities: [75, 80],
   },
+  experimental: {
+    serverActions: {
+      bodySizeLimit: "2gb", // زيادة الحد الأقصى لحجم الملفات المرفوعة (للفيديوهات الطويلة)
+    },
+  },
 };
 
 export default config;
