@@ -88,6 +88,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
     "no_response",
     "far_location",
     "cancel_reg",
+    "busy_morning",
+    "busy_evening",
   ];
 
   const allLeadsForCourse = await db
@@ -102,6 +104,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
       status: courseLeads.status,
       studentMajor: courseLeads.studentMajor,
       studentCountry: courseLeads.studentCountry,
+      nonResponseCount: courseLeads.nonResponseCount,
       sectionId: courseLeads.sectionId,
       originalSectionNumber: courseSections.sectionNumber,
     })
@@ -151,10 +154,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
   });
 
   const filteredOldLeads = latestLeadsPerStudent.filter((lead: any) => {
-    const totalNegative = negativeMap.get(lead.studentEmail) || 0;
-
-    // استبعاد إذا كانت أحدث حالة سلبية (لم يرد، سعر عالي، إلخ) وتكررت الحالات السلبية مرتين أو أكثر
-    if (negativeStatuses.includes(lead.status) && totalNegative >= 2) {
+    // جلب الطلاب الذين لم تتجاوز قلة استجابتهم مرتين (0 أو 1 أو 2)
+    if (lead.nonResponseCount > 2) {
       return false;
     }
 

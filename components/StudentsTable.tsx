@@ -453,6 +453,18 @@ const StudentsTable = ({
               المكان بعيد
             </Badge>
           );
+        case "busy_morning":
+          return (
+            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
+              مشغول فترة صباحية
+            </Badge>
+          );
+        case "busy_evening":
+          return (
+            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
+              مشغول فترة مسائية
+            </Badge>
+          );
         default:
           return (
             <Badge className="bg-gray-100 text-gray-700 border-gray-200">
@@ -657,6 +669,8 @@ const StudentsTable = ({
               <SelectItem value="future_course">الدورة القادمة</SelectItem>
               <SelectItem value="far_location">المكان بعيد</SelectItem>
               <SelectItem value="cancel_reg">يريد إلغاء التسجيل</SelectItem>
+              <SelectItem value="busy_morning">مشغول فترة صباحية</SelectItem>
+              <SelectItem value="busy_evening">مشغول فترة مسائية</SelectItem>
               <SelectItem value="interested">مهتم</SelectItem>
             </SelectContent>
           </Select>
@@ -921,6 +935,24 @@ const StudentsTable = ({
                                     }
                                   >
                                     ألغى
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "busy_morning",
+                                      })
+                                    }
+                                  >
+                                    مشغول فترة صباحية
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
+                                        status: "busy_evening",
+                                      })
+                                    }
+                                  >
+                                    مشغول فترة مسائية
                                   </DropdownMenuItem>
                                   <DropdownMenuItem
                                     onClick={() =>

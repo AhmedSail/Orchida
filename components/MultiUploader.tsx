@@ -4,6 +4,8 @@ import { useEffect, useState } from "react";
 import { FileState, MultiFileDropzone } from "./multi-file-dropzone";
 import Swal from "sweetalert2";
 
+import { uploadFile } from "@/lib/multipart-upload";
+
 type MultiUploaderProps = {
   bucket?: "publicFiles";
   onChange: (urls: string[]) => void;
@@ -79,37 +81,12 @@ export function MultiUploader({
           await Promise.all(
             addedFiles.map(async (addedFileState: FileState) => {
               try {
-                const url = await new Promise<string>((resolve, reject) => {
-                  const xhr = new XMLHttpRequest();
-                  xhr.open("POST", "/api/upload/r2");
-
-                  xhr.upload.onprogress = (event) => {
-                    if (event.lengthComputable) {
-                      const percentComplete =
-                        (event.loaded / event.total) * 100;
-                      updateFileProgress(addedFileState.key, percentComplete);
-                    }
-                  };
-
-                  xhr.onload = () => {
-                    if (xhr.status === 200) {
-                      try {
-                        const response = JSON.parse(xhr.responseText);
-                        resolve(response.url);
-                      } catch (e) {
-                        reject(e);
-                      }
-                    } else {
-                      reject(new Error("Upload failed"));
-                    }
-                  };
-
-                  xhr.onerror = () => reject(new Error("Upload failed"));
-
-                  const formData = new FormData();
-                  formData.append("file", addedFileState.file);
-                  xhr.send(formData);
-                });
+                const url = await uploadFile(
+                  addedFileState.file,
+                  (progress) => {
+                    updateFileProgress(addedFileState.key, progress);
+                  }
+                );
 
                 // تحديث حالة الملف بالرابط الجديد
                 setFileStates((prev) =>

@@ -241,7 +241,7 @@ const RegisterUser = ({
 
   return (
     <div
-      className="min-h-screen py-12 px-4 relative overflow-hidden bg-zinc-50 dark:bg-black"
+      className="min-h-screen py-12 px-4 relative overflow-hidden "
       dir="rtl"
     >
       {/* Background Decor */}

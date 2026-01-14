@@ -49,6 +49,18 @@ import {
 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Send,
+  Loader2,
+  MessageSquare as MessageSquareIcon,
+} from "lucide-react";
+import { cn } from "@/lib/utils";
+import Swal from "sweetalert2";
+import withReactContent from "sweetalert2-react-content";
+
+const MySwal = withReactContent(Swal);
 
 // ✅ دالة معرفة إذا المستخدم نشط الآن بناءً على الجلسة
 const isOnline = (userId: string, sessions: any[]) => {
@@ -120,6 +132,76 @@ const ControlUsers = ({
   const [open, setOpen] = useState(false);
   const [selectedUser, setSelectedUser] = useState<User | null>(null);
   const [role, setRole] = useState<string>("user");
+
+  const [selectedIds, setSelectedIds] = useState<string[]>([]);
+  const [smsMessage, setSmsMessage] = useState("");
+  const [isSendingSms, setIsSendingSms] = useState(false);
+
+  const toggleSelectAll = () => {
+    if (selectedIds.length === filteredUsers.length) {
+      setSelectedIds([]);
+    } else {
+      setSelectedIds(filteredUsers.map((u) => u.id));
+    }
+  };
+
+  const toggleSelectUser = (id: string) => {
+    setSelectedIds((prev) =>
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+    );
+  };
+
+  const handleSendBulkSMS = async () => {
+    if (selectedIds.length === 0) {
+      MySwal.fire("تنبيه", "يرجى اختيار مستخدم واحد على الأقل", "warning");
+      return;
+    }
+    if (!smsMessage.trim()) {
+      MySwal.fire("تنبيه", "يرجى كتابة نص الرسالة", "warning");
+      return;
+    }
+
+    const result = await MySwal.fire({
+      title: "إرسال رسائل جماعية للموظفين؟",
+      text: `سيتم إرسال الرسالة إلى ${selectedIds.length} مستخدم.`,
+      icon: "question",
+      showCancelButton: true,
+      confirmButtonText: "نعم، أرسل الآن",
+      cancelButtonText: "إلغاء",
+    });
+
+    if (!result.isConfirmed) return;
+
+    setIsSendingSms(true);
+    try {
+      const selectedMobiles = allUsers
+        .filter((u) => selectedIds.includes(u.id) && u.phone)
+        .map((u) => u.phone);
+
+      const res = await fetch("/api/sms/bulk", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          mobiles: selectedMobiles,
+          text: smsMessage,
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        MySwal.fire("تم بنجاح!", data.message, "success");
+        setSmsMessage("");
+        setSelectedIds([]);
+      } else {
+        const error = await res.json();
+        MySwal.fire("فشل!", error.message, "error");
+      }
+    } catch (error) {
+      MySwal.fire("خطأ", "فشل في الاتصال بالسيرفر", "error");
+    } finally {
+      setIsSendingSms(false);
+    }
+  };
 
   const openRoleModal = (user: User) => {
     setSelectedUser(user);
@@ -226,11 +308,63 @@ const ControlUsers = ({
         </Select>
       </div>
 
+      {/* SMS Sending Panel */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="bg-white dark:bg-zinc-950 p-6 rounded-[32px] border border-blue-100 dark:border-blue-900/30 shadow-xl space-y-4"
+      >
+        <div className="flex items-center gap-2 text-blue-600 dark:text-blue-400 mb-2">
+          <MessageSquareIcon className="w-5 h-5" />
+          <h2 className="font-black">إرسال رسائل SMS للموظفين والمستخدمين</h2>
+        </div>
+        <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex-1">
+            <Textarea
+              placeholder="اكتب نص الرسالة هنا..."
+              className="rounded-2xl border-zinc-200 dark:border-zinc-800 min-h-[100px] bg-zinc-50 dark:bg-zinc-900 resize-none focus:ring-blue-500"
+              value={smsMessage}
+              onChange={(e) => setSmsMessage(e.target.value)}
+            />
+          </div>
+          <div className="flex flex-col justify-end gap-2 text-right">
+            <div className="text-sm text-zinc-500 mb-2">
+              المختارون:{" "}
+              <span className="font-black text-blue-600">
+                {selectedIds.length}
+              </span>{" "}
+              مستخدم
+            </div>
+            <Button
+              className="bg-blue-600 hover:bg-blue-700 text-white rounded-2xl gap-2 h-12 px-8 shadow-lg shadow-blue-100 dark:shadow-none"
+              disabled={isSendingSms || selectedIds.length === 0}
+              onClick={handleSendBulkSMS}
+            >
+              {isSendingSms ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                <Send className="w-5 h-5" />
+              )}
+              إرسال الرسالة
+            </Button>
+          </div>
+        </div>
+      </motion.div>
+
       {/* Users Desktop View */}
       <div className="hidden lg:block bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/50">
+              <TableHead className="px-6 py-5 w-12">
+                <Checkbox
+                  checked={
+                    filteredUsers.length > 0 &&
+                    selectedIds.length === filteredUsers.length
+                  }
+                  onCheckedChange={toggleSelectAll}
+                />
+              </TableHead>
               <TableHead className="px-6 py-5 font-bold text-slate-500">
                 المستخدم
               </TableHead>
@@ -261,8 +395,18 @@ const ControlUsers = ({
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, scale: 0.95 }}
                     transition={{ delay: index * 0.05 }}
-                    className="group border-b border-slate-50 dark:border-zinc-900 hover:bg-slate-50/50 dark:hover:bg-zinc-900/20 transition-colors"
+                    className={cn(
+                      "group border-b border-slate-50 dark:border-zinc-900 hover:bg-slate-50/50 dark:hover:bg-zinc-900/20 transition-colors",
+                      selectedIds.includes(user.id) &&
+                        "bg-blue-50/30 dark:bg-blue-500/5"
+                    )}
                   >
+                    <TableCell className="px-6 py-5">
+                      <Checkbox
+                        checked={selectedIds.includes(user.id)}
+                        onCheckedChange={() => toggleSelectUser(user.id)}
+                      />
+                    </TableCell>
                     <TableCell className="px-6 py-5">
                       <div className="flex items-center gap-4">
                         <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 group-hover:bg-primary group-hover:text-white transition-all duration-300">

@@ -629,6 +629,8 @@ export const courseLeads = pgTable("courseLeads", {
   studentCountry: varchar("studentCountry", { length: 255 }),
   notes: text("notes"),
   status: varchar("status", { length: 50 }).default("new"), // new, contacted, interested, registered
+  isActive: boolean("isActive").default(true).notNull(),
+  nonResponseCount: integer("nonResponseCount").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 

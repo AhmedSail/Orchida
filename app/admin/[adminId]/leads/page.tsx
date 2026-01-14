@@ -10,7 +10,9 @@ export const metadata: Metadata = {
 const Page = () => {
   return (
     <div className="p-4 md:p-8">
-      <LeadsManagement />
+      <React.Suspense fallback={<div>جاري التحميل...</div>}>
+        <LeadsManagement />
+      </React.Suspense>
     </div>
   );
 };

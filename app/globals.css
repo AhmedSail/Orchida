@@ -194,3 +194,431 @@
   height: 10px;
   transform: scale(1.1); /* يعطيها تكبير إضافي */
 }
+
+/* ========================================
+   📅 FullCalendar Premium Styles
+   ======================================== */
+
+/* الحاوية الرئيسية للتقويم */
+.fc {
+  --fc-border-color: var(--border);
+  --fc-button-bg-color: var(--primary);
+  --fc-button-border-color: var(--primary);
+  --fc-button-hover-bg-color: #56487c;
+  --fc-button-hover-border-color: #56487c;
+  --fc-button-active-bg-color: #453a63;
+  --fc-button-active-border-color: #453a63;
+  --fc-today-bg-color: rgba(103, 87, 149, 0.08);
+  --fc-event-bg-color: var(--primary);
+  --fc-event-border-color: var(--primary);
+  --fc-page-bg-color: var(--card);
+  direction: rtl;
+  font-family: "BigVestaRegular", sans-serif !important;
+}
+
+/* خلفية التقويم بتأثير glassmorphism */
+.fc .fc-view-harness {
+  background: var(--card);
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 4px 24px rgba(103, 87, 149, 0.08);
+  border: 1px solid var(--border);
+}
+
+/* شريط الأدوات العلوي */
+.fc .fc-toolbar {
+  padding: 16px 20px;
+  background: linear-gradient(135deg, var(--primary) 0%, #56487c 100%);
+  border-radius: 16px 16px 0 0;
+  margin-bottom: 0 !important;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.fc .fc-toolbar-title {
+  color: white !important;
+  font-size: 1.25rem !important;
+  font-weight: 700 !important;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* أزرار التنقل */
+.fc .fc-button {
+  background: rgba(255, 255, 255, 0.15) !important;
+  border: 1px solid rgba(255, 255, 255, 0.25) !important;
+  color: white !important;
+  border-radius: 10px !important;
+  padding: 8px 16px !important;
+  font-weight: 600 !important;
+  font-size: 0.875rem !important;
+  transition: all 0.25s ease !important;
+  backdrop-filter: blur(4px);
+  text-shadow: none !important;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1) !important;
+}
+
+.fc .fc-button:hover {
+  background: rgba(255, 255, 255, 0.25) !important;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15) !important;
+}
+
+.fc .fc-button:active,
+.fc .fc-button-active {
+  background: rgba(255, 255, 255, 0.35) !important;
+  transform: scale(0.98);
+}
+
+.fc .fc-button:disabled {
+  opacity: 0.5 !important;
+  cursor: not-allowed !important;
+}
+
+/* مجموعة الأزرار */
+.fc .fc-button-group {
+  gap: 4px;
+}
+
+.fc .fc-button-group > .fc-button {
+  border-radius: 8px !important;
+}
+
+/* رؤوس الأيام */
+.fc .fc-col-header-cell {
+  background: linear-gradient(180deg, var(--secondary) 0%, var(--muted) 100%);
+  padding: 12px 8px !important;
+  border: none !important;
+  border-bottom: 2px solid var(--primary) !important;
+}
+
+.fc .fc-col-header-cell-cushion {
+  color: var(--primary) !important;
+  font-weight: 700 !important;
+  font-size: 0.9rem !important;
+  text-decoration: none !important;
+}
+
+/* خلايا الأيام */
+.fc .fc-daygrid-day {
+  transition: all 0.2s ease;
+  border: 1px solid var(--border) !important;
+}
+
+.fc .fc-daygrid-day:hover {
+  background: rgba(103, 87, 149, 0.05) !important;
+}
+
+.fc .fc-daygrid-day-number {
+  color: var(--foreground) !important;
+  font-weight: 600 !important;
+  padding: 8px 12px !important;
+  font-size: 0.95rem !important;
+}
+
+/* اليوم الحالي */
+.fc .fc-day-today {
+  background: linear-gradient(
+    135deg,
+    rgba(103, 87, 149, 0.08) 0%,
+    rgba(103, 87, 149, 0.15) 100%
+  ) !important;
+  position: relative;
+}
+
+.fc .fc-day-today::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, var(--primary), #897baa);
+  border-radius: 0 0 4px 4px;
+}
+
+.fc .fc-day-today .fc-daygrid-day-number {
+  background: var(--primary);
+  color: white !important;
+  border-radius: 50%;
+  width: 32px;
+  height: 32px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 4px;
+}
+
+/* الأحداث (اللقاءات) */
+.fc .fc-event {
+  border-radius: 8px !important;
+  border: none !important;
+  padding: 4px 8px !important;
+  font-size: 0.8rem !important;
+  font-weight: 600 !important;
+  cursor: pointer !important;
+  transition: all 0.25s ease !important;
+  box-shadow: 0 2px 6px rgba(103, 87, 149, 0.2);
+  margin: 2px !important;
+}
+
+/* لقاءات الشعبة الحالية */
+.fc .fc-event:not([style*="background-color: rgb(108, 117, 125)"]) {
+  background: linear-gradient(
+    135deg,
+    var(--primary) 0%,
+    #56487c 100%
+  ) !important;
+}
+
+.fc .fc-event:hover {
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: 0 4px 12px rgba(103, 87, 149, 0.35) !important;
+}
+
+/* لقاءات الشعب الأخرى (المحجوزة) */
+.fc .fc-event[style*="background-color: rgb(108, 117, 125)"] {
+  background: linear-gradient(135deg, #6c757d 0%, #495057 100%) !important;
+  opacity: 0.75;
+}
+
+/* عنوان الحدث */
+.fc .fc-event-title {
+  font-weight: 600 !important;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.15);
+}
+
+.fc .fc-event-time {
+  font-weight: 500 !important;
+  opacity: 0.9;
+}
+
+/* عرض الأسبوع واليوم */
+.fc .fc-timegrid-slot {
+  height: 48px !important;
+  border-color: var(--border) !important;
+}
+
+.fc .fc-timegrid-slot-label {
+  font-size: 0.75rem !important;
+  color: var(--muted-foreground) !important;
+  font-weight: 500 !important;
+}
+
+.fc .fc-timegrid-axis {
+  padding: 0 8px !important;
+}
+
+/* خط الوقت الحالي */
+.fc .fc-timegrid-now-indicator-line {
+  border-color: #ef4444 !important;
+  border-width: 2px !important;
+}
+
+.fc .fc-timegrid-now-indicator-arrow {
+  border-color: #ef4444 !important;
+  border-width: 6px !important;
+}
+
+/* أيام نهاية الأسبوع */
+.fc .fc-day-sat,
+.fc .fc-day-fri {
+  background: rgba(103, 87, 149, 0.03);
+}
+
+/* ========================================
+   🌙 FullCalendar Dark Mode
+   ======================================== */
+
+.dark .fc .fc-view-harness {
+  background: var(--card);
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.3);
+  border-color: var(--border);
+}
+
+.dark .fc .fc-toolbar {
+  background: linear-gradient(135deg, #2d2838 0%, #1a1721 100%);
+}
+
+.dark .fc .fc-col-header-cell {
+  background: linear-gradient(180deg, #2d2838 0%, #1a1721 100%);
+  border-bottom-color: var(--primary) !important;
+}
+
+.dark .fc .fc-col-header-cell-cushion {
+  color: #ab9fc0 !important;
+}
+
+.dark .fc .fc-daygrid-day {
+  border-color: var(--border) !important;
+}
+
+.dark .fc .fc-daygrid-day:hover {
+  background: rgba(103, 87, 149, 0.15) !important;
+}
+
+.dark .fc .fc-daygrid-day-number {
+  color: var(--foreground) !important;
+}
+
+.dark .fc .fc-day-today {
+  background: linear-gradient(
+    135deg,
+    rgba(103, 87, 149, 0.15) 0%,
+    rgba(103, 87, 149, 0.25) 100%
+  ) !important;
+}
+
+.dark .fc .fc-event {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.dark .fc .fc-event:hover {
+  box-shadow: 0 4px 16px rgba(103, 87, 149, 0.5) !important;
+}
+
+.dark .fc .fc-timegrid-slot {
+  border-color: var(--border) !important;
+}
+
+.dark .fc .fc-day-sat,
+.dark .fc .fc-day-fri {
+  background: rgba(103, 87, 149, 0.08);
+}
+
+/* ========================================
+   📱 FullCalendar Responsive
+   ======================================== */
+
+@media (max-width: 768px) {
+  .fc .fc-toolbar {
+    padding: 12px;
+    border-radius: 12px 12px 0 0;
+  }
+
+  .fc .fc-toolbar-title {
+    font-size: 1rem !important;
+  }
+
+  .fc .fc-button {
+    padding: 6px 10px !important;
+    font-size: 0.75rem !important;
+  }
+
+  .fc .fc-view-harness {
+    border-radius: 12px;
+  }
+
+  .fc .fc-daygrid-day-number {
+    padding: 4px 8px !important;
+    font-size: 0.85rem !important;
+  }
+
+  .fc .fc-event {
+    padding: 2px 4px !important;
+    font-size: 0.7rem !important;
+  }
+
+  .fc .fc-col-header-cell-cushion {
+    font-size: 0.75rem !important;
+  }
+}
+
+/* ========================================
+   🖱️ FullCalendar Drag & Drop Styles
+   ======================================== */
+
+/* حدث قيد السحب */
+.fc .fc-event.fc-event-dragging {
+  opacity: 0.85;
+  box-shadow: 0 8px 25px rgba(103, 87, 149, 0.4) !important;
+  transform: scale(1.05) rotate(2deg);
+  cursor: grabbing !important;
+  z-index: 1000;
+}
+
+/* مؤشر السحب */
+.fc .fc-event:not(.other-section-event) {
+  cursor: grab;
+}
+
+.fc .fc-event:not(.other-section-event):active {
+  cursor: grabbing;
+}
+
+/* تمييز اليوم عند السحب فوقه */
+.fc .fc-day.fc-day-highlighted {
+  background: rgba(103, 87, 149, 0.15) !important;
+  border: 2px dashed var(--primary) !important;
+}
+
+/* لقاءات الشعبة الحالية - قابلة للسحب */
+.fc .current-section-event {
+  cursor: grab !important;
+  position: relative;
+}
+
+.fc .current-section-event::after {
+  content: "⋮⋮";
+  position: absolute;
+  left: 4px;
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 10px;
+  opacity: 0.5;
+  color: white;
+}
+
+.fc .current-section-event:hover::after {
+  opacity: 1;
+}
+
+/* لقاءات الشعب الأخرى - غير قابلة للسحب */
+.fc .other-section-event {
+  cursor: not-allowed !important;
+  opacity: 0.7;
+}
+
+.fc .other-section-event:hover {
+  transform: none !important;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.15) !important;
+}
+
+/* تأثير النجاح عند إسقاط الحدث */
+@keyframes dropSuccess {
+  0% {
+    transform: scale(1.1);
+    box-shadow: 0 0 20px rgba(34, 197, 94, 0.5);
+  }
+  100% {
+    transform: scale(1);
+    box-shadow: 0 2px 6px rgba(103, 87, 149, 0.2);
+  }
+}
+
+.fc .fc-event.drop-success {
+  animation: dropSuccess 0.3s ease-out;
+}
+
+/* ========================================
+   📱 Loading Animation
+   ======================================== */
+
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+.fc .fc-event.loading {
+  background: linear-gradient(
+    90deg,
+    var(--primary) 25%,
+    rgba(103, 87, 149, 0.5) 50%,
+    var(--primary) 75%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}

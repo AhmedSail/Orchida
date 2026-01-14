@@ -11,11 +11,16 @@ export async function PATCH(
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { status } = body;
+    const { status, nonResponseCount, isActive } = body;
+    const updateData: any = {};
+    if (status !== undefined) updateData.status = status;
+    if (nonResponseCount !== undefined)
+      updateData.nonResponseCount = nonResponseCount;
+    if (isActive !== undefined) updateData.isActive = isActive;
 
     const updatedLead = await db
       .update(courseLeads)
-      .set({ status })
+      .set(updateData)
       .where(eq(courseLeads.id, id))
       .returning();
 

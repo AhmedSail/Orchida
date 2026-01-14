@@ -1,9 +1,9 @@
 import Image from "next/image";
 
 export default function Loading() {
-  const word = "Orchida"; // أو "أوركيدة" لو بدك بالعربي
+  const word = "Orchida"; // أو "أوركيدا" لو بدك بالعربي
   return (
-    <div className="mx-auto mt-32 text-center">
+    <div className="mx-auto mt-32 text-center" dir="ltr">
       {/* اللوجو */}
       <Image
         src="/logoLoading.webp"

@@ -59,25 +59,38 @@ export async function POST(req: Request) {
       );
     }
 
-    // 2. منع التكرار لنفس الطالب في نفس الشعبة
-    const existingLead = await db
+    // 2. منع التكرار لنفس الطالب في نفس الدورة (Course)
+    const existingLeadOnCourse = await db
       .select()
       .from(courseLeads)
       .where(
         and(
           eq(courseLeads.studentEmail, body.studentEmail),
-          eq(courseLeads.sectionId, body.sectionId)
+          eq(courseLeads.courseId, body.courseId)
         )
       )
       .limit(1);
 
-    if (existingLead[0]) {
+    if (existingLeadOnCourse[0]) {
+      // إذا كان مسجلاً سابقاً في نفس الدورة (حتى لو شعبة مختلفة)
+      // نقوم بتحديث طلبه الحالي بدلاً من إنشاء طلب جديد
+      await db
+        .update(courseLeads)
+        .set({
+          sectionId: body.sectionId, // تحديث للشعبة الجديدة المقترحة
+          nonResponseCount: 0, // تصفير العداد للاهتمام الجديد
+          isActive: true,
+          status: "new", // إعادة الحالة لجديد
+        })
+        .where(eq(courseLeads.id, existingLeadOnCourse[0].id));
+
       return NextResponse.json(
         {
-          message: "لقد قمت بالتسجيل مسبقاً في هذه الشعبة. سنتواصل معك قريباً.",
-          code: "ALREADY_REGISTERED",
+          message:
+            "تم تحديث بيانات اهتمامك بهذه الدورة بنجاح. سنقوم بالتواصل معك قريباً.",
+          lead: existingLeadOnCourse[0],
         },
-        { status: 409 }
+        { status: 200 }
       );
     }
 
@@ -106,7 +119,18 @@ export async function POST(req: Request) {
       });
     }
 
-    // 4. إنشاء طلب التسجيل (Lead)
+    // 4. تصفير الـ nonResponseCount لأي طلبات سابقة بنفس الإيميل أو الهاتف
+    await db
+      .update(courseLeads)
+      .set({ nonResponseCount: 0 })
+      .where(
+        and(
+          eq(courseLeads.studentEmail, body.studentEmail),
+          eq(courseLeads.studentPhone, body.studentPhone)
+        )
+      );
+
+    // 5. إنشاء طلب التسجيل (Lead)
     const lead = {
       id: uuidv4(),
       courseId: body.courseId,
@@ -119,6 +143,8 @@ export async function POST(req: Request) {
       studentMajor: body.studentMajor || null,
       studentCountry: body.studentCountry || null,
       status: body.status || "new",
+      isActive: true,
+      nonResponseCount: 0,
       notes: body.notes || null,
     };
 
