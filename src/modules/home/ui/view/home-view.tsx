@@ -1,6 +1,5 @@
 "use client";
 import { Button } from "../../../../../components/ui/button";
-import Slider from "@/components/SliderCode"; // استدعاء الكومبوننت الجديد
 import { motion, Variants } from "framer-motion";
 import { Link } from "next-view-transitions";
 import ServicesFound from "@/components/admin/service/servicesFound";
@@ -62,45 +61,50 @@ const HomeView = ({
   }[];
 }) => {
   return (
-    <div className="min-h-screen w-full ">
-      {/* الكاروسيل الثاني (Slider) */}
-      <div className="w-full md:h-screen overflow-x-hidden ">
-        <Slider sliders={sliders} />
+    <div className="min-h-screen w-full bg-white">
+      {/* 1. السلايدر الرئيسي (آخر المستجدات) */}
+      <section className="w-full">
+        <LatestNewsUser news={news} />
+      </section>
+
+      {/* 2. الخدمات وباقي المحتوى */}
+      <div className="relative z-10 bg-white rounded-t-[3.5rem] -mt-12 pt-20 pb-12 shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.1)]">
+        <div className="container mx-auto px-6">
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            whileInView={{ opacity: 1, x: 0 }}
+            viewport={{ once: true }}
+            className="flex items-center justify-start gap-4 mb-12"
+            dir="rtl"
+          >
+            <div className="w-2 h-8 bg-primary rounded-full shadow-lg shadow-primary/20"></div>
+            <h2 className="text-2xl md:text-3xl  text-gray-900">
+              خدماتنا <span className="text-primary">المتميزة</span>
+            </h2>
+          </motion.div>
+
+          <ServicesFound services={services} />
+
+          <motion.div
+            className="flex justify-center items-center mt-16"
+            initial={{ opacity: 0, y: 30 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+          >
+            <Button
+              asChild
+              className="h-16 px-14 rounded-full bg-gray-900 text-white hover:bg-primary transition-all duration-500 shadow-2xl hover:scale-105 text-lg font-bold"
+            >
+              <Link href="/services">استكشف جميع الخدمات</Link>
+            </Button>
+          </motion.div>
+        </div>
       </div>
 
-      <div className="p-6 container mx-auto">
-        <motion.div
-          initial={{ opacity: 0, x: 20 }}
-          whileInView={{ opacity: 1, x: 0 }}
-          viewport={{ once: true }}
-          className="flex items-center justify-start gap-3 text-right"
-          dir="rtl"
-        >
-          <div className="w-1.5 h-10 bg-primary rounded-full"></div>
-          <h2 className="text-3xl md:text-4xl font-bold text-gray-900 text-right">
-            خدماتنا <span className="text-primary">المتميزة</span>
-          </h2>
-        </motion.div>
-        <ServicesFound services={services} />
-        <motion.div
-          className="flex justify-center items-center mt-10"
-          initial={{ opacity: 0, y: 50 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ duration: 1 }}
-          viewport={{ once: true }}
-        >
-          <Button className="w-1/3 hover:bg-white hover:text-primary hover:shadow-primary hover:shadow">
-            <Link href="/services">تصفح كل الخدمات</Link>
-          </Button>
-        </motion.div>
-      </div>
-      <div className="p-6">
-        <LatestNewsUser news={news} />
-      </div>
       <div className="p-6">
         <CoursesUser allCourses={allCourses} />
       </div>
-      <div>
+      <div className="py-12 bg-gray-50/50">
         <StudentWorksHome studentStories={studentStories} />
       </div>
     </div>

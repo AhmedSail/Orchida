@@ -184,7 +184,7 @@ export default function WorkPage({
                       className="w-full h-full max-h-[600px] object-contain"
                     />
                   ) : (
-                    <div className="relative w-full h-full lg:h-[600px] group">
+                    <div className="relative w-full aspect-[4/5] group">
                       <Image
                         src={work.imageUrl || "/placeholder.jpg"}
                         alt={work.title}
