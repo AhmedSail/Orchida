@@ -5,10 +5,35 @@ import { news } from "@/src/db/schema"; // جدول الأخبار
 import { eq } from "drizzle-orm";
 
 import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| الخبر",
-};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const { id } = await params;
+  const itemRaw = await db
+    .select({
+      title: news.title,
+      summary: news.summary,
+    })
+    .from(news)
+    .where(eq(news.id, id))
+    .limit(1);
+
+  const item = itemRaw[0];
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+
+  return {
+    title: item?.title ? `${item.title} | اوركيدة` : "المركز الإعلامي",
+    description: item?.summary || "آخر أخبار ومستجدات اوركيدة",
+    alternates: {
+      canonical: `${baseUrl}/news/${id}`,
+    },
+  };
+}
 
 const eventTypeMap: Record<string, string> = {
   news: "خبر",
