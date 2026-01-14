@@ -171,7 +171,7 @@ export default function LatestNewsHome({ allNews }: { allNews: any[] }) {
             </div>
 
             {/* إحصائيات سريعة */}
-            <div className="bg-gradient-to-br from-primary to-blue-700 rounded-3xl p-8 text-white hidden lg:block shadow-xl shadow-primary/20">
+            <div className="bg-linear-to-br from-primary to-blue-700 rounded-3xl p-8 text-white hidden lg:block shadow-xl shadow-primary/20">
               <h3 className="font-bold mb-2">إجمالي المحتوى</h3>
               <p className="text-4xl font-black">{filteredNews.length}</p>
               <div className="w-12 h-1.5 bg-white/20 rounded-full mt-4" />
@@ -187,7 +187,7 @@ export default function LatestNewsHome({ allNews }: { allNews: any[] }) {
                   initial={{ opacity: 0, scale: 0.95 }}
                   animate={{ opacity: 1, scale: 1 }}
                   exit={{ opacity: 0, scale: 0.95 }}
-                  className="flex flex-col items-center justify-center min-h-[500px] bg-white rounded-[2rem] border-2 border-dashed border-gray-200 p-12 text-center"
+                  className="flex flex-col items-center justify-center min-h-[500px] bg-white rounded-4xl border-2 border-dashed border-gray-200 p-12 text-center"
                 >
                   <div className="w-24 h-24 bg-gray-50 rounded-full flex items-center justify-center mb-6 text-4xl">
                     🕵️‍♂️
@@ -222,10 +222,10 @@ export default function LatestNewsHome({ allNews }: { allNews: any[] }) {
                       initial={{ opacity: 0, y: 20 }}
                       animate={{ opacity: 1, y: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      className="group bg-white rounded-[1.5rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
+                      className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
                     >
                       {/* Image Container */}
-                      <div className="relative aspect-[4/5] overflow-hidden bg-gray-100">
+                      <div className="relative aspect-4/5 overflow-hidden bg-gray-100">
                         <Image
                           src={item.imageUrl || "/placeholder.png"}
                           alt={item.title}
