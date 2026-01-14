@@ -162,7 +162,7 @@ const WorkService = ({
 
                 {/* Main Text Content */}
                 <div className="transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-                  <h3 className="text-3xl font-black mb-3 leading-tight drop-shadow-lg text-transparent bg-linear-to-r from-white to-gray-200 bg-clip-text">
+                  <h3 className="text-2xl font-black mb-3 leading-tight drop-shadow-lg text-transparent bg-linear-to-r from-white to-gray-200 bg-clip-text">
                     {work.title}
                   </h3>
 

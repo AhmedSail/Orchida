@@ -13,7 +13,7 @@ import {
   users,
 } from "@/src/db/schema";
 import { db } from "@/src";
-import { eq, inArray } from "drizzle-orm";
+import { eq, inArray, desc } from "drizzle-orm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -26,12 +26,12 @@ export const metadata: Metadata = {
 };
 
 const page = async () => {
-  // ✅ جلب جميع البيانات بالتوازي لتحسين الأداء
+  // ✅ جلب جميع البيانات بالتوازي مع ترتيب الأخبار تنازلياً
   const [services, slidersPhoto, newsData, sections, rowData, studentStories] =
     await Promise.all([
       db.select().from(digitalServices),
       db.select().from(sliders),
-      db.select().from(news),
+      db.select().from(news).orderBy(desc(news.publishedAt)),
       db.select().from(courseSections),
       db
         .select({
