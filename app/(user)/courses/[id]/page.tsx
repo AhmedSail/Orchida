@@ -11,10 +11,35 @@ type Instructor = {
   bio?: string; // نبذة (اختياري)
 };
 import { Metadata } from "next";
-export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| الدورة التدريبية",
-};
+
+export async function generateMetadata({
+  params,
+}: {
+  params: { id: string };
+}): Promise<Metadata> {
+  const { id } = await params;
+  const courseRaw = await db
+    .select({
+      title: courses.title,
+      description: courses.description,
+    })
+    .from(courses)
+    .where(eq(courses.id, id))
+    .limit(1);
+
+  const course = courseRaw[0];
+
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+
+  return {
+    title: course?.title ? `${course.title} | اوركيدة` : "الدورة التدريبية",
+    description: course?.description || "تفاصيل الدورة التدريبية من اوركيدة",
+    alternates: {
+      canonical: `${baseUrl}/courses/${id}`,
+    },
+  };
+}
 const page = async ({ params }: { params: { id: string } }) => {
   const courseId = await params;
 
