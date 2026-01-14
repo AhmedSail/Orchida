@@ -155,7 +155,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                           {buttonLoading === item.id ? (
                             <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
                           ) : (
-                            <ArrowLeft className="group-hover:-translate-x-2 transition-transform text-primary" />
+                            <ArrowLeft className="group-hover:-translate-x-2 transition-transform group-hover:text-white text-primary" />
                           )}
                         </div>
                         <span className="text-lg font-black tracking-widest uppercase text-primary transition-colors">

@@ -72,7 +72,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
               quality={90}
             />
             {/* غطاء مظلم متدرج للتركيز على المحتوى */}
-            <div className="absolute inset-0 bg-gradient-to-b from-black/20 via-transparent to-black/60" />
+            <div className="absolute inset-0 bg-linear-to-b from-black/20 via-transparent to-black/60" />
           </motion.div>
 
           {/* نصوص السلايدر في المنتصف */}
@@ -133,7 +133,7 @@ export default function Slider({ sliders }: { sliders: SliderType[] }) {
         transition={{ duration: 2, repeat: Infinity }}
         className="absolute bottom-10 left-1/2 -translate-x-1/2 z-30 opacity-50 flex flex-col items-center gap-2"
       >
-        <div className="w-[1px] h-12 bg-gradient-to-b from-white to-transparent" />
+        <div className="w-px h-12 bg-linear-to-b from-white to-transparent" />
       </motion.div>
     </main>
   );
