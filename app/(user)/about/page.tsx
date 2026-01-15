@@ -15,7 +15,7 @@ export const metadata: Metadata = {
 
 type CompanyFormValues = {
   name: string;
-  phone: string;
+  phoneToCall: string;
   accountNumber?: string;
   ibanShekel?: string;
   ibanDinar?: string;
@@ -32,7 +32,7 @@ const page = async () => {
 
   const normalizedCompany: Partial<CompanyFormValues> = {
     name: company[0].name ?? "",
-    phone: company[0].phone ?? "",
+    phoneToCall: company[0].phoneToCall ?? "",
     accountNumber: company[0].accountNumber ?? "",
     ibanShekel: company[0].ibanShekel ?? "",
     ibanDinar: company[0].ibanDinar ?? "",
