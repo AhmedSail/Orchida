@@ -44,16 +44,8 @@ const LatestNews = ({
     <div>
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-primary mb-6">أحدث المستجدات</h1>
-        <Link href={`/${role}/${userId}/news/newNews`}>
-          <Button
-            className={`bg-primary text-white flex items-center gap-2 disabled:${pending} `}
-            onClick={() => setPending(!pending)}
-          >
-            إضافة خبر جديد
-          </Button>
-        </Link>
       </div>
-      <TableNews news={news} userId={userId} />
+      <TableNews news={news} userId={userId} role={role} />
     </div>
   );
 };

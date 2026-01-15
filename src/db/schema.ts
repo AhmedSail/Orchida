@@ -517,6 +517,8 @@ export const news = pgTable("news", {
   imagePublicId: varchar("imagePublicId", { length: 255 }), // ✅ public_id من Cloudinary
   publishedAt: timestamp("publishedAt"),
   isActive: boolean("isActive").default(true).notNull(),
+  isSlider: boolean("isSlider").default(false).notNull(), // ✅ هل يظهر في السلايدر الرئيسي
+  bgColor: varchar("bgColor", { length: 50 }).default("#6e5e9b"), // ✅ لون الخلفية في السلايدر
   // الحقل الجديد لتحديد نوع الحدث
   eventType: eventTypeEnum("eventType").default("news").notNull(),
 
