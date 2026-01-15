@@ -68,7 +68,7 @@ const HomeView = ({
       </section>
 
       {/* 2. الخدمات وباقي المحتوى */}
-      <div className="relative z-10 bg-white rounded-t-[3.5rem] -mt-32 pt-20 pb-12 shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.1)]">
+      <div className="relative z-10 bg-white rounded-t-[3.5rem] -mt-[7%] pt-20 pb-12 shadow-[0_-20px_50px_-20px_rgba(0,0,0,0.1)] ">
         <div className="container mx-auto px-6">
           <motion.div
             initial={{ opacity: 0, x: 20 }}
