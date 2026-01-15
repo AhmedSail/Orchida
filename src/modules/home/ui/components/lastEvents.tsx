@@ -69,7 +69,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
   };
 
   const activeNews = [...news]
-    .filter((item) => item.isActive)
+    .filter((item) => item.isActive && item.isSlider)
     .sort(
       (a, b) =>
         new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
@@ -79,7 +79,10 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
   if (!activeNews.length) return null;
 
   // Opposite color for pagination/elements based on active slide color
-  const inverseColor = activeIndex % 2 === 0 ? "#e0b016" : "#6e5e9b";
+  // Default to gold if background is purple, and vice versa
+  const currentBg =
+    activeNews[activeIndex]?.bgColor?.toLowerCase() || "#6e5e9b";
+  const inverseColor = currentBg === "#6e5e9b" ? "#e0b016" : "#6e5e9b";
 
   return (
     <div
@@ -108,7 +111,8 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
         className="w-full h-full"
       >
         {activeNews.map((item, index) => {
-          const slideColor = index % 2 === 0 ? "#6e5e9b" : "#e0b016";
+          const slideColor =
+            item.bgColor || (index % 2 === 0 ? "#6e5e9b" : "#e0b016");
 
           return (
             <SwiperSlide
@@ -309,7 +313,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
       <style jsx global>{`
         .swiper-pagination-bullets {
           bottom: auto !important;
-          top: 50% !important;
+          top: 10% !important;
           right: 40px !important;
           transform: translateY(-50%) !important;
           width: auto !important;

@@ -31,6 +31,8 @@ const formSchema = z.object({
   content: z.string().optional(),
   imageFile: z.any().optional(),
   isActive: z.boolean().optional(),
+  isSlider: z.boolean().optional(),
+  bgColor: z.string().optional(),
   eventType: z.enum([
     "news",
     "announcement",
@@ -57,7 +59,9 @@ export default function NewNewsForm({
       title: "",
       summary: "",
       content: "",
-      isActive: false,
+      isActive: true,
+      isSlider: false,
+      bgColor: "#6e5e9b",
       eventType: "news", // القيمة الافتراضية
     },
   });
@@ -81,7 +85,9 @@ export default function NewNewsForm({
         content: values.content || "",
         publishedAt: new Date().toISOString(),
         imageUrl,
-        isActive: values.isActive, // ✅ هنا التعديل
+        isActive: values.isActive,
+        isSlider: values.isSlider,
+        bgColor: values.bgColor,
         eventType: values.eventType, // ✅ إضافة النوع
       };
 
@@ -167,45 +173,93 @@ export default function NewNewsForm({
             </FormItem>
           )}
         />
-        <FormField
-          control={form.control}
-          name="eventType"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>نوع الحدث</FormLabel>
-              <FormControl>
-                <select {...field} className="border rounded-md p-2 w-full">
-                  <option value="news">خبر</option>
-                  <option value="announcement">إعلان</option>
-                  <option value="article">مقال</option>
-                  <option value="event">فعالية</option>
-                  <option value="update">تحديث</option>
-                  <option value="blog">مدونة</option>
-                  <option value="pressRelease">بيان صحفي</option>
-                  <option value="promotion">عرض ترويجي</option>
-                  <option value="alert">تنبيه</option>
-                </select>
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-        <FormField
-          control={form.control}
-          name="isActive"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>نشط</FormLabel>
-              <FormControl>
-                <Checkbox
-                  checked={field.value}
-                  onCheckedChange={field.onChange}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="eventType"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>نوع الحدث</FormLabel>
+                <FormControl>
+                  <select {...field} className="border rounded-md p-2 w-full">
+                    <option value="news">خبر</option>
+                    <option value="announcement">إعلان</option>
+                    <option value="article">مقال</option>
+                    <option value="event">فعالية</option>
+                    <option value="update">تحديث</option>
+                    <option value="blog">مدونة</option>
+                    <option value="pressRelease">بيان صحفي</option>
+                    <option value="promotion">عرض ترويجي</option>
+                    <option value="alert">تنبيه</option>
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="bgColor"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>لون الخلفية (للسلايدر)</FormLabel>
+                <FormControl>
+                  <select
+                    {...field}
+                    className="border rounded-md p-2 w-full bg-white transition-all focus:ring-2 focus:ring-purple-500"
+                    style={{ borderRight: `8px solid ${field.value}` }}
+                  >
+                    <option value="#6e5e9b">البنفسجي</option>
+                    <option value="#e0b016">الذهبي</option>
+                  </select>
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
+
+        <div className="flex gap-10 bg-gray-50 p-4 rounded-xl">
+          <FormField
+            control={form.control}
+            name="isActive"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="mr-3 leading-none">
+                  <FormLabel className="text-sm font-medium">نشط</FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isSlider"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="mr-3 leading-none">
+                  <FormLabel className="text-sm font-medium">
+                    تفعيل السلايدر
+                  </FormLabel>
+                </div>
+              </FormItem>
+            )}
+          />
+        </div>
 
         {/* رفع صورة */}
         <FormField

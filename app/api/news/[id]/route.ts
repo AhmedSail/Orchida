@@ -66,6 +66,8 @@ export async function PUT(
         imagePublicId: body.imagePublicId ?? existingNews[0].imagePublicId,
         eventType: body.eventType,
         isActive: body.isActive,
+        isSlider: body.isSlider,
+        bgColor: body.bgColor,
         publishedAt: body.publishedAt ? new Date(body.publishedAt) : new Date(),
         updatedAt: new Date(),
       })

@@ -46,6 +46,10 @@ export async function POST(req: Request) {
       | "alert"
       | undefined;
 
+    let isSlider: boolean = false;
+    let bgColor: string = "#6e5e9b";
+    let isActive: boolean = true;
+
     const contentType = req.headers.get("content-type") || "";
 
     if (contentType.includes("application/json")) {
@@ -57,6 +61,9 @@ export async function POST(req: Request) {
       publishedAt = body.publishedAt ? new Date(body.publishedAt) : new Date();
       eventType = body.eventType;
       imageUrl = body.imageUrl; // ✅ نخزن الرابط مباشرة
+      isActive = body.isActive ?? true;
+      isSlider = body.isSlider ?? false;
+      bgColor = body.bgColor ?? "#6e5e9b";
     } else if (contentType.includes("multipart/form-data")) {
       // 📌 لو البيانات جاية كـ FormData (رفع ملف)
       const formData = await req.formData();
@@ -64,25 +71,13 @@ export async function POST(req: Request) {
       summary = formData.get("summary") as string;
       content = formData.get("content") as string;
       publishedAt = new Date(formData.get("publishedAt") as string);
-      eventType = formData.get("eventType") as
-        | "news"
-        | "announcement"
-        | "article"
-        | "event"
-        | "update"
-        | "blog"
-        | "pressRelease"
-        | "promotion"
-        | "alert"
-        | undefined;
+      eventType = formData.get("eventType") as any;
+      isActive = formData.get("isActive") === "true";
+      isSlider = formData.get("isSlider") === "true";
+      bgColor = (formData.get("bgColor") as string) || "#6e5e9b";
 
       const imageFile = formData.get("image") as File | null;
       if (imageFile) {
-        // هنا لازم ترفع الملف على EdgeStore أو أي خدمة تخزين
-        // وترجع الرابط العام (Public URL)
-        // مثال:
-        // const resUpload = await edgestore.publicFiles.upload({ file: imageFile });
-        // imageUrl = resUpload.url;
         imageUrl = ""; // مؤقتاً نخليها فاضية لو ما رفعت
       }
     }
@@ -98,7 +93,9 @@ export async function POST(req: Request) {
         imageUrl,
         publishedAt,
         eventType: eventType || "news", // قيمة افتراضية
-        isActive: true,
+        isActive,
+        isSlider,
+        bgColor,
         createdAt: new Date(),
         updatedAt: new Date(),
       })
