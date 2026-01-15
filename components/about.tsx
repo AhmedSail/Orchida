@@ -16,7 +16,7 @@ import { useIsMobile } from "@/hooks/use-mobile";
 
 type CompanyFormValues = {
   name: string;
-  phone: string;
+  phoneToCall: string;
   accountNumber?: string;
   ibanShekel?: string;
   ibanDinar?: string;

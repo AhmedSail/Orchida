@@ -40,7 +40,11 @@ type MyCourse = {
 type Company = {
   id: string;
   name: string;
-  phone: string | null;
+  phoneToCall: string | null;
+  phoneToBank: string | null;
+  email: string | null;
+  address: string | null;
+  workingHours: string | null;
   accountNumber: string | null;
   ibanShekel: string | null;
   ibanDinar: string | null;
@@ -80,15 +84,15 @@ const Payment = ({
   const paymentInfo: Record<Currency, { iban: string; phone: string }> = {
     شيكل: {
       iban: company.ibanShekel ?? "غير متوفر",
-      phone: company.phone ?? "غير متوفر",
+      phone: company.phoneToBank ?? company.phoneToCall ?? "غير متوفر",
     },
     دولار: {
       iban: company.ibanDollar ?? "غير متوفر",
-      phone: company.phone ?? "غير متوفر",
+      phone: company.phoneToBank ?? company.phoneToCall ?? "غير متوفر",
     },
     دينار: {
       iban: company.ibanDinar ?? "غير متوفر",
-      phone: company.phone ?? "غير متوفر",
+      phone: company.phoneToBank ?? company.phoneToCall ?? "غير متوفر",
     },
   };
 
