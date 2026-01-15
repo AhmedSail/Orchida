@@ -350,16 +350,16 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
           display: flex !important;
           align-items: center !important;
         }
-        .swiper-pagination-bullet::before {
-          content: "";
-          position: absolute;
-          right: 0;
-          width: 8px;
-          height: 1px;
-          background: currentColor;
-          transition: width 0.5s ease;
-          font-size: 50px !important;
-        }
+        // .swiper-pagination-bullet::before {
+        //   content: "";
+        //   position: absolute;
+        //   right: 0;
+        //   width: 8px;
+        //   height: 1px;
+        //   background: currentColor;
+        //   transition: width 0.5s ease;
+        //   font-size: 50px !important;
+        // }
         .swiper-pagination-bullet-active {
           color: var(--pagination-color) !important;
           font-size: 20px !important;

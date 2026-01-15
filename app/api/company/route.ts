@@ -9,7 +9,7 @@ export async function PUT(req: Request) {
     const body = await req.json();
 
     // تحقق من البيانات الأساسية
-    if (!body.name || !body.phone) {
+    if (!body.name || !body.phoneToCall) {
       return NextResponse.json(
         { success: false, message: "الاسم ورقم الهاتف مطلوبان" },
         { status: 400 }
@@ -21,7 +21,11 @@ export async function PUT(req: Request) {
       .update(companies)
       .set({
         name: body.name,
-        phone: body.phone,
+        phoneToCall: body.phoneToCall,
+        phoneToBank: body.phoneToBank,
+        email: body.email,
+        address: body.address,
+        workingHours: body.workingHours,
         accountNumber: body.accountNumber,
         ibanShekel: body.ibanShekel,
         ibanDinar: body.ibanDinar,

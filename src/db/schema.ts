@@ -392,7 +392,11 @@ export const companies = pgTable("companies", {
   id: text("id").primaryKey(), // معرف الشركة
 
   name: text("name").notNull(), // اسم الشركة
-  phone: text("phone"), // رقم الهاتف
+  phoneToCall: text("phoneToCall"), // رقم الهاتف للتواصل
+  phoneToBank: text("phoneToBank"), // رقم الهاتف للاتصال
+  email: text("email"), // البريد الإلكتروني
+  address: text("address"), // العنوان
+  workingHours: text("workingHours"), // ساعات العمل
 
   accountNumber: text("accountNumber"), // رقم الحساب البنكي
   ibanShekel: text("ibanShekel"), // رقم IBAN بالشيكل
