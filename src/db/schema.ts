@@ -798,6 +798,24 @@ export const sessionRelations = relations(session, ({ one }) => ({
   }),
 }));
 
+// 15. SMS Templates
+export const smsTemplates = pgTable("smsTemplates", {
+  id: text("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(), // عنوان القالب (للإدارة فقط)
+  content: text("content").notNull(), // نص الرسالة
+  isActive: boolean("isActive").default(true).notNull(),
+  createdBy: text("createdBy").references(() => users.id),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const smsTemplatesRelations = relations(smsTemplates, ({ one }) => ({
+  creator: one(users, {
+    fields: [smsTemplates.createdBy],
+    references: [users.id],
+  }),
+}));
+
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(users, {
     fields: [account.userId],

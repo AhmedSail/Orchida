@@ -1,5 +1,5 @@
 "use client";
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   Table,
   TableHeader,
@@ -118,6 +118,25 @@ const StudentsTable = ({
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [smsMessage, setSmsMessage] = useState<string>("");
   const [isSendingSms, setIsSendingSms] = useState(false);
+  const [templates, setTemplates] = useState<
+    { id: string; title: string; content: string }[]
+  >([]);
+
+  useEffect(() => {
+    // جلب القوالب
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch("/api/sms/templates");
+        if (res.ok) {
+          const data = await res.json();
+          setTemplates(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch templates", e);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === currentStudents.length) {
@@ -537,7 +556,27 @@ const StudentsTable = ({
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-emerald-100 space-y-4">
         <div className="flex items-center gap-2 text-emerald-600 mb-2">
           <MessageSquare className="w-5 h-5" />
-          <h2 className="font-bold">إرسال رسائل SMS جماعية</h2>
+          <div className="flex items-center gap-2">
+            <h2 className="font-bold">إرسال رسائل SMS جماعية</h2>
+            <div className="flex-1"></div>
+            <Select
+              onValueChange={(val) => {
+                const tmpl = templates.find((t) => t.id === val);
+                if (tmpl) setSmsMessage(tmpl.content);
+              }}
+            >
+              <SelectTrigger className="w-[200px] h-9 text-xs rounded-lg border-emerald-200">
+                <SelectValue placeholder="اختر رسالة جاهزة..." />
+              </SelectTrigger>
+              <SelectContent>
+                {templates.map((t) => (
+                  <SelectItem key={t.id} value={t.id}>
+                    {t.title}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
