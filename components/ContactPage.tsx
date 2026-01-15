@@ -14,7 +14,7 @@ import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { MapPin, Phone, Mail, Clock, Send } from "lucide-react";
+import { MapPin, Phone, Mail, Clock, Send, CreditCard } from "lucide-react";
 
 import {
   Form,
@@ -29,13 +29,22 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { useIsMobile } from "@/hooks/use-mobile";
 
-type Links = {
+type CompanyData = {
   facebookUrl: string | null;
   instagramUrl: string | null;
   twitterUrl: string | null;
   whatsappUrl: string | null;
   linkedinUrl: string | null;
   tiktokUrl: string | null;
+  phoneToCall: string | null;
+  phoneToBank: string | null;
+  email: string | null;
+  address: string | null;
+  workingHours: string | null;
+  accountNumber: string | null;
+  ibanShekel: string | null;
+  ibanDinar: string | null;
+  ibanDollar: string | null;
 };
 
 const formSchema = z.object({
@@ -44,7 +53,7 @@ const formSchema = z.object({
   message: z.string().min(5, "الرسالة قصيرة جداً"),
 });
 
-const ContactPage = ({ result }: { result: Links }) => {
+const ContactPage = ({ result }: { result: CompanyData }) => {
   const [isSent, setIsSent] = useState(false);
   const [loading, setLoading] = useState(false);
   const isMobile = useIsMobile();
@@ -146,7 +155,7 @@ const ContactPage = ({ result }: { result: Links }) => {
                   <div>
                     <h4 className="font-semibold mb-1">العنوان</h4>
                     <p className="text-gray-200 text-sm">
-                      فلسطين، غزة، مول الرحاب
+                      {result.address || "فلسطين، غزة، مول الرحاب"}
                     </p>
                   </div>
                 </div>
@@ -158,7 +167,7 @@ const ContactPage = ({ result }: { result: Links }) => {
                   <div>
                     <h4 className="font-semibold mb-1">الهاتف</h4>
                     <p className="text-gray-200 text-sm" dir="ltr">
-                      +970 59 123 4567
+                      {result.phoneToCall || "+970 59 123 4567"}
                     </p>
                   </div>
                 </div>
@@ -170,7 +179,7 @@ const ContactPage = ({ result }: { result: Links }) => {
                   <div>
                     <h4 className="font-semibold mb-1">البريد الإلكتروني</h4>
                     <p className="text-gray-200 text-sm">
-                      admin@orchida-ods.com
+                      {result.email || "admin@orchida-ods.com"}
                     </p>
                   </div>
                 </div>
@@ -182,7 +191,7 @@ const ContactPage = ({ result }: { result: Links }) => {
                   <div>
                     <h4 className="font-semibold mb-1">ساعات العمل</h4>
                     <p className="text-gray-200 text-sm">
-                      السبت - الخميس: 9:00 ص - 5:00 م
+                      {result.workingHours || "السبت - الخميس: 9:00 ص - 5:00 م"}
                     </p>
                   </div>
                 </div>

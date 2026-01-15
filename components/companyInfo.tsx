@@ -5,6 +5,22 @@ import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import Swal from "sweetalert2";
+import {
+  User,
+  Globe,
+  Landmark,
+  Share2,
+  MessageSquare,
+  Image as ImageIcon,
+  Loader2,
+  Phone,
+  Mail,
+  MapPin,
+  Clock,
+  CreditCard,
+  Video,
+  ExternalLink,
+} from "lucide-react";
 
 import {
   Form,
@@ -17,12 +33,15 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Loader2 } from "lucide-react";
 import { MultiUploader } from "./MultiUploader";
 
 type CompanyFormValues = {
   name: string;
-  phone: string;
+  phoneToCall: string;
+  phoneToBank?: string;
+  email?: string;
+  address?: string;
+  workingHours?: string;
   accountNumber?: string;
   ibanShekel?: string;
   ibanDinar?: string;
@@ -40,19 +59,51 @@ type CompanyFormValues = {
 // ✅ مخطط البيانات
 const companySchema = z.object({
   name: z.string().min(3, "اسم الشركة مطلوب"),
-  phone: z.string().min(5, "رقم الهاتف مطلوب"),
+  phoneToCall: z.string().min(5, "رقم الهاتف مطلوب"),
+  phoneToBank: z.string().optional(),
+  email: z
+    .string()
+    .email("بريد إلكتروني غير صالح")
+    .optional()
+    .or(z.literal("")),
+  address: z.string().optional(),
+  workingHours: z.string().optional(),
   accountNumber: z.string().optional(),
   ibanShekel: z.string().optional(),
   ibanDinar: z.string().optional(),
   ibanDollar: z.string().optional(),
-  videoUrl: z.string().url("رابط فيديو غير صالح").optional(),
+  videoUrl: z.string().url("رابط فيديو غير صالح").optional().or(z.literal("")),
   managerMessage: z.string().optional(),
-  facebookUrl: z.string().url("رابط فيسبوك غير صالح").optional(),
-  instagramUrl: z.string().url("رابط إنستغرام غير صالح").optional(),
-  twitterUrl: z.string().url("رابط تويتر غير صالح").optional(),
-  whatsappUrl: z.string().url("رابط واتساب غير صالح").optional(),
-  linkedinUrl: z.string().url("رابط لينكدإن غير صالح").optional(),
-  tiktokUrl: z.string().url("رابط تيك توك غير صالح").optional(),
+  facebookUrl: z
+    .string()
+    .url("رابط فيسبوك غير صالح")
+    .optional()
+    .or(z.literal("")),
+  instagramUrl: z
+    .string()
+    .url("رابط إنستغرام غير صالح")
+    .optional()
+    .or(z.literal("")),
+  twitterUrl: z
+    .string()
+    .url("رابط تويتر غير صالح")
+    .optional()
+    .or(z.literal("")),
+  whatsappUrl: z
+    .string()
+    .url("رابط واتساب غير صالح")
+    .optional()
+    .or(z.literal("")),
+  linkedinUrl: z
+    .string()
+    .url("رابط لينكدإن غير صالح")
+    .optional()
+    .or(z.literal("")),
+  tiktokUrl: z
+    .string()
+    .url("رابط تيك توك غير صالح")
+    .optional()
+    .or(z.literal("")),
 });
 
 const EditCompanyInfo = ({
@@ -67,13 +118,23 @@ const EditCompanyInfo = ({
     resolver: zodResolver(companySchema),
     defaultValues: {
       name: company.name ?? "",
-      phone: company.phone ?? "",
+      phoneToCall: company.phoneToCall ?? "",
+      phoneToBank: company.phoneToBank ?? "",
+      email: company.email ?? "",
+      address: company.address ?? "",
+      workingHours: company.workingHours ?? "",
       accountNumber: company.accountNumber ?? "",
       ibanShekel: company.ibanShekel ?? "",
       ibanDinar: company.ibanDinar ?? "",
       ibanDollar: company.ibanDollar ?? "",
       videoUrl: company.videoUrl ?? "",
       managerMessage: company.managerMessage ?? "",
+      facebookUrl: company.facebookUrl ?? "",
+      instagramUrl: company.instagramUrl ?? "",
+      twitterUrl: company.twitterUrl ?? "",
+      whatsappUrl: company.whatsappUrl ?? "",
+      linkedinUrl: company.linkedinUrl ?? "",
+      tiktokUrl: company.tiktokUrl ?? "",
     },
   });
 
@@ -93,6 +154,10 @@ const EditCompanyInfo = ({
           icon: "success",
           title: "تم الحفظ بنجاح ✅",
           text: data.message,
+          customClass: {
+            popup: "rounded-3xl border-none shadow-2xl",
+            confirmButton: "bg-primary rounded-xl px-8",
+          },
         });
         setIsEditing(false);
       } else {
@@ -103,298 +168,447 @@ const EditCompanyInfo = ({
         icon: "error",
         title: "خطأ",
         text: (error as Error).message,
+        customClass: {
+          popup: "rounded-3xl border-none shadow-2xl",
+        },
       });
     } finally {
       setLoading(false);
     }
   };
 
+  const SectionHeader = ({
+    icon: Icon,
+    title,
+    desc,
+  }: {
+    icon: any;
+    title: string;
+    desc: string;
+  }) => (
+    <div className="mb-6 flex items-start gap-4 p-4 bg-slate-50/80 rounded-2xl border border-slate-100">
+      <div className="p-2.5 bg-white rounded-xl shadow-sm border border-slate-100 text-primary">
+        <Icon size={24} />
+      </div>
+      <div>
+        <h3 className="text-lg font-bold text-slate-900">{title}</h3>
+        <p className="text-sm text-slate-500">{desc}</p>
+      </div>
+    </div>
+  );
+
   return (
-    <div className="mx-auto mt-10 max-w-2xl space-y-6">
-      <h2 className="text-2xl font-bold text-primary">🏢 بيانات الشركة</h2>
-
+    <div className="p-6 lg:p-10 space-y-10 max-w-5xl mx-auto" dir="rtl">
       <Form {...form}>
-        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* اسم الشركة */}
-          <FormField
-            control={form.control}
-            name="name"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>اسم الشركة</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل اسم الشركة"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* رقم الهاتف */}
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>رقم الهاتف</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رقم الهاتف"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          {/* باقي الحقول بنفس النمط */}
-          <FormField
-            control={form.control}
-            name="accountNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>رقم الحساب</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رقم الحساب البنكي"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="ibanShekel"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>IBAN (شيكل)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رقم IBAN بالشيكل"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="ibanDinar"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>IBAN (دينار)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رقم IBAN بالدينار"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="ibanDollar"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>IBAN (دولار)</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رقم IBAN بالدولار"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="videoUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>الصورة / الفيديو الرئيسي</FormLabel>
-                <FormControl>
-                  <MultiUploader
-                    bucket="publicFiles"
-                    onChange={(urls) => field.onChange(urls[0] ?? "")} // نخزن رابط واحد فقط
-                    initialUrls={field.value ? [field.value] : []} // نحول string إلى array
-                    maxFiles={1}
-                    required={true}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="managerMessage"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>💬 كلمة المدير</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="أدخل كلمة المدير"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          <FormField
-            control={form.control}
-            name="facebookUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>🌐 رابط فيسبوك</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط صفحة الفيسبوك"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="instagramUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>📸 رابط إنستغرام</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط حساب إنستغرام"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="twitterUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>🐦 رابط تويتر</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط حساب تويتر"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="whatsappUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>📱 رابط واتساب</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط واتساب"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="linkedinUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>💼 رابط لينكدإن</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط لينكدإن"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="tiktokUrl"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>🎵 رابط تيك توك</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="أدخل رابط تيك توك"
-                    {...field}
-                    disabled={!isEditing}
-                  />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-          {/* أزرار */}
-          {!isEditing ? (
-            <Button
-              type="button" // ✅ زر عادي مش submit
-              className="w-full"
-              onClick={() => setIsEditing(true)}
-            >
-              تعديل البيانات
-            </Button>
-          ) : (
-            <div className="flex gap-2">
-              <Button
-                type="submit" // ✅ هذا فقط اللي يحفظ
-                className="bg-primary w-full text-white"
-                disabled={loading}
-              >
-                {loading ? (
-                  <>
-                    <Loader2 className="animate-spin mr-2" /> جاري الحفظ...
-                  </>
-                ) : (
-                  "حفظ البيانات"
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-12">
+          {/* Section 1: Basic Info */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={User}
+              title="المعلومات الأساسية"
+              desc="المعلومات التي تظهر في ترويثة الموقع وقسم اتصل بنا."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <FormField
+                control={form.control}
+                name="name"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Globe size={14} className="text-slate-400" />
+                      اسم الشركة
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="أروكيدة للتقنية"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
                 )}
-              </Button>
-
-              {/* زر إلغاء التعديل */}
-              <Button
-                type="button"
-                variant="outline"
-                className="w-full"
-                onClick={() => setIsEditing(false)}
-              >
-                إلغاء
-              </Button>
+              />
+              <FormField
+                control={form.control}
+                name="phoneToCall"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Phone size={14} className="text-slate-400" />
+                      رقم الهاتف (للاتصال)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="+970 ..."
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Mail size={14} className="text-slate-400" />
+                      البريد الإلكتروني
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="admin@orchida.com"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="address"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <MapPin size={14} className="text-slate-400" />
+                      العنوان بالتفصيل
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="فلسطين، غزة، مول الرحاب"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="workingHours"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Clock size={14} className="text-slate-400" />
+                      ساعات العمل الرسمية
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="السبت - الخميس: 9:00 ص - 5:00 م"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
             </div>
-          )}
+          </div>
+
+          {/* Section 2: Bank Details */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={Landmark}
+              title="بيانات التحويل البنكي"
+              desc="المعلومات البنكية اللازمة لاستقبال رسوم الدورات والخدمات."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              <FormField
+                control={form.control}
+                name="accountNumber"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <CreditCard size={14} className="text-slate-400" />
+                      رقم الحساب
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="أدخل رقم الحساب"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="phoneToBank"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Phone size={14} className="text-slate-400" />
+                      هاتف تأكيد التحويل (واتساب)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="+970 ..."
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ibanShekel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold text-slate-400 uppercase">
+                      IBAN (ILS - شيكل)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ibanDollar"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="text-xs font-bold text-slate-400 uppercase">
+                      IBAN (USD - دولار)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+              <FormField
+                control={form.control}
+                name="ibanDinar"
+                render={({ field }) => (
+                  <FormItem className="md:col-span-2">
+                    <FormLabel className="text-xs font-bold text-slate-400 uppercase">
+                      IBAN (JOD - دينار)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Section 3: Social Media */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={Share2}
+              title="وسائل التواصل الاجتماعي"
+              desc="روابط الحسابات الرسمية للشركة على المنصات المختلفة."
+            />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
+              {[
+                {
+                  name: "facebookUrl",
+                  label: "فيسبوك",
+                  placeholder: "https://facebook.com/...",
+                },
+                {
+                  name: "instagramUrl",
+                  label: "إنستغرام",
+                  placeholder: "https://instagram.com/...",
+                },
+                {
+                  name: "twitterUrl",
+                  label: "تويتر / X",
+                  placeholder: "https://x.com/...",
+                },
+                {
+                  name: "whatsappUrl",
+                  label: "واتساب",
+                  placeholder: "https://wa.me/...",
+                },
+                {
+                  name: "linkedinUrl",
+                  label: "لينكدإن",
+                  placeholder: "https://linkedin.com/...",
+                },
+                {
+                  name: "tiktokUrl",
+                  label: "تيك توك",
+                  placeholder: "https://tiktok.com/...",
+                },
+              ].map((social) => (
+                <FormField
+                  key={social.name}
+                  control={form.control}
+                  name={social.name as any}
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                        <ExternalLink size={14} className="text-slate-400" />
+                        {social.label}
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          placeholder={social.placeholder}
+                          {...field}
+                          disabled={!isEditing}
+                          className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                          dir="ltr"
+                        />
+                      </FormControl>
+                    </FormItem>
+                  )}
+                />
+              ))}
+            </div>
+          </div>
+
+          {/* Section 4: Media Content */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={MessageSquare}
+              title="المحتوى والمدير"
+              desc="كلمة المدير العام والصورة/الفيديو التعريفي للشركة."
+            />
+            <div className="space-y-6">
+              <FormField
+                control={form.control}
+                name="managerMessage"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold text-slate-700">
+                      💬 كلمة المدير
+                    </FormLabel>
+                    <FormControl>
+                      <Textarea
+                        placeholder="أدخل نص كلمة المدير العام..."
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-2xl border-slate-200 focus:ring-primary/20 min-h-[150px] resize-none"
+                      />
+                    </FormControl>
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="videoUrl"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <Video size={14} className="text-slate-400" />
+                      الصورة / الفيديو التعريفي (سيظهر في قسم 'من نحن')
+                    </FormLabel>
+                    <FormControl>
+                      <div
+                        className={
+                          !isEditing ? "opacity-60 pointer-events-none" : ""
+                        }
+                      >
+                        <MultiUploader
+                          bucket="publicFiles"
+                          onChange={(urls) => field.onChange(urls[0] ?? "")}
+                          initialUrls={field.value ? [field.value] : []}
+                          maxFiles={1}
+                          required={true}
+                        />
+                      </div>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          <div className="sticky bottom-10 z-20">
+            <div className="bg-white/80 backdrop-blur-md border border-slate-200 p-4 rounded-3xl shadow-2xl flex items-center justify-between">
+              <div>
+                {!isEditing ? (
+                  <p className="text-sm text-slate-500 mr-4 font-medium italic">
+                    * اضغط على زر "تعديل البيانات" للبدء في التغيير.
+                  </p>
+                ) : (
+                  <p className="text-sm text-primary mr-4 font-bold flex items-center gap-2">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-primary opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-primary"></span>
+                    </span>
+                    أنت في وضع التعديل الآن
+                  </p>
+                )}
+              </div>
+
+              {!isEditing ? (
+                <Button
+                  type="button"
+                  onClick={() => setIsEditing(true)}
+                  className="bg-primary hover:bg-primary/90 text-white px-10 h-12 rounded-2xl shadow-lg transition-all active:scale-95 text-lg font-bold"
+                >
+                  تعديل البيانات
+                </Button>
+              ) : (
+                <div className="flex gap-4">
+                  <Button
+                    type="button"
+                    variant="ghost"
+                    size="lg"
+                    onClick={() => {
+                      form.reset();
+                      setIsEditing(false);
+                    }}
+                    className="hover:bg-slate-100 rounded-2xl px-8 font-bold text-slate-600"
+                  >
+                    إلغاء
+                  </Button>
+                  <Button
+                    type="submit"
+                    size="lg"
+                    disabled={loading}
+                    className="bg-emerald-600 hover:bg-emerald-700 text-white px-12 h-12 rounded-2xl shadow-xl shadow-emerald-200 transition-all active:scale-95 font-bold text-lg"
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="animate-spin ml-2" /> جاري الحفظ...
+                      </>
+                    ) : (
+                      "حفظ التغييرات"
+                    )}
+                  </Button>
+                </div>
+              )}
+            </div>
+          </div>
         </form>
       </Form>
     </div>

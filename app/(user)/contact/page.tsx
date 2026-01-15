@@ -21,6 +21,15 @@ const page = async () => {
       whatsappUrl: companies.whatsappUrl,
       linkedinUrl: companies.linkedinUrl,
       tiktokUrl: companies.tiktokUrl,
+      phoneToCall: companies.phoneToCall,
+      phoneToBank: companies.phoneToBank,
+      email: companies.email,
+      address: companies.address,
+      workingHours: companies.workingHours,
+      accountNumber: companies.accountNumber,
+      ibanShekel: companies.ibanShekel,
+      ibanDinar: companies.ibanDinar,
+      ibanDollar: companies.ibanDollar,
     })
     .from(companies)
     .where(eq(companies.id, "orchid-company"))
