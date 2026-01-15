@@ -41,6 +41,8 @@ type Section = {
     | "closed"
     | "cancelled";
   currentEnrollment: number;
+  interestedCount: number;
+  registeredCount: number;
 };
 
 type Courses = {

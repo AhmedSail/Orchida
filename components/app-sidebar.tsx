@@ -21,6 +21,7 @@ import {
   Layers,
   LogOut,
   User as UserIcon,
+  MessageSquareText,
 } from "lucide-react";
 
 import {
@@ -73,6 +74,11 @@ export function AppSidebar({ user }: { user: User }) {
       title: "الموظفون",
       icon: Users,
       url: `/admin/${user.id}/employees`,
+    },
+    {
+      title: "قوالب الرسائل (SMS)",
+      icon: MessageSquareText,
+      url: `/admin/${user.id}/sms/templates`,
     },
   ];
 

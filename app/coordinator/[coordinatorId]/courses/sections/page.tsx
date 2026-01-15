@@ -7,6 +7,7 @@ import {
   instructors,
   meetings,
   users,
+  courseLeads,
 } from "@/src/db/schema";
 import Sections from "@/components/admin/courses/sections/Sections";
 import { eq, sql } from "drizzle-orm";
@@ -14,6 +15,7 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة المنسق",
   description: "كل الشعب",
@@ -36,31 +38,24 @@ const page = async () => {
       instructorEmail: instructors.email,
       instructorSpecialty: instructors.specialty,
 
-      // ✅ عدّ الطلاب من جدول courseEnrollments
-      studentCount: sql<number>`count(${courseEnrollments.id})`,
+      // ✅ جلب عدد المهتمين (Leads)
+      interestedCount: sql<number>`(
+        SELECT count(*) 
+        FROM ${courseLeads} 
+        WHERE ${courseLeads.sectionId} = ${courseSections.id}
+      )`.mapWith(Number),
+
+      // ✅ جلب عدد المسجلين (Confirmed Enrollments)
+      registeredCount: sql<number>`(
+        SELECT count(*) 
+        FROM ${courseEnrollments} 
+        WHERE ${courseEnrollments.sectionId} = ${courseSections.id} 
+        AND ${courseEnrollments.confirmationStatus} = 'confirmed'
+      )`.mapWith(Number),
     })
     .from(courses)
     .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
-    .leftJoin(instructors, eq(courseSections.instructorId, instructors.id))
-    .leftJoin(
-      courseEnrollments,
-      eq(courseEnrollments.sectionId, courseSections.id)
-    )
-    .groupBy(
-      courses.id,
-      courses.title,
-      courses.description,
-      courseSections.id,
-      courseSections.sectionNumber,
-      courseSections.startDate,
-      courseSections.endDate,
-      courseSections.maxCapacity,
-      courseSections.status,
-      instructors.id,
-      instructors.name,
-      instructors.email,
-      instructors.specialty
-    );
+    .leftJoin(instructors, eq(courseSections.instructorId, instructors.id));
 
   // ✅ تحويل النتائج إلى الشكل المطلوب
   const courseList = rows.reduce((acc: any[], row) => {
@@ -89,7 +84,9 @@ const page = async () => {
         instructorEmail: row.instructorEmail ?? "",
         instructorSpecialty: row.instructorSpecialty ?? "",
         status: row.status,
-        currentEnrollment: row.studentCount ?? 0, // 👈 العدد الحقيقي من courseEnrollments
+        interestedCount: row.interestedCount ?? 0,
+        registeredCount: row.registeredCount ?? 0,
+        currentEnrollment: row.registeredCount ?? 0,
       });
     }
 

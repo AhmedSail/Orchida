@@ -1,12 +1,20 @@
 import React from "react";
 import { db } from "@/src/db";
-import { courses, courseSections, instructors, users } from "@/src/db/schema";
+import {
+  courses,
+  courseSections,
+  instructors,
+  users,
+  courseEnrollments,
+  courseLeads,
+} from "@/src/db/schema";
 import Sections from "@/components/admin/courses/sections/Sections";
-import { eq } from "drizzle-orm";
+import { eq, sql } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "اوركيدة",
   description: "لوحة المدير | الشعب المعتمدة",
@@ -29,6 +37,20 @@ const page = async () => {
       instructorName: instructors.name,
       instructorEmail: instructors.email,
       instructorSpecialty: instructors.specialty,
+
+      // ✅ جلب عدد المهتمين (Leads)
+      interestedCount: sql<number>`(
+        SELECT count(*) 
+        FROM ${courseLeads} 
+        WHERE ${courseLeads.sectionId} = ${courseSections.id}
+      )`.mapWith(Number),
+
+      registeredCount: sql<number>`(
+        SELECT count(*) 
+        FROM ${courseEnrollments} 
+        WHERE ${courseEnrollments.sectionId} = ${courseSections.id} 
+        AND ${courseEnrollments.confirmationStatus} = 'confirmed'
+      )`.mapWith(Number),
     })
     .from(courses)
     .where(eq(courseSections.status, "approved"))
@@ -62,6 +84,9 @@ const page = async () => {
         instructorEmail: row.instructorEmail ?? "",
         instructorSpecialty: row.instructorSpecialty ?? "",
         status: row.status,
+        interestedCount: row.interestedCount ?? 0,
+        registeredCount: row.registeredCount ?? 0,
+        currentEnrollment: row.registeredCount ?? 0,
       });
     }
 

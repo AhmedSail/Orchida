@@ -18,6 +18,7 @@ import {
   LogOut,
   AppWindow,
   Users2,
+  MessageSquareText,
 } from "lucide-react";
 
 import {
@@ -58,6 +59,11 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
       title: "جدول اللقاءات",
       icon: Video,
       url: `/coordinator/${user.id}/courses/sections/meetings`,
+    },
+    {
+      title: "قوالب الرسائل (SMS)",
+      icon: MessageSquareText,
+      url: `/coordinator/${user.id}/sms/templates`,
     },
   ];
 

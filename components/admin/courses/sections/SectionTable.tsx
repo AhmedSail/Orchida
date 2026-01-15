@@ -57,6 +57,8 @@ type Section = {
     | "completed"
     | "closed"
     | "cancelled";
+  interestedCount: number;
+  registeredCount: number;
 };
 
 type Courses = {
@@ -256,6 +258,12 @@ const SectionTable = ({
                 الفترة الزمنية
               </TableHead>
               <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
+                المهتمين
+              </TableHead>
+              <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
+                المسجلين
+              </TableHead>
+              <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
                 الإشغال
               </TableHead>
               <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
@@ -312,6 +320,16 @@ const SectionTable = ({
                             إلى {section.endDate}
                           </div>
                         </div>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        <span className="font-bold text-amber-600 bg-amber-50 dark:bg-amber-500/10 px-3 py-1 rounded-lg">
+                          {section.interestedCount}
+                        </span>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        <span className="font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-500/10 px-3 py-1 rounded-lg">
+                          {section.registeredCount}
+                        </span>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
                         <div className="flex flex-col items-center gap-2">
@@ -482,7 +500,7 @@ const SectionTable = ({
                 })
               ) : (
                 <TableRow>
-                  <TableCell colSpan={6} className="py-20 text-center">
+                  <TableCell colSpan={8} className="py-20 text-center">
                     <div className="flex flex-col items-center gap-3">
                       <AlertCircle className="w-12 h-12 text-slate-200" />
                       <p className="text-slate-400 font-bold">
