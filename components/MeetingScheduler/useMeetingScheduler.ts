@@ -53,6 +53,14 @@ function formatDateToYMD(d: Date | string): string {
   return `${year}-${month}-${day}`;
 }
 
+export function formatTimeTo12h(timeStr: string): string {
+  if (!timeStr) return "";
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const period = hours >= 12 ? "م" : "ص";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${minutes.toString().padStart(2, "0")} ${period}`;
+}
+
 // --- دالة توليد PDF ---
 async function exportToPDF(meetings: CalendarEvent[], sectionNumber: number) {
   // استخدام html2pdf أو jspdf
@@ -90,8 +98,8 @@ async function exportToPDF(meetings: CalendarEvent[], sectionNumber: number) {
                 <tr>
                   <td>${i + 1}</td>
                   <td>${m.start.split("T")[0]}</td>
-                  <td>${m.start.split("T")[1]}</td>
-                  <td>${m.end.split("T")[1]}</td>
+                  <td>${formatTimeTo12h(m.start.split("T")[1])}</td>
+                  <td>${formatTimeTo12h(m.end.split("T")[1])}</td>
                 </tr>
               `
               )
@@ -123,8 +131,8 @@ function exportToExcel(meetings: CalendarEvent[], sectionNumber: number) {
         [
           i + 1,
           m.start.split("T")[0],
-          m.start.split("T")[1],
-          m.end.split("T")[1],
+          formatTimeTo12h(m.start.split("T")[1]),
+          formatTimeTo12h(m.end.split("T")[1]),
         ].join(",")
       ),
   ].join("\n");
@@ -432,14 +440,27 @@ export const useMeetingScheduler = (
             .value
         );
 
-        const sectionStartDate = new Date(section.startDate ?? "");
-        const chosenStartDate = new Date(startDate);
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
 
-        if (chosenStartDate < sectionStartDate) {
+        const sectionStart = section.startDate
+          ? new Date(section.startDate)
+          : today;
+        sectionStart.setHours(0, 0, 0, 0);
+
+        const minAllowedDate = sectionStart > today ? sectionStart : today;
+        const chosenStartDate = new Date(startDate);
+        chosenStartDate.setHours(0, 0, 0, 0);
+
+        if (chosenStartDate < minAllowedDate) {
           Swal.showValidationMessage(
-            `تاريخ بداية الجدولة (${startDate}) يجب أن يكون بعد أو يساوي تاريخ بداية الشعبة (${formatDateToYMD(
-              sectionStartDate
-            )}).`
+            `التاريخ المختار (${startDate}) لا يمكن أن يكون قبل ${formatDateToYMD(
+              minAllowedDate
+            )} ${
+              minAllowedDate.getTime() === today.getTime()
+                ? "(تاريخ اليوم)"
+                : "(تاريخ بداية الشعبة)"
+            }`
           );
           return null;
         }
@@ -542,9 +563,9 @@ export const useMeetingScheduler = (
                   <p><strong>التاريخ:</strong> ${
                     conflictingEvent.start.split("T")[0]
                   }</p>
-                  <p><strong>الوقت:</strong> ${
-                    conflictingEvent.start.split("T")[1]
-                  } - ${conflictingEvent.end.split("T")[1]}</p>
+                  <p><strong>الوقت:</strong> ${formatTimeTo12h(
+                    startTime
+                  )} - ${formatTimeTo12h(endTime)}</p>
                 </div>
                 <p class="text-red-600">سيتم إيقاف الجدولة. يرجى اختيار موعد بدء أو أيام مختلفة.</p>
               </div>
@@ -679,16 +700,27 @@ export const useMeetingScheduler = (
             return null;
           }
 
-          const sectionStartDate = new Date(section.startDate ?? "");
-          sectionStartDate.setHours(0, 0, 0, 0);
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const sectionStart = section.startDate
+            ? new Date(section.startDate)
+            : today;
+          sectionStart.setHours(0, 0, 0, 0);
+
+          const minAllowedDate = sectionStart > today ? sectionStart : today;
           const chosenDate = new Date(dateStr);
           chosenDate.setHours(0, 0, 0, 0);
 
-          if (chosenDate < sectionStartDate) {
+          if (chosenDate < minAllowedDate) {
             Swal.showValidationMessage(
-              `التاريخ المختار (${dateStr}) يجب أن يكون بعد أو يساوي تاريخ بداية الشعبة (${formatDateToYMD(
-                sectionStartDate
-              )}).`
+              `التاريخ المختار (${dateStr}) لا يمكن أن يكون قبل ${formatDateToYMD(
+                minAllowedDate
+              )} ${
+                minAllowedDate.getTime() === today.getTime()
+                  ? "(تاريخ اليوم)"
+                  : "(تاريخ بداية الشعبة)"
+              }`
             );
             return null;
           }
@@ -728,7 +760,9 @@ export const useMeetingScheduler = (
         html: `
         <div class="text-right">
           <p><strong>التاريخ:</strong> ${dateStr}</p>
-          <p><strong>الوقت:</strong> ${startTime} - ${endTime}</p>
+          <p><strong>الوقت:</strong> ${formatTimeTo12h(
+            startTime
+          )} - ${formatTimeTo12h(endTime)}</p>
           ${location ? `<p><strong>الموقع:</strong> ${location}</p>` : ""}
           <p><strong>رقم اللقاء:</strong> ${nextMeetingNumber}</p>
         </div>
@@ -814,8 +848,19 @@ export const useMeetingScheduler = (
         confirmButtonText: "نسخ",
         cancelButtonText: "إلغاء",
         preConfirm: () => {
-          return (document.getElementById("swal-new-date") as HTMLInputElement)
-            .value;
+          const date = (
+            document.getElementById("swal-new-date") as HTMLInputElement
+          ).value;
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const chosenDate = new Date(date);
+          chosenDate.setHours(0, 0, 0, 0);
+
+          if (chosenDate < today) {
+            Swal.showValidationMessage("لا يمكن نسخ اللقاء لتاريخ قديم.");
+            return null;
+          }
+          return date;
         },
       });
 
@@ -903,9 +948,11 @@ export const useMeetingScheduler = (
             ).toLocaleTimeString("ar-EG", {
               hour: "2-digit",
               minute: "2-digit",
+              hour12: true,
             })} - ${new Date(arg.event.endStr).toLocaleTimeString("ar-EG", {
             hour: "2-digit",
             minute: "2-digit",
+            hour12: true,
           })}</p>
             <hr class="my-2">
             <p class="text-sm text-gray-500">هذا اللقاء يخص شعبة أخرى ولا يمكنك تعديله.</p>
@@ -977,6 +1024,32 @@ export const useMeetingScheduler = (
             );
             return null;
           }
+
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+
+          const sectionStart = section.startDate
+            ? new Date(section.startDate)
+            : today;
+          sectionStart.setHours(0, 0, 0, 0);
+
+          const minAllowedDate = sectionStart > today ? sectionStart : today;
+          const chosenDate = new Date(date);
+          chosenDate.setHours(0, 0, 0, 0);
+
+          if (chosenDate < minAllowedDate) {
+            Swal.showValidationMessage(
+              `التاريخ المختار لا يمكن أن يكون قبل ${formatDateToYMD(
+                minAllowedDate
+              )} ${
+                minAllowedDate.getTime() === today.getTime()
+                  ? "(تاريخ اليوم)"
+                  : "(تاريخ بداية الشعبة)"
+              }`
+            );
+            return null;
+          }
+
           return { date, startTime, endTime, location };
         },
       });
@@ -1188,6 +1261,17 @@ export const useMeetingScheduler = (
       const newDate = event.startStr.split("T")[0];
       const newStartTime = event.startStr.split("T")[1]?.slice(0, 5) || "09:00";
       const newEndTime = event.endStr.split("T")[1]?.slice(0, 5) || "11:00";
+
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+      const chosenDate = new Date(newDate);
+      chosenDate.setHours(0, 0, 0, 0);
+
+      if (chosenDate < today) {
+        revert();
+        Swal.fire("تنبيه", "لا يمكن نقل اللقاء لتاريخ قديم.", "warning");
+        return;
+      }
 
       const originalMeeting = AllMeetings.find(
         (jm) => jm.meetings.id === event.id

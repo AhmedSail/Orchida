@@ -231,7 +231,14 @@ const MeetingCalendar: React.FC<MeetingCalendarProps> = ({
           eventTimeFormat={{
             hour: "2-digit",
             minute: "2-digit",
-            hour12: false,
+            hour12: true,
+            meridiem: "short",
+          }}
+          slotLabelFormat={{
+            hour: "numeric",
+            minute: "2-digit",
+            hour12: true,
+            meridiem: "short",
           }}
           // ✅ تخصيص مظهر الأحداث
           eventClassNames={(arg) => {
