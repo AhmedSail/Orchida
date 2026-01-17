@@ -76,6 +76,11 @@ export function AppSidebar({ user }: { user: User }) {
       url: `/admin/${user.id}/employees`,
     },
     {
+      title: "إدارة المهتمين (Leads)",
+      icon: Users,
+      url: `/admin/${user.id}/leads`,
+    },
+    {
       title: "قوالب الرسائل (SMS)",
       icon: MessageSquareText,
       url: `/admin/${user.id}/sms/templates`,

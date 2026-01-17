@@ -78,6 +78,24 @@ const LeadsManagement = () => {
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [smsMessage, setSmsMessage] = useState("");
   const [isSendingSms, setIsSendingSms] = useState(false);
+  const [templates, setTemplates] = useState<
+    { id: string; title: string; content: string }[]
+  >([]);
+
+  useEffect(() => {
+    const fetchTemplates = async () => {
+      try {
+        const res = await fetch("/api/sms/templates");
+        if (res.ok) {
+          const data = await res.json();
+          setTemplates(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch templates", e);
+      }
+    };
+    fetchTemplates();
+  }, []);
 
   const toggleSelectAll = () => {
     if (selectedIds.length === filteredLeads.length) {
@@ -437,9 +455,31 @@ const LeadsManagement = () => {
         animate={{ opacity: 1, y: 0 }}
         className="bg-white dark:bg-zinc-950 p-6 rounded-[32px] border border-emerald-100 dark:border-emerald-900/30 shadow-xl space-y-4"
       >
-        <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400 mb-2">
-          <MessageSquare className="w-5 h-5" />
-          <h2 className="font-black">إرسال رسائل SMS جماعية للمهتمين</h2>
+        <div className="flex items-center justify-between mb-2">
+          <div className="flex items-center gap-2 text-emerald-600 dark:text-emerald-400">
+            <MessageSquare className="w-5 h-5" />
+            <h2 className="font-black">إرسال رسائل SMS جماعية للمهتمين</h2>
+          </div>
+
+          <div className="flex items-center gap-2">
+            <select
+              className="h-9 px-3 rounded-xl bg-zinc-50 dark:bg-zinc-900 border border-emerald-100 dark:border-emerald-900/30 outline-none text-xs w-48"
+              onChange={(e) => {
+                const tmpl = templates.find((t) => t.id === e.target.value);
+                if (tmpl) setSmsMessage(tmpl.content);
+              }}
+              defaultValue=""
+            >
+              <option value="" disabled>
+                اختر رسالة جاهزة...
+              </option>
+              {templates.map((t) => (
+                <option key={t.id} value={t.id}>
+                  {t.title}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         <div className="flex flex-col md:flex-row gap-4">
           <div className="flex-1">
@@ -562,12 +602,36 @@ const LeadsManagement = () => {
                       </td>
                       <td className="px-6 py-5">
                         <div className="flex flex-col space-y-1">
-                          <a
-                            href={`tel:${lead.studentPhone}`}
-                            className="text-sm font-medium hover:text-primary flex items-center gap-2"
-                          >
-                            <Phone className="w-3 h-3" /> {lead.studentPhone}
-                          </a>
+                          <div className="flex items-center gap-2">
+                            <a
+                              href={`tel:${lead.studentPhone}`}
+                              className="text-sm font-medium hover:text-primary flex items-center gap-2"
+                            >
+                              <Phone className="w-3 h-3" /> {lead.studentPhone}
+                            </a>
+                            <a
+                              href={`https://wa.me/${(lead.studentPhone.startsWith(
+                                "05"
+                              ) && lead.studentPhone.length === 10
+                                ? "970" + lead.studentPhone.substring(1)
+                                : lead.studentPhone
+                              ).replace("+", "")}${
+                                smsMessage
+                                  ? `?text=${encodeURIComponent(smsMessage)}`
+                                  : ""
+                              }`}
+                              target="_blank"
+                              className="size-7 rounded-lg bg-green-50 text-green-600 flex items-center justify-center hover:bg-green-100 transition-colors"
+                              title="إرسال واتساب"
+                            >
+                              <svg
+                                viewBox="0 0 24 24"
+                                className="size-4 fill-current"
+                              >
+                                <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.414 0 0 5.414 0 12.05c0 2.123.553 4.197 1.603 6.02L0 24l6.135-1.61a11.783 11.783 0 005.912 1.587h.005c6.632 0 12.05-5.419 12.05-12.054a11.772 11.772 0 00-3.41-8.483" />
+                              </svg>
+                            </a>
+                          </div>
                           <a
                             href={`mailto:${lead.studentEmail}`}
                             className="text-xs text-zinc-500 hover:text-primary flex items-center gap-2"

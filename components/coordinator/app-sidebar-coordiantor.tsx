@@ -61,6 +61,11 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
       url: `/coordinator/${user.id}/courses/sections/meetings`,
     },
     {
+      title: "إدارة المهتمين (Leads)",
+      icon: Users2,
+      url: `/coordinator/${user.id}/leads`,
+    },
+    {
       title: "قوالب الرسائل (SMS)",
       icon: MessageSquareText,
       url: `/coordinator/${user.id}/sms/templates`,

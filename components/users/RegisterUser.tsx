@@ -67,7 +67,13 @@ const MySwal = withReactContent(Swal);
 const schema = z.object({
   studentName: z.string().min(2, "الاسم مطلوب وبحد أدنى حرفين"),
   studentEmail: z.string().email("يرجى إدخال بريد إلكتروني صالح"),
-  studentPhone: z.string().length(9, "رقم الهاتف يجب أن يتكون من 9 أرقام فقط"),
+  studentPhone: z
+    .string()
+    .length(9, "رقم الهاتف يجب أن يتكون من 9 أرقام فقط")
+    .refine(
+      (val) => val.startsWith("59") || val.startsWith("56"),
+      "رقم الهاتف غير صالح، يجب أن يبدأ بـ 59 أو 56"
+    ),
   studentAge: z.number({ message: "يرجى إدخال عمر صالح" }).int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
