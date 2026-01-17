@@ -137,7 +137,9 @@ const CourseSelected = ({
                     </div>
                     <span className="text-xl font-bold text-primary">
                       {coursesSelected.price
-                        ? `${coursesSelected.price} $`
+                        ? `${coursesSelected.price} ${" "} ${
+                            coursesSelected.currency
+                          }`
                         : "مجاني"}
                     </span>
                   </div>
