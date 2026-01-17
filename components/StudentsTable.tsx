@@ -992,15 +992,7 @@ const StudentsTable = ({
                                   >
                                     المكان بعيد
                                   </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "cancelled",
-                                      })
-                                    }
-                                  >
-                                    ألغى
-                                  </DropdownMenuItem>
+
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleUpdateEnrollment(s.id, {
