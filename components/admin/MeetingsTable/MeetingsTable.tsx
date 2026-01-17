@@ -39,6 +39,14 @@ interface MeetingsTableProps {
   courses: Courses[];
 }
 
+const formatTimeTo12h = (timeStr: string): string => {
+  if (!timeStr) return "";
+  const [hours, minutes] = timeStr.split(":").map(Number);
+  const period = hours >= 12 ? "م" : "ص";
+  const h12 = hours % 12 || 12;
+  return `${h12}:${minutes.toString().padStart(2, "0")} ${period}`;
+};
+
 const MeetingsTable = ({ meetings, courses }: MeetingsTableProps) => {
   const [selectedCourse, setSelectedCourse] = useState<string>("all");
   const [selectedSection, setSelectedSection] = useState<string>("all");
@@ -265,8 +273,8 @@ const MeetingsTable = ({ meetings, courses }: MeetingsTableProps) => {
                 <TableCell>
                   {new Date(m.date).toLocaleDateString("ar-EG")}
                 </TableCell>
-                <TableCell>{m.startTime}</TableCell>
-                <TableCell>{m.endTime}</TableCell>
+                <TableCell>{formatTimeTo12h(m.startTime)}</TableCell>
+                <TableCell>{formatTimeTo12h(m.endTime)}</TableCell>
                 <TableCell>{m.location || "-"}</TableCell>
               </TableRow>
             ))}
@@ -292,7 +300,8 @@ const MeetingsTable = ({ meetings, courses }: MeetingsTableProps) => {
                 {new Date(m.date).toLocaleDateString("ar-EG")}
               </p>
               <p>
-                <strong>الوقت:</strong> {m.startTime} - {m.endTime}
+                <strong>الوقت:</strong> {formatTimeTo12h(m.startTime)} -{" "}
+                {formatTimeTo12h(m.endTime)}
               </p>
               <p>
                 <strong>المكان:</strong> {m.location || "-"}
