@@ -67,14 +67,8 @@ const MySwal = withReactContent(Swal);
 const schema = z.object({
   studentName: z.string().min(2, "الاسم مطلوب وبحد أدنى حرفين"),
   studentEmail: z.string().email("يرجى إدخال بريد إلكتروني صالح"),
-  studentPhone: z
-    .string()
-    .length(9, "رقم الهاتف يجب أن يتكون من 9 أرقام فقط")
-    .refine(
-      (val) => val.startsWith("59") || val.startsWith("56"),
-      "رقم الهاتف غير صالح، يجب أن يبدأ بـ 59 أو 56"
-    ),
-  studentAge: z.number({ message: "يرجى إدخال عمر صالح" }).int().positive(),
+  studentPhone: z.string().regex(/^(0?5[69]\d{7})$/, "رقم الهاتف غير صالح"),
+  studentAge: z.number({ message: "يرجى إدخل عمر صالح" }).int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
   notes: z.string().max(500).optional().or(z.literal("")),
@@ -117,11 +111,16 @@ const RegisterUser = ({
     try {
       setSubmitting(true);
 
+      let phoneValue = values.studentPhone;
+      if (phoneValue.startsWith("0")) {
+        phoneValue = phoneValue.substring(1);
+      }
+
       const payload = {
         courseId: coursesSelected.id,
         sectionId: lastSectionRaw.sectionId,
         ...values,
-        studentPhone: `${countryCode}${values.studentPhone}`,
+        studentPhone: `${countryCode}${phoneValue}`,
       };
 
       const res = await fetch("/api/course-leads", {
@@ -456,7 +455,7 @@ const RegisterUser = ({
                                     className={`${inputStyles} text-left`}
                                     {...field}
                                     dir="ltr"
-                                    maxLength={9}
+                                    maxLength={10}
                                   />
                                   <Phone className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 text-zinc-400 group-focus-within:text-primary transition-colors" />
                                 </div>

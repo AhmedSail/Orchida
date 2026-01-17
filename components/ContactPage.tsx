@@ -9,7 +9,6 @@ import {
   FaTwitter,
   FaWhatsapp,
 } from "react-icons/fa";
-import emailjs from "emailjs-com";
 import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -65,21 +64,23 @@ const ContactPage = ({ result }: { result: CompanyData }) => {
   const onSubmit = async (values: z.infer<typeof formSchema>) => {
     setLoading(true);
     try {
-      await emailjs.send(
-        "service_fan2sii",
-        "template_c3vgke8",
-        {
-          from_name: values.name,
-          from_email: values.email,
-          message: values.message,
+      const response = await fetch("/api/contact", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
         },
-        "6EiU3FO0-LttZ-aVX"
-      );
+        body: JSON.stringify(values),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to send message");
+      }
+
       setIsSent(true);
       form.reset();
       setTimeout(() => setIsSent(false), 3000);
     } catch (error) {
-      console.error("EmailJS Error:", error);
+      console.error("Contact Form Error:", error);
     } finally {
       setLoading(false);
     }
