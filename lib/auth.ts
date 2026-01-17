@@ -22,6 +22,10 @@ export const auth = betterAuth({
       user: schema.users,
     },
   }),
+  session: {
+    expiresIn: 60 * 60, // 1 hour
+    updateAge: 60 * 30, // Update session age every 30 minutes
+  },
 
   // 👇 هنا تحط إعدادات الكوكيز
   cookies: {
