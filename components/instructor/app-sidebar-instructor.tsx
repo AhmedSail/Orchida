@@ -9,6 +9,7 @@ import {
   LogOut,
   User as UserIcon,
   GraduationCap,
+  FolderOpen,
 } from "lucide-react";
 
 import {
@@ -48,6 +49,11 @@ export function AppSidebarInstructor({ user }: { user: User }) {
       title: "الطلاب",
       icon: Users,
       url: `/instructor/${user.id}/students`,
+    },
+    {
+      title: "مكتبة الوسائط",
+      icon: FolderOpen,
+      url: `/instructor/${user.id}/library`,
     },
   ];
 
