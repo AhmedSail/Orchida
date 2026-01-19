@@ -59,6 +59,8 @@ import {
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
+import { ArrowRightLeft } from "lucide-react";
+import MoveStudentDialog from "./MoveStudentDialog";
 
 type Student = {
   id: string;
@@ -86,10 +88,12 @@ const StudentsTable = ({
   students,
   currentSectionId,
   courseId,
+  allSections = [],
 }: {
   students: Student[];
   currentSectionId: string;
   courseId: string;
+  allSections?: { id: string; sectionNumber: number; instructorName: string }[];
 }) => {
   const [studentList, setStudentList] = useState<Student[]>(students);
   const [activeTab, setActiveTab] = useState<
@@ -122,6 +126,14 @@ const StudentsTable = ({
     { id: string; title: string; content: string }[]
   >([]);
 
+  // Move Student States
+  const [showMoveDialog, setShowMoveDialog] = useState(false);
+  const [movingStudent, setMovingStudent] = useState<{
+    id: string;
+    name: string;
+    type: "registered" | "interested";
+  } | null>(null);
+
   useEffect(() => {
     // جلب القوالب
     const fetchTemplates = async () => {
@@ -148,7 +160,7 @@ const StudentsTable = ({
 
   const toggleSelectStudent = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -212,7 +224,7 @@ const StudentsTable = ({
 
   const handleUpdateEnrollment = async (
     id: string,
-    updates: Partial<Student>
+    updates: Partial<Student>,
   ) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
@@ -279,8 +291,8 @@ const StudentsTable = ({
                   isSuggested: false,
                   // إذا كان مقترح وتم تحديثه، يصبح طالب حقيقي في هذه الشعبة
                 }
-              : s
-          )
+              : s,
+          ),
         );
       } else {
         Swal.fire("خطأ!", "فشل في تحديث البيانات.", "error");
@@ -292,7 +304,7 @@ const StudentsTable = ({
 
   const handleDelete = async (
     id: string,
-    type: "registered" | "interested"
+    type: "registered" | "interested",
   ) => {
     const result = await Swal.fire({
       title: "هل أنت متأكد؟",
@@ -347,7 +359,9 @@ const StudentsTable = ({
         Swal.fire("تم التحويل!", "تم تسجيل الطالب بنجاح.", "success");
         // Reload list or update state
         setStudentList((prev) =>
-          prev.map((s) => (s.id === lead.id ? { ...s, type: "registered" } : s))
+          prev.map((s) =>
+            s.id === lead.id ? { ...s, type: "registered" } : s,
+          ),
         );
       }
     } catch (e) {
@@ -412,7 +426,7 @@ const StudentsTable = ({
   const totalPages = Math.ceil(filteredSorted.length / studentsPerPage) || 1;
   const currentStudents = filteredSorted.slice(
     (currentPage - 1) * studentsPerPage,
-    currentPage * studentsPerPage
+    currentPage * studentsPerPage,
   );
 
   const getStatusBadge = (status: string | null | undefined, type: string) => {
@@ -482,6 +496,12 @@ const StudentsTable = ({
           return (
             <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
               مشغول فترة مسائية
+            </Badge>
+          );
+        case "focal_course":
+          return (
+            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+              دورة بؤرية
             </Badge>
           );
         default:
@@ -621,7 +641,7 @@ const StudentsTable = ({
                 "px-6 py-2 rounded-lg text-sm font-medium transition-all",
                 activeTab === "all"
                   ? "bg-white shadow-sm text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-gray-500 hover:text-gray-700",
               )}
             >
               الكل
@@ -632,7 +652,7 @@ const StudentsTable = ({
                 "px-6 py-2 rounded-lg text-sm font-medium transition-all",
                 activeTab === "registered"
                   ? "bg-white shadow-sm text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-gray-500 hover:text-gray-700",
               )}
             >
               المسجلين
@@ -643,7 +663,7 @@ const StudentsTable = ({
                 "px-6 py-2 rounded-lg text-sm font-medium transition-all",
                 activeTab === "interested"
                   ? "bg-white shadow-sm text-blue-600"
-                  : "text-gray-500 hover:text-gray-700"
+                  : "text-gray-500 hover:text-gray-700",
               )}
             >
               المهتمين
@@ -759,7 +779,7 @@ const StudentsTable = ({
                   key={s.id}
                   className={cn(
                     "hover:bg-blue-50/20 transition-colors",
-                    selectedIds.includes(s.id) && "bg-emerald-50/30"
+                    selectedIds.includes(s.id) && "bg-emerald-50/30",
                   )}
                 >
                   <TableCell>
@@ -801,7 +821,7 @@ const StudentsTable = ({
                         {s.studentPhone && (
                           <a
                             href={`https://wa.me/${(s.studentPhone.startsWith(
-                              "05"
+                              "05",
                             ) && s.studentPhone.length === 10
                               ? "970" + s.studentPhone.substring(1)
                               : s.studentPhone
@@ -868,7 +888,7 @@ const StudentsTable = ({
                   <TableCell>
                     {getStatusBadge(
                       s.type === "interested" ? s.status : s.paymentStatus,
-                      s.type
+                      s.type,
                     )}
                   </TableCell>
 
@@ -1023,6 +1043,15 @@ const StudentsTable = ({
                                   <DropdownMenuItem
                                     onClick={() =>
                                       handleUpdateEnrollment(s.id, {
+                                        status: "focal_course",
+                                      })
+                                    }
+                                  >
+                                    دورة بؤرية
+                                  </DropdownMenuItem>
+                                  <DropdownMenuItem
+                                    onClick={() =>
+                                      handleUpdateEnrollment(s.id, {
                                         status: "interested",
                                       })
                                     }
@@ -1087,6 +1116,21 @@ const StudentsTable = ({
                             <MessageSquare className="w-4 h-4" /> عرض الملاحظات
                           </DropdownMenuItem>
 
+                          <DropdownMenuItem
+                            className="gap-2 text-blue-600 font-bold"
+                            onClick={() => {
+                              setMovingStudent({
+                                id: s.id,
+                                name: s.studentName,
+                                type: s.type,
+                              });
+                              setShowMoveDialog(true);
+                            }}
+                          >
+                            <ArrowRightLeft className="w-4 h-4" /> نقل لشعبة
+                            أخرى
+                          </DropdownMenuItem>
+
                           <DropdownMenuSeparator />
                           <DropdownMenuItem
                             className="text-red-600 gap-2 cursor-pointer"
@@ -1143,7 +1187,7 @@ const StudentsTable = ({
               </div>
               {getStatusBadge(
                 s.type === "interested" ? s.status : s.paymentStatus,
-                s.type
+                s.type,
               )}
             </div>
 
@@ -1238,6 +1282,24 @@ const StudentsTable = ({
           </Button>
         </div>
       </div>
+      {/* Move Student Dialog */}
+      {movingStudent && (
+        <MoveStudentDialog
+          open={showMoveDialog}
+          onOpenChange={setShowMoveDialog}
+          studentId={movingStudent.id}
+          studentName={movingStudent.name}
+          studentType={movingStudent.type}
+          currentSectionId={currentSectionId}
+          allSections={allSections}
+          onSuccess={() => {
+            // Remove student from current list after move
+            setStudentList((prev) =>
+              prev.filter((student) => student.id !== movingStudent.id),
+            );
+          }}
+        />
+      )}
     </div>
   );
 };

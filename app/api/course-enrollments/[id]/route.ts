@@ -11,14 +11,14 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const param = await context.params;
 
   if (!param.id) {
     return NextResponse.json(
       { message: "يجب إرسال معرف التسجيل (id)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
@@ -59,58 +59,69 @@ export async function DELETE(
 
     return NextResponse.json(
       { message: "تم حذف التسجيل بنجاح وإرجاعه لقائمة المهتمين" },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error: any) {
     console.error("Error in delete enrollment:", error);
     return NextResponse.json(
       { message: "حدث خطأ أثناء الحذف", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json(
       { message: "يجب إرسال معرف التسجيل (id)" },
-      { status: 400 }
+      { status: 400 },
     );
   }
 
   const body = await req.json();
-  const { paymentStatus, confirmationStatus, IBAN } = body;
+  const { paymentStatus, confirmationStatus, IBAN, sectionId } = body;
 
-  // ✅ تحقق فقط إذا ما أرسلت أي قيمة
-  if (
-    paymentStatus === undefined &&
-    confirmationStatus === undefined &&
-    IBAN === undefined
-  ) {
-    return NextResponse.json(
-      { message: "يجب إرسال حالة الدفع أو حالة التأكيد أو IBAN للتعديل" },
-      { status: 400 }
-    );
-  }
-
-  const updateData: Partial<typeof courseEnrollments.$inferInsert> = {};
+  const updateData: any = {};
   if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
   if (confirmationStatus !== undefined)
     updateData.confirmationStatus = confirmationStatus;
-  if (IBAN !== undefined) updateData.IBAN = IBAN; // يقبل "" كمان
+  if (IBAN !== undefined) updateData.IBAN = IBAN;
+  if (sectionId !== undefined) {
+    // التحقق من وجود الشعبة الجديدة
+    const section = await db.query.courseSections.findFirst({
+      where: eq(courseSections.id, sectionId),
+    });
+    if (!section) {
+      return NextResponse.json(
+        { message: "الشعبة المطلوبة غير موجودة" },
+        { status: 404 },
+      );
+    }
+    updateData.sectionId = sectionId;
+  }
+
+  if (Object.keys(updateData).length === 0) {
+    return NextResponse.json(
+      { message: "لا توجد بيانات لتحديثها" },
+      { status: 400 },
+    );
+  }
 
   await db
     .update(courseEnrollments)
-    .set(updateData)
+    .set({
+      ...updateData,
+      updatedAt: new Date(),
+    })
     .where(eq(courseEnrollments.id, id));
 
   return NextResponse.json(
     { message: "تم تعديل التسجيل بنجاح", id, updateData },
-    { status: 200 }
+    { status: 200 },
   );
 }

@@ -10,9 +10,9 @@ import { headers } from "next/headers";
 
 export async function GET(
   req: Request,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
-  const param = await params;
+  const param = await context.params;
   try {
     const recommendation = await db.query.instructorRecommendations.findFirst({
       where: eq(instructorRecommendations.id, param.id),
@@ -33,10 +33,10 @@ export async function GET(
 
 export async function PUT(
   req: Request,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
-  const param = await params;
+  const param = await context.params;
 
   if (
     !session?.user ||
@@ -100,10 +100,10 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  { params }: { params: { id: string } },
+  context: { params: Promise<{ id: string }> },
 ) {
   const session = await auth.api.getSession({ headers: await headers() });
-  const param = await params;
+  const param = await context.params;
 
   if (!session?.user) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
