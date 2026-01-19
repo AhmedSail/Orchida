@@ -253,7 +253,7 @@ const Clasification = ({
 
       {/* Header Section */}
       <div className="relative overflow-hidden p-8 md:p-12 rounded-[48px] bg-slate-900 border border-slate-800">
-        <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent opacity-50" />
+        <div className="absolute top-0 right-0 w-1/2 h-full bg-linear-to-l from-primary/20 to-transparent opacity-50" />
         <div className="absolute -bottom-24 -left-24 size-64 bg-primary/10 rounded-full blur-3xl" />
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
@@ -330,7 +330,7 @@ const Clasification = ({
                 طالب مسجل
               </span>
             </div>
-            <div className="w-[1px] h-10 bg-white/10" />
+            <div className="w-px h-12 bg-slate-800" />
             <div className="text-center">
               <Badge
                 variant="outline"
@@ -633,7 +633,7 @@ const Clasification = ({
                           <ImageIcon className="size-16" />
                         </div>
                       )}
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     </div>
 
                     <div className="p-8 flex flex-col flex-1 space-y-4">

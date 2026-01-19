@@ -6,17 +6,18 @@ import { v4 as uuidv4 } from "uuid";
 
 export async function PATCH(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
     const body = await req.json();
-    const { status, nonResponseCount, isActive } = body;
+    const { status, nonResponseCount, isActive, sectionId } = body;
     const updateData: any = {};
     if (status !== undefined) updateData.status = status;
     if (nonResponseCount !== undefined)
       updateData.nonResponseCount = nonResponseCount;
     if (isActive !== undefined) updateData.isActive = isActive;
+    if (sectionId !== undefined) updateData.sectionId = sectionId;
 
     const updatedLead = await db
       .update(courseLeads)
@@ -36,14 +37,14 @@ export async function PATCH(
     console.error("Error updating course lead:", error);
     return NextResponse.json(
       { message: "فشل تحديث الطلب", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function POST(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -64,7 +65,7 @@ export async function POST(
     if (!finalSectionId) {
       return NextResponse.json(
         { message: "يجب تحديد شعبة أولاً لتحويل الطلب" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -96,14 +97,14 @@ export async function POST(
     console.error("Error converting lead to enrollment:", error);
     return NextResponse.json(
       { message: "فشل تحويل الطلب", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
 
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const { id } = await context.params;
@@ -113,7 +114,7 @@ export async function DELETE(
     console.error("Error deleting course lead:", error);
     return NextResponse.json(
       { message: "فشل حذف الطلب", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

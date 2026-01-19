@@ -6,6 +6,7 @@ import {
   meetings,
   users,
   courseLeads,
+  instructors,
 } from "@/src/db/schema";
 import { eq, and, sql, ne, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -87,9 +88,9 @@ const Page = async ({ params }: { params: { id: string } }) => {
     "high_price",
     "no_response",
     "far_location",
-    "cancel_reg",
     "busy_morning",
     "busy_evening",
+    "focal_course",
   ];
 
   const allLeadsForCourse = await db
@@ -114,8 +115,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       and(
         eq(courseLeads.courseId, currentSection.courseId),
         ne(courseLeads.sectionId, param.id),
-        inArray(courseLeads.status, potentialStatuses)
-      )
+        inArray(courseLeads.status, potentialStatuses),
+      ),
     )
     .orderBy(sql`${courseLeads.createdAt} DESC`);
 
@@ -136,13 +137,13 @@ const Page = async ({ params }: { params: { id: string } }) => {
     .where(
       and(
         eq(courseLeads.courseId, currentSection.courseId),
-        inArray(courseLeads.status, negativeStatuses)
-      )
+        inArray(courseLeads.status, negativeStatuses),
+      ),
     )
     .groupBy(courseLeads.studentEmail);
 
   const negativeMap = new Map(
-    negativeStats.map((s) => [s.email, Number(s.count)])
+    negativeStats.map((s) => [s.email, Number(s.count)]),
   );
 
   // تصفية للحصول على أحدث سجل لكل إيميل فقط
@@ -189,6 +190,17 @@ const Page = async ({ params }: { params: { id: string } }) => {
     })),
   ];
 
+  // 7. جلب جميع شعب الدورة ليتمكن من النقل إليها
+  const allCourseSections = await db
+    .select({
+      id: courseSections.id,
+      sectionNumber: courseSections.sectionNumber,
+      instructorName: instructors.name,
+    })
+    .from(courseSections)
+    .leftJoin(instructors, eq(courseSections.instructorId, instructors.id))
+    .where(eq(courseSections.courseId, currentSection.courseId));
+
   // ✅ جلب اللقاءات الخاصة بالشعبة للمنطق التلقائي
   const sectionMeetings = await db
     .select({
@@ -209,8 +221,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       .where(
         and(
           eq(courseEnrollments.sectionId, param.id),
-          eq(courseEnrollments.paymentStatus, "pending")
-        )
+          eq(courseEnrollments.paymentStatus, "pending"),
+        ),
       );
   }
 
@@ -236,9 +248,14 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
       {/* جدول الطلاب */}
       <StudentsTable
-        students={allStudents}
+        students={allStudents as any}
         currentSectionId={param.id}
         courseId={currentSection.courseId}
+        allSections={allCourseSections.map((s) => ({
+          id: s.id,
+          sectionNumber: s.sectionNumber,
+          instructorName: s.instructorName || "بدون مدرب",
+        }))}
       />
     </div>
   );

@@ -714,6 +714,10 @@ export const courseSectionsRelations = relations(
       fields: [courseSections.courseId],
       references: [courses.id],
     }),
+    instructor: one(instructors, {
+      fields: [courseSections.instructorId],
+      references: [instructors.id],
+    }),
     enrollments: many(courseEnrollments),
   }),
 );
