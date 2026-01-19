@@ -382,9 +382,9 @@ export const studentProgress = pgTable(
   (table) => ({
     uniqueEnrollmentContent: unique("unique_enrollment_content").on(
       table.enrollmentId,
-      table.contentId
+      table.contentId,
     ),
-  })
+  }),
 );
 
 // جدول الشركة
@@ -468,7 +468,28 @@ export const mediaFiles = pgTable("mediaFiles", {
   size: integer("size"),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+export const instructorMediaLibrary = pgTable("instructorMediaLibrary", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  instructorId: text("instructorId")
+    .notNull()
+    .references(() => users.id),
+  fileKey: varchar("fileKey", { length: 500 }).notNull(),
+  url: varchar("url", { length: 1024 }).notNull(),
+  name: varchar("name", { length: 255 }).notNull(),
+  type: varchar("type", { length: 50 }).notNull(),
+  size: integer("size").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
 
+export const instructorMediaLibraryRelations = relations(
+  instructorMediaLibrary,
+  ({ one }) => ({
+    instructor: one(users, {
+      fields: [instructorMediaLibrary.instructorId],
+      references: [users.id],
+    }),
+  }),
+);
 export const employees = pgTable("employees", {
   id: text("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
@@ -692,7 +713,7 @@ export const courseSectionsRelations = relations(
       references: [courses.id],
     }),
     enrollments: many(courseEnrollments),
-  })
+  }),
 );
 
 export const courseEnrollmentsRelations = relations(
@@ -707,7 +728,7 @@ export const courseEnrollmentsRelations = relations(
       references: [users.id],
     }),
     progress: many(studentProgress),
-  })
+  }),
 );
 
 export const chapterContentRelations = relations(
@@ -718,7 +739,7 @@ export const chapterContentRelations = relations(
       references: [courses.id],
     }),
     progress: many(studentProgress),
-  })
+  }),
 );
 
 // علاقة الأعمال
@@ -754,14 +775,14 @@ export const studentProgressRelations = relations(
       fields: [studentProgress.contentId],
       references: [chapterContent.id],
     }),
-  })
+  }),
 );
 
 export const digitalServicesRelations = relations(
   digitalServices,
   ({ many }) => ({
     requests: many(serviceRequests),
-  })
+  }),
 );
 
 export const serviceRequestsRelations = relations(
@@ -781,7 +802,7 @@ export const serviceRequestsRelations = relations(
       references: [users.id],
       relationName: "assignedTo",
     }),
-  })
+  }),
 );
 
 export const notificationsRelations = relations(notifications, ({ one }) => ({

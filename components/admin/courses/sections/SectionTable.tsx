@@ -188,7 +188,7 @@ const SectionTable = ({
       Swal.fire(
         "تنبيه",
         "هذه الشعبة بانتظار الاعتماد من قِبل الإدارة.",
-        "info"
+        "info",
       );
       return;
     }
@@ -216,8 +216,10 @@ const SectionTable = ({
           Swal.fire("تم التحديث!", "تم تغيير حالة الشعبة بنجاح.", "success");
           setSections((prev) =>
             prev.map((s) =>
-              s.id === id ? { ...s, status: newStatus as Section["status"] } : s
-            )
+              s.id === id
+                ? { ...s, status: newStatus as Section["status"] }
+                : s,
+            ),
           );
         } else {
           Swal.fire("خطأ!", "لم نتمكن من تحديث الحالة.", "error");
@@ -244,7 +246,8 @@ const SectionTable = ({
         </div>
       </div>
 
-      <div className="bg-white dark:bg-zinc-950 rounded-[32px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
+      {/* Desktop Table View */}
+      <div className="hidden md:block bg-white dark:bg-zinc-950 rounded-[32px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-sm">
         <Table>
           <TableHeader>
             <TableRow className="bg-slate-50/50 dark:bg-zinc-900/50 border-b border-slate-100 dark:border-zinc-800/50">
@@ -352,8 +355,8 @@ const SectionTable = ({
                                 occupancyRate >= 90
                                   ? "bg-red-500"
                                   : occupancyRate >= 50
-                                  ? "bg-amber-500"
-                                  : "bg-primary"
+                                    ? "bg-amber-500"
+                                    : "bg-primary"
                               }`}
                               style={{
                                 width: `${Math.min(occupancyRate, 100)}%`,
@@ -372,128 +375,13 @@ const SectionTable = ({
                         </Badge>
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
-                        <DropdownMenu dir="rtl">
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="size-9 p-0 rounded-xl hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-800"
-                            >
-                              <MoreHorizontal className="size-5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent
-                            align="end"
-                            className="w-64 p-2 rounded-2xl shadow-2xl border-slate-200 dark:border-zinc-800"
-                          >
-                            <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
-                              إدارة الشعبة
-                            </DropdownMenuLabel>
-
-                            <Link
-                              href={`/${role}/${userId}/courses/sections/${section.id}/edit`}
-                            >
-                              <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                <Edit className="size-4 text-blue-500" />
-                                <span className="font-bold">
-                                  تعديل البيانات
-                                </span>
-                              </DropdownMenuItem>
-                            </Link>
-
-                            {(role === "admin" ||
-                              (role === "coordinator" &&
-                                section.status !== "pending_approval")) && (
-                              <DropdownMenuItem
-                                onClick={() =>
-                                  handleChangeStatus(section.id, section.status)
-                                }
-                                className="gap-2.5 rounded-xl py-2.5 cursor-pointer"
-                              >
-                                <Settings2 className="size-4 text-amber-500" />
-                                <span className="font-bold">تغيير الحالة</span>
-                              </DropdownMenuItem>
-                            )}
-
-                            <DropdownMenuSeparator className="my-1 opacity-50" />
-
-                            <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
-                              الأكاديميا والطلاب
-                            </DropdownMenuLabel>
-
-                            <Link
-                              href={`/${role}/${userId}/courses/sections/${section.id}/students`}
-                            >
-                              <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                <Users className="size-4 text-primary" />
-                                <span className="font-bold">سجل المسجلين</span>
-                              </DropdownMenuItem>
-                            </Link>
-
-                            {(section.status === "open" ||
-                              section.status === "in_progress") && (
-                              <Link
-                                href={`/${role}/${userId}/courses/sections/${section.id}/celender`}
-                              >
-                                <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                  <Calendar className="size-4 text-emerald-500" />
-                                  <span className="font-bold">
-                                    جدولة المحاضرات
-                                  </span>
-                                </DropdownMenuItem>
-                              </Link>
-                            )}
-
-                            <Link
-                              href={`/${role}/${userId}/courses/sections/${section.id}/attendance`}
-                            >
-                              <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                <FileSpreadsheet className="size-4 text-purple-500" />
-                                <span className="font-bold">
-                                  كشف الحضور والغياب
-                                </span>
-                              </DropdownMenuItem>
-                            </Link>
-
-                            <DropdownMenuSeparator className="my-1 opacity-50" />
-
-                            <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
-                              المخرجات والنجاح
-                            </DropdownMenuLabel>
-
-                            <Link
-                              href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`}
-                            >
-                              <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                <Plus className="size-4 text-emerald-500" />
-                                <span className="font-bold">
-                                  إضافة قصة نجاح
-                                </span>
-                              </DropdownMenuItem>
-                            </Link>
-
-                            <Link
-                              href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`}
-                            >
-                              <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
-                                <Eye className="size-4 text-slate-500" />
-                                <span className="font-bold">
-                                  عرض أعمال الطلاب
-                                </span>
-                              </DropdownMenuItem>
-                            </Link>
-
-                            <DropdownMenuSeparator className="my-1 opacity-50" />
-
-                            <DropdownMenuItem
-                              className="gap-2.5 rounded-xl py-2.5 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
-                              onClick={() => handleDelete(section.id)}
-                            >
-                              <Trash2 className="size-4" />
-                              <span className="font-bold">حذف الشعبة</span>
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <SectionActions
+                          section={section}
+                          role={role}
+                          userId={userId}
+                          handleDelete={handleDelete}
+                          handleChangeStatus={handleChangeStatus}
+                        />
                       </TableCell>
                     </motion.tr>
                   );
@@ -514,9 +402,236 @@ const SectionTable = ({
           </TableBody>
         </Table>
       </div>
+
+      {/* Mobile Card View */}
+      <div className="md:hidden space-y-4">
+        <AnimatePresence mode="popLayout">
+          {sections.length > 0 ? (
+            sections.map((section, index) => {
+              const status = statusStyles[section.status];
+              const occupancyRate =
+                (section.currentEnrollment / section.maxCapacity) * 100;
+
+              return (
+                <motion.div
+                  key={section.id}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="bg-white dark:bg-zinc-950 rounded-[24px] border border-slate-200 dark:border-zinc-800 p-5 shadow-sm"
+                >
+                  <div className="flex justify-between items-start mb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
+                        #{section.number}
+                      </div>
+                      <div className="flex flex-col">
+                        <Badge
+                          variant="outline"
+                          className={`rounded-full px-2 py-0.5 mb-1 gap-1 font-bold border ${status.className} w-fit text-[10px]`}
+                        >
+                          {status.label}
+                        </Badge>
+                        <span className="text-xs text-slate-400 font-bold">
+                          {section.startDate} - {section.endDate}
+                        </span>
+                      </div>
+                    </div>
+                    <SectionActions
+                      section={section}
+                      role={role}
+                      userId={userId}
+                      handleDelete={handleDelete}
+                      handleChangeStatus={handleChangeStatus}
+                    />
+                  </div>
+
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-3 p-3 rounded-2xl bg-slate-50 dark:bg-zinc-900/50">
+                      <div className="size-8 rounded-full bg-white dark:bg-zinc-800 flex items-center justify-center text-primary shadow-sm">
+                        <User className="size-4" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="font-bold text-slate-700 dark:text-zinc-200 text-sm">
+                          {section.instructorName}
+                        </span>
+                        <span className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">
+                          {section.instructorSpecialty}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2">
+                      <div className="bg-amber-50 dark:bg-amber-900/10 rounded-2xl p-2.5 text-center">
+                        <span className="block text-[10px] text-amber-600/70 font-bold mb-1">
+                          مهتمين
+                        </span>
+                        <span className="text-lg font-black text-amber-600">
+                          {section.interestedCount}
+                        </span>
+                      </div>
+                      <div className="bg-emerald-50 dark:bg-emerald-900/10 rounded-2xl p-2.5 text-center">
+                        <span className="block text-[10px] text-emerald-600/70 font-bold mb-1">
+                          مسجلين
+                        </span>
+                        <span className="text-lg font-black text-emerald-600">
+                          {section.registeredCount}
+                        </span>
+                      </div>
+                      <div className="bg-slate-50 dark:bg-zinc-900/50 rounded-2xl p-2.5 text-center">
+                        <span className="block text-[10px] text-slate-400 font-bold mb-1">
+                          السعة
+                        </span>
+                        <div className="flex flex-col items-center justify-center h-full">
+                          <span
+                            className={`${occupancyRate >= 90 ? "text-red-500" : "text-primary"} text-lg font-black leading-none`}
+                          >
+                            {section.currentEnrollment}
+                            <span className="text-xs text-slate-300">
+                              /{section.maxCapacity}
+                            </span>
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </motion.div>
+              );
+            })
+          ) : (
+            <div className="py-12 text-center bg-slate-50 dark:bg-zinc-900/20 rounded-[32px] border border-dashed border-slate-200">
+              <div className="flex flex-col items-center gap-3">
+                <AlertCircle className="w-10 h-10 text-slate-300" />
+                <p className="text-slate-400 font-bold text-sm">
+                  لا يوجد شعب مضافة بعد
+                </p>
+              </div>
+            </div>
+          )}
+        </AnimatePresence>
+      </div>
     </div>
   );
 };
+
+const SectionActions = ({
+  section,
+  role,
+  userId,
+  handleDelete,
+  handleChangeStatus,
+}: {
+  section: Section;
+  role: string;
+  userId: string;
+  handleDelete: any;
+  handleChangeStatus: any;
+}) => (
+  <DropdownMenu dir="rtl">
+    <DropdownMenuTrigger asChild>
+      <Button
+        variant="ghost"
+        size="sm"
+        className="size-8 p-0 rounded-lg hover:bg-slate-100 dark:hover:bg-zinc-800 text-slate-400 hover:text-slate-800"
+      >
+        <MoreHorizontal className="size-5" />
+      </Button>
+    </DropdownMenuTrigger>
+    <DropdownMenuContent
+      align="end"
+      className="w-56 p-2 rounded-2xl shadow-xl border-slate-200 dark:border-zinc-800"
+    >
+      <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
+        إدارة الشعبة
+      </DropdownMenuLabel>
+
+      <Link href={`/${role}/${userId}/courses/sections/${section.id}/edit`}>
+        <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+          <Edit className="size-4 text-blue-500" />
+          <span className="font-bold">تعديل البيانات</span>
+        </DropdownMenuItem>
+      </Link>
+
+      {(role === "admin" ||
+        (role === "coordinator" && section.status !== "pending_approval")) && (
+        <DropdownMenuItem
+          onClick={() => handleChangeStatus(section.id, section.status)}
+          className="gap-2.5 rounded-xl py-2.5 cursor-pointer"
+        >
+          <Settings2 className="size-4 text-amber-500" />
+          <span className="font-bold">تغيير الحالة</span>
+        </DropdownMenuItem>
+      )}
+
+      <DropdownMenuSeparator className="my-1 opacity-50" />
+
+      <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
+        الأكاديميا والطلاب
+      </DropdownMenuLabel>
+
+      <Link href={`/${role}/${userId}/courses/sections/${section.id}/students`}>
+        <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+          <Users className="size-4 text-primary" />
+          <span className="font-bold">سجل المسجلين</span>
+        </DropdownMenuItem>
+      </Link>
+
+      {(section.status === "open" || section.status === "in_progress") && (
+        <Link
+          href={`/${role}/${userId}/courses/sections/${section.id}/celender`}
+        >
+          <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+            <Calendar className="size-4 text-emerald-500" />
+            <span className="font-bold">جدولة المحاضرات</span>
+          </DropdownMenuItem>
+        </Link>
+      )}
+
+      <Link
+        href={`/${role}/${userId}/courses/sections/${section.id}/attendance`}
+      >
+        <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+          <FileSpreadsheet className="size-4 text-purple-500" />
+          <span className="font-bold">كشف الحضور والغياب</span>
+        </DropdownMenuItem>
+      </Link>
+
+      <DropdownMenuSeparator className="my-1 opacity-50" />
+
+      <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
+        المخرجات والنجاح
+      </DropdownMenuLabel>
+
+      <Link
+        href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`}
+      >
+        <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+          <Plus className="size-4 text-emerald-500" />
+          <span className="font-bold">إضافة قصة نجاح</span>
+        </DropdownMenuItem>
+      </Link>
+
+      <Link
+        href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`}
+      >
+        <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+          <Eye className="size-4 text-slate-500" />
+          <span className="font-bold">عرض أعمال الطلاب</span>
+        </DropdownMenuItem>
+      </Link>
+
+      <DropdownMenuSeparator className="my-1 opacity-50" />
+
+      <DropdownMenuItem
+        className="gap-2.5 rounded-xl py-2.5 cursor-pointer text-red-600 focus:text-red-700 focus:bg-red-50"
+        onClick={() => handleDelete(section.id)}
+      >
+        <Trash2 className="size-4" />
+        <span className="font-bold">حذف الشعبة</span>
+      </DropdownMenuItem>
+    </DropdownMenuContent>
+  </DropdownMenu>
+);
 
 const Plus = ({ className }: { className?: string }) => (
   <svg
