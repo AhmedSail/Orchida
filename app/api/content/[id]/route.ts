@@ -6,7 +6,7 @@ import { NextResponse } from "next/server";
 
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const param = await context.params;
@@ -68,6 +68,9 @@ export async function PUT(
         contentType,
         attachmentUrl,
         attachmentName: attachmentNameDb,
+        scheduledAt: body.scheduledAt
+          ? new Date(body.scheduledAt)
+          : existing[0].scheduledAt,
         updatedAt: new Date(),
       })
       .where(eq(chapterContent.id, param.id))
@@ -84,7 +87,7 @@ export async function PUT(
 
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const param = await context.params;

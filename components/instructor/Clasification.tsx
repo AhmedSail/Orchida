@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import SectionContent from "./SectionContent";
 import {
   AllChapters,
@@ -32,8 +32,18 @@ import {
   Mail,
   MoreVertical,
   Activity,
+  StickyNote,
+  Star,
+  Link as LinkIcon,
+  Image as ImageIcon,
+  Trash,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
+import EditNotesDialog from "./EditNotesDialog";
+import AddRecommendationDialog from "./AddRecommendationDialog";
+import EditRecommendationDialog from "./EditRecommendationDialog";
+import Swal from "sweetalert2";
+import { Edit2 } from "lucide-react";
 
 interface Section {
   id: string;
@@ -42,6 +52,8 @@ interface Section {
   endDate: Date | null;
   courseTitle: string | null;
   sectionStatus?: string;
+  notes?: string | null;
+  instructorId?: string | null;
 }
 
 interface Student {
@@ -73,7 +85,7 @@ interface Props {
 
 const Clasification = ({
   user,
-  section,
+  section: initialSection,
   allModules,
   userId,
   courseId,
@@ -81,10 +93,18 @@ const Clasification = ({
   contents,
   role,
   students,
+  instructorSections,
 }: Props) => {
-  const [activeTab, setActiveTab] = useState<"content" | "members" | "forum">(
-    "content"
-  );
+  const [activeTab, setActiveTab] = useState<
+    "content" | "members" | "forum" | "recommendations"
+  >("content");
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [showAddRec, setShowAddRec] = useState(false);
+  const [showEditRec, setShowEditRec] = useState(false);
+  const [selectedRecId, setSelectedRecId] = useState<string | null>(null);
+  const [loadingRecs, setLoadingRecs] = useState(false);
+  const [section, setSection] = useState(initialSection);
+  const [showEditNotes, setShowEditNotes] = useState(false);
   const router = useRouter();
 
   if (!section) {
@@ -107,7 +127,7 @@ const Clasification = ({
         router.push(
           `/${
             role === "user" ? "dashboardUser" : role || "instructor"
-          }/${userId}/courses/${section.id}/content`
+          }/${userId}/courses/${section.id}/content`,
         );
       },
     },
@@ -127,14 +147,110 @@ const Clasification = ({
         router.push(
           `/${
             role === "user" ? "dashboardUser" : role || "instructor"
-          }/${userId}/courses/${section.id}/chat`
+          }/${userId}/courses/${section.id}/chat`,
         );
       },
     },
+    {
+      id: "recommendations" as const,
+      label: "توصيات المدرب",
+      icon: Star,
+      color: "text-amber-500",
+      action: () => setActiveTab("recommendations"),
+    },
   ];
+
+  const fetchRecommendations = async () => {
+    if (!section?.instructorId) return;
+    setLoadingRecs(true);
+    try {
+      const res = await fetch(
+        `/api/recommendations?instructorId=${section.instructorId}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendations(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingRecs(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "recommendations") {
+      fetchRecommendations();
+    }
+  }, [activeTab, section?.instructorId]);
+
+  const handleDeleteRec = async (id: string) => {
+    const result = await Swal.fire({
+      title: "هل أنت متأكد؟",
+      text: "سيتم حذف هذه التوصية من جميع شعبك!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذفها",
+      cancelButtonText: "إلغاء",
+    });
+
+    if (result.isConfirmed) {
+      try {
+        const res = await fetch(`/api/recommendations/${id}`, {
+          method: "DELETE",
+        });
+        if (res.ok) {
+          Swal.fire("تم الحذف", "تم حذف التوصية بنجاح", "success");
+          fetchRecommendations();
+        }
+      } catch (error) {
+        Swal.fire("خطأ", "فشل الحذف", "error");
+      }
+    }
+  };
 
   return (
     <div className="space-y-8 pb-12" dir="rtl">
+      {/* Edit Notes Dialog */}
+      {section && (
+        <EditNotesDialog
+          active={showEditNotes}
+          setActive={setShowEditNotes}
+          sectionId={section.id}
+          initialNotes={section.notes || ""}
+          onUpdate={(newNotes: string) =>
+            setSection((prev: any) =>
+              prev ? { ...prev, notes: newNotes } : null,
+            )
+          }
+        />
+      )}
+
+      {/* Add Recommendation Dialog */}
+      <AddRecommendationDialog
+        active={showAddRec}
+        setActive={setShowAddRec}
+        onSuccess={fetchRecommendations}
+        sections={instructorSections.map((s) => ({
+          sectionId: s.sectionId,
+          sectionNumber: s.sectionNumber,
+          courseTitle: s.courseTitle,
+        }))}
+      />
+
+      {/* Edit Recommendation Dialog */}
+      <EditRecommendationDialog
+        active={showEditRec}
+        setActive={setShowEditRec}
+        onSuccess={fetchRecommendations}
+        recommendationId={selectedRecId}
+        sections={instructorSections.map((s) => ({
+          sectionId: s.sectionId,
+          sectionNumber: s.sectionNumber,
+          courseTitle: s.courseTitle,
+        }))}
+      />
+
       {/* Header Section */}
       <div className="relative overflow-hidden p-8 md:p-12 rounded-[48px] bg-slate-900 border border-slate-800">
         <div className="absolute top-0 right-0 w-1/2 h-full bg-gradient-to-l from-primary/20 to-transparent opacity-50" />
@@ -142,14 +258,27 @@ const Clasification = ({
 
         <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
           <div className="space-y-4">
-            <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 text-primary tracking-widest font-black uppercase text-xs"
-            >
-              <Activity className="size-4" />
-              <span>لوحة التحكم الأكاديمية</span>
-            </motion.div>
+            <div className="flex items-center justify-between gap-4">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 text-primary tracking-widest font-black uppercase text-xs"
+              >
+                <Activity className="size-4" />
+                <span>لوحة التحكم الأكاديمية</span>
+              </motion.div>
+
+              {role === "instructor" && (
+                <Button
+                  variant="ghost"
+                  onClick={() => setShowEditNotes(true)}
+                  className="rounded-2xl bg-white/5 border border-white/10 text-white/80 hover:bg-white/10 hover:text-white font-bold gap-2 py-1 h-auto"
+                >
+                  <StickyNote className="size-4 text-emerald-500" />
+                  تحديث ملاحظات الدورة
+                </Button>
+              )}
+            </div>
 
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -264,6 +393,26 @@ const Clasification = ({
       >
         {activeTab === "content" && (
           <div className="space-y-6">
+            {/* Course Notes Section (Internal Preview) */}
+            {section.notes && (
+              <div className="p-8 rounded-[40px] bg-blue-50/50 dark:bg-blue-500/5 border border-blue-100 dark:border-blue-500/10 shadow-sm relative overflow-hidden group">
+                <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
+                  <AlertCircle className="size-24 text-blue-600" />
+                </div>
+                <div className="relative z-10 space-y-4">
+                  <div className="flex items-center gap-3 text-blue-700 dark:text-blue-400">
+                    <StickyNote className="size-6" />
+                    <h3 className="text-xl font-black tracking-tight">
+                      ملاحظات الدورة (معاينة الطلاب)
+                    </h3>
+                  </div>
+                  <p className="text-slate-600 dark:text-slate-400 font-medium leading-relaxed">
+                    {section.notes}
+                  </p>
+                </div>
+              </div>
+            )}
+
             <div className="flex items-center justify-between">
               <h2 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
                 <BookOpen className="size-6 text-primary" />
@@ -272,7 +421,7 @@ const Clasification = ({
             </div>
 
             {["open", "in_progress", "closed"].includes(
-              section.sectionStatus || ""
+              section.sectionStatus || "",
             ) ? (
               <div className="relative group">
                 <SectionContent
@@ -408,6 +557,130 @@ const Clasification = ({
           </div>
         )}
 
+        {activeTab === "recommendations" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+                  <Star className="size-8 text-amber-500 fill-amber-500" />
+                  توصيات وخدمات المدرب
+                </h2>
+                <p className="text-slate-500 font-medium mt-1">
+                  أهم المنتجات والأدوات والخدمات التي ينصح بها المدرب لتطوير
+                  مستواك.
+                </p>
+              </div>
+
+              {role === "instructor" && (
+                <Button
+                  onClick={() => setShowAddRec(true)}
+                  className="rounded-2xl bg-amber-500 hover:bg-amber-600 text-white font-black gap-2 h-12 px-6 shadow-lg shadow-amber-500/20 active:scale-95 transition-all"
+                >
+                  <Star className="size-5 fill-white" />
+                  إضافة توصية جديدة
+                </Button>
+              )}
+            </div>
+
+            {loadingRecs ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 rounded-3xl bg-slate-100 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : recommendations.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {recommendations.map((rec, index) => (
+                  <motion.div
+                    key={rec.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
+                  >
+                    {role === "instructor" && (
+                      <div className="absolute top-4 left-4 z-20 flex flex-col gap-2">
+                        <button
+                          onClick={() => {
+                            setSelectedRecId(rec.id);
+                            setShowEditRec(true);
+                          }}
+                          className="size-10 rounded-full bg-blue-500/10 text-blue-500 hover:bg-blue-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 shadow-xl"
+                        >
+                          <Edit2 className="size-5" />
+                        </button>
+                        <button
+                          onClick={() => handleDeleteRec(rec.id)}
+                          className="size-10 rounded-full bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all active:scale-90 shadow-xl"
+                        >
+                          <Trash className="size-5" />
+                        </button>
+                      </div>
+                    )}
+
+                    <div className="relative h-48 overflow-hidden">
+                      {rec.imageUrl ? (
+                        <img
+                          src={rec.imageUrl}
+                          alt={rec.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-zinc-900 flex items-center justify-center text-slate-300">
+                          <ImageIcon className="size-16" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    <div className="p-8 flex flex-col flex-1 space-y-4">
+                      <div className="space-y-1">
+                        <Badge className="bg-amber-500/10 text-amber-600 border-none text-[10px] font-black tracking-widest uppercase px-3">
+                          توصية رائدة
+                        </Badge>
+                        <h4 className="text-xl font-black text-slate-800 dark:text-white">
+                          {rec.title}
+                        </h4>
+                      </div>
+
+                      <p className="text-slate-500 dark:text-slate-400 font-medium text-sm line-clamp-3 leading-relaxed">
+                        {rec.description}
+                      </p>
+
+                      <div className="pt-4 mt-auto">
+                        <a
+                          href={rec.linkUrl || "#"}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="w-full h-12 rounded-2xl bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-slate-100 text-white font-black flex items-center justify-center gap-2 group/btn transition-all shadow-lg active:scale-95"
+                        >
+                          <LinkIcon className="size-4 group-hover/btn:translate-x-1 transition-transform" />
+                          عرض الرابط / الخدمة
+                        </a>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-zinc-950 rounded-[40px] border border-dashed border-slate-200 dark:border-zinc-800 text-center gap-6">
+                <div className="size-20 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                  <Star className="size-10" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">لا يوجد توصيات حالياً</h3>
+                  <p className="text-slate-500">
+                    سوف تظهر هنا أهم المنتجات والخدمات التي ينصح بها المدرب.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {activeTab === "forum" && (
           <div className="flex flex-col items-center justify-center p-20 bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 shadow-xl text-center gap-8">
             <div className="size-24 rounded-[32px] bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 shadow-2xl shadow-purple-500/10">
@@ -427,7 +700,7 @@ const Clasification = ({
                 router.push(
                   `/${
                     role === "user" ? "dashboardUser" : role || "instructor"
-                  }/${userId}/courses/${section.id}/chat`
+                  }/${userId}/courses/${section.id}/chat`,
                 )
               }
               className="h-14 px-10 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-lg shadow-xl shadow-purple-600/20 active:scale-95 transition-all"

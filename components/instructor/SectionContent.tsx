@@ -36,6 +36,7 @@ import {
   HelpCircle,
   ChevronRight,
   GripVertical,
+  Clock,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
 
@@ -115,7 +116,7 @@ const SectionContent = ({
 
   const handleUpdateModule = async (
     id: string,
-    data: { title: string; description: string }
+    data: { title: string; description: string },
   ) => {
     try {
       const res = await fetch(`/api/modules/${id}`, {
@@ -133,7 +134,7 @@ const SectionContent = ({
 
   const handleUpdateChapter = async (
     id: string,
-    data: { title: string; description: string }
+    data: { title: string; description: string },
   ) => {
     try {
       const res = await fetch(`/api/chapters/${id}`, {
@@ -226,6 +227,7 @@ const SectionContent = ({
           fileUrl,
           attachmentName,
           removeFile: data.removeFile,
+          scheduledAt: data.scheduledAt,
         }),
       });
 
@@ -462,6 +464,17 @@ const SectionContent = ({
                                         >
                                           {content.contentType}
                                         </Badge>
+                                        {content.scheduledAt && (
+                                          <Badge
+                                            variant="secondary"
+                                            className="text-[8px] px-1.5 py-0 rounded-md font-black text-blue-500 bg-blue-50 border-blue-100"
+                                          >
+                                            <Clock className="size-2 mr-1" />
+                                            {new Date(
+                                              content.scheduledAt,
+                                            ).toLocaleString("ar-EG")}
+                                          </Badge>
+                                        )}
                                       </div>
                                     </div>
                                   </div>
@@ -493,7 +506,7 @@ const SectionContent = ({
                                           content.videoUrl ||
                                             content.imageUrl ||
                                             content.attachmentUrl ||
-                                            undefined
+                                            undefined,
                                         )
                                       }
                                       className="size-9 p-0 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border-none shadow-sm"

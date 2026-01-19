@@ -10,6 +10,9 @@ import {
   Activity,
   ArrowLeft,
   GraduationCap,
+  Star,
+  Link as LinkIcon,
+  Image as ImageIcon,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -27,6 +30,7 @@ interface Section {
   endDate: Date | null;
   courseTitle: string | null;
   notes?: string | null;
+  instructorId?: string | null;
 }
 
 interface Props {
@@ -52,8 +56,36 @@ const Clasification = ({
   IBAN,
   role,
 }: Props) => {
-  const [activeTab, setActiveTab] = useState<"content" | "forum">("content");
+  const [activeTab, setActiveTab] = useState<
+    "content" | "forum" | "recommendations"
+  >("content");
+  const [recommendations, setRecommendations] = useState<any[]>([]);
+  const [loadingRecs, setLoadingRecs] = useState(false);
   const router = useRouter();
+
+  const fetchRecommendations = async () => {
+    if (!section?.instructorId) return;
+    setLoadingRecs(true);
+    try {
+      const res = await fetch(
+        `/api/recommendations?instructorId=${section.instructorId}&sectionId=${section.id}`,
+      );
+      if (res.ok) {
+        const data = await res.json();
+        setRecommendations(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingRecs(false);
+    }
+  };
+
+  React.useEffect(() => {
+    if (activeTab === "recommendations") {
+      fetchRecommendations();
+    }
+  }, [activeTab, section?.instructorId]);
 
   if (!section) {
     return (
@@ -82,6 +114,14 @@ const Clasification = ({
       link: `/${role === "user" ? "dashboardUser" : role}/${userId}/courses/${
         section?.id
       }/chat`,
+    },
+    {
+      id: "recommendations" as const,
+      label: "توصيات المدرب",
+      icon: Star,
+      color: "text-amber-500",
+      action: () => setActiveTab("recommendations"),
+      link: "#",
     },
   ];
 
@@ -161,7 +201,9 @@ const Clasification = ({
               key={item.id}
               onClick={() => {
                 setActiveTab(item.id);
-                router.push(item.link);
+                if (item.link && item.link !== "#") {
+                  router.push(item.link);
+                }
               }}
               className={`
                 relative px-8 py-4 rounded-3xl flex items-center gap-3 transition-all duration-300
@@ -273,6 +315,101 @@ const Clasification = ({
                   contents={contents}
                 />
               </div>
+            </div>
+          )}
+
+          {activeTab === "recommendations" && (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 px-2">
+                <div className="h-8 w-1.5 bg-amber-500 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-black text-slate-800 dark:text-white">
+                    توصيات المدرب للطلاب
+                  </h2>
+                  <p className="text-slate-500 text-sm font-medium">
+                    نصائح، أدوات، ومنتجات مهمة يوصي بها مدرب الدورة
+                  </p>
+                </div>
+              </div>
+
+              {loadingRecs ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 rounded-[40px] bg-slate-100 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : recommendations.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {recommendations.map((rec, index) => (
+                    <motion.div
+                      key={rec.id}
+                      initial={{ opacity: 0, scale: 0.9 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
+                    >
+                      <div className="relative h-44 overflow-hidden">
+                        {rec.imageUrl ? (
+                          <img
+                            src={rec.imageUrl}
+                            alt={rec.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-slate-100 dark:bg-zinc-900 flex items-center justify-center text-slate-300">
+                            <ImageIcon className="size-16" />
+                          </div>
+                        )}
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                      </div>
+
+                      <div className="p-6 flex flex-col flex-1 space-y-3">
+                        <div className="space-y-1">
+                          <span className="text-[10px] font-black text-amber-600 uppercase tracking-widest bg-amber-50 px-2 py-0.5 rounded-lg">
+                            توصية المدرب
+                          </span>
+                          <h4 className="text-lg font-black text-slate-800 dark:text-white leading-tight">
+                            {rec.title}
+                          </h4>
+                        </div>
+
+                        <p className="text-slate-500 dark:text-slate-400 font-medium text-xs line-clamp-3 leading-relaxed">
+                          {rec.description}
+                        </p>
+
+                        <div className="pt-4 mt-auto">
+                          <a
+                            href={rec.linkUrl || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="w-full h-11 rounded-2xl bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-slate-100 text-white font-black flex items-center justify-center gap-2 group/btn transition-all text-sm"
+                          >
+                            <LinkIcon className="size-4 group-hover/btn:translate-x-1 transition-transform" />
+                            فتح التوصية
+                          </a>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-zinc-900 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-zinc-800 text-center gap-6">
+                  <div className="size-20 rounded-full bg-amber-50 flex items-center justify-center text-amber-500">
+                    <Star className="size-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white">
+                      لا توجد توصيات حالياً
+                    </h3>
+                    <p className="text-slate-500 font-medium">
+                      سوف تظهر هنا أي أدوات أو منتجات ينصح بها المدرب.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
 

@@ -40,6 +40,7 @@ const contentSchema = z.object({
   contentType: z.enum(["text", "video", "image", "attachment"]),
   textContent: z.string().optional(),
   attachmentName: z.string().optional(),
+  scheduledAt: z.string().optional(),
 });
 
 type ContentForm = z.infer<typeof contentSchema>;
@@ -57,7 +58,8 @@ interface Props {
       file?: File | null;
       removeFile?: boolean;
       textContent?: string;
-    }
+      scheduledAt?: string;
+    },
   ) => Promise<void>;
 }
 
@@ -80,6 +82,9 @@ export default function EditContentDialog({
       contentType: (content.contentType as any) ?? "text",
       textContent: content.textContent ?? "",
       attachmentName: content.attachmentName ?? "",
+      scheduledAt: content.scheduledAt
+        ? new Date(content.scheduledAt).toISOString().slice(0, 16)
+        : "",
     },
   });
 
@@ -93,6 +98,9 @@ export default function EditContentDialog({
         contentType: (content.contentType as any) ?? "text",
         textContent: content.textContent ?? "",
         attachmentName: content.attachmentName ?? "",
+        scheduledAt: content.scheduledAt
+          ? new Date(content.scheduledAt).toISOString().slice(0, 16)
+          : "",
       });
       setFile(null);
       setUploadProgress(0);
@@ -119,6 +127,7 @@ export default function EditContentDialog({
       description: data.description || "",
       contentType: data.contentType,
       textContent: data.textContent,
+      scheduledAt: data.scheduledAt,
       file: file,
     });
     setActive(false);
@@ -237,6 +246,26 @@ export default function EditContentDialog({
                 )}
               />
 
+              <FormField
+                control={form.control}
+                name="scheduledAt"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="font-bold text-slate-700">
+                      وقت الظهور (اختياري)
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        {...field}
+                        type="datetime-local"
+                        className="rounded-2xl h-12 border-slate-200 focus:ring-primary shadow-sm"
+                      />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               {contentType === "text" ? (
                 <FormField
                   control={form.control}
@@ -334,8 +363,8 @@ export default function EditContentDialog({
                         contentType === "video"
                           ? "video/*"
                           : contentType === "image"
-                          ? "image/*"
-                          : "*"
+                            ? "image/*"
+                            : "*"
                       }
                     />
 

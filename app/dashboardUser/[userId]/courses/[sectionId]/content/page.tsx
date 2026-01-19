@@ -11,7 +11,7 @@ import {
   meetings,
   users, // 👈 لازم نستدعي جدول اللقاءات
 } from "@/src/db/schema";
-import { and, eq, InferSelectModel } from "drizzle-orm";
+import { and, eq, InferSelectModel, or, isNull, lte } from "drizzle-orm";
 import { User } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -62,6 +62,7 @@ const Page = async ({
       courseTitle: courses.title,
       courseId: courses.id,
       notes: courseSections.notes,
+      instructorId: courseSections.instructorId,
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
@@ -93,8 +94,8 @@ const Page = async ({
     .where(
       and(
         eq(courseEnrollments.sectionId, param.sectionId),
-        eq(courseEnrollments.studentId, session.user.id)
-      )
+        eq(courseEnrollments.studentId, session.user.id),
+      ),
     )
     .limit(1);
 
@@ -112,7 +113,7 @@ const Page = async ({
     .where(eq(meetings.sectionId, param.sectionId));
 
   const archivedCount = sectionMeetings.filter(
-    (m) => m.archived === true
+    (m) => m.archived === true,
   ).length;
 
   // ✅ الشرط: إذا الدفع = pending والتأكيد = pending وعدد اللقاءات المؤرشفة = 3 → إخفاء المحتوى

@@ -9,6 +9,7 @@ import {
   integer,
   unique,
   serial,
+  primaryKey,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { uuid } from "drizzle-orm/pg-core";
@@ -333,6 +334,7 @@ export const chapterContent = pgTable("chapterContent", {
   attachmentName: varchar("attachmentName", { length: 255 }),
   orderIndex: integer("orderIndex").notNull(), // ترتيب المحتوى داخل الفصل
   isPublished: boolean("isPublished").default(false).notNull(),
+  scheduledAt: timestamp("scheduledAt"), // وقت ظهور المحتوى
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
@@ -836,6 +838,60 @@ export const smsTemplatesRelations = relations(smsTemplates, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+export const instructorRecommendations = pgTable("instructorRecommendations", {
+  id: text("id").primaryKey(),
+  instructorId: text("instructorId")
+    .notNull()
+    .references(() => instructors.id), // ربط بالمدرب
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  imageUrl: varchar("imageUrl", { length: 500 }),
+  linkUrl: varchar("linkUrl", { length: 500 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const recommendationToSections = pgTable(
+  "recommendationToSections",
+  {
+    recommendationId: text("recommendationId")
+      .notNull()
+      .references(() => instructorRecommendations.id, { onDelete: "cascade" }),
+    sectionId: text("sectionId")
+      .notNull()
+      .references(() => courseSections.id, { onDelete: "cascade" }),
+  },
+  (t) => ({
+    pk: primaryKey({ columns: [t.recommendationId, t.sectionId] }),
+  }),
+);
+
+export const instructorRecommendationsRelations = relations(
+  instructorRecommendations,
+  ({ one, many }) => ({
+    instructor: one(instructors, {
+      fields: [instructorRecommendations.instructorId],
+      references: [instructors.id],
+    }),
+    sectionAssignments: many(recommendationToSections),
+  }),
+);
+
+export const recommendationToSectionsRelations = relations(
+  recommendationToSections,
+  ({ one }) => ({
+    recommendation: one(instructorRecommendations, {
+      fields: [recommendationToSections.recommendationId],
+      references: [instructorRecommendations.id],
+    }),
+    section: one(courseSections, {
+      fields: [recommendationToSections.sectionId],
+      references: [courseSections.id],
+    }),
+  }),
+);
 
 export const accountRelations = relations(account, ({ one }) => ({
   user: one(users, {
