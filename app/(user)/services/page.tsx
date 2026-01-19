@@ -11,7 +11,11 @@ export const metadata = {
   },
 };
 
+import JsonLd from "@/components/ui/JsonLd";
+
 const page = async () => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
   const services = await db.select().from(digitalServices);
 
   const allWorks = await db
@@ -38,8 +42,21 @@ const page = async () => {
     .where(and(eq(works.isActive, true), isNull(works.deletedAt)))
     .orderBy(works.createdAt);
 
+  const itemListJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: services.map((service, index) => ({
+      "@type": "ListItem",
+      position: index + 1,
+      name: service.name,
+      description: service.description,
+      url: `${baseUrl}/services/${service.id}/works`,
+    })),
+  };
+
   return (
     <div className="container mx-auto">
+      <JsonLd data={itemListJsonLd} />
       <ServicePage services={services} allWorks={allWorks} />
     </div>
   );

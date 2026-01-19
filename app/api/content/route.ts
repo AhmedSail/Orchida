@@ -16,7 +16,7 @@ export async function POST(req: Request) {
     if (!allowedTypes.includes(rawContentType as any)) {
       return NextResponse.json(
         { error: "نوع المحتوى غير صالح" },
-        { status: 400 }
+        { status: 400 },
       );
     }
     const contentType = rawContentType as (typeof allowedTypes)[number];
@@ -24,12 +24,14 @@ export async function POST(req: Request) {
     const textContent = formData.get("textContent") as string | null;
     const attachmentName = formData.get("attachmentName") as string | null;
     const fileUrl = formData.get("fileUrl") as string | null;
+    const scheduledAtStr = formData.get("scheduledAt") as string | null;
+    const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : null;
 
     // تحقق من وجود رابط الملف إذا لم يكن المحتوى نصيًا
     if (!fileUrl && contentType !== "text") {
       return NextResponse.json(
         { error: "يجب توفير رابط الملف للأنواع غير النصية" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -47,6 +49,7 @@ export async function POST(req: Request) {
       attachmentName,
       orderIndex: 1,
       isPublished: true,
+      scheduledAt,
     };
 
     await db.insert(chapterContent).values(newContent);

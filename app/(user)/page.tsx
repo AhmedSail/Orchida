@@ -25,7 +25,12 @@ export const metadata: Metadata = {
   },
 };
 
+import JsonLd from "@/components/ui/JsonLd";
+
 const page = async () => {
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+
   // ✅ جلب جميع البيانات بالتوازي مع ترتيب الأخبار تنازلياً
   const [services, slidersPhoto, newsData, sections, rowData, studentStories] =
     await Promise.all([
@@ -87,8 +92,40 @@ const page = async () => {
     // ممكن تضيف sections كمصفوفة منفصلة لو بدك
   }));
 
+  const organizationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    name: "اوركيدة",
+    url: baseUrl,
+    logo: `${baseUrl}/logo.png`,
+    description:
+      "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم.",
+    contactPoint: {
+      "@type": "ContactPoint",
+      telephone: "+972-598-919-125", // Replace with real phone if known, or leave as placeholder for user to update
+      contactType: "customer service",
+    },
+  };
+
+  const websiteJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    name: "اوركيدة",
+    url: baseUrl,
+    potentialAction: {
+      "@type": "SearchAction",
+      target: {
+        "@type": "EntryPoint",
+        urlTemplate: `${baseUrl}/search?q={search_term_string}`,
+      },
+      "query-input": "required name=search_term_string",
+    },
+  };
+
   return (
     <div>
+      <JsonLd data={organizationJsonLd} />
+      <JsonLd data={websiteJsonLd} />
       {/* مرر الخدمات + الطلبات للـ HomeView */}
       <HomeView
         services={services}

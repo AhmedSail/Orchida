@@ -59,6 +59,8 @@ const page = async ({
       endDate: courseSections.endDate,
       courseTitle: courses.title,
       sectionStatus: courseSections.status, // 👈 الحالة من enum section_status
+      notes: courseSections.notes,
+      instructorId: courseSections.instructorId,
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
@@ -98,8 +100,8 @@ const page = async ({
     .where(
       and(
         eq(courseModules.sectionId, sectionId),
-        eq(courseModules.intructorId, session.user.id)
-      )
+        eq(courseModules.intructorId, session.user.id),
+      ),
     );
 
   const chapters = await db.select().from(courseChapters);

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Package,
@@ -14,6 +14,7 @@ import {
   Clock,
   CheckCircle2,
   HelpCircle,
+  Lock,
 } from "lucide-react";
 import {
   Accordion,
@@ -29,6 +30,7 @@ import {
   AllContent,
   AllModules,
 } from "@/app/instructor/[instructorId]/courses/[sectionId]/content/page";
+import CountdownTimer from "@/components/ui/CountdownTimer";
 
 interface Props {
   modules: AllModules[];
@@ -48,6 +50,13 @@ const SectionContent = ({
   contents,
 }: Props) => {
   const [activeContent, setActiveContent] = useState<AllContent | null>(null);
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  // تحديث الوقت كل ثانية لمراقبة المحتوى المجدول
+  useEffect(() => {
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
+    return () => clearInterval(timer);
+  }, []);
 
   const getContentIcon = (type: string) => {
     switch (type) {
@@ -142,53 +151,100 @@ const SectionContent = ({
                                 <AnimatePresence mode="popLayout">
                                   {contents
                                     .filter((c) => c.chapterId === chapter.id)
-                                    .map((content, cIdx) => (
-                                      <motion.div
-                                        layout
-                                        key={content.id}
-                                        initial={{ opacity: 0, x: 10 }}
-                                        animate={{ opacity: 1, x: 0 }}
-                                        transition={{ delay: cIdx * 0.05 }}
-                                        className="group/item flex items-center justify-between p-5 bg-white dark:bg-zinc-950/50 rounded-2xl border border-slate-100 dark:border-zinc-800 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5 transition-all"
-                                      >
-                                        <div className="flex items-center gap-4">
-                                          <div className="size-12 rounded-xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center group-hover/item:scale-110 transition-transform border border-slate-100 dark:border-zinc-800">
-                                            {getContentIcon(
-                                              content.contentType || "text"
-                                            )}
-                                          </div>
-                                          <div className="space-y-1">
-                                            <h4 className="font-bold text-slate-800 dark:text-zinc-100">
-                                              {content.title}
-                                            </h4>
-                                            <div className="flex items-center gap-2">
-                                              <Badge
-                                                variant="outline"
-                                                className="text-[10px] font-black uppercase text-slate-400 group-hover/item:text-primary transition-colors h-5"
+                                    .map((content, cIdx) => {
+                                      const isLocked =
+                                        content.scheduledAt &&
+                                        new Date(content.scheduledAt) >
+                                          currentTime;
+
+                                      return (
+                                        <motion.div
+                                          layout
+                                          key={content.id}
+                                          initial={{ opacity: 0, x: 10 }}
+                                          animate={{ opacity: 1, x: 0 }}
+                                          transition={{ delay: cIdx * 0.05 }}
+                                          className={`group/item flex flex-col md:flex-row items-start md:items-center justify-between p-5 bg-white dark:bg-zinc-950/50 rounded-2xl border transition-all ${
+                                            isLocked
+                                              ? "border-slate-100 opacity-80"
+                                              : "border-slate-100 dark:border-zinc-800 hover:border-primary/30 hover:shadow-lg hover:shadow-primary/5"
+                                          }`}
+                                        >
+                                          <div className="flex items-center gap-4">
+                                            <div
+                                              className={`size-12 rounded-xl flex items-center justify-center transition-transform border ${
+                                                isLocked
+                                                  ? "bg-slate-100 text-slate-400 group-hover/item:scale-100 border-slate-200"
+                                                  : "bg-slate-50 dark:bg-zinc-900 group-hover/item:scale-110 border-slate-100 dark:border-zinc-800"
+                                              }`}
+                                            >
+                                              {isLocked ? (
+                                                <Lock className="size-5" />
+                                              ) : (
+                                                getContentIcon(
+                                                  content.contentType || "text",
+                                                )
+                                              )}
+                                            </div>
+                                            <div className="space-y-1">
+                                              <h4
+                                                className={`font-bold transition-colors ${
+                                                  isLocked
+                                                    ? "text-slate-400"
+                                                    : "text-slate-800 dark:text-zinc-100"
+                                                }`}
                                               >
-                                                {getContentTypeLabel(
-                                                  content.contentType || "text"
+                                                {content.title}
+                                              </h4>
+                                              <div className="flex items-center gap-2">
+                                                <Badge
+                                                  variant="outline"
+                                                  className={`text-[10px] font-black uppercase transition-colors h-5 ${
+                                                    isLocked
+                                                      ? "text-slate-300 border-slate-200"
+                                                      : "text-slate-400 group-hover/item:text-primary"
+                                                  }`}
+                                                >
+                                                  {getContentTypeLabel(
+                                                    content.contentType ||
+                                                      "text",
+                                                  )}
+                                                </Badge>
+                                                {!isLocked && (
+                                                  <div className="flex items-center gap-1 text-[10px] text-slate-400">
+                                                    <Clock className="size-3" />
+                                                    متاح للعرض
+                                                  </div>
                                                 )}
-                                              </Badge>
-                                              <div className="flex items-center gap-1 text-[10px] text-slate-400">
-                                                <Clock className="size-3" />
-                                                متاح للعرض
                                               </div>
                                             </div>
                                           </div>
-                                        </div>
 
-                                        <Button
-                                          onClick={() =>
-                                            setActiveContent(content)
-                                          }
-                                          className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-slate-100 font-black text-xs gap-2 shadow-xl shadow-black/5"
-                                        >
-                                          <Eye className="size-4" />
-                                          ابدأ التعلم
-                                        </Button>
-                                      </motion.div>
-                                    ))}
+                                          <div className="mt-4 md:mt-0">
+                                            {isLocked ? (
+                                              <CountdownTimer
+                                                targetDate={
+                                                  new Date(content.scheduledAt!)
+                                                }
+                                                onComplete={() =>
+                                                  setCurrentTime(new Date())
+                                                }
+                                              />
+                                            ) : (
+                                              <Button
+                                                onClick={() =>
+                                                  setActiveContent(content)
+                                                }
+                                                className="h-10 px-6 rounded-xl bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-slate-100 font-black text-xs gap-2 shadow-xl shadow-black/5"
+                                              >
+                                                <Eye className="size-4" />
+                                                ابدأ التعلم
+                                              </Button>
+                                            )}
+                                          </div>
+                                        </motion.div>
+                                      );
+                                    })}
                                 </AnimatePresence>
                               </div>
                             </AccordionContent>

@@ -41,6 +41,7 @@ const contentSchema = z.object({
   contentType: z.enum(["text", "video", "image", "attachment"]),
   textContent: z.string().optional(),
   attachmentName: z.string().optional(),
+  scheduledAt: z.string().optional(),
 });
 
 type ContentForm = z.infer<typeof contentSchema>;
@@ -62,6 +63,7 @@ export default function AddContentDialog({
       contentType: "text",
       textContent: "",
       attachmentName: "",
+      scheduledAt: "",
     },
   });
 
@@ -86,13 +88,16 @@ export default function AddContentDialog({
     setFileUrl(selected.url);
 
     // Map library type to form content type
-    const typeMap: Record<string, "image" | "video" | "attachment"> = {
+    const typeMap = {
       image: "image",
       video: "video",
       file: "attachment",
-    };
+    } as const;
 
-    form.setValue("contentType", typeMap[selected.type] || "attachment");
+    form.setValue(
+      "contentType",
+      (typeMap[selected.type] as any) || "attachment",
+    );
     form.setValue("attachmentName", selected.name);
   };
 
@@ -103,6 +108,7 @@ export default function AddContentDialog({
       formData.append("title", data.title);
       if (data.description) formData.append("description", data.description);
       formData.append("contentType", data.contentType);
+      if (data.scheduledAt) formData.append("scheduledAt", data.scheduledAt);
 
       if (data.contentType === "text") {
         if (data.textContent) {
@@ -253,6 +259,26 @@ export default function AddContentDialog({
                         <Input
                           {...field}
                           placeholder="أضف وصفاً بسيطاً لهذا الدرس..."
+                          className="rounded-2xl h-12 border-slate-200 focus:ring-primary shadow-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+
+                <FormField
+                  control={form.control}
+                  name="scheduledAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold text-slate-700">
+                        وقت الظهور (اختياري)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="datetime-local"
                           className="rounded-2xl h-12 border-slate-200 focus:ring-primary shadow-sm"
                         />
                       </FormControl>
