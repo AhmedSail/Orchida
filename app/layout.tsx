@@ -9,8 +9,7 @@ const tajawal = Tajawal({
   variable: "--font-tajawal",
 });
 
-const baseUrl =
-  process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),

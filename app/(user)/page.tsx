@@ -28,8 +28,7 @@ export const metadata: Metadata = {
 import JsonLd from "@/components/ui/JsonLd";
 
 const page = async () => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
 
   // ✅ جلب جميع البيانات بالتوازي مع ترتيب الأخبار تنازلياً
   const [services, slidersPhoto, newsData, sections, rowData, studentStories] =
@@ -122,10 +121,60 @@ const page = async () => {
     },
   };
 
+  const navigationJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "ItemList",
+    itemListElement: [
+      {
+        "@type": "SiteNavigationElement",
+        position: 1,
+        name: "الرئيسية",
+        url: `${baseUrl}/`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 2,
+        name: "آخر المستجدات والأخبار",
+        url: `${baseUrl}/latest`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 3,
+        name: "الخدمات الرقمية",
+        url: `${baseUrl}/services`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 4,
+        name: "الدورات والبرامج التدريبية",
+        url: `${baseUrl}/courses`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 5,
+        name: "من نحن",
+        url: `${baseUrl}/about`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 6,
+        name: "اتصل بنا",
+        url: `${baseUrl}/contact`,
+      },
+      {
+        "@type": "SiteNavigationElement",
+        position: 7,
+        name: "تسجيل الدخول",
+        url: `${baseUrl}/sign-in`,
+      },
+    ],
+  };
+
   return (
     <div>
       <JsonLd data={organizationJsonLd} />
       <JsonLd data={websiteJsonLd} />
+      <JsonLd data={navigationJsonLd} />
       {/* مرر الخدمات + الطلبات للـ HomeView */}
       <HomeView
         services={services}
