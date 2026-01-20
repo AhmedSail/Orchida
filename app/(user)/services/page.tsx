@@ -14,8 +14,7 @@ export const metadata = {
 import JsonLd from "@/components/ui/JsonLd";
 
 const page = async () => {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
   const services = await db.select().from(digitalServices);
 
   const allWorks = await db

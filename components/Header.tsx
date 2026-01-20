@@ -121,7 +121,7 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
           </MenuItem>
         </Link>
       );
-    }
+    },
   );
 
   return (
@@ -180,7 +180,7 @@ function NavList({
   ];
   const isMobile = useIsMobile();
   return (
-    <div>
+    <nav aria-label="Main Navigation">
       {/* @ts-ignore */}
       <List className="mt-4 mb-6 font-semibold p-0 lg:mt-0 lg:mb-0 lg:flex-row lg:p-1 lg:items-center relative">
         {navListItemsData.map(({ id, title, href }) => (
@@ -205,7 +205,7 @@ function NavList({
         ))}
         <NavListMenu closeMenu={closeMenu} />
       </List>
-    </div>
+    </nav>
   );
 }
 

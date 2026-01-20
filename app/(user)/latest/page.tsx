@@ -5,8 +5,9 @@ import { Metadata } from "next";
 import { desc } from "drizzle-orm"; // ✅ استيراد desc
 
 export const metadata: Metadata = {
-  title: "اوركيدة",
-  description: "اوكيدة| اخر المستجدات",
+  title: "آخر المستجدات والأخبار",
+  description:
+    "اطلع على آخر أخبار ومستجدات أوركيدة، شريكك الأمثل للحلول الرقمية والتدريب.",
 };
 export default async function Page() {
   // ✅ جلب الأخبار من قاعدة البيانات بترتيب تنازلي (الأحدث أولاً)

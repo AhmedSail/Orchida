@@ -8,7 +8,7 @@ export const metadata: Metadata = {
   title: "اتصل بنا | أوركيدة للخدمات الرقمية والأكاديمية",
   description: "تواصل معنا لأي استفسارات أو طلبات خدمات. نحن هنا لمساعدتك.",
   alternates: {
-    canonical: "https://www.orchida-ods.com/contact",
+    canonical: "https://orchida-ods.com/contact",
   },
 };
 
