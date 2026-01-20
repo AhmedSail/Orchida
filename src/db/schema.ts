@@ -94,6 +94,13 @@ export const attendanceStatusEnum = pgEnum("attendanceStatus", [
   "absent", // غائب
   "excused", // غياب بعذر
 ]);
+
+// Enum للفئة المستهدفة للروابط التفاعلية
+export const interactiveLinkTargetEnum = pgEnum("interactive_link_target", [
+  "student",
+  "instructor",
+  "both",
+]);
 // 2. Tables Definitions
 
 // 1. users
@@ -903,3 +910,28 @@ export const accountRelations = relations(account, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// 16. interactiveLinks
+export const interactiveLinks = pgTable("interactiveLinks", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }), // مرتبطة بالكورس مباشرة
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  url: varchar("url", { length: 1024 }).notNull(),
+  target: interactiveLinkTargetEnum("target").default("both").notNull(), // طالب، مدرب، أو كلاهما
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const interactiveLinksRelations = relations(
+  interactiveLinks,
+  ({ one }) => ({
+    course: one(courses, {
+      fields: [interactiveLinks.courseId],
+      references: [courses.id],
+    }),
+  }),
+);
