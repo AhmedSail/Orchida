@@ -145,7 +145,7 @@ export function AppSidebar({ user }: { user: User }) {
                 onClick={() => toggleMenu("services")}
                 className={cn(
                   "group h-11 px-4 flex justify-between items-center transition-all duration-300 active:scale-[0.98]",
-                  openMenus.services ? "bg-slate-50" : "hover:bg-slate-50/50"
+                  openMenus.services ? "bg-slate-50" : "hover:bg-slate-50/50",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -154,7 +154,7 @@ export function AppSidebar({ user }: { user: User }) {
                       "size-5 transition-colors",
                       openMenus.services
                         ? "text-primary"
-                        : "text-slate-500 group-hover:text-primary"
+                        : "text-slate-500 group-hover:text-primary",
                     )}
                   />
                   <span
@@ -162,7 +162,7 @@ export function AppSidebar({ user }: { user: User }) {
                       "font-bold transition-colors",
                       openMenus.services
                         ? "text-slate-900"
-                        : "text-slate-700 group-hover:text-slate-900"
+                        : "text-slate-700 group-hover:text-slate-900",
                     )}
                   >
                     الخدمات الرقمية
@@ -171,7 +171,7 @@ export function AppSidebar({ user }: { user: User }) {
                 <ChevronDown
                   className={cn(
                     "size-4 text-slate-400 transition-transform duration-300",
-                    openMenus.services && "rotate-180"
+                    openMenus.services && "rotate-180",
                   )}
                 />
               </SidebarMenuButton>
@@ -251,7 +251,7 @@ export function AppSidebar({ user }: { user: User }) {
                 onClick={() => toggleMenu("courses")}
                 className={cn(
                   "group h-11 px-4 flex justify-between items-center transition-all duration-300 active:scale-[0.98]",
-                  openMenus.courses ? "bg-slate-50" : "hover:bg-slate-50/50"
+                  openMenus.courses ? "bg-slate-50" : "hover:bg-slate-50/50",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -260,7 +260,7 @@ export function AppSidebar({ user }: { user: User }) {
                       "size-5 transition-colors",
                       openMenus.courses
                         ? "text-primary"
-                        : "text-slate-500 group-hover:text-primary"
+                        : "text-slate-500 group-hover:text-primary",
                     )}
                   />
                   <span
@@ -268,7 +268,7 @@ export function AppSidebar({ user }: { user: User }) {
                       "font-bold transition-colors",
                       openMenus.courses
                         ? "text-slate-900"
-                        : "text-slate-700 group-hover:text-slate-900"
+                        : "text-slate-700 group-hover:text-slate-900",
                     )}
                   >
                     الدورات التعليمية
@@ -277,7 +277,7 @@ export function AppSidebar({ user }: { user: User }) {
                 <ChevronDown
                   className={cn(
                     "size-4 text-slate-400 transition-transform duration-300",
-                    openMenus.courses && "rotate-180"
+                    openMenus.courses && "rotate-180",
                   )}
                 />
               </SidebarMenuButton>
@@ -317,7 +317,7 @@ export function AppSidebar({ user }: { user: User }) {
                         <ChevronDown
                           className={cn(
                             "size-3 transition-transform",
-                            openMenus.sections && "rotate-180"
+                            openMenus.sections && "rotate-180",
                           )}
                         />
                       </button>
@@ -369,6 +369,13 @@ export function AppSidebar({ user }: { user: User }) {
                           </motion.div>
                         )}
                       </AnimatePresence>
+
+                      <Link
+                        href={`/admin/${user.id}/courses/interactive-links`}
+                        className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all"
+                      >
+                        الروابط التفاعلية
+                      </Link>
 
                       <Link
                         href={`/admin/${user.id}/instructor`}

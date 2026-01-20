@@ -19,6 +19,7 @@ import {
   AppWindow,
   Users2,
   MessageSquareText,
+  Link as LinkIcon,
 } from "lucide-react";
 
 import {
@@ -69,6 +70,11 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
       title: "قوالب الرسائل (SMS)",
       icon: MessageSquareText,
       url: `/coordinator/${user.id}/sms/templates`,
+    },
+    {
+      title: "الروابط التفاعلية",
+      icon: LinkIcon,
+      url: `/coordinator/${user.id}/courses/interactive-links`,
     },
   ];
 
@@ -161,7 +167,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
                 onClick={() => setSectionsOpen(!sectionsOpen)}
                 className={cn(
                   "group h-11 px-4 flex justify-between items-center transition-all duration-300 active:scale-[0.98]",
-                  sectionsOpen ? "bg-slate-50" : "hover:bg-slate-50/50"
+                  sectionsOpen ? "bg-slate-50" : "hover:bg-slate-50/50",
                 )}
               >
                 <div className="flex items-center gap-3">
@@ -170,7 +176,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
                       "size-5 transition-colors",
                       sectionsOpen
                         ? "text-primary"
-                        : "text-slate-500 group-hover:text-primary"
+                        : "text-slate-500 group-hover:text-primary",
                     )}
                   />
                   <span
@@ -178,7 +184,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
                       "font-bold transition-colors",
                       sectionsOpen
                         ? "text-slate-900"
-                        : "text-slate-700 group-hover:text-slate-900"
+                        : "text-slate-700 group-hover:text-slate-900",
                     )}
                   >
                     إدارة الشعب
@@ -187,7 +193,7 @@ export function AppSidebarCoordinator({ user }: { user: User }) {
                 <ChevronDown
                   className={cn(
                     "size-4 text-slate-400 transition-transform duration-300",
-                    sectionsOpen && "rotate-180"
+                    sectionsOpen && "rotate-180",
                   )}
                 />
               </SidebarMenuButton>

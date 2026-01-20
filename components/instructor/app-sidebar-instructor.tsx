@@ -10,6 +10,7 @@ import {
   User as UserIcon,
   GraduationCap,
   FolderOpen,
+  Link as LinkIcon,
 } from "lucide-react";
 
 import {
@@ -54,6 +55,11 @@ export function AppSidebarInstructor({ user }: { user: User }) {
       title: "مكتبة الوسائط",
       icon: FolderOpen,
       url: `/instructor/${user.id}/library`,
+    },
+    {
+      title: "الروابط التفاعلية",
+      icon: LinkIcon,
+      url: `/instructor/${user.id}/interactive-links`,
     },
   ];
 
