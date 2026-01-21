@@ -115,7 +115,10 @@ const page = async ({
         section={section[0]}
         allModules={allModules}
         userId={session.user.id}
-        courseId={instructorSections[0].courseId ?? ""}
+        courseId={
+          instructorSections.find((s) => s.sectionId === sectionId)?.courseId ??
+          ""
+        }
         chapters={chapters}
         contents={contents}
         role={session.user.role}

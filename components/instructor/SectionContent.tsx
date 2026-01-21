@@ -39,6 +39,9 @@ import {
   Clock,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
+import AddAiPromptDialog from "./AddAiPromptDialog";
+import EditAiPromptDialog from "./EditAiPromptDialog";
+import { Sparkles, MessageSquare } from "lucide-react";
 
 interface Props {
   modules: AllModules[];
@@ -72,6 +75,48 @@ const SectionContent = ({
   const [editModuleId, setEditModuleId] = useState<string | null>(null);
   const [editChapterId, setEditChapterId] = useState<string | null>(null);
   const [editContentId, setEditContentId] = useState<string | null>(null);
+  const [activeAiPrompt, setActiveAiPrompt] = useState(false);
+  const [editingAiPrompt, setEditingAiPrompt] = useState<any | null>(null);
+  const [aiPrompts, setAiPrompts] = useState<any[]>([]);
+
+  const fetchAiPrompts = async () => {
+    try {
+      const res = await fetch(`/api/ai-prompts?sectionId=${sectionId}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAiPrompts(data);
+      }
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  React.useEffect(() => {
+    if (courseId === "a837434d-58c3-422e-a21b-1d3fd4b485a5") {
+      fetchAiPrompts();
+    }
+  }, [courseId, sectionId]);
+
+  const handleDeleteAiPrompt = async (id: string) => {
+    const confirm = await Swal.fire({
+      title: "حذف البرومبت؟",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "تراجع",
+    });
+
+    if (confirm.isConfirmed) {
+      try {
+        await fetch(`/api/ai-prompts/${id}`, { method: "DELETE" });
+        setAiPrompts((prev) => prev.filter((p) => p.id !== id));
+        Swal.fire("تم!", "تم حذف البرومبت بنجاح", "success");
+      } catch (error) {
+        Swal.fire("خطأ", "فشل الحذف", "error");
+      }
+    }
+  };
 
   const handleModuleAdded = (newModule: AllModules) => {
     setModules((prev) => [...prev, newModule]);
@@ -247,287 +292,82 @@ const SectionContent = ({
         return <Book className="size-5 text-emerald-500" />;
       case "attachment":
         return <FileText className="size-5 text-orange-500" />;
+      case "quiz":
+        return <HelpCircle className="size-5 text-indigo-500" />;
       default:
         return <HelpCircle className="size-5 text-slate-400" />;
     }
   };
 
   return (
-    <div className="space-y-6" dir="rtl">
+    <div className="space-y-8" dir="rtl">
       {/* Top Action Bar */}
-      <div className="flex justify-between items-center p-6 bg-white dark:bg-zinc-900 rounded-3xl border border-slate-200 dark:border-zinc-800 shadow-sm">
-        <div className="space-y-1">
-          <h3 className="text-xl font-black text-slate-800 dark:text-white">
-            إدارة الوحدات
-          </h3>
-          <p className="text-sm text-slate-500 font-medium">
-            قم بتنظيم محتوى الدورة التدريبية
-          </p>
-        </div>
-        <Button
-          onClick={() => setActiveModules(true)}
-          className="rounded-2xl h-12 px-6 bg-primary hover:bg-primary/90 text-white font-black flex items-center gap-2 shadow-lg shadow-primary/20 transition-all active:scale-95"
-        >
-          <Plus className="size-5" />
-          إضافة وحدة جديدة
-        </Button>
+      <div className="p-8 bg-white dark:bg-zinc-900 rounded-[40px] border border-slate-200 dark:border-zinc-800 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
+          <div className="space-y-1">
+            <h3 className="text-2xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+              <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <Package className="size-6 text-primary" />
+              </div>
+              إدارة محتوى الدورة
+            </h3>
+            <p className="text-slate-500 font-medium mr-15">
+              قم بتنظيم الوحدات التدريبية والمحتوى التعليمي
+            </p>
+          </div>
 
-        {activeModules && (
-          <AddModuleDialog
-            userId={userId}
-            sectionId={sectionId}
-            active={activeModules}
-            setActive={setActiveModules}
-            courseId={courseId}
-            onModuleAdded={handleModuleAdded}
-          />
-        )}
+          <div className="flex flex-wrap items-center gap-3">
+            <Button
+              onClick={() => setActiveModules(true)}
+              className="rounded-2xl h-14 px-8 bg-slate-900 hover:bg-black dark:bg-white dark:text-black dark:hover:bg-slate-100 text-white font-black flex items-center gap-3 shadow-xl transition-all active:scale-95"
+            >
+              <Plus className="size-5" />
+              إضافة وحدة جديدة
+            </Button>
+
+            {courseId === "a837434d-58c3-422e-a21b-1d3fd4b485a5" && (
+              <Button
+                onClick={() => setActiveAiPrompt(true)}
+                className="rounded-2xl h-14 px-8 bg-emerald-600 hover:bg-emerald-700 text-white font-black flex items-center gap-3 shadow-xl transition-all active:scale-95 border-b-4 border-emerald-800 active:border-b-0"
+              >
+                <Sparkles className="size-5" />
+                إضافة برومبت ذكي
+              </Button>
+            )}
+          </div>
+        </div>
       </div>
 
-      {/* Modules List */}
-      <Accordion type="single" collapsible className="space-y-4">
-        {modules.map((module) => (
-          <AccordionItem
-            key={module.id}
-            value={module.id}
-            className="border-none bg-white dark:bg-black/20 rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800/50 shadow-sm hover:shadow-md transition-all"
-          >
-            <AccordionTrigger className="px-6 py-6 hover:no-underline group">
-              <div className="flex items-center gap-5 text-right w-full">
-                <div className="size-14 rounded-2xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-colors">
-                  <Package className="size-8" />
-                </div>
-                <div className="grow text-right">
-                  <h4 className="text-xl font-black text-slate-800 dark:text-white tracking-tight">
-                    {module.title}
-                  </h4>
-                  <p className="text-sm text-slate-500 font-medium line-clamp-1">
-                    {module.description}
-                  </p>
-                </div>
-              </div>
-            </AccordionTrigger>
-
-            <AccordionContent className="px-6 pb-6 pt-2">
-              <div className="flex items-center gap-3 p-4 bg-slate-50 dark:bg-zinc-900/50 rounded-2xl border border-slate-100 dark:border-zinc-800 mb-6">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => setEditModuleId(module.id)}
-                  className="h-9 px-4 rounded-xl font-bold gap-2 text-slate-600 hover:text-primary transition-colors"
-                >
-                  <Edit3 className="size-4" /> تعديل
-                </Button>
-                <div className="w-px h-4 bg-slate-200 dark:bg-zinc-800" />
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => handleDeleteModule(module.id)}
-                  className="h-9 px-4 rounded-xl font-bold gap-2 text-red-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 transition-colors"
-                >
-                  <Trash2 className="size-4" /> حذف
-                </Button>
-                <div className="grow" />
-                <Button
-                  onClick={() => setActiveChapterModuleId(module.id)}
-                  className="h-9 px-5 rounded-xl bg-slate-900 hover:bg-black text-white font-bold gap-2"
-                >
-                  <Plus className="size-4" /> إضافة فصل جديد
-                </Button>
-              </div>
-
-              {editModuleId === module.id && (
-                <EditModuleDialog
-                  active={true}
-                  setActive={() => setEditModuleId(null)}
-                  moduleId={module.id}
-                  initialTitle={module.title}
-                  initialDescription={module.description ?? ""}
-                  onUpdate={handleUpdateModule}
-                />
-              )}
-
-              {activeChapterModuleId === module.id && (
-                <AddChapterDialog
-                  active={true}
-                  setActive={() => setActiveChapterModuleId(null)}
-                  moduleId={module.id}
-                  onChapterAdded={handleChapterAdded}
-                />
-              )}
-
-              {/* Chapters List */}
-              <Accordion
-                type="single"
-                collapsible
-                className="space-y-3 mr-8 border-r-2 border-slate-100 dark:border-zinc-800 pr-4"
-              >
-                {chapters
-                  .filter((ch) => ch.moduleId === module.id)
-                  .map((chapter) => (
-                    <AccordionItem
-                      key={chapter.id}
-                      value={chapter.id}
-                      className="border-none bg-slate-50/50 dark:bg-zinc-900/30 rounded-2xl border border-slate-100 dark:border-zinc-800/50 overflow-hidden"
-                    >
-                      <AccordionTrigger className="px-5 py-4 hover:no-underline group/ch">
-                        <div className="flex items-center gap-4 text-right w-full">
-                          <div className="size-10 rounded-xl bg-white dark:bg-zinc-950 flex items-center justify-center text-slate-400 group-hover/ch:text-emerald-500 group-hover/ch:shadow-lg group-hover/ch:shadow-emerald-500/10 transition-all">
-                            <Book className="size-5" />
-                          </div>
-                          <div className="grow text-right">
-                            <h5 className="font-bold text-slate-800 dark:text-zinc-200">
-                              {chapter.title}
-                            </h5>
-                            <p className="text-[10px] text-slate-400 font-bold uppercase tracking-widest">
-                              {chapter.description?.slice(0, 50)}...
-                            </p>
-                          </div>
-                        </div>
-                      </AccordionTrigger>
-
-                      <AccordionContent className="px-5 pb-5">
-                        <div className="flex items-center gap-3 mb-5 border-b border-slate-100 dark:border-zinc-800 pb-4 mt-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => setEditChapterId(chapter.id)}
-                            className="h-8 px-3 rounded-lg text-[11px] font-black text-slate-500 gap-1.5 hover:bg-white transition-all"
-                          >
-                            <Edit3 className="size-3" /> تعديل الفصل
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleDeleteChapter(chapter.id)}
-                            className="h-8 px-3 rounded-lg text-[11px] font-black text-red-400 gap-1.5 hover:bg-red-50 transition-all"
-                          >
-                            <Trash2 className="size-3" /> حذف
-                          </Button>
-                          <div className="grow" />
-                          <Button
-                            size="sm"
-                            onClick={() =>
-                              setActiveContentChapterId(chapter.id)
-                            }
-                            className="h-8 px-4 rounded-lg bg-emerald-500 hover:bg-emerald-600 text-white text-[11px] font-black gap-1.5 shadow-md shadow-emerald-500/10"
-                          >
-                            <Plus className="size-3" /> إضافة درس
-                          </Button>
-                        </div>
-
-                        {editChapterId === chapter.id && (
-                          <EditChapterDialog
-                            active={true}
-                            setActive={() => setEditChapterId(null)}
-                            chapterId={chapter.id}
-                            initialTitle={chapter.title}
-                            initialDescription={chapter.description ?? ""}
-                            onUpdate={handleUpdateChapter}
-                          />
-                        )}
-
-                        {activeContentChapterId === chapter.id && (
-                          <AddContentDialog
-                            active={true}
-                            setActive={() => setActiveContentChapterId(null)}
-                            chapterId={chapter.id}
-                          />
-                        )}
-
-                        {/* Lessons List */}
-                        <div className="space-y-2">
-                          <AnimatePresence mode="popLayout">
-                            {contents
-                              .filter((c) => c.chapterId === chapter.id)
-                              .map((content, idx) => (
-                                <motion.div
-                                  layout
-                                  key={content.id}
-                                  initial={{ opacity: 0, x: -10 }}
-                                  animate={{ opacity: 1, x: 0 }}
-                                  transition={{ delay: idx * 0.05 }}
-                                  className="group/item flex items-center justify-between p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-slate-100 dark:border-zinc-800 hover:border-primary/30 hover:shadow-xl hover:shadow-primary/5 transition-all"
-                                >
-                                  <div className="flex items-center gap-4">
-                                    <div className="size-10 rounded-xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center group-hover/item:scale-110 transition-transform shadow-sm">
-                                      {getContentIcon(content.contentType)}
-                                    </div>
-                                    <div className="space-y-0.5">
-                                      <h6 className="font-bold text-sm text-slate-800 dark:text-zinc-200">
-                                        {content.title}
-                                      </h6>
-                                      <div className="flex items-center gap-2">
-                                        <Badge
-                                          variant="outline"
-                                          className="text-[8px] px-1.5 py-0 rounded-md font-black uppercase text-slate-400 border-slate-100"
-                                        >
-                                          {content.contentType}
-                                        </Badge>
-                                        {content.scheduledAt && (
-                                          <Badge
-                                            variant="secondary"
-                                            className="text-[8px] px-1.5 py-0 rounded-md font-black text-blue-500 bg-blue-50 border-blue-100"
-                                          >
-                                            <Clock className="size-2 mr-1" />
-                                            {new Date(
-                                              content.scheduledAt,
-                                            ).toLocaleString("ar-EG")}
-                                          </Badge>
-                                        )}
-                                      </div>
-                                    </div>
-                                  </div>
-                                  <div className="flex gap-2 opacity-100 md:opacity-0 group-hover/item:opacity-100 transition-opacity">
-                                    <Button
-                                      size="sm"
-                                      variant="secondary"
-                                      onClick={() => setActiveContent(content)}
-                                      className="size-9 p-0 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 shadow-sm"
-                                    >
-                                      <Eye className="size-4" />
-                                    </Button>
-                                    <Button
-                                      variant="outline"
-                                      size="sm"
-                                      onClick={() =>
-                                        setEditContentId(content.id)
-                                      }
-                                      className="size-9 p-0 rounded-xl border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
-                                    >
-                                      <Edit3 className="size-4" />
-                                    </Button>
-                                    <Button
-                                      variant="destructive"
-                                      size="sm"
-                                      onClick={() =>
-                                        handleDeleteContent(
-                                          content.id,
-                                          content.videoUrl ||
-                                            content.imageUrl ||
-                                            content.attachmentUrl ||
-                                            undefined,
-                                        )
-                                      }
-                                      className="size-9 p-0 rounded-xl bg-red-50 hover:bg-red-100 text-red-500 border-none shadow-sm"
-                                    >
-                                      <Trash2 className="size-4" />
-                                    </Button>
-                                  </div>
-                                </motion.div>
-                              ))}
-                          </AnimatePresence>
-                        </div>
-                      </AccordionContent>
-                    </AccordionItem>
-                  ))}
-              </Accordion>
-            </AccordionContent>
-          </AccordionItem>
-        ))}
-      </Accordion>
-
       {/* Global Dialogs */}
+      {activeAiPrompt && (
+        <AddAiPromptDialog
+          active={activeAiPrompt}
+          setActive={setActiveAiPrompt}
+          sectionId={sectionId}
+          onSuccess={fetchAiPrompts}
+        />
+      )}
+
+      {editingAiPrompt && (
+        <EditAiPromptDialog
+          active={!!editingAiPrompt}
+          setActive={() => setEditingAiPrompt(null)}
+          prompt={editingAiPrompt}
+          onSuccess={fetchAiPrompts}
+        />
+      )}
+
+      {activeModules && (
+        <AddModuleDialog
+          userId={userId}
+          sectionId={sectionId}
+          active={activeModules}
+          setActive={setActiveModules}
+          courseId={courseId}
+          onModuleAdded={handleModuleAdded}
+        />
+      )}
+
       {editContentId && (
         <EditContentDialog
           active={true}
@@ -541,9 +381,319 @@ const SectionContent = ({
         <ViewContentDialog
           active={true}
           setActive={() => setActiveContent(null)}
-          content={activeContent}
+          content={activeContent!}
         />
       )}
+
+      {/* Modules List */}
+      <div className="space-y-6">
+        <Accordion type="single" collapsible className="space-y-4">
+          {modules.map((module) => (
+            <AccordionItem
+              key={module.id}
+              value={module.id}
+              className="border-none bg-white dark:bg-zinc-900/50 rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800/50 shadow-sm hover:shadow-md transition-all"
+            >
+              <AccordionTrigger className="px-8 py-8 hover:no-underline group">
+                <div className="flex items-center gap-6 text-right w-full">
+                  <div className="size-16 rounded-3xl bg-slate-50 dark:bg-zinc-800 flex items-center justify-center text-slate-400 group-hover:bg-primary/10 group-hover:text-primary transition-all shadow-inner">
+                    <Package className="size-8" />
+                  </div>
+                  <div className="grow text-right space-y-1">
+                    <h4 className="text-2xl font-black text-slate-800 dark:text-white tracking-tight">
+                      {module.title}
+                    </h4>
+                    <p className="text-base text-slate-500 font-medium line-clamp-1">
+                      {module.description}
+                    </p>
+                  </div>
+                </div>
+              </AccordionTrigger>
+
+              <AccordionContent className="px-8 pb-8 pt-2">
+                <div className="flex flex-wrap items-center gap-4 p-5 bg-slate-50 dark:bg-zinc-950/50 rounded-3xl border border-slate-100 dark:border-zinc-800 mb-8">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setEditModuleId(module.id)}
+                    className="h-11 px-5 rounded-2xl font-bold gap-2 text-slate-600 hover:text-primary hover:bg-white transition-all shadow-sm"
+                  >
+                    <Edit3 className="size-4" /> تعديل الوحدة
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    onClick={() => handleDeleteModule(module.id)}
+                    className="h-11 px-5 rounded-2xl font-bold gap-2 text-red-400 hover:text-red-500 hover:bg-red-50 transition-all shadow-sm"
+                  >
+                    <Trash2 className="size-4" /> حذف بالكامل
+                  </Button>
+                  <div className="md:grow" />
+                  <Button
+                    onClick={() => setActiveChapterModuleId(module.id)}
+                    className="h-11 px-6 rounded-2xl bg-slate-900 hover:bg-black text-white font-black gap-2 shadow-lg active:scale-95 transition-all"
+                  >
+                    <Plus className="size-4" /> إضافة فصل جديد
+                  </Button>
+                </div>
+
+                {editModuleId === module.id && (
+                  <EditModuleDialog
+                    active={true}
+                    setActive={() => setEditModuleId(null)}
+                    moduleId={module.id}
+                    initialTitle={module.title}
+                    initialDescription={module.description ?? ""}
+                    onUpdate={handleUpdateModule}
+                  />
+                )}
+
+                {activeChapterModuleId === module.id && (
+                  <AddChapterDialog
+                    active={true}
+                    setActive={() => setActiveChapterModuleId(null)}
+                    moduleId={module.id}
+                    onChapterAdded={handleChapterAdded}
+                  />
+                )}
+
+                {/* Chapters List */}
+                <Accordion
+                  type="single"
+                  collapsible
+                  className="space-y-4 mr-10 border-r-2 border-slate-100 dark:border-zinc-800 pr-6"
+                >
+                  {chapters
+                    .filter((ch) => ch.moduleId === module.id)
+                    .map((chapter) => (
+                      <AccordionItem
+                        key={chapter.id}
+                        value={chapter.id}
+                        className="border-none bg-slate-50/50 dark:bg-zinc-900/30 rounded-3xl border border-slate-100 dark:border-zinc-800/50 overflow-hidden"
+                      >
+                        <AccordionTrigger className="px-6 py-5 hover:no-underline group/ch">
+                          <div className="flex items-center gap-5 text-right w-full">
+                            <div className="size-12 rounded-2xl bg-white dark:bg-zinc-950 flex items-center justify-center text-slate-400 group-hover/ch:text-emerald-500 group-hover/ch:shadow-lg transition-all border border-slate-100 dark:border-zinc-800">
+                              <Book className="size-6" />
+                            </div>
+                            <div className="grow text-right">
+                              <h5 className="text-xl font-black text-slate-800 dark:text-zinc-200">
+                                {chapter.title}
+                              </h5>
+                              <p className="text-xs text-slate-400 font-bold tracking-wide mt-1">
+                                {chapter.description?.slice(0, 100)}
+                              </p>
+                            </div>
+                          </div>
+                        </AccordionTrigger>
+
+                        <AccordionContent className="px-6 pb-6">
+                          <div className="flex flex-wrap items-center gap-3 mb-6 border-b border-slate-200/50 dark:border-zinc-800 pb-5 mt-2">
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => setEditChapterId(chapter.id)}
+                              className="h-10 px-4 rounded-xl font-bold text-slate-500 gap-2 hover:bg-white transition-all"
+                            >
+                              <Edit3 className="size-4" /> تعديل
+                            </Button>
+                            <Button
+                              variant="ghost"
+                              size="sm"
+                              onClick={() => handleDeleteChapter(chapter.id)}
+                              className="h-10 px-4 rounded-xl font-bold text-red-400 gap-2 hover:bg-red-50 transition-all"
+                            >
+                              <Trash2 className="size-4" /> حذف
+                            </Button>
+                            <div className="grow" />
+                            <Button
+                              size="sm"
+                              onClick={() =>
+                                setActiveContentChapterId(chapter.id)
+                              }
+                              className="h-10 px-6 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-black gap-2 shadow-lg shadow-emerald-500/10 active:scale-95 transition-all"
+                            >
+                              <Plus className="size-4" /> إضافة درس
+                            </Button>
+                          </div>
+
+                          {editChapterId === chapter.id && (
+                            <EditChapterDialog
+                              active={true}
+                              setActive={() => setEditChapterId(null)}
+                              chapterId={chapter.id}
+                              initialTitle={chapter.title}
+                              initialDescription={chapter.description ?? ""}
+                              onUpdate={handleUpdateChapter}
+                            />
+                          )}
+
+                          {activeContentChapterId === chapter.id && (
+                            <AddContentDialog
+                              active={true}
+                              setActive={() => setActiveContentChapterId(null)}
+                              chapterId={chapter.id}
+                            />
+                          )}
+
+                          {/* Lessons List */}
+                          <div className="space-y-3">
+                            <AnimatePresence mode="popLayout">
+                              {contents
+                                .filter((c) => c.chapterId === chapter.id)
+                                .map((content, idx) => (
+                                  <motion.div
+                                    layout
+                                    key={content.id}
+                                    initial={{ opacity: 0, x: -20 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    transition={{ delay: idx * 0.05 }}
+                                    className="group/item flex items-center justify-between p-5 bg-white dark:bg-zinc-950 rounded-[28px] border border-slate-100 dark:border-zinc-800 hover:border-primary/30 hover:shadow-2xl hover:shadow-primary/5 transition-all"
+                                  >
+                                    <div className="flex items-center gap-5">
+                                      <div className="size-14 rounded-2xl bg-slate-50 dark:bg-zinc-900 flex items-center justify-center group-hover/item:scale-110 transition-all shadow-sm border border-slate-100 dark:border-zinc-800">
+                                        {getContentIcon(content.contentType)}
+                                      </div>
+                                      <div className="space-y-1">
+                                        <h6 className="font-black text-slate-800 dark:text-zinc-200">
+                                          {content.title}
+                                        </h6>
+                                        <div className="flex items-center gap-3">
+                                          <Badge
+                                            variant="outline"
+                                            className="text-[10px] px-2 py-0.5 rounded-lg font-black uppercase text-slate-400 border-slate-200"
+                                          >
+                                            {content.contentType}
+                                          </Badge>
+                                          {content.scheduledAt && (
+                                            <Badge
+                                              variant="secondary"
+                                              className="text-[10px] px-2 py-0.5 rounded-lg font-black text-blue-600 bg-blue-50 border-blue-100"
+                                            >
+                                              <Clock className="size-3 mr-1" />
+                                              {new Date(
+                                                content.scheduledAt,
+                                              ).toLocaleString("ar-EG")}
+                                            </Badge>
+                                          )}
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div className="flex gap-2">
+                                      <Button
+                                        size="sm"
+                                        variant="secondary"
+                                        onClick={() =>
+                                          setActiveContent(content)
+                                        }
+                                        className="size-11 p-0 rounded-2xl bg-slate-50 hover:bg-slate-100 text-slate-600 shadow-sm border border-slate-100"
+                                      >
+                                        <Eye className="size-5" />
+                                      </Button>
+                                      <Button
+                                        variant="outline"
+                                        size="sm"
+                                        onClick={() =>
+                                          setEditContentId(content.id)
+                                        }
+                                        className="size-11 p-0 rounded-2xl border-slate-200 hover:bg-slate-50 text-slate-600 shadow-sm"
+                                      >
+                                        <Edit3 className="size-5" />
+                                      </Button>
+                                      <Button
+                                        variant="destructive"
+                                        size="sm"
+                                        onClick={() =>
+                                          handleDeleteContent(
+                                            content.id,
+                                            content.videoUrl ||
+                                              content.imageUrl ||
+                                              content.attachmentUrl ||
+                                              undefined,
+                                          )
+                                        }
+                                        className="size-11 p-0 rounded-2xl bg-red-50 hover:bg-red-100 text-red-500 border-none shadow-sm"
+                                      >
+                                        <Trash2 className="size-5" />
+                                      </Button>
+                                    </div>
+                                  </motion.div>
+                                ))}
+                            </AnimatePresence>
+                          </div>
+                        </AccordionContent>
+                      </AccordionItem>
+                    ))}
+                </Accordion>
+              </AccordionContent>
+            </AccordionItem>
+          ))}
+        </Accordion>
+      </div>
+
+      {/* AI Prompts Section for specific course */}
+      {courseId === "a837434d-58c3-422e-a21b-1d3fd4b485a5" &&
+        aiPrompts.length > 0 && (
+          <div className="mt-16 space-y-8 bg-slate-50/50 dark:bg-zinc-950/50 p-10 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-zinc-800">
+            <div className="flex items-center justify-between px-4">
+              <div className="space-y-1">
+                <h3 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-4">
+                  <Sparkles className="size-8 text-emerald-500 animate-pulse" />
+                  إدارة البرومبتات الذكية
+                </h3>
+                <p className="text-slate-500 font-medium">
+                  البرومبتات الجاهزة التي قمت بإضافتها لهذا القسم
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+              {aiPrompts.map((p) => (
+                <div
+                  key={p.id}
+                  className="bg-white dark:bg-zinc-900 rounded-[40px] p-8 border border-slate-100 dark:border-zinc-800 shadow-xl hover:shadow-2xl transition-all group relative overflow-hidden"
+                >
+                  <div className="space-y-6">
+                    {p.imageUrl && (
+                      <div className="aspect-video rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-inner">
+                        <img
+                          src={p.imageUrl}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-3">
+                      <h4 className="text-xl font-black text-slate-800 dark:text-white group-hover:text-emerald-600 transition-colors">
+                        {p.title}
+                      </h4>
+                      <div className="relative">
+                        <p className="text-sm text-slate-500 font-mono line-clamp-4 bg-slate-50 dark:bg-zinc-950 p-4 rounded-3xl border border-slate-100 dark:border-zinc-800 leading-relaxed">
+                          {p.prompt}
+                        </p>
+                        <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-slate-50 dark:from-zinc-950 to-transparent" />
+                      </div>
+                    </div>
+                    <div className="flex gap-3 mt-4 pt-4 border-t border-slate-50 dark:border-zinc-800">
+                      <Button
+                        variant="ghost"
+                        onClick={() => setEditingAiPrompt(p)}
+                        className="flex-1 h-12 rounded-2xl text-amber-600 bg-amber-50 hover:bg-amber-100 font-black gap-2 transition-all shadow-sm"
+                      >
+                        <Edit3 className="size-4" /> تعديل
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        onClick={() => handleDeleteAiPrompt(p.id)}
+                        className="flex-1 h-12 rounded-2xl text-red-500 bg-red-50 hover:bg-red-100 font-black gap-2 transition-all shadow-sm"
+                      >
+                        <Trash2 className="size-4" /> حذف
+                      </Button>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
     </div>
   );
 };

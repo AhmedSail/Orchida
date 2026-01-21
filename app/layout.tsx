@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
-import "./globals.css";
 import { ViewTransitions } from "next-view-transitions";
+import "./globals.css";
 
 const tajawal = Tajawal({
   subsets: ["arabic"],
@@ -42,8 +42,11 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="ar" dir="rtl">
-      <body className={`${tajawal.variable} antialiased`}>
+    <html lang="ar" dir="rtl" suppressHydrationWarning>
+      <body
+        className={`${tajawal.variable} antialiased`}
+        suppressHydrationWarning
+      >
         <ViewTransitions>{children}</ViewTransitions>
       </body>
     </html>

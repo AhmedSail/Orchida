@@ -132,7 +132,7 @@ const Page = async ({
       </div>
     );
   }
-  if (confirmationStatus === "rejected" || confirmationStatus === "pending") {
+  if (confirmationStatus === "rejected") {
     return (
       <div className="p-6 text-center">
         <h2 className="text-xl font-bold text-red-600 mb-4">⚠️ الوصول مرفوض</h2>

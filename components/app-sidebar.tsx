@@ -22,6 +22,7 @@ import {
   LogOut,
   User as UserIcon,
   MessageSquareText,
+  Trophy,
 } from "lucide-react";
 
 import {
@@ -382,6 +383,13 @@ export function AppSidebar({ user }: { user: User }) {
                         className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all"
                       >
                         إدارة المدربين
+                      </Link>
+
+                      <Link
+                        href={`/admin/${user.id}/quizzes`}
+                        className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all"
+                      >
+                        المسابقات التفاعلية
                       </Link>
                     </div>
                   </motion.div>

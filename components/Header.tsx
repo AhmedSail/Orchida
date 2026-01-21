@@ -174,6 +174,7 @@ function NavList({
   const navListItemsData = [
     { id: 1, title: "الرئيسية", href: "/" },
     { id: 2, title: "اخر المستجدات", href: "/latest" },
+    { id: 3, title: "المسابقات", href: "/competitions" },
     { id: 4, title: "الخدمات الرقمية", href: "/services" },
     { id: 5, title: "اتصل بنا", href: "/contact" },
     { id: 6, title: "من نحن", href: "/about" },

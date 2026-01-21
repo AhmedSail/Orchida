@@ -13,6 +13,9 @@ import {
   Star,
   Link as LinkIcon,
   Image as ImageIcon,
+  Sparkles,
+  Copy,
+  Check,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
@@ -57,10 +60,13 @@ const Clasification = ({
   role,
 }: Props) => {
   const [activeTab, setActiveTab] = useState<
-    "content" | "forum" | "recommendations"
+    "content" | "forum" | "recommendations" | "aiPrompts"
   >("content");
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [loadingRecs, setLoadingRecs] = useState(false);
+  const [aiPrompts, setAiPrompts] = useState<any[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const router = useRouter();
 
   const fetchRecommendations = async () => {
@@ -81,11 +87,36 @@ const Clasification = ({
     }
   };
 
+  const fetchAiPrompts = async () => {
+    if (!section?.id) return;
+    setLoadingPrompts(true);
+    try {
+      const res = await fetch(`/api/ai-prompts?sectionId=${section.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAiPrompts(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
   React.useEffect(() => {
     if (activeTab === "recommendations") {
       fetchRecommendations();
     }
-  }, [activeTab, section?.instructorId]);
+    if (activeTab === "aiPrompts") {
+      fetchAiPrompts();
+    }
+  }, [activeTab, section?.instructorId, section?.id]);
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   if (!section) {
     return (
@@ -96,9 +127,16 @@ const Clasification = ({
     );
   }
 
-  const tabItems = [
+  const tabItems: Array<{
+    id: "content" | "forum" | "recommendations" | "aiPrompts";
+    label: string;
+    icon: any;
+    color: string;
+    link: string;
+    action?: () => void;
+  }> = [
     {
-      id: "content" as const,
+      id: "content",
       label: "المحتوى التعليمي",
       icon: BookOpen,
       color: "text-blue-500",
@@ -107,7 +145,7 @@ const Clasification = ({
       }/content`,
     },
     {
-      id: "forum" as const,
+      id: "forum",
       label: "المنتدى الطلابي",
       icon: MessageSquare,
       color: "text-indigo-500",
@@ -116,7 +154,7 @@ const Clasification = ({
       }/chat`,
     },
     {
-      id: "recommendations" as const,
+      id: "recommendations",
       label: "توصيات المدرب",
       icon: Star,
       color: "text-amber-500",
@@ -124,6 +162,17 @@ const Clasification = ({
       link: "#",
     },
   ];
+
+  if (courseId === "a837434d-58c3-422e-a21b-1d3fd4b485a5") {
+    tabItems.splice(1, 0, {
+      id: "aiPrompts",
+      label: "برومبات جاهزة",
+      icon: Sparkles,
+      color: "text-emerald-500",
+      action: () => setActiveTab("aiPrompts"),
+      link: "#",
+    });
+  }
 
   return (
     <div className="space-y-8 pb-12" dir="rtl">
@@ -413,19 +462,135 @@ const Clasification = ({
             </div>
           )}
 
-          {activeTab === "forum" && (
-            <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-zinc-900 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-zinc-800 text-center gap-6">
-              <div className="size-24 rounded-full bg-indigo-50 dark:bg-indigo-500/10 flex items-center justify-center text-indigo-500">
-                <MessageSquare className="size-12" />
+          {activeTab === "aiPrompts" && (
+            <div className="space-y-8">
+              <div className="flex items-center gap-4 px-2">
+                <div className="h-8 w-1.5 bg-emerald-500 rounded-full" />
+                <div>
+                  <h2 className="text-2xl font-black text-slate-800 dark:text-white">
+                    برومبات ذكية جاهزة للاستخدام
+                  </h2>
+                  <p className="text-slate-500 text-sm font-medium">
+                    مجموعة من الأوامر الاحترافية التي أعدها المدرب لمساعدتك في
+                    الحصول على أفضل النتائج
+                  </p>
+                </div>
               </div>
-              <div className="space-y-2">
-                <h3 className="text-2xl font-black text-slate-800 dark:text-white">
-                  المنتدى الطلابي قيد النقل
-                </h3>
-                <p className="text-slate-500 font-medium max-w-md mx-auto">
-                  جاري تحويلك إلى ساحة النقاشات التفاعلية الخاصة بزملائك..
-                </p>
-              </div>
+
+              {loadingPrompts ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {[1, 2, 3].map((i) => (
+                    <div
+                      key={i}
+                      className="h-64 rounded-[40px] bg-slate-100 dark:bg-zinc-800 animate-pulse"
+                    />
+                  ))}
+                </div>
+              ) : aiPrompts.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                  {aiPrompts.map((p, index) => (
+                    <motion.div
+                      key={p.id}
+                      initial={{ opacity: 0, y: 20 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ delay: index * 0.1 }}
+                      className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
+                    >
+                      {p.imageUrl && (
+                        <div
+                          onClick={() =>
+                            router.push(
+                              `/${role === "user" ? "dashboardUser" : role}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                            )
+                          }
+                          className="relative h-48 overflow-hidden cursor-pointer"
+                        >
+                          <img
+                            src={p.imageUrl}
+                            alt={p.title}
+                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                          />
+                          <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        </div>
+                      )}
+
+                      <div className="p-6 flex flex-col flex-1 space-y-4">
+                        <div className="space-y-1">
+                          <div className="flex items-center gap-2">
+                            <Sparkles className="size-4 text-emerald-500" />
+                            <span className="text-[10px] font-black text-emerald-600 uppercase tracking-widest bg-emerald-50 dark:bg-emerald-500/10 px-2 py-0.5 rounded-lg">
+                              برومبت احترافي
+                            </span>
+                          </div>
+                          <h4
+                            onClick={() =>
+                              router.push(
+                                `/${role === "user" ? "dashboardUser" : role}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                              )
+                            }
+                            className="text-lg font-black text-slate-800 dark:text-white leading-tight cursor-pointer hover:text-emerald-500 transition-colors"
+                          >
+                            {p.title}
+                          </h4>
+                        </div>
+
+                        <div className="relative flex-1">
+                          <div
+                            className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800 text-sm font-mono text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap text-right"
+                            dir="rtl"
+                          >
+                            {p.prompt}
+                          </div>
+                          <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-slate-50 dark:from-zinc-900 to-transparent" />
+                        </div>
+
+                        <div className="pt-2 flex flex-col gap-2">
+                          <button
+                            onClick={() =>
+                              router.push(
+                                `/${role === "user" ? "dashboardUser" : role}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                              )
+                            }
+                            className="w-full h-11 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black flex items-center justify-center gap-2 group/btn transition-all text-sm shadow-lg shadow-emerald-500/10"
+                          >
+                            فتح صفحة البرومبت
+                          </button>
+                          <button
+                            onClick={() => handleCopy(p.prompt, p.id)}
+                            className="w-full h-11 rounded-2xl bg-slate-100 hover:bg-slate-200 dark:bg-zinc-800 dark:hover:bg-zinc-700 text-slate-600 dark:text-slate-300 font-bold flex items-center justify-center gap-2 transition-all text-xs"
+                          >
+                            {copiedId === p.id ? (
+                              <>
+                                <Check className="size-3 text-emerald-400" />
+                                تم النسخ بنجاح
+                              </>
+                            ) : (
+                              <>
+                                <Copy className="size-3" />
+                                نسخ سريع للبرومبت
+                              </>
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))}
+                </div>
+              ) : (
+                <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-zinc-900 rounded-[48px] border-2 border-dashed border-slate-200 dark:border-zinc-800 text-center gap-6">
+                  <div className="size-20 rounded-full bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-500">
+                    <Sparkles className="size-10" />
+                  </div>
+                  <div className="space-y-1">
+                    <h3 className="text-xl font-black text-slate-800 dark:text-white">
+                      لا توجد برومبات حالياً
+                    </h3>
+                    <p className="text-slate-500 font-medium">
+                      سوف تظهر هنا البرومبات التي يشاركها المدرب معكم.
+                    </p>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </motion.div>

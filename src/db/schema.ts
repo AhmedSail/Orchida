@@ -101,6 +101,19 @@ export const interactiveLinkTargetEnum = pgEnum("interactive_link_target", [
   "instructor",
   "both",
 ]);
+
+// 🏁 Competition/Quiz Enums
+export const quizQuestionTypeEnum = pgEnum("quiz_question_type", [
+  "mcq", // اختيار من متعدد
+  "true_false", // صح أو خطأ
+  "short_answer", // إجابة قصيرة
+]);
+
+export const quizSessionStatusEnum = pgEnum("quiz_session_status", [
+  "waiting", // بانتظار اللاعبين
+  "in_progress", // المسابقة بدأت
+  "finished", // المسابقة انتهت
+]);
 // 2. Tables Definitions
 
 // 1. users
@@ -935,3 +948,176 @@ export const interactiveLinksRelations = relations(
     }),
   }),
 );
+// 17. Quizzes & Competitions
+export const quizzes = pgTable("quizzes", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  description: text("description"),
+  coverImage: varchar("coverImage", { length: 1024 }),
+  creatorId: text("creatorId").references(() => users.id, {
+    onDelete: "cascade",
+  }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const quizQuestions = pgTable("quizQuestions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  quizId: uuid("quizId")
+    .references(() => quizzes.id, { onDelete: "cascade" })
+    .notNull(),
+  text: text("text").notNull(),
+  type: quizQuestionTypeEnum("type").default("mcq").notNull(),
+  mediaUrl: varchar("mediaUrl", { length: 1024 }),
+  mediaType: varchar("mediaType", { length: 50 }), // image, video
+  timer: integer("timer").default(20).notNull(), // بالثواني
+  points: integer("points").default(1000).notNull(),
+  order: integer("order").notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const quizOptions = pgTable("quizOptions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  questionId: uuid("questionId")
+    .references(() => quizQuestions.id, { onDelete: "cascade" })
+    .notNull(),
+  text: text("text").notNull(),
+  isCorrect: boolean("isCorrect").default(false).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const quizSessions = pgTable("quizSessions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  quizId: uuid("quizId")
+    .references(() => quizzes.id, { onDelete: "cascade" })
+    .notNull(),
+  pin: varchar("pin", { length: 6 }).notNull().unique(),
+  status: quizSessionStatusEnum("status").default("waiting").notNull(),
+  hostId: text("hostId").references(() => users.id, { onDelete: "cascade" }),
+  currentQuestionId: uuid("currentQuestionId"),
+  questionStartTime: timestamp("questionStartTime"),
+  timeLimit: integer("timeLimit").default(0), // Total time limit per participant in minutes. 0 = unlimited
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const quizParticipantStatusEnum = pgEnum("quiz_participant_status", [
+  "active",
+  "eliminated",
+  "finished",
+  "left",
+]);
+
+export const quizParticipants = pgTable("quizParticipants", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: uuid("sessionId")
+    .references(() => quizSessions.id, { onDelete: "cascade" })
+    .notNull(),
+  nickname: varchar("nickname", { length: 50 }).notNull(),
+  userId: text("userId").references(() => users.id, { onDelete: "set null" }),
+  score: integer("score").default(0).notNull(),
+  status: quizParticipantStatusEnum("status").default("active").notNull(),
+  currentQuestionIndex: integer("currentQuestionIndex").default(0).notNull(),
+  startedAt: timestamp("startedAt"), // When they started answering
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const quizResponses = pgTable("quizResponses", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sessionId: uuid("sessionId")
+    .references(() => quizSessions.id, { onDelete: "cascade" })
+    .notNull(),
+  participantId: uuid("participantId")
+    .references(() => quizParticipants.id, { onDelete: "cascade" })
+    .notNull(),
+  questionId: uuid("questionId")
+    .references(() => quizQuestions.id, { onDelete: "cascade" })
+    .notNull(),
+  optionId: uuid("optionId").references(() => quizOptions.id, {
+    onDelete: "cascade",
+  }),
+  isCorrect: boolean("isCorrect").notNull(),
+  pointsEarned: integer("pointsEarned").default(0).notNull(),
+  responseTime: integer("responseTime").notNull(), // بميلي ثانية
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// Relations
+export const quizzesRelations = relations(quizzes, ({ one, many }) => ({
+  questions: many(quizQuestions),
+  creator: one(users, { fields: [quizzes.creatorId], references: [users.id] }),
+}));
+
+export const quizQuestionsRelations = relations(
+  quizQuestions,
+  ({ one, many }) => ({
+    quiz: one(quizzes, {
+      fields: [quizQuestions.quizId],
+      references: [quizzes.id],
+    }),
+    options: many(quizOptions),
+  }),
+);
+
+export const quizOptionsRelations = relations(quizOptions, ({ one }) => ({
+  question: one(quizQuestions, {
+    fields: [quizOptions.questionId],
+    references: [quizQuestions.id],
+  }),
+}));
+
+export const quizSessionsRelations = relations(
+  quizSessions,
+  ({ one, many }) => ({
+    quiz: one(quizzes, {
+      fields: [quizSessions.quizId],
+      references: [quizzes.id],
+    }),
+    participants: many(quizParticipants),
+    responses: many(quizResponses),
+  }),
+);
+
+export const quizParticipantsRelations = relations(
+  quizParticipants,
+  ({ one, many }) => ({
+    session: one(quizSessions, {
+      fields: [quizParticipants.sessionId],
+      references: [quizSessions.id],
+    }),
+    responses: many(quizResponses),
+  }),
+);
+
+export const quizResponsesRelations = relations(quizResponses, ({ one }) => ({
+  session: one(quizSessions, {
+    fields: [quizResponses.sessionId],
+    references: [quizSessions.id],
+  }),
+  participant: one(quizParticipants, {
+    fields: [quizResponses.participantId],
+    references: [quizParticipants.id],
+  }),
+  question: one(quizQuestions, {
+    fields: [quizResponses.questionId],
+    references: [quizQuestions.id],
+  }),
+}));
+// 18. AI Prompts
+export const aiPrompts = pgTable("aiPrompts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sectionId: text("sectionId")
+    .notNull()
+    .references(() => courseSections.id, { onDelete: "cascade" }),
+  title: varchar("title", { length: 255 }).notNull(),
+  prompt: text("prompt").notNull(),
+  imageUrl: varchar("imageUrl", { length: 1024 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const aiPromptsRelations = relations(aiPrompts, ({ one }) => ({
+  section: one(courseSections, {
+    fields: [aiPrompts.sectionId],
+    references: [courseSections.id],
+  }),
+}));
