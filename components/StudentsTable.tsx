@@ -79,6 +79,7 @@ type Student = {
   notes?: string | null;
   studentMajor?: string | null;
   studentCountry?: string | null;
+  attendanceType?: "in_person" | "online" | null;
   isSuggested?: boolean;
   previousStatus?: string | null;
   originalSectionNumber?: number | null;
@@ -105,6 +106,9 @@ const StudentsTable = ({
     "all" | "paid" | "pending" | "failed"
   >("all");
   const [filterLeadStatus, setFilterLeadStatus] = useState<string>("all");
+  const [filterAttendanceType, setFilterAttendanceType] = useState<
+    "all" | "in_person" | "online"
+  >("all");
   const [sortBy, setSortBy] = useState<
     "name_asc" | "name_desc" | "date_asc" | "date_desc" | "status_asc"
   >("date_desc");
@@ -387,6 +391,11 @@ const StudentsTable = ({
       data = data.filter((s) => s.status === filterLeadStatus);
     }
 
+    // فلترة نوع الحضور
+    if (filterAttendanceType !== "all") {
+      data = data.filter((s) => s.attendanceType === filterAttendanceType);
+    }
+
     // بحث بالاسم
     if (searchName.trim()) {
       const q = searchName.trim().toLowerCase();
@@ -419,6 +428,7 @@ const StudentsTable = ({
     activeTab,
     filterPayment,
     filterLeadStatus,
+    filterAttendanceType,
     searchName,
     sortBy,
   ]);
@@ -734,6 +744,20 @@ const StudentsTable = ({
             </SelectContent>
           </Select>
 
+          <Select
+            value={filterAttendanceType}
+            onValueChange={(v: any) => setFilterAttendanceType(v)}
+          >
+            <SelectTrigger className="h-9 w-[140px] rounded-lg border-gray-200">
+              <SelectValue placeholder="نوع الحضور" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">كل الأنواع</SelectItem>
+              <SelectItem value="in_person">وجاهي</SelectItem>
+              <SelectItem value="online">أونلاين</SelectItem>
+            </SelectContent>
+          </Select>
+
           <Select value={sortBy} onValueChange={(v: any) => setSortBy(v)}>
             <SelectTrigger className="h-9 w-[160px] rounded-lg border-gray-200">
               <SelectValue placeholder="ترتيب حسب" />
@@ -768,6 +792,7 @@ const StudentsTable = ({
               <TableHead className="text-right">التاريخ</TableHead>
               <TableHead className="text-right">إشعار الدفع</TableHead>
               <TableHead className="text-right">الحالة</TableHead>
+              <TableHead className="text-right">نوع الحضور</TableHead>
               {showIBAN && <TableHead className="text-right">IBAN</TableHead>}
               <TableHead className="text-center">إجراءات</TableHead>
             </TableRow>
@@ -889,6 +914,19 @@ const StudentsTable = ({
                     {getStatusBadge(
                       s.type === "interested" ? s.status : s.paymentStatus,
                       s.type,
+                    )}
+                  </TableCell>
+                  <TableCell>
+                    {s.attendanceType === "in_person" ? (
+                      <Badge className="bg-blue-100 text-blue-700 border-blue-200">
+                        وجاهي
+                      </Badge>
+                    ) : s.attendanceType === "online" ? (
+                      <Badge className="bg-purple-100 text-purple-700 border-purple-200">
+                        أونلاين
+                      </Badge>
+                    ) : (
+                      <span className="text-gray-400 text-sm">-</span>
                     )}
                   </TableCell>
 
@@ -1177,18 +1215,163 @@ const StudentsTable = ({
                   <Badge variant="outline" className="text-[10px] h-5">
                     {s.type === "registered" ? "مسجل" : "مهتم"}
                   </Badge>
+                  {s.attendanceType === "in_person" ? (
+                    <Badge className="bg-blue-100 text-blue-700 border-none rounded-full text-[9px] h-5 px-2">
+                      وجاهي
+                    </Badge>
+                  ) : s.attendanceType === "online" ? (
+                    <Badge className="bg-purple-100 text-purple-700 border-none rounded-full text-[9px] h-5 px-2">
+                      أونلاين
+                    </Badge>
+                  ) : null}
                   {s.isSuggested && (
-                    <div className="flex items-center gap-1 text-[9px] bg-purple-50 text-purple-700 px-2 rounded-full border border-purple-100">
+                    <div className="flex items-center gap-1 text-[9px] bg-purple-50 text-purple-700 px-2 rounded-full border border-purple-100 h-5">
                       <span>{s.originalSectionNumber} ←</span>
                       {getStatusBadge(s.previousStatus, "interested")}
                     </div>
                   )}
                 </div>
               </div>
-              {getStatusBadge(
-                s.type === "interested" ? s.status : s.paymentStatus,
-                s.type,
-              )}
+              <div className="flex items-center gap-1">
+                {getStatusBadge(
+                  s.type === "interested" ? s.status : s.paymentStatus,
+                  s.type,
+                )}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-8 w-8 rounded-full hover:bg-gray-100"
+                    >
+                      <MoreVertical className="w-4 h-4 text-gray-500" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-[200px]">
+                    {s.type === "interested" && (
+                      <>
+                        <DropdownMenuItem
+                          className="text-blue-600 gap-2 font-bold"
+                          onClick={() => convertLeadToRegistered(s)}
+                        >
+                          <UserCheck className="w-4 h-4" /> تحويل لمسجل
+                        </DropdownMenuItem>
+
+                        <DropdownMenuSub>
+                          <DropdownMenuSubTrigger className="gap-2">
+                            تحديث حالة الطلب
+                          </DropdownMenuSubTrigger>
+                          <DropdownMenuSubContent>
+                            {[
+                              { val: "new", label: "جديد" },
+                              { val: "contacted", label: "تم التواصل" },
+                              { val: "interested", label: "مهتم بالاشتراك" },
+                              { val: "no_response", label: "لم يرد" },
+                              { val: "high_price", label: "السعر مرتفع" },
+                              { val: "wants_online", label: "يريد أونلاين" },
+                              { val: "future_course", label: "الدورة القادمة" },
+                              { val: "far_location", label: "المكان بعيد" },
+                              {
+                                val: "cancel_reg",
+                                label: "يريد إلغاء التسجيل",
+                              },
+                              { val: "busy_morning", label: "مشغول صباحاً" },
+                              { val: "busy_evening", label: "مشغول مساءً" },
+                            ].map((item) => (
+                              <DropdownMenuItem
+                                key={item.val}
+                                onClick={() =>
+                                  handleUpdateEnrollment(s.id, {
+                                    status: item.val,
+                                  })
+                                }
+                              >
+                                {item.label}
+                              </DropdownMenuItem>
+                            ))}
+                          </DropdownMenuSubContent>
+                        </DropdownMenuSub>
+                      </>
+                    )}
+
+                    {s.type === "registered" && (
+                      <DropdownMenuSub>
+                        <DropdownMenuSubTrigger className="gap-2">
+                          إدارة حالة الدفع
+                        </DropdownMenuSubTrigger>
+                        <DropdownMenuSubContent>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleUpdateEnrollment(s.id, {
+                                paymentStatus: "paid",
+                                confirmationStatus: "confirmed",
+                              })
+                            }
+                          >
+                            مدفوع ومؤكد
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() =>
+                              handleUpdateEnrollment(s.id, {
+                                paymentStatus: "pending",
+                                confirmationStatus: "pending",
+                              })
+                            }
+                          >
+                            بانتظار الدفع
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            className="text-red-600"
+                            onClick={() =>
+                              handleUpdateEnrollment(s.id, {
+                                paymentStatus: "failed",
+                              })
+                            }
+                          >
+                            فشل الدفع
+                          </DropdownMenuItem>
+                        </DropdownMenuSubContent>
+                      </DropdownMenuSub>
+                    )}
+
+                    <DropdownMenuItem
+                      className="gap-2"
+                      onClick={() => {
+                        Swal.fire({
+                          title: "ملاحظات الطالب",
+                          text: s.notes || "لا يوجد ملاحظات",
+                          icon: "info",
+                          confirmButtonText: "إغلاق",
+                        });
+                      }}
+                    >
+                      <MessageSquare className="w-4 h-4" /> عرض الملاحظات
+                    </DropdownMenuItem>
+
+                    <DropdownMenuItem
+                      className="gap-2 text-blue-600 font-bold"
+                      onClick={() => {
+                        setMovingStudent({
+                          id: s.id,
+                          name: s.studentName,
+                          type: s.type,
+                        });
+                        setShowMoveDialog(true);
+                      }}
+                    >
+                      <ArrowRightLeft className="w-4 h-4" /> نقل لشعبة أخرى
+                    </DropdownMenuItem>
+
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600 gap-2 cursor-pointer"
+                      onClick={() => handleDelete(s.id, s.type)}
+                    >
+                      <Trash2 className="w-4 h-4" /> حذف البيانات
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
             </div>
 
             <div className="grid grid-cols-2 gap-2 text-xs text-gray-500 bg-gray-50 rounded-xl p-3">

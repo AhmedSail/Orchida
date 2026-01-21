@@ -20,7 +20,7 @@ export async function GET() {
     console.error("Error fetching course leads:", error);
     return NextResponse.json(
       { message: "فشل جلب الطلبات", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
     if (!body.studentEmail || !body.studentPhone || !body.studentName) {
       return NextResponse.json(
         { message: "الاسم، البريد الإلكتروني، ورقم الهاتف مطلوبة" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -55,7 +55,7 @@ export async function POST(req: Request) {
             "لديك حساب بالفعل في النظام. يرجى تسجيل الدخول بحسابك لتتمكن من التسجيل في الدورة.",
           code: "REQUIRE_LOGIN",
         },
-        { status: 403 }
+        { status: 403 },
       );
     }
 
@@ -66,8 +66,8 @@ export async function POST(req: Request) {
       .where(
         and(
           eq(courseLeads.studentEmail, body.studentEmail),
-          eq(courseLeads.courseId, body.courseId)
-        )
+          eq(courseLeads.courseId, body.courseId),
+        ),
       )
       .limit(1);
 
@@ -78,6 +78,7 @@ export async function POST(req: Request) {
         .update(courseLeads)
         .set({
           sectionId: body.sectionId, // تحديث للشعبة الجديدة المقترحة
+          attendanceType: body.attendanceType || null, // تحديث نوع الحضور
           nonResponseCount: 0, // تصفير العداد للاهتمام الجديد
           isActive: true,
           status: "new", // إعادة الحالة لجديد
@@ -90,7 +91,7 @@ export async function POST(req: Request) {
             "تم تحديث بيانات اهتمامك بهذه الدورة بنجاح. سنقوم بالتواصل معك قريباً.",
           lead: existingLeadOnCourse[0],
         },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -126,8 +127,8 @@ export async function POST(req: Request) {
       .where(
         and(
           eq(courseLeads.studentEmail, body.studentEmail),
-          eq(courseLeads.studentPhone, body.studentPhone)
-        )
+          eq(courseLeads.studentPhone, body.studentPhone),
+        ),
       );
 
     // 5. إنشاء طلب التسجيل (Lead)
@@ -142,6 +143,7 @@ export async function POST(req: Request) {
       studentAge: body.studentAge || null,
       studentMajor: body.studentMajor || null,
       studentCountry: body.studentCountry || null,
+      attendanceType: body.attendanceType || null, // نوع الحضور: وجاهي أو أونلاين
       status: body.status || "new",
       isActive: true,
       nonResponseCount: 0,
@@ -159,13 +161,13 @@ export async function POST(req: Request) {
         message: successMessage,
         lead,
       },
-      { status: 201 }
+      { status: 201 },
     );
   } catch (error: any) {
     console.error("Error creating course lead:", error);
     return NextResponse.json(
       { message: "فشل إرسال الطلب", error: error.message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

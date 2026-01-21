@@ -71,6 +71,9 @@ const schema = z.object({
   studentAge: z.number({ message: "يرجى إدخل عمر صالح" }).int().positive(),
   studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
   studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
+  attendanceType: z.enum(["in_person", "online"], {
+    message: "يرجى اختيار نوع الحضور",
+  }),
   notes: z.string().max(500).optional().or(z.literal("")),
 });
 
@@ -102,6 +105,7 @@ const RegisterUser = ({
       studentAge: 18,
       studentMajor: "",
       studentCountry: "",
+      attendanceType: "in_person",
       notes: "",
     },
     mode: "onChange",
@@ -571,6 +575,94 @@ const RegisterUser = ({
                         )}
                       />
                     </div>
+
+                    <FormField
+                      control={form.control}
+                      name="attendanceType"
+                      render={({ field }) => (
+                        <FormItem className="group">
+                          <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
+                            نوع الحضور
+                          </FormLabel>
+                          <FormControl>
+                            <div className="grid grid-cols-2 gap-4">
+                              <label
+                                className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                  field.value === "in_person"
+                                    ? "border-primary bg-primary/5"
+                                    : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  value="in_person"
+                                  checked={field.value === "in_person"}
+                                  onChange={() => field.onChange("in_person")}
+                                  className="sr-only"
+                                />
+                                <div className="flex flex-col items-center gap-2">
+                                  <div
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                      field.value === "in_person"
+                                        ? "bg-primary text-white"
+                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
+                                    }`}
+                                  >
+                                    <UserIcon className="w-5 h-5" />
+                                  </div>
+                                  <span className="font-bold text-sm">
+                                    وجاهي
+                                  </span>
+                                </div>
+                              </label>
+
+                              <label
+                                className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                  field.value === "online"
+                                    ? "border-primary bg-primary/5"
+                                    : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
+                                }`}
+                              >
+                                <input
+                                  type="radio"
+                                  value="online"
+                                  checked={field.value === "online"}
+                                  onChange={() => field.onChange("online")}
+                                  className="sr-only"
+                                />
+                                <div className="flex flex-col items-center gap-2">
+                                  <div
+                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                      field.value === "online"
+                                        ? "bg-primary text-white"
+                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
+                                    }`}
+                                  >
+                                    <svg
+                                      className="w-5 h-5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                    >
+                                      <path
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                      />
+                                    </svg>
+                                  </div>
+                                  <span className="font-bold text-sm">
+                                    أونلاين
+                                  </span>
+                                </div>
+                              </label>
+                            </div>
+                          </FormControl>
+                          <FormMessage className="text-xs" />
+                        </FormItem>
+                      )}
+                    />
                   </div>
 
                   {/* Section 4: Notes */}

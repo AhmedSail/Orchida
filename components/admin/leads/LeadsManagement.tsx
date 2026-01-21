@@ -56,6 +56,7 @@ type Lead = {
   status: string;
   isActive: boolean;
   nonResponseCount: number;
+  attendanceType: "in_person" | "online" | null;
   createdAt: string;
   course: {
     title: string;
@@ -74,6 +75,10 @@ const LeadsManagement = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCourseId, setFilterCourseId] = useState("all");
+  const [filterAttendance, setFilterAttendance] = useState("all");
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const itemsPerPage = 10;
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [smsMessage, setSmsMessage] = useState("");
@@ -107,7 +112,7 @@ const LeadsManagement = () => {
 
   const toggleSelectLead = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -196,7 +201,7 @@ const LeadsManagement = () => {
       });
       if (res.ok) {
         setLeads(
-          leads.map((l) => (l.id === id ? { ...l, [field]: value } : l))
+          leads.map((l) => (l.id === id ? { ...l, [field]: value } : l)),
         );
         MySwal.fire({
           icon: "success",
@@ -287,11 +292,23 @@ const LeadsManagement = () => {
       filterStatus === "all" || lead.status === filterStatus;
     const matchesCourse =
       filterCourseId === "all" || lead.courseId === filterCourseId;
-    return matchesSearch && matchesStatus && matchesCourse;
+    const matchesAttendance =
+      filterAttendance === "all" || lead.attendanceType === filterAttendance;
+    return matchesSearch && matchesStatus && matchesCourse && matchesAttendance;
   });
 
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterCourseId, filterAttendance]);
+
   const uniqueCourses = Array.from(
-    new Map(leads.map((l) => [l.courseId, l.course.title])).entries()
+    new Map(leads.map((l) => [l.courseId, l.course.title])).entries(),
   ).map(([id, title]) => ({ id, title }));
 
   const getStatusBadge = (status: string) => {
@@ -378,9 +395,9 @@ const LeadsManagement = () => {
         </div>
         <div className="flex flex-col md:flex-row items-center gap-2 w-full md:w-auto">
           <div className="flex items-center gap-2 w-full md:w-auto">
-            <Filter className="w-5 h-5 text-zinc-400 mr-2" />
+            <Filter className="w-5 h-5 text-zinc-400 mr-2 md:mr-0" />
             <select
-              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-44"
+              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-40"
               value={filterStatus}
               onChange={(e) => setFilterStatus(e.target.value)}
             >
@@ -391,10 +408,11 @@ const LeadsManagement = () => {
               <option value="registered">مسجل</option>
             </select>
           </div>
+
           <div className="flex items-center gap-2 w-full md:w-auto">
             <GraduationCap className="w-5 h-5 text-zinc-400 mr-2 md:mr-0" />
             <select
-              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-56"
+              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-48"
               value={filterCourseId}
               onChange={(e) => setFilterCourseId(e.target.value)}
             >
@@ -404,6 +422,19 @@ const LeadsManagement = () => {
                   {course.title}
                 </option>
               ))}
+            </select>
+          </div>
+
+          <div className="flex items-center gap-2 w-full md:w-auto">
+            <User className="w-5 h-5 text-zinc-400 mr-2 md:mr-0" />
+            <select
+              className="h-12 px-4 rounded-2xl bg-white dark:bg-zinc-900 border-zinc-200 dark:border-zinc-800 outline-none text-sm w-full md:w-40"
+              value={filterAttendance}
+              onChange={(e) => setFilterAttendance(e.target.value)}
+            >
+              <option value="all">كل الأنواع</option>
+              <option value="in_person">وجاهي</option>
+              <option value="online">أونلاين</option>
             </select>
           </div>
         </div>
@@ -514,8 +545,8 @@ const LeadsManagement = () => {
         </div>
       </motion.div>
 
-      {/* Table */}
-      <div className="bg-white dark:bg-zinc-950 rounded-5xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
+      {/* Table - Desktop only */}
+      <div className="hidden lg:block bg-white dark:bg-zinc-950 rounded-5xl border border-zinc-200 dark:border-zinc-800 overflow-hidden shadow-xl">
         <div className="overflow-x-auto">
           <table className="w-full text-right">
             <thead>
@@ -541,6 +572,9 @@ const LeadsManagement = () => {
                 <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400">
                   الحالة
                 </th>
+                <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400">
+                  نوع الحضور
+                </th>
                 <th className="px-6 py-5 font-bold text-zinc-600 dark:text-zinc-400 text-center">
                   عدم الاستجابة
                 </th>
@@ -557,8 +591,8 @@ const LeadsManagement = () => {
             </thead>
             <tbody className="divide-y divide-zinc-100 dark:divide-zinc-900">
               <AnimatePresence>
-                {filteredLeads.length > 0 ? (
-                  filteredLeads.map((lead) => (
+                {paginatedLeads.length > 0 ? (
+                  paginatedLeads.map((lead) => (
                     <motion.tr
                       key={lead.id}
                       initial={{ opacity: 0 }}
@@ -567,7 +601,7 @@ const LeadsManagement = () => {
                       className={cn(
                         "hover:bg-zinc-50/50 dark:hover:bg-zinc-900/20 transition-colors group",
                         selectedIds.includes(lead.id) &&
-                          "bg-emerald-50/30 dark:bg-emerald-500/5"
+                          "bg-emerald-50/30 dark:bg-emerald-500/5",
                       )}
                     >
                       <td className="px-6 py-5">
@@ -611,7 +645,7 @@ const LeadsManagement = () => {
                             </a>
                             <a
                               href={`https://wa.me/${(lead.studentPhone.startsWith(
-                                "05"
+                                "05",
                               ) && lead.studentPhone.length === 10
                                 ? "970" + lead.studentPhone.substring(1)
                                 : lead.studentPhone
@@ -644,13 +678,26 @@ const LeadsManagement = () => {
                         {getStatusBadge(lead.status)}
                       </td>
                       <td className="px-6 py-5 text-center">
+                        {lead.attendanceType === "in_person" ? (
+                          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 rounded-full text-[10px]">
+                            وجاهي
+                          </Badge>
+                        ) : lead.attendanceType === "online" ? (
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100 border-none px-3 py-1 rounded-full text-[10px]">
+                            أونلاين
+                          </Badge>
+                        ) : (
+                          <span className="text-zinc-300">--</span>
+                        )}
+                      </td>
+                      <td className="px-6 py-5 text-center">
                         <div className="flex items-center justify-center gap-2">
                           <button
                             onClick={() =>
                               updateLeadField(
                                 lead.id,
                                 "nonResponseCount",
-                                Math.max(0, lead.nonResponseCount - 1)
+                                Math.max(0, lead.nonResponseCount - 1),
                               )
                             }
                             className="size-6 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-600"
@@ -662,8 +709,8 @@ const LeadsManagement = () => {
                               lead.nonResponseCount > 2
                                 ? "text-red-600"
                                 : lead.nonResponseCount > 0
-                                ? "text-amber-600"
-                                : "text-zinc-400"
+                                  ? "text-amber-600"
+                                  : "text-zinc-400"
                             }`}
                           >
                             {lead.nonResponseCount}
@@ -673,7 +720,7 @@ const LeadsManagement = () => {
                               updateLeadField(
                                 lead.id,
                                 "nonResponseCount",
-                                lead.nonResponseCount + 1
+                                lead.nonResponseCount + 1,
                               )
                             }
                             className="size-6 rounded-full bg-zinc-100 hover:bg-zinc-200 flex items-center justify-center text-zinc-600"
@@ -827,6 +874,173 @@ const LeadsManagement = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-2 mt-4">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="rounded-xl"
+          >
+            السابق
+          </Button>
+          <div className="flex items-center gap-1">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
+              <Button
+                key={page}
+                variant={currentPage === page ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCurrentPage(page)}
+                className="w-10 h-10 rounded-xl"
+              >
+                {page}
+              </Button>
+            ))}
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="rounded-xl"
+          >
+            التالي
+          </Button>
+        </div>
+      )}
+
+      {/* Mobile view - hidden on desktop */}
+      <div className="lg:hidden space-y-4">
+        {paginatedLeads.map((lead) => (
+          <div
+            key={lead.id}
+            className="bg-white dark:bg-zinc-950 p-6 rounded-3xl border border-zinc-200 dark:border-zinc-800 shadow-sm space-y-4"
+          >
+            <div className="flex justify-between items-start">
+              <div className="flex gap-3">
+                <Checkbox
+                  checked={selectedIds.includes(lead.id)}
+                  onCheckedChange={() => toggleSelectLead(lead.id)}
+                />
+                <div className="flex flex-col">
+                  <span className="font-bold text-zinc-900 dark:text-white">
+                    {lead.studentName}
+                  </span>
+                  <span className="text-xs text-zinc-500">
+                    {lead.studentPhone}
+                  </span>
+                </div>
+              </div>
+              <div className="flex gap-1">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="rounded-xl">
+                      <MoreVertical className="w-5 h-5" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent
+                    align="end"
+                    className="w-48 rounded-2xl p-2"
+                  >
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 cursor-pointer"
+                      onClick={() => updateStatus(lead.id, "contacted")}
+                    >
+                      <Phone className="w-4 h-4" /> تم التواصل
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 cursor-pointer"
+                      onClick={() => updateStatus(lead.id, "interested")}
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> مهتم بالاشتراك
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 cursor-pointer"
+                      onClick={() => updateStatus(lead.id, "busy_morning")}
+                    >
+                      <Clock className="w-4 h-4" /> مشغول فترة صباحية
+                    </DropdownMenuItem>
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 cursor-pointer"
+                      onClick={() => updateStatus(lead.id, "busy_evening")}
+                    >
+                      <Clock className="w-4 h-4" /> مشغول فترة مسائية
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 text-blue-600 focus:text-blue-600 cursor-pointer"
+                      onClick={() => {
+                        MySwal.fire({
+                          title: "ملاحظات الطالب",
+                          text: lead.notes || "لا يوجد ملاحظات",
+                          icon: "info",
+                          confirmButtonText: "إغلاق",
+                        });
+                      }}
+                    >
+                      <MessageSquare className="w-4 h-4" /> عرض الملاحظات
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="rounded-xl gap-2 text-red-600 focus:text-red-600 cursor-pointer"
+                      onClick={() => deleteLead(lead.id)}
+                    >
+                      <Trash2 className="w-4 h-4" /> حذف الطلب
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </div>
+
+            <div className="flex flex-wrap gap-2 items-center">
+              <span className="text-xs bg-zinc-100 dark:bg-zinc-800 text-zinc-600 dark:text-zinc-400 px-3 py-1 rounded-full">
+                {lead.course?.title}
+              </span>
+              {getStatusBadge(lead.status)}
+              {lead.attendanceType === "in_person" ? (
+                <Badge className="bg-blue-100 text-blue-700 border-none rounded-full text-[10px]">
+                  وجاهي
+                </Badge>
+              ) : lead.attendanceType === "online" ? (
+                <Badge className="bg-purple-100 text-purple-700 border-none rounded-full text-[10px]">
+                  أونلاين
+                </Badge>
+              ) : null}
+            </div>
+
+            <div className="flex items-center justify-between pt-4 border-t border-zinc-100 dark:border-zinc-800">
+              <div className="flex items-center gap-4">
+                <a
+                  href={`tel:${lead.studentPhone}`}
+                  className="size-10 rounded-full bg-zinc-100 dark:bg-zinc-900 flex items-center justify-center text-zinc-600"
+                >
+                  <Phone className="w-5 h-5" />
+                </a>
+                <a
+                  href={`https://wa.me/${(lead.studentPhone.startsWith("05") && lead.studentPhone.length === 10 ? "970" + lead.studentPhone.substring(1) : lead.studentPhone).replace("+", "")}`}
+                  target="_blank"
+                  className="size-10 rounded-full bg-green-50 text-green-600 flex items-center justify-center"
+                >
+                  <MessageSquare className="w-5 h-5" />
+                </a>
+              </div>
+              {lead.status !== "registered" && (
+                <Button
+                  size="sm"
+                  className="bg-green-600 hover:bg-green-700 text-white rounded-xl gap-2 font-bold px-4 h-10"
+                  onClick={() => convertToEnrollment(lead)}
+                >
+                  <UserPlus className="w-4 h-4" />
+                  تحويل
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   );

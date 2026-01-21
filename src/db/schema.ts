@@ -41,6 +41,11 @@ export const courseTypeEnum = pgEnum("course_type", [
   "external",
 ]);
 
+export const attendanceTypeEnum = pgEnum("attendance_type", [
+  "in_person", // وجاهي
+  "online", // أونلاين
+]);
+
 export const confirmationStatusEnum = pgEnum("confirmation_status", [
   "pending",
   "confirmed",
@@ -234,6 +239,7 @@ export const courseEnrollments = pgTable("courseEnrollments", {
   studentAge: integer("studentAge"), // العمر
   studentMajor: varchar("studentMajor", { length: 255 }), // التخصص الجامعي
   studentCountry: varchar("studentCountry", { length: 255 }), // الدولة
+  attendanceType: attendanceTypeEnum("attendanceType"), // نوع الحضور: وجاهي أو أونلاين
 
   registrationNumber: varchar("registrationNumber", { length: 50 }).unique(),
   confirmationStatus: confirmationStatusEnum("confirmationStatus").notNull(),
@@ -676,6 +682,7 @@ export const courseLeads = pgTable("courseLeads", {
   studentAge: integer("studentAge"),
   studentMajor: varchar("studentMajor", { length: 255 }),
   studentCountry: varchar("studentCountry", { length: 255 }),
+  attendanceType: attendanceTypeEnum("attendanceType"), // نوع الحضور: وجاهي أو أونلاين
   notes: text("notes"),
   status: varchar("status", { length: 50 }).default("new"), // new, contacted, interested, registered
   isActive: boolean("isActive").default(true).notNull(),
