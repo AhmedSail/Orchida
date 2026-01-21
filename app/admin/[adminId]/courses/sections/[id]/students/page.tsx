@@ -51,6 +51,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
       studentPhone: courseEnrollments.studentPhone,
       studentMajor: courseEnrollments.studentMajor,
       studentCountry: courseEnrollments.studentCountry,
+      attendanceType: courseEnrollments.attendanceType,
       paymentStatus: courseEnrollments.paymentStatus,
       confirmationStatus: courseEnrollments.confirmationStatus,
       registeredAt: courseEnrollments.registeredAt,
@@ -75,6 +76,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
       status: courseLeads.status,
       studentMajor: courseLeads.studentMajor,
       studentCountry: courseLeads.studentCountry,
+      attendanceType: courseLeads.attendanceType,
     })
     .from(courseLeads)
     .where(eq(courseLeads.sectionId, param.id));
@@ -105,6 +107,7 @@ const Page = async ({ params }: { params: { id: string } }) => {
       status: courseLeads.status,
       studentMajor: courseLeads.studentMajor,
       studentCountry: courseLeads.studentCountry,
+      attendanceType: courseLeads.attendanceType,
       nonResponseCount: courseLeads.nonResponseCount,
       sectionId: courseLeads.sectionId,
       originalSectionNumber: courseSections.sectionNumber,
