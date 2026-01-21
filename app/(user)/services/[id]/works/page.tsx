@@ -27,7 +27,8 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   return {
     title: `معرض أعمال ${service[0].name}`,
@@ -92,8 +93,8 @@ export default async function ServiceWorksPage({
       and(
         eq(works.serviceId, id),
         eq(works.isActive, true),
-        isNull(works.deletedAt)
-      )
+        isNull(works.deletedAt),
+      ),
     )
     .orderBy(works.createdAt);
 

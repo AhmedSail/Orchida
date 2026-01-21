@@ -24,7 +24,8 @@ export async function generateMetadata({
     };
   }
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   return {
     title: `تسجيل في دورة ${course[0].title}`,

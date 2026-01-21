@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "تصفح دوراتنا التدريبية المتميزة في مختلف المجالات التقنية والإبداعية.",
   alternates: {
-    canonical: "https://orchida-ods.com/courses",
+    canonical: "https://www.orchida-ods.com/courses",
   },
 };
 
@@ -54,7 +54,7 @@ const page = async () => {
       courseSections.startDate,
       courseSections.endDate,
       courseSections.status,
-      courseSections.createdAt
+      courseSections.createdAt,
     )
     .orderBy(desc(courseSections.createdAt));
 
@@ -105,7 +105,8 @@ const page = async () => {
 
   // ✅ فلترة الكورسات لتكون فريدة
   const uniqueCourses = allCourses.filter(
-    (course, index, self) => index === self.findIndex((c) => c.id === course.id)
+    (course, index, self) =>
+      index === self.findIndex((c) => c.id === course.id),
   );
 
   return (
