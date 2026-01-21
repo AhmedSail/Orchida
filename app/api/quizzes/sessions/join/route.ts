@@ -1,7 +1,8 @@
 import { db } from "@/src/db";
 import { quizSessions, quizParticipants } from "@/src/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, count } from "drizzle-orm";
 import { NextResponse } from "next/server";
+import { pusherServer } from "@/lib/pusher";
 
 export async function POST(req: Request) {
   try {
@@ -31,9 +32,6 @@ export async function POST(req: Request) {
     }
 
     // 1.5 Check Max Capacity (100)
-    // We can use db.select({ count: count() }).from(participants)... or just findMany if not too big, but count is safer.
-    // Drizzle simplified count:
-    const { count } = await import("drizzle-orm");
     const [pCount] = await db
       .select({ value: count(quizParticipants.id) })
       .from(quizParticipants)
@@ -72,7 +70,6 @@ export async function POST(req: Request) {
       .returning();
 
     // 4. Trigger real-time event
-    const { pusherServer } = await import("@/lib/pusher");
     await pusherServer.trigger(`session-${pin}`, "player-joined", {
       id: participant.id,
       nickname: participant.nickname,
