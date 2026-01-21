@@ -3,7 +3,8 @@ import { db } from "@/src/db";
 import { digitalServices, courses, works } from "@/src/db/schema";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   // Fetch all dynamic IDs
   const allServices = await db
