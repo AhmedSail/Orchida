@@ -44,7 +44,7 @@ export const auth = betterAuth({
   trustedOrigins: [
     process.env.NEXT_PUBLIC_BASE_URL as string,
     "https://orchida-liard.vercel.app",
-    "https://orchida-ods.com",
+    "https://www.orchida-ods.com",
   ],
 
   user: {

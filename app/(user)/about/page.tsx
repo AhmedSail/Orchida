@@ -9,7 +9,7 @@ export const metadata: Metadata = {
   description:
     "تعرف على شركة أوركيدة، رؤيتنا، رسالتنا، وفريقنا المتميز في تقديم الحلول الرقمية والدورات التدريبية.",
   alternates: {
-    canonical: "https://orchida-ods.com/about",
+    canonical: "https://www.orchida-ods.com/about",
   },
 };
 

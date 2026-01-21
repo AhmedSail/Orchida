@@ -21,14 +21,14 @@ export const metadata: Metadata = {
   description:
     "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم. نقدم خدمات البرمجة، التصميم، التسويق، ودورات تدريبية احترافية.",
   alternates: {
-    canonical: "https://orchida-ods.com",
+    canonical: "https://www.orchida-ods.com",
   },
 };
 
 import JsonLd from "@/components/ui/JsonLd";
 
 const page = async () => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   // ✅ جلب جميع البيانات بالتوازي مع ترتيب الأخبار تنازلياً
   const [services, slidersPhoto, newsData, sections, rowData, studentStories] =
