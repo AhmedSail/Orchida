@@ -66,6 +66,8 @@ const SectionContent = ({
         return <ImageIcon className="size-5 text-emerald-500" />;
       case "attachment":
         return <FileText className="size-5 text-orange-500" />;
+      case "quiz":
+        return <HelpCircle className="size-5 text-indigo-500" />;
       default:
         return <HelpCircle className="size-5 text-slate-400" />;
     }
@@ -79,6 +81,8 @@ const SectionContent = ({
         return "وسائط بصريّة";
       case "attachment":
         return "ملف مرفق";
+      case "quiz":
+        return "اختبار / مسابقة";
       default:
         return "محتوى نصي";
     }

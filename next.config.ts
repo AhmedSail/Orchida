@@ -32,7 +32,7 @@ const config: NextConfig = {
       },
     ],
     // هنا مكانها الصحيح
-    qualities: [75, 80],
+    qualities: [100, 75, 80],
   },
   experimental: {
     serverActions: {

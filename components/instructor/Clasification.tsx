@@ -37,6 +37,9 @@ import {
   Link as LinkIcon,
   Image as ImageIcon,
   Trash,
+  Sparkles,
+  Copy,
+  Check,
 } from "lucide-react";
 import { Badge } from "../ui/badge";
 import EditNotesDialog from "./EditNotesDialog";
@@ -96,8 +99,11 @@ const Clasification = ({
   instructorSections,
 }: Props) => {
   const [activeTab, setActiveTab] = useState<
-    "content" | "members" | "forum" | "recommendations"
+    "content" | "members" | "forum" | "recommendations" | "aiPrompts"
   >("content");
+  const [aiPrompts, setAiPrompts] = useState<any[]>([]);
+  const [loadingPrompts, setLoadingPrompts] = useState(false);
+  const [copiedId, setCopiedId] = useState<string | null>(null);
   const [recommendations, setRecommendations] = useState<any[]>([]);
   const [showAddRec, setShowAddRec] = useState(false);
   const [showEditRec, setShowEditRec] = useState(false);
@@ -116,7 +122,13 @@ const Clasification = ({
     );
   }
 
-  const tabItems = [
+  const tabItems: {
+    id: "content" | "members" | "forum" | "recommendations" | "aiPrompts";
+    label: string;
+    icon: any;
+    color: string;
+    action: () => void;
+  }[] = [
     {
       id: "content" as const,
       label: "المحتوى التعليمي",
@@ -160,6 +172,16 @@ const Clasification = ({
     },
   ];
 
+  if (courseId === "a837434d-58c3-422e-a21b-1d3fd4b485a5") {
+    tabItems.splice(1, 0, {
+      id: "aiPrompts" as const,
+      label: "برومبات جاهزة",
+      icon: Sparkles,
+      color: "text-emerald-500",
+      action: () => setActiveTab("aiPrompts"),
+    });
+  }
+
   const fetchRecommendations = async () => {
     if (!section?.instructorId) return;
     setLoadingRecs(true);
@@ -178,11 +200,36 @@ const Clasification = ({
     }
   };
 
+  const fetchAiPrompts = async () => {
+    if (!section?.id) return;
+    setLoadingPrompts(true);
+    try {
+      const res = await fetch(`/api/ai-prompts?sectionId=${section.id}`);
+      if (res.ok) {
+        const data = await res.json();
+        setAiPrompts(data);
+      }
+    } catch (error) {
+      console.error(error);
+    } finally {
+      setLoadingPrompts(false);
+    }
+  };
+
   useEffect(() => {
     if (activeTab === "recommendations") {
       fetchRecommendations();
     }
-  }, [activeTab, section?.instructorId]);
+    if (activeTab === "aiPrompts") {
+      fetchAiPrompts();
+    }
+  }, [activeTab, section?.instructorId, section?.id]);
+
+  const handleCopy = (text: string, id: string) => {
+    navigator.clipboard.writeText(text);
+    setCopiedId(id);
+    setTimeout(() => setCopiedId(null), 2000);
+  };
 
   const handleDeleteRec = async (id: string) => {
     const result = await Swal.fire({
@@ -707,6 +754,138 @@ const Clasification = ({
             >
               دخول المنتدى الآن
             </Button>
+          </div>
+        )}
+
+        {activeTab === "aiPrompts" && (
+          <div className="space-y-8">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="text-3xl font-black text-slate-800 dark:text-white flex items-center gap-3">
+                  <Sparkles className="size-8 text-emerald-500" />
+                  برومبات ذكية جاهزة (معاينة)
+                </h2>
+                <p className="text-slate-500 font-medium mt-1">
+                  هذا ما يراه الطلاب في تبويب البرومبتات الجاهزة. يمكنك إدارتها
+                  من تبويب "المحتوى التعليمي".
+                </p>
+              </div>
+            </div>
+
+            {loadingPrompts ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="h-64 rounded-3xl bg-slate-100 animate-pulse"
+                  />
+                ))}
+              </div>
+            ) : aiPrompts.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                {aiPrompts.map((p, index) => (
+                  <motion.div
+                    key={p.id}
+                    initial={{ opacity: 0, scale: 0.9 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
+                  >
+                    <div
+                      onClick={() =>
+                        router.push(
+                          `/${role === "user" ? "dashboardUser" : role || "instructor"}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                        )
+                      }
+                      className="relative h-48 overflow-hidden cursor-pointer"
+                    >
+                      {p.imageUrl ? (
+                        <img
+                          src={p.imageUrl}
+                          alt={p.title}
+                          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                        />
+                      ) : (
+                        <div className="w-full h-full bg-slate-100 dark:bg-zinc-900 flex items-center justify-center text-slate-300">
+                          <ImageIcon className="size-16" />
+                        </div>
+                      )}
+                      <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                    </div>
+
+                    <div className="p-8 flex flex-col flex-1 space-y-4">
+                      <div className="space-y-1">
+                        <Badge className="bg-emerald-500/10 text-emerald-600 border-none text-[10px] font-black tracking-widest uppercase px-3">
+                          برومبت احترافي
+                        </Badge>
+                        <h4
+                          onClick={() =>
+                            router.push(
+                              `/${role === "user" ? "dashboardUser" : role || "instructor"}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                            )
+                          }
+                          className="text-xl font-black text-slate-800 dark:text-white cursor-pointer hover:text-emerald-500 transition-colors"
+                        >
+                          {p.title}
+                        </h4>
+                      </div>
+
+                      <div className="relative flex-1">
+                        <div
+                          className="p-4 bg-slate-50 dark:bg-zinc-900 rounded-2xl border border-slate-100 dark:border-zinc-800 text-sm font-mono text-slate-600 dark:text-slate-400 line-clamp-3 leading-relaxed whitespace-pre-wrap text-right"
+                          dir="rtl"
+                        >
+                          {p.prompt}
+                        </div>
+                        <div className="absolute inset-x-0 bottom-0 h-8 bg-linear-to-t from-slate-50 dark:from-zinc-900 to-transparent" />
+                      </div>
+
+                      <div className="pt-4 mt-auto flex flex-col gap-2">
+                        <Button
+                          onClick={() =>
+                            router.push(
+                              `/${role === "user" ? "dashboardUser" : role || "instructor"}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                            )
+                          }
+                          className="w-full h-12 rounded-2xl bg-emerald-500 hover:bg-emerald-600 text-white font-black flex items-center justify-center gap-2 group/btn transition-all shadow-lg shadow-emerald-500/10 active:scale-95 text-sm"
+                        >
+                          فتح صفحة البرومبت
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          onClick={() => handleCopy(p.prompt, p.id)}
+                          className="w-full h-11 rounded-2xl text-slate-500 font-bold flex items-center justify-center gap-2 transition-all text-xs"
+                        >
+                          {copiedId === p.id ? (
+                            <>
+                              <Check className="size-4 text-emerald-400" />
+                              تم النسخ
+                            </>
+                          ) : (
+                            <>
+                              <Copy className="size-4 group-hover/btn:scale-110 transition-transform" />
+                              نسخ سريع
+                            </>
+                          )}
+                        </Button>
+                      </div>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <div className="flex flex-col items-center justify-center py-24 bg-white dark:bg-zinc-950 rounded-[40px] border border-dashed border-slate-200 dark:border-zinc-800 text-center gap-6">
+                <div className="size-20 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500">
+                  <Sparkles className="size-10" />
+                </div>
+                <div>
+                  <h3 className="text-xl font-black">لا توجد برومبات حالياً</h3>
+                  <p className="text-slate-500">
+                    يمكنك إضافة برومبتات من تبويب "المحتوى التعليمي".
+                  </p>
+                </div>
+              </div>
+            )}
           </div>
         )}
       </motion.div>
