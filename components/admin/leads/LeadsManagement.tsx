@@ -41,6 +41,10 @@ import { Badge } from "@/components/ui/badge";
 
 const MySwal = withReactContent(Swal);
 
+import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import { Send } from "lucide-react";
+
 type Lead = {
   id: string;
   courseId: string;
@@ -65,9 +69,6 @@ type Lead = {
     sectionNumber: number;
   } | null;
 };
-import { Checkbox } from "@/components/ui/checkbox";
-import { Textarea } from "@/components/ui/textarea";
-import { Send } from "lucide-react";
 
 const LeadsManagement = () => {
   const [leads, setLeads] = useState<Lead[]>([]);
@@ -86,6 +87,34 @@ const LeadsManagement = () => {
   const [templates, setTemplates] = useState<
     { id: string; title: string; content: string }[]
   >([]);
+
+  const filteredLeads = leads.filter((lead) => {
+    const matchesSearch =
+      lead.studentName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      lead.studentPhone?.includes(searchTerm) ||
+      lead.course?.title?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesStatus =
+      filterStatus === "all" || lead.status === filterStatus;
+    const matchesCourse =
+      filterCourseId === "all" || lead.courseId === filterCourseId;
+    const matchesAttendance =
+      filterAttendance === "all" || lead.attendanceType === filterAttendance;
+    return matchesSearch && matchesStatus && matchesCourse && matchesAttendance;
+  });
+
+  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
+  const paginatedLeads = filteredLeads.slice(
+    (currentPage - 1) * itemsPerPage,
+    currentPage * itemsPerPage,
+  );
+
+  const uniqueCourses = Array.from(
+    new Map(leads.map((l) => [l.courseId, l.course?.title])).entries(),
+  ).map(([id, title]) => ({ id, title }));
+
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterCourseId, filterAttendance]);
 
   useEffect(() => {
     const fetchTemplates = async () => {
@@ -282,34 +311,6 @@ const LeadsManagement = () => {
       }
     }
   };
-
-  const filteredLeads = leads.filter((lead) => {
-    const matchesSearch =
-      lead.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      lead.studentPhone.includes(searchTerm) ||
-      lead.course.title.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesStatus =
-      filterStatus === "all" || lead.status === filterStatus;
-    const matchesCourse =
-      filterCourseId === "all" || lead.courseId === filterCourseId;
-    const matchesAttendance =
-      filterAttendance === "all" || lead.attendanceType === filterAttendance;
-    return matchesSearch && matchesStatus && matchesCourse && matchesAttendance;
-  });
-
-  const totalPages = Math.ceil(filteredLeads.length / itemsPerPage);
-  const paginatedLeads = filteredLeads.slice(
-    (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage,
-  );
-
-  useEffect(() => {
-    setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterCourseId, filterAttendance]);
-
-  const uniqueCourses = Array.from(
-    new Map(leads.map((l) => [l.courseId, l.course.title])).entries(),
-  ).map(([id, title]) => ({ id, title }));
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -850,7 +851,7 @@ const LeadsManagement = () => {
                   ))
                 ) : (
                   <tr>
-                    <td colSpan={6} className="px-6 py-20 text-center ">
+                    <td colSpan={10} className="px-6 py-20 text-center ">
                       <div className="flex flex-col items-center gap-3">
                         <Search className="w-12 h-12 text-zinc-200" />
                         <p className="text-zinc-500 font-medium">

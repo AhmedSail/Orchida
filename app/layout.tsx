@@ -9,7 +9,8 @@ const tajawal = Tajawal({
   variable: "--font-tajawal",
 });
 
-const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://orchida-ods.com";
+const baseUrl =
+  process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
@@ -19,7 +20,7 @@ export const metadata: Metadata = {
   },
   description: "خدمات أوركيدة الرقمية والأكاديمية",
   alternates: {
-    canonical: "./",
+    canonical: baseUrl,
   },
   openGraph: {
     title: "اوركيدة",
