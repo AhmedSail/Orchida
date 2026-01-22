@@ -37,10 +37,6 @@ const Page = async ({ params }: { params: { userId: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "user") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   // ✅ لو المستخدم طالب
   if (role === "user") {
     // الكورسات المسجل فيها
@@ -54,7 +50,7 @@ const Page = async ({ params }: { params: { userId: string } }) => {
       .from(courseEnrollments)
       .leftJoin(
         courseSections,
-        eq(courseEnrollments.sectionId, courseSections.id)
+        eq(courseEnrollments.sectionId, courseSections.id),
       )
       .leftJoin(courses, eq(courseSections.courseId, courses.id))
       .where(eq(courseEnrollments.studentId, session.user.id));
@@ -83,8 +79,8 @@ const Page = async ({ params }: { params: { userId: string } }) => {
         .where(
           and(
             gt(meetings.date, new Date()),
-            inArray(meetings.sectionId, sectionIds) // ✅ فلترة اللقاءات حسب الشُعب المسجل فيها الطالب
-          )
+            inArray(meetings.sectionId, sectionIds), // ✅ فلترة اللقاءات حسب الشُعب المسجل فيها الطالب
+          ),
         );
     }
 

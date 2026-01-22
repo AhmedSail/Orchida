@@ -19,25 +19,21 @@ export const metadata: Metadata = {
   description: "عرض قائمة الطلاب المسجلين في دوراتي",
 };
 
-const Page = async ({ params }: { params: { instructorId: string } }) => {
+const Page = async ({
+  params,
+}: {
+  params: Promise<{ instructorId: string }>;
+}) => {
+  const { instructorId } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
     redirect("/sign-in");
   }
 
-  // Ensure user is an instructor and it's their own ID or they are an admin
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  if (role !== "instructor" && role !== "admin") {
-    redirect("/");
-  }
+  const role = session.user.role;
+  const isAdmin = role === "admin";
+  const isOwner = session.user.id === instructorId;
 
   // Fetch sections for this instructor
   const sections = await db
@@ -49,7 +45,7 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
     })
     .from(courseSections)
     .innerJoin(courses, eq(courseSections.courseId, courses.id))
-    .where(eq(courseSections.instructorId, params.instructorId));
+    .where(eq(courseSections.instructorId, instructorId));
 
   const sectionIds = sections.map((s) => s.id);
 
@@ -71,8 +67,8 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
       .where(
         and(
           inArray(courseEnrollments.sectionId, sectionIds),
-          eq(courseEnrollments.isCancelled, false)
-        )
+          eq(courseEnrollments.isCancelled, false),
+        ),
       );
   }
 
@@ -86,10 +82,17 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
     };
   });
 
+  // Fetch target instructor data for the UI
+  const targetInstructor = await db
+    .select()
+    .from(users)
+    .where(eq(users.id, instructorId))
+    .limit(1);
+
   return (
     <InstructorStudentsPage
       students={instructorStudents}
-      instructorName={userRecord[0]?.name || "المدرب"}
+      instructorName={targetInstructor[0]?.name || "المدرب"}
     />
   );
 };

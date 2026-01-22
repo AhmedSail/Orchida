@@ -28,10 +28,6 @@ export default async function Page({ params }: { params: { id: string } }) {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "content_creator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   if (!workRecord.length) {
     return <div>العمل غير موجود</div>;
   }

@@ -19,17 +19,26 @@ export const metadata = {
   description: "عرض الروابط التفاعلية الخاصة بالدورات",
 };
 
-export default async function Page() {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ instructorId: string }>;
+}) {
+  const { instructorId } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
-  if (!session || session.user.role !== "instructor") {
+
+  if (!session) {
     redirect("/sign-in");
   }
+
+  const isAdmin = session.user.role === "admin";
+  const isOwner = session.user.id === instructorId;
 
   // Fetch courses taught by this instructor
   const taughtSections = await db
     .select({ courseId: courseSections.courseId })
     .from(courseSections)
-    .where(eq(courseSections.instructorId, session.user.id));
+    .where(eq(courseSections.instructorId, instructorId));
 
   const taughtCourseIds = Array.from(
     new Set(taughtSections.map((s) => s.courseId)),

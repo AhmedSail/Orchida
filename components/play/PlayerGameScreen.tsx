@@ -148,6 +148,8 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
     rank: number;
     score: number;
     nickname: string;
+    realName?: string;
+    phone?: string;
   } | null>(null);
 
   useEffect(() => {
@@ -167,6 +169,8 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
                 rank: myRankIdx + 1,
                 score: sorted[myRankIdx].score,
                 nickname: sorted[myRankIdx].nickname,
+                realName: sorted[myRankIdx].realName,
+                phone: sorted[myRankIdx].phone,
               });
             }
           }
@@ -339,6 +343,12 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
                     اسمك
                   </p>
                   <p className="text-xl font-bold">{finalRank.nickname}</p>
+                  <p className="text-[10px] text-slate-500 font-bold">
+                    {finalRank.realName}
+                  </p>
+                  <p className="text-[10px] text-slate-500 font-bold">
+                    {finalRank.phone}
+                  </p>
                 </div>
               </div>
             </div>

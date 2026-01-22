@@ -667,6 +667,66 @@ export const verification = pgTable("verification", {
     .$onUpdate(() => new Date())
     .notNull(),
 });
+export const jobs = pgTable("jobs", {
+  id: text("id").primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  department: varchar("department", { length: 255 }),
+  description: text("description"),
+  isActive: boolean("isActive").default(true).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const jobApplications = pgTable("jobApplications", {
+  id: text("id").primaryKey(),
+
+  // Foreign Keys
+  jobId: text("jobId")
+    .notNull()
+    .references(() => jobs.id, { onDelete: "cascade" }),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+
+  // بيانات أساسية
+  applicantName: varchar("applicantName", { length: 255 }).notNull(),
+  applicantEmail: varchar("applicantEmail", { length: 320 }).notNull(),
+  applicantPhone: varchar("applicantPhone", { length: 20 }).notNull(),
+  applicantWhatsapp: varchar("applicantWhatsapp", { length: 20 }),
+
+  // بيانات أكاديمية ومهنية
+  applicantMajor: varchar("applicantMajor", { length: 255 }), // التخصص
+  applicantEducation: varchar("applicantEducation", { length: 255 }), // المؤهل التعليمي
+  applicantExperienceYears: integer("applicantExperienceYears"), // سنوات الخبرة
+
+  // بيانات شخصية
+  applicantGender: varchar("applicantGender", { length: 20 }), // ذكر / أنثى
+  applicantLocation: varchar("applicantLocation", { length: 255 }), // مكان السكن
+  applicantAge: integer("applicantAge"),
+
+  // السيرة الذاتية
+  applicantCV: text("applicantCV"), // رابط أو نص للسيرة الذاتية
+
+  // حالة الطلب
+  status: varchar("status", { length: 50 }).default("pending"), // pending, reviewed, accepted, rejected
+  notes: text("notes"),
+
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+// علاقات (لو عندك جدول وظائف أو مستخدمين)
+export const jobApplicationsRelations = relations(
+  jobApplications,
+  ({ one }) => ({
+    // مثال: ربط بالوظيفة
+    job: one(jobs, {
+      fields: [jobApplications.jobId],
+      references: [jobs.id],
+    }),
+    user: one(users, {
+      fields: [jobApplications.userId],
+      references: [users.id],
+    }),
+  }),
+);
 
 // ✅ جدول المهتمين (Leads) للتسجيل السريع بدون تسجيل دخول
 export const courseLeads = pgTable("courseLeads", {
@@ -1020,6 +1080,8 @@ export const quizParticipants = pgTable("quizParticipants", {
     .references(() => quizSessions.id, { onDelete: "cascade" })
     .notNull(),
   nickname: varchar("nickname", { length: 50 }).notNull(),
+  realName: varchar("realName", { length: 255 }),
+  phone: varchar("phone", { length: 20 }),
   userId: text("userId").references(() => users.id, { onDelete: "set null" }),
   score: integer("score").default(0).notNull(),
   status: quizParticipantStatusEnum("status").default("active").notNull(),

@@ -76,6 +76,12 @@ export function AppSidebar({ user }: { user: User }) {
       icon: Users,
       url: `/admin/${user.id}/employees`,
     },
+
+    {
+      title: "التوظيف",
+      icon: Users,
+      url: `/admin/${user.id}/employment`,
+    },
     {
       title: "إدارة المهتمين (Leads)",
       icon: Users,

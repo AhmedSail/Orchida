@@ -5,8 +5,6 @@ import {
   Save,
   Plus,
   Trash2,
-  Image as ImageIcon,
-  Video,
   Timer,
   CheckCircle2,
   ChevronRight,
@@ -424,40 +422,7 @@ export default function QuizEditor({
                   }
                 />
 
-                {/* Media Upload Area */}
-                <div className="mt-8">
-                  {activeQuestion.mediaUrl ? (
-                    <div className="relative aspect-video max-w-lg mx-auto rounded-[32px] overflow-hidden border-2 border-slate-100 ring-8 ring-slate-50 shadow-inner group">
-                      <img
-                        src={activeQuestion.mediaUrl}
-                        className="size-full object-cover"
-                      />
-                      <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                        <Button
-                          variant="destructive"
-                          className="rounded-full size-12 p-0"
-                          onClick={() =>
-                            updateQuestion(activeQuestionIndex, {
-                              mediaUrl: undefined,
-                              mediaType: null,
-                            })
-                          }
-                        >
-                          <X className="size-6" />
-                        </Button>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="aspect-21/9 max-w-xl mx-auto rounded-[40px] border-4 border-dashed border-slate-100 flex flex-col items-center justify-center gap-4 hover:border-primary/20 hover:bg-primary/5 transition-all text-slate-300 cursor-pointer group">
-                      <div className="size-16 rounded-full bg-slate-50 flex items-center justify-center group-hover:scale-110 group-hover:bg-primary/10 transition-all">
-                        <Plus className="size-8 text-slate-200 group-hover:text-primary" />
-                      </div>
-                      <p className="font-bold text-sm text-slate-400 group-hover:text-primary">
-                        أضف صورة أو فيديو
-                      </p>
-                    </div>
-                  )}
-                </div>
+                {/* Media upload area removed as requested */}
               </CardContent>
             </Card>
 

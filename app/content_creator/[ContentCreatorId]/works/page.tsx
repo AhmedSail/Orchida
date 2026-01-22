@@ -29,10 +29,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "content_creator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   const services = await db.select().from(digitalServices);
 
   const worksData = await db.select().from(works);
@@ -48,7 +44,7 @@ const page = async () => {
         ...work,
         mediaFiles: media, // ✅ مصفوفة الوسائط المرتبطة بالعمل
       };
-    })
+    }),
   );
 
   return (

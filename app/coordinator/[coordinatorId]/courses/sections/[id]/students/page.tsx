@@ -37,10 +37,6 @@ const Page = async ({ params }: { params: { id: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "coordinator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   // ✅ جلب الطلاب المسجلين في الشعبة
   const students = await db
     .select({

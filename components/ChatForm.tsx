@@ -24,6 +24,17 @@ import {
 } from "lucide-react";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
+import Avatar from "react-avatar";
+
+// دالة لاستخراج أول حرفين من الاسم
+const getInitials = (name: string) => {
+  if (!name) return "U";
+  const parts = name.trim().split(" ");
+  if (parts.length >= 2) {
+    return (parts[0][0] + parts[1][0]).toUpperCase();
+  }
+  return name.substring(0, 2).toUpperCase();
+};
 
 interface Section {
   id: string;
@@ -48,6 +59,7 @@ interface ReplyType {
   userId: string;
   content: string;
   authorName?: string | null;
+  userImage?: string | null;
   roleUser: string | null;
   createdAt?: Date;
 }
@@ -98,7 +110,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
         {
           ...data.post,
           authorName: user.name,
-          userImage: user.image ?? "/default-avatar.png",
+          userImage: user.image,
           roleUser: user.role,
           replies: [],
         },
@@ -128,8 +140,8 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
     });
     setLocalPosts(
       localPosts.map((p) =>
-        p.id === postId ? { ...p, status: "approved" } : p
-      )
+        p.id === postId ? { ...p, status: "approved" } : p,
+      ),
     );
     Swal.fire({
       title: "✅ تمت الموافقة",
@@ -191,8 +203,8 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
       const data = await res.json();
       setLocalPosts(
         localPosts.map((p) =>
-          p.id === post.id ? { ...p, content: data.post.content } : p
-        )
+          p.id === post.id ? { ...p, content: data.post.content } : p,
+        ),
       );
       Swal.fire("✅ تم التعديل", "تم التحديث بنجاح", "success");
     }
@@ -217,11 +229,16 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
               ...p,
               replies: [
                 ...(p.replies || []),
-                { ...data.reply, authorName: user.name, roleUser: user.role },
+                {
+                  ...data.reply,
+                  authorName: user.name,
+                  roleUser: user.role,
+                  userImage: user.image,
+                },
               ],
             }
-          : p
-      )
+          : p,
+      ),
     );
     setReplyContent("");
     setReplyPostId(null);
@@ -296,15 +313,11 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
       {/* Tabs Navigation */}
       <div className="flex flex-wrap gap-3 p-2 bg-slate-100 dark:bg-zinc-900 rounded-[32px] border border-slate-200 dark:border-zinc-800">
         <button
-          onClick={() =>
-            router.push(
-              `/${
-                user.role === "user"
-                  ? "dashboardUser"
-                  : user.role || "instructor"
-              }/${user.id}/courses/${sec?.id}/content`
-            )
-          }
+          onClick={() => {
+            const targetRole =
+              user.role === "user" ? "dashboardUser" : "instructor";
+            router.push(`/${targetRole}/${user.id}/courses/${sec?.id}/content`);
+          }}
           className="px-8 py-4 rounded-3xl flex items-center gap-3 transition-all duration-300 text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-white/5"
         >
           <BookOpen className="size-5" />
@@ -376,14 +389,24 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                               : "border-slate-100 bg-slate-50"
                           }`}
                         >
-                          <Image
-                            width={64}
-                            height={64}
-                            src={post.userImage ?? "/default-avatar.png"}
-                            alt={post.authorName ?? "user"}
-                            className="rounded-[18px] object-cover size-14"
-                            unoptimized
-                          />
+                          {post.userImage ? (
+                            <Image
+                              width={64}
+                              height={64}
+                              src={post.userImage}
+                              alt={post.authorName ?? "user"}
+                              className="rounded-[18px] object-cover size-14"
+                              unoptimized
+                            />
+                          ) : (
+                            <Avatar
+                              name={getInitials(post.authorName || "User")}
+                              size="56"
+                              round="18px"
+                              color="#675795"
+                              fgColor="#fff"
+                            />
+                          )}
                           {isInstructor && (
                             <div className="absolute -top-3 -right-3 size-7 rounded-xl bg-indigo-600 text-white flex items-center justify-center shadow-xl border-2 border-white">
                               <ShieldCheck className="size-4" />
@@ -447,7 +470,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                       </div>
                     </div>
 
-                    <div className="mt-8 text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-medium">
+                    <div className="mt-8 text-xl leading-relaxed text-slate-700 dark:text-slate-300 font-medium whitespace-pre-wrap">
                       {post.content}
                     </div>
 
@@ -460,7 +483,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                             <ShieldCheck className="size-3" />
                             توجيه وإرشاد المدرب
                           </div>
-                          <p className="text-lg font-bold leading-relaxed">
+                          <p className="text-lg font-bold leading-relaxed whitespace-pre-wrap">
                             {post.instructorReply}
                           </p>
                         </div>
@@ -481,8 +504,29 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                             key={reply.id}
                             className="flex gap-5 group/reply"
                           >
-                            <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center shrink-0 border border-slate-200 dark:border-zinc-700 shadow-sm transition-transform group-hover/reply:scale-110">
-                              <UserIcon className="size-6 text-slate-400" />
+                            <div className="size-12 rounded-[18px] shrink-0 transition-transform group-hover/reply:scale-110">
+                              {reply.userImage ? (
+                                <Image
+                                  src={reply.userImage}
+                                  alt={reply.authorName || "User"}
+                                  width={48}
+                                  height={48}
+                                  className="rounded-[18px] object-cover size-12"
+                                  unoptimized
+                                />
+                              ) : (
+                                <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-700 shadow-sm">
+                                  <Avatar
+                                    name={getInitials(
+                                      reply.authorName || "User",
+                                    )}
+                                    size="44"
+                                    round="16px"
+                                    color="#675795"
+                                    fgColor="#fff"
+                                  />
+                                </div>
+                              )}
                             </div>
                             <div className="grow space-y-2">
                               <div className="flex items-center gap-2">
@@ -495,7 +539,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                                   </Badge>
                                 )}
                               </div>
-                              <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px]">
+                              <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
                                 {reply.content}
                               </p>
                             </div>

@@ -21,10 +21,14 @@ export const metadata: Metadata = {
   description: "الرئيسية",
 };
 
-const Page = async ({ params }: { params: { instructorId: string } }) => {
+const Page = async ({
+  params,
+}: {
+  params: Promise<{ instructorId: string }>;
+}) => {
   // ✅ جلب السيشن
   const session = await auth.api.getSession({ headers: await headers() });
-  const param = await params;
+  const { instructorId: targetInstructorId } = await params;
   if (!session?.user?.id) {
     redirect("/sign-in"); // لو مش مسجل دخول
   }
@@ -38,13 +42,7 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "instructor" && role !== "admin") {
-    redirect("/"); // لو مش أدمن أو مدرب رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
-
-  // Use the params instructorId for fetching data
-  const targetInstructorId = param.instructorId;
+  // targetInstructorId is already defined above from params await.
 
   const instructorRecord = await db
     .select()
@@ -76,13 +74,13 @@ const Page = async ({ params }: { params: { instructorId: string } }) => {
     .from(courseEnrollments)
     .innerJoin(
       courseSections,
-      eq(courseEnrollments.sectionId, courseSections.id)
+      eq(courseEnrollments.sectionId, courseSections.id),
     )
     .where(
       and(
         eq(courseSections.instructorId, targetInstructorId),
-        eq(courseEnrollments.isCancelled, false)
-      )
+        eq(courseEnrollments.isCancelled, false),
+      ),
     );
 
   const totalStudents = totalStudentsResult[0]?.count || 0;

@@ -24,6 +24,8 @@ export async function GET(req: Request) {
       .select({
         id: quizParticipants.id,
         nickname: quizParticipants.nickname,
+        realName: quizParticipants.realName,
+        phone: quizParticipants.phone,
         score: quizParticipants.score,
         status: quizParticipants.status,
         currentQuestionIndex: quizParticipants.currentQuestionIndex,

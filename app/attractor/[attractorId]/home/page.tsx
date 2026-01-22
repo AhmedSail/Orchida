@@ -17,18 +17,6 @@ export default async function page() {
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user?.id) redirect("/sign-in");
 
-  // ✅ التحقق من الرول (اختياري حسب نظامك)
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-  if (role !== "attractor") {
-    redirect("/");
-  }
-
   // ✅ حساب الطلبات اليوم
   const now = new Date();
   const startOfDay = new Date(
@@ -37,7 +25,7 @@ export default async function page() {
     now.getDate(),
     0,
     0,
-    0
+    0,
   );
   const endOfDay = new Date(
     now.getFullYear(),
@@ -45,7 +33,7 @@ export default async function page() {
     now.getDate() + 1,
     0,
     0,
-    0
+    0,
   );
 
   const todayRequests = await db
@@ -54,8 +42,8 @@ export default async function page() {
     .where(
       and(
         gte(serviceRequests.createdAt, startOfDay),
-        lt(serviceRequests.createdAt, endOfDay)
-      )
+        lt(serviceRequests.createdAt, endOfDay),
+      ),
     );
 
   // ✅ الخدمات حسب الحالة

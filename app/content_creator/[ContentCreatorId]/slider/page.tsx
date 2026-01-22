@@ -28,10 +28,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "content_creator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       <AdminSlider data={data} userId={session.user.id} role={role} />
