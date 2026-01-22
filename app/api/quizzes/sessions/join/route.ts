@@ -6,11 +6,14 @@ import { pusherServer } from "@/lib/pusher";
 
 export async function POST(req: Request) {
   try {
-    const { pin, nickname } = await req.json();
+    const { pin, nickname, realName, phone } = await req.json();
 
-    if (!pin || !nickname) {
+    if (!pin || !nickname || !realName || !phone) {
       return NextResponse.json(
-        { error: "PIN and nickname are required" },
+        {
+          error:
+            "جميع الحقول مطلوبة (الرمز، الاسم المستعار، الاسم الحقيقي، رقم الهاتف)",
+        },
         { status: 400 },
       );
     }
@@ -65,6 +68,8 @@ export async function POST(req: Request) {
       .values({
         sessionId: session.id,
         nickname,
+        realName,
+        phone,
         score: 0,
       })
       .returning();
@@ -73,6 +78,8 @@ export async function POST(req: Request) {
     await pusherServer.trigger(`session-${pin}`, "player-joined", {
       id: participant.id,
       nickname: participant.nickname,
+      realName: participant.realName,
+      phone: participant.phone,
     });
 
     return NextResponse.json({ participantId: participant.id });

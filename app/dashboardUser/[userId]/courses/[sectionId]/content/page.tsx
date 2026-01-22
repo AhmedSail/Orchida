@@ -47,11 +47,6 @@ const Page = async ({
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "user") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
-
   // ✅ جلب بيانات الشعبة مع الكورس
   const section = await db
     .select({

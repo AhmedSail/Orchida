@@ -136,11 +136,8 @@ const Clasification = ({
       color: "text-blue-500",
       action: () => {
         setActiveTab("content");
-        router.push(
-          `/${
-            role === "user" ? "dashboardUser" : role || "instructor"
-          }/${userId}/courses/${section.id}/content`,
-        );
+        const targetRole = role === "user" ? "dashboardUser" : "instructor";
+        router.push(`/${targetRole}/${userId}/courses/${section.id}/content`);
       },
     },
     {
@@ -156,11 +153,8 @@ const Clasification = ({
       icon: MessageSquare,
       color: "text-purple-500",
       action: () => {
-        router.push(
-          `/${
-            role === "user" ? "dashboardUser" : role || "instructor"
-          }/${userId}/courses/${section.id}/chat`,
-        );
+        const targetRole = role === "user" ? "dashboardUser" : "instructor";
+        router.push(`/${targetRole}/${userId}/courses/${section.id}/chat`);
       },
     },
     {
@@ -743,13 +737,13 @@ const Clasification = ({
               </p>
             </div>
             <Button
-              onClick={() =>
+              onClick={() => {
+                const targetRole =
+                  role === "user" ? "dashboardUser" : "instructor";
                 router.push(
-                  `/${
-                    role === "user" ? "dashboardUser" : role || "instructor"
-                  }/${userId}/courses/${section.id}/chat`,
-                )
-              }
+                  `/${targetRole}/${userId}/courses/${section.id}/chat`,
+                );
+              }}
               className="h-14 px-10 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-lg shadow-xl shadow-purple-600/20 active:scale-95 transition-all"
             >
               دخول المنتدى الآن
@@ -792,11 +786,13 @@ const Clasification = ({
                     className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
                   >
                     <div
-                      onClick={() =>
+                      onClick={() => {
+                        const targetRole =
+                          role === "user" ? "dashboardUser" : "instructor";
                         router.push(
-                          `/${role === "user" ? "dashboardUser" : role || "instructor"}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
-                        )
-                      }
+                          `/${targetRole}/${userId}/courses/${section.id}/ai-prompts/${p.id}`,
+                        );
+                      }}
                       className="relative h-48 overflow-hidden cursor-pointer"
                     >
                       {p.imageUrl ? (

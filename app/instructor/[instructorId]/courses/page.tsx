@@ -12,25 +12,16 @@ export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة المدرب",
   description: " الشعب",
 };
-const page = async ({ params }: { params: { instructorId: string } }) => {
+const page = async ({
+  params,
+}: {
+  params: Promise<{ instructorId: string }>;
+}) => {
+  const { instructorId } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
-    redirect("/sign-in"); // لو مش مسجل دخول
-  }
-
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "instructor") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
+    redirect("/sign-in");
   }
 
   const instructorSections = await db
@@ -40,17 +31,17 @@ const page = async ({ params }: { params: { instructorId: string } }) => {
       startDate: courseSections.startDate,
       endDate: courseSections.endDate,
       courseTitle: courses.title,
-      courseStatus: courseSections.status, // 👈 جلب حالة الدورة
+      courseStatus: courseSections.status,
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
-    .where(eq(courseSections.instructorId, session.user.id));
+    .where(eq(courseSections.instructorId, instructorId));
 
   return (
     <div>
       <CoursePage
         instructorSections={instructorSections}
-        userId={session.user.id}
+        userId={instructorId}
       />
     </div>
   );

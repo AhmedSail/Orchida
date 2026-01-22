@@ -17,26 +17,18 @@ export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة المدرب",
   description: "اللقاءات",
 };
-const page = async ({ params }: { params: { instructorId: string } }) => {
+const page = async ({
+  params,
+}: {
+  params: Promise<{ instructorId: string }>;
+}) => {
+  const { instructorId } = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
-    redirect("/sign-in"); // لو مش مسجل دخول
+    redirect("/sign-in");
   }
 
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "instructor") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   const meetingofInstructor = await db
     .select({
       id: meetings.id,
@@ -44,19 +36,19 @@ const page = async ({ params }: { params: { instructorId: string } }) => {
       date: meetings.date,
       startTime: meetings.startTime,
       endTime: meetings.endTime,
-      courseName: courses.title, // اسم الدورة
-      sectionNumber: courseSections.sectionNumber, // رقم الشعبة
+      courseName: courses.title,
+      sectionNumber: courseSections.sectionNumber,
     })
     .from(meetings)
     .leftJoin(courses, eq(meetings.courseId, courses.id))
     .leftJoin(courseSections, eq(meetings.sectionId, courseSections.id))
-    .where(eq(meetings.instructorId, session?.user.id));
+    .where(eq(meetings.instructorId, instructorId));
 
-  // جلب بيانات المحاضر نفسه
+  // جلب بيانات المحاضر المستهدف
   const instructor = await db
     .select()
     .from(instructors)
-    .where(eq(instructors.id, session?.user.id))
+    .where(eq(instructors.id, instructorId))
     .limit(1);
 
   return (

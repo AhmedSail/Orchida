@@ -107,10 +107,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "admin" && role !== "coordinator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   for (const course of courseList) {
     for (const section of course.sections) {
       const sectionMeetings = await db
@@ -120,7 +116,7 @@ const page = async () => {
 
       // ✅ احسب فقط اللقاءات المؤرشفة
       const archivedCount = sectionMeetings.filter(
-        (m) => m.archived === true
+        (m) => m.archived === true,
       ).length;
 
       // ✅ إذا عدد اللقاءات المؤرشفة 3 أو أكثر → حدث الحالة إلى closed

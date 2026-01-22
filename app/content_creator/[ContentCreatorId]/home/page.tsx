@@ -32,9 +32,6 @@ const page = async ({ params }: Props) => {
     .limit(1);
 
   const user = userRecord[0];
-  if (!user || user.role !== "content_creator") {
-    redirect("/");
-  }
 
   // Ensure the user is accessing their own dashboard
   if (user.id !== ContentCreatorId) {

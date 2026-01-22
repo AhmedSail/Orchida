@@ -29,37 +29,53 @@ import Image from "next/image";
 import { Link } from "next-view-transitions";
 import { User } from "../admin/instructor/NewInstructorForm";
 
-export function AppSidebarInstructor({ user }: { user: User }) {
+export function AppSidebarInstructor({
+  user,
+  instructorId,
+}: {
+  user: {
+    id: string;
+    name: string | null;
+    role: string;
+    image?: string | null;
+  };
+  instructorId: string;
+}) {
+  const isAdmin = user.role === "admin";
+  const isOwner = user.id === instructorId;
+
+  console.log("Sidebar InstructorID:", instructorId);
+
   const menuItems = [
     {
       title: "الرئيسية",
       icon: Home,
-      url: `/instructor/${user.id}/home`,
+      url: `/instructor/${instructorId}/home`,
     },
     {
       title: "المقررات الدراسية",
       icon: BookOpen,
-      url: `/instructor/${user.id}/courses`,
+      url: `/instructor/${instructorId}/courses`,
     },
     {
       title: "الجدول الزمني",
       icon: Calendar,
-      url: `/instructor/${user.id}/celender`,
+      url: `/instructor/${instructorId}/celender`,
     },
     {
       title: "الطلاب",
       icon: Users,
-      url: `/instructor/${user.id}/students`,
+      url: `/instructor/${instructorId}/students`,
     },
     {
       title: "مكتبة الوسائط",
       icon: FolderOpen,
-      url: `/instructor/${user.id}/library`,
+      url: `/instructor/${instructorId}/library`,
     },
     {
       title: "الروابط التفاعلية",
       icon: LinkIcon,
-      url: `/instructor/${user.id}/interactive-links`,
+      url: `/instructor/${instructorId}/interactive-links`,
     },
   ];
 

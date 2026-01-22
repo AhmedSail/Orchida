@@ -34,9 +34,6 @@ export default async function AdminHomePage() {
     .limit(1);
 
   const role = userRecord[0]?.role;
-  if (role !== "coordinator") {
-    redirect("/");
-  }
 
   // ✅ Coordinator Dynamic Queries
 
@@ -68,7 +65,7 @@ export default async function AdminHomePage() {
     now.getDate(),
     0,
     0,
-    0
+    0,
   );
   const endOfDay = new Date(
     now.getFullYear(),
@@ -76,7 +73,7 @@ export default async function AdminHomePage() {
     now.getDate() + 1,
     0,
     0,
-    0
+    0,
   );
 
   const newEnrollmentsToday = await db
@@ -85,8 +82,8 @@ export default async function AdminHomePage() {
     .where(
       and(
         gte(courseEnrollments.registeredAt, startOfDay),
-        lt(courseEnrollments.registeredAt, endOfDay)
-      )
+        lt(courseEnrollments.registeredAt, endOfDay),
+      ),
     );
 
   // 5. Latest Enrollments (Last 5)
@@ -101,7 +98,7 @@ export default async function AdminHomePage() {
     .from(courseEnrollments)
     .leftJoin(
       courseSections,
-      eq(courseEnrollments.sectionId, courseSections.id)
+      eq(courseEnrollments.sectionId, courseSections.id),
     )
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
     .orderBy(desc(courseEnrollments.registeredAt))

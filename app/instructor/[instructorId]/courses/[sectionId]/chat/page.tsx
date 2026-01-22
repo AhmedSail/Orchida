@@ -36,11 +36,6 @@ const Page = async ({
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "instructor") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
-
   // ✅ جلب بيانات الشعبة المفتوحة
   const section = await db
     .select({
@@ -89,12 +84,12 @@ const Page = async ({
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
     .where(
-      user.role === "instructor"
-        ? eq(sectionForumPosts.sectionId, sectionId) // المدرب يشوف الكل
+      user.role === "instructor" || user.role === "admin"
+        ? eq(sectionForumPosts.sectionId, sectionId) // المدرب والآدمين يشوفوا الكل
         : and(
             eq(sectionForumPosts.sectionId, sectionId),
-            inArray(sectionForumPosts.status, ["approved", "pendingForSelf"]) // الطالب يشوف بس approved
-          )
+            inArray(sectionForumPosts.status, ["approved", "pendingForSelf"]), // الطالب يشوف بس approved
+          ),
     );
 
   // ✅ جلب الردود
@@ -106,6 +101,7 @@ const Page = async ({
       content: sectionForumReplies.content,
       authorName: users.name,
       roleUser: users.role,
+      userImage: users.image,
     })
     .from(sectionForumReplies)
     .leftJoin(users, eq(sectionForumReplies.userId, users.id));

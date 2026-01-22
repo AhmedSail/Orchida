@@ -11,6 +11,7 @@ import {
   sliders,
   studentWorks,
   users,
+  jobs,
 } from "@/src/db/schema";
 import { db } from "@/src";
 import { eq } from "drizzle-orm";
@@ -21,6 +22,7 @@ const page = async () => {
 
   const slidersPhoto = await db.select().from(sliders);
   const newsData = await db.select().from(news);
+  const jobsData = await db.select().from(jobs);
   const allCourses = await db
     .select()
     .from(courses)
@@ -33,19 +35,6 @@ const page = async () => {
     redirect("/sign-in"); // لو مش مسجل دخول
   }
 
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "user") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       {/* مرر الخدمات + الطلبات للـ HomeView */}
@@ -55,6 +44,7 @@ const page = async () => {
         news={newsData}
         allCourses={allCourses}
         sections={sections}
+        jobs={jobsData}
         studentStories={[]}
       />
     </div>

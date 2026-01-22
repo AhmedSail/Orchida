@@ -24,6 +24,8 @@ import PusherClient from "pusher-js";
 interface Participant {
   id: string;
   nickname: string;
+  realName?: string;
+  phone?: string;
   score: number;
 }
 
@@ -287,6 +289,11 @@ export default function LiveHostGame({
                   <span className="font-bold text-slate-700 text-sm">
                     {player.nickname}
                   </span>
+                  {player.realName && (
+                    <span className="text-[10px] text-slate-400 font-bold">
+                      ({player.realName})
+                    </span>
+                  )}
                 </motion.div>
               ))}
             </div>
@@ -326,8 +333,12 @@ export default function LiveHostGame({
                 </div>
                 <div>
                   <h3 className="font-bold text-lg">{p.nickname}</h3>
+                  <div className="flex flex-col text-[10px] text-slate-500 font-bold">
+                    <span>{p.realName}</span>
+                    <span>{p.phone}</span>
+                  </div>
                   {(p as any).status === "eliminated" && (
-                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-md font-bold">
+                    <span className="text-xs bg-red-100 text-red-600 px-2 py-0.5 rounded-md font-bold mt-1">
                       تم الاستبعاد
                     </span>
                   )}
@@ -377,6 +388,9 @@ export default function LiveHostGame({
                 {p.nickname.charAt(0).toUpperCase()}
               </div>
               <div className="text-2xl font-black">{p.nickname}</div>
+              <div className="text-sm font-bold opacity-80">
+                {p.realName} - {p.phone}
+              </div>
               <div className="text-4xl font-black">{p.score} pt</div>
             </div>
           ))}

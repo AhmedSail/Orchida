@@ -11,6 +11,7 @@ import {
   sliders,
   studentWorks,
   users,
+  jobs,
 } from "@/src/db/schema";
 import { db } from "@/src";
 import { eq, inArray, desc } from "drizzle-orm";
@@ -28,51 +29,60 @@ export const metadata: Metadata = {
 import JsonLd from "@/components/ui/JsonLd";
 
 const page = async () => {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
+  const baseUrl =
+    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   // ✅ جلب جميع البيانات بالتوازي مع ترتيب الأخبار تنازلياً
-  const [services, slidersPhoto, newsData, sections, rowData, studentStories] =
-    await Promise.all([
-      db.select().from(digitalServices),
-      db.select().from(sliders),
-      db.select().from(news).orderBy(desc(news.publishedAt)),
-      db.select().from(courseSections),
-      db
-        .select({
-          id: courses.id,
-          title: courses.title,
-          description: courses.description,
-          imageUrl: courses.imageUrl,
-          hours: courses.hours,
-          price: courses.price,
-          duration: courses.duration,
-          createdAt: courses.createdAt,
-          updatedAt: courses.updatedAt,
-          approvedAt: courses.approvedAt,
-          currency: courses.currency,
-          sectionId: courseSections.id,
-          sectionNumber: courseSections.sectionNumber,
-          startDate: courseSections.startDate,
-          endDate: courseSections.endDate,
-          status: courseSections.status,
-        })
-        .from(courses)
-        .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
-        .where(inArray(courseSections.status, ["open", "in_progress"])),
-      db
-        .select({
-          id: studentWorks.id,
-          title: studentWorks.title,
-          description: studentWorks.description,
-          type: studentWorks.type,
-          mediaUrl: studentWorks.mediaUrl,
-          studentName: users.name,
-        })
-        .from(studentWorks)
-        .innerJoin(users, eq(studentWorks.studentId, users.id))
-        .where(eq(studentWorks.status, "approved"))
-        .limit(6),
-    ]);
+  const [
+    services,
+    slidersPhoto,
+    newsData,
+    sections,
+    rowData,
+    studentStories,
+    activeJobs,
+  ] = await Promise.all([
+    db.select().from(digitalServices),
+    db.select().from(sliders),
+    db.select().from(news).orderBy(desc(news.publishedAt)),
+    db.select().from(courseSections),
+    db
+      .select({
+        id: courses.id,
+        title: courses.title,
+        description: courses.description,
+        imageUrl: courses.imageUrl,
+        hours: courses.hours,
+        price: courses.price,
+        duration: courses.duration,
+        createdAt: courses.createdAt,
+        updatedAt: courses.updatedAt,
+        approvedAt: courses.approvedAt,
+        currency: courses.currency,
+        sectionId: courseSections.id,
+        sectionNumber: courseSections.sectionNumber,
+        startDate: courseSections.startDate,
+        endDate: courseSections.endDate,
+        status: courseSections.status,
+      })
+      .from(courses)
+      .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
+      .where(inArray(courseSections.status, ["open", "in_progress"])),
+    db
+      .select({
+        id: studentWorks.id,
+        title: studentWorks.title,
+        description: studentWorks.description,
+        type: studentWorks.type,
+        mediaUrl: studentWorks.mediaUrl,
+        studentName: users.name,
+      })
+      .from(studentWorks)
+      .innerJoin(users, eq(studentWorks.studentId, users.id))
+      .where(eq(studentWorks.status, "approved"))
+      .limit(6),
+    db.select().from(jobs),
+  ]);
 
   const rows = rowData;
 
@@ -183,6 +193,7 @@ const page = async () => {
         allCourses={allCourses}
         sections={sections}
         studentStories={studentStories}
+        jobs={activeJobs}
       />
     </div>
   );

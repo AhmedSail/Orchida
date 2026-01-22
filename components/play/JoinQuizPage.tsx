@@ -17,6 +17,8 @@ import { motion } from "framer-motion";
 export default function JoinQuizPage() {
   const [pin, setPin] = useState("");
   const [nickname, setNickname] = useState("");
+  const [realName, setRealName] = useState("");
+  const [phone, setPhone] = useState("");
   const [step, setStep] = useState(1); // 1: PIN, 2: Nickname
   const [loading, setLoading] = useState(false);
 
@@ -42,8 +44,8 @@ export default function JoinQuizPage() {
   };
 
   const handleJoin = async () => {
-    if (!nickname) {
-      toast.error("يرجى إدخال اسمك المستعار");
+    if (!nickname || !realName || !phone) {
+      toast.error("يرجى تعبئة جميع الحقول المطلوبة");
       return;
     }
 
@@ -52,7 +54,7 @@ export default function JoinQuizPage() {
       const res = await fetch("/api/quizzes/sessions/join", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pin, nickname }),
+        body: JSON.stringify({ pin, nickname, realName, phone }),
       });
 
       if (res.ok) {
@@ -133,15 +135,33 @@ export default function JoinQuizPage() {
                     خطوة واحدة متبقية
                   </span>
                 </div>
-                <Input
-                  type="text"
-                  placeholder="اسمك المستعار"
-                  className="h-20 text-center text-3xl font-black rounded-3xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
-                  maxLength={15}
-                  value={nickname}
-                  onChange={(e) => setNickname(e.target.value)}
-                  onKeyDown={(e) => e.key === "Enter" && handleJoin()}
-                />
+                <div className="space-y-4">
+                  <Input
+                    type="text"
+                    placeholder="اسمك المستعار (للمسابقة)"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    maxLength={15}
+                    value={nickname}
+                    onChange={(e) => setNickname(e.target.value)}
+                  />
+                  <Input
+                    type="text"
+                    placeholder="اسمك الحقيقي"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    maxLength={50}
+                    value={realName}
+                    onChange={(e) => setRealName(e.target.value)}
+                  />
+                  <Input
+                    type="tel"
+                    placeholder="رقم الهاتف"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    maxLength={15}
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleJoin()}
+                  />
+                </div>
                 <Button
                   className="w-full h-16 rounded-3xl text-xl font-black bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   onClick={handleJoin}

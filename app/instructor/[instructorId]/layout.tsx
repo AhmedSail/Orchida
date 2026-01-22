@@ -11,11 +11,16 @@ export const metadata = {
   title: "لوحة المدرب",
   description: "لوحة المدرب",
 };
+
 export default async function Layout({
   children,
+  params,
 }: {
   children: React.ReactNode;
+  params: Promise<{ instructorId: string }>;
 }) {
+  const { instructorId } = await params;
+  console.log("Layout Extracted instructorId:", instructorId);
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
@@ -28,16 +33,43 @@ export default async function Layout({
     .where(eq(users.id, session.user.id))
     .limit(1);
 
-  const role = userRecord[0]?.role;
+  const currentUser = userRecord[0];
+
+  if (!currentUser) {
+    redirect("/sign-in");
+  }
+
+  const isAdmin = currentUser.role === "admin";
+  const isOwner = currentUser.id === instructorId;
+
+  // Access Control: Allow only Admin or the Instructor themselves
+  if (!isAdmin && !isOwner) {
+    console.log(
+      "Access Denied. User Role:",
+      currentUser.role,
+      "isOwner:",
+      isOwner,
+    );
+    redirect("/"); // Redirect unauthorized users to home
+  }
+
   return (
     <SidebarProvider dir="rtl">
       <div className="flex w-full min-h-screen">
         {/* Sidebar */}
-        <AppSidebarInstructor user={userRecord[0]} />
+        <AppSidebarInstructor user={currentUser} instructorId={instructorId} />
 
         {/* Main content */}
-        <main className="flex-1 p-6">
+        <main className="flex-1 p-6 relative">
           <SidebarTrigger />
+          {isAdmin && !isOwner && (
+            <div className="mb-4 bg-yellow-50 border border-yellow-200 text-yellow-800 px-4 py-2 rounded-md text-sm flex items-center gap-2">
+              <span className="font-bold">⚠️ وضع المشرف:</span>
+              <span>
+                أنت تشاهد لوحة التحكم الخاصة بالمدرب (وضع للقراءة والإدارة)
+              </span>
+            </div>
+          )}
           {children}
         </main>
       </div>

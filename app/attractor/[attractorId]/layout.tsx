@@ -28,7 +28,6 @@ export default async function Layout({
     .where(eq(users.id, session.user.id))
     .limit(1);
 
-  const role = userRecord[0]?.role;
   return (
     <SidebarProvider dir="rtl">
       <div className="flex w-full min-h-screen">

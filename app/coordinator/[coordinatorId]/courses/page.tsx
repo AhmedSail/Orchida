@@ -34,10 +34,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  if (role !== "coordinator") {
-    redirect("/");
-  }
-
   // --- بداية التعديل ---
 
   // 1. جلب جميع الدورات
@@ -77,7 +73,7 @@ const page = async () => {
       // ترتيب الشعب من الأحدث للأقدم
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
 
     return {

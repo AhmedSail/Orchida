@@ -28,26 +28,12 @@ const page = async ({
 }: {
   params: Promise<{ instructorId: string; sectionId: string }>;
 }) => {
-  const sectionId = (await params).sectionId;
+  const { instructorId, sectionId } = await params;
 
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
-    redirect("/sign-in"); // لو مش مسجل دخول
-  }
-
-  // ✅ جلب بيانات المستخدم من DB
-  const userRecord = await db
-    .select()
-    .from(users)
-    .where(eq(users.id, session.user.id))
-    .limit(1);
-
-  const role = userRecord[0]?.role;
-
-  // ✅ تحقق من الرول
-  if (role !== "instructor") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
+    redirect("/sign-in");
   }
 
   // ✅ جلب بيانات الشعبة مع حالة الدورة
@@ -58,7 +44,7 @@ const page = async ({
       startDate: courseSections.startDate,
       endDate: courseSections.endDate,
       courseTitle: courses.title,
-      sectionStatus: courseSections.status, // 👈 الحالة من enum section_status
+      sectionStatus: courseSections.status,
       notes: courseSections.notes,
       instructorId: courseSections.instructorId,
     })
@@ -66,6 +52,7 @@ const page = async ({
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
     .where(eq(courseSections.id, sectionId))
     .limit(1);
+
   // ✅ جلب الطلاب المسجلين في هذه الشعبة
   const students = await db
     .select({
@@ -77,6 +64,7 @@ const page = async ({
     })
     .from(courseEnrollments)
     .where(eq(courseEnrollments.sectionId, sectionId));
+
   if (section.length === 0) {
     return <div>❌ لم يتم العثور على هذه الشعبة</div>;
   }
@@ -92,7 +80,7 @@ const page = async ({
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))
-    .where(eq(courseSections.instructorId, session.user.id));
+    .where(eq(courseSections.instructorId, instructorId));
 
   const allModules = await db
     .select()
@@ -100,7 +88,7 @@ const page = async ({
     .where(
       and(
         eq(courseModules.sectionId, sectionId),
-        eq(courseModules.intructorId, session.user.id),
+        eq(courseModules.intructorId, instructorId),
       ),
     );
 
@@ -114,7 +102,7 @@ const page = async ({
         instructorSections={instructorSections}
         section={section[0]}
         allModules={allModules}
-        userId={session.user.id}
+        userId={instructorId}
         courseId={
           instructorSections.find((s) => s.sectionId === sectionId)?.courseId ??
           ""

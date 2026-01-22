@@ -3,7 +3,6 @@ import type { NextRequest } from "next/server";
 import { auth } from "./lib/auth";
 
 export const config = {
-  // تشغيل الميدلوير على كل المسارات ما عدا الملفات الثابتة والـ API
   matcher: [
     "/((?!api|_next/static|_next/image|favicon.ico|logoLoading.webp|logo.svg).*)",
   ],
@@ -28,7 +27,7 @@ export default async function proxy(req: NextRequest) {
 
   const protectedPrefixes = Object.values(rolePaths);
   const isProtectedPath = protectedPrefixes.some((prefix) =>
-    pathname.startsWith(prefix)
+    pathname.startsWith(prefix),
   );
 
   // إذا كان المسار محمياً
@@ -40,17 +39,19 @@ export default async function proxy(req: NextRequest) {
       return NextResponse.redirect(signInUrl);
     }
 
+    // ✅ إذا كان أدمن → يدخل على أي صفحة مباشرة
+    if (role === "admin") {
+      return NextResponse.next();
+    }
+
     // 2. التحقق من صلاحية الدور للوصول لهذا المسار
     const userDashboardPrefix = rolePaths[role as string];
 
-    // إذا كان يحاول الدخول لمسار محمي لا يخص دوره (مثلاً يوزر يحاول دخول أدمن)
     if (!userDashboardPrefix || !pathname.startsWith(userDashboardPrefix)) {
-      // توجيه لصفحة لوحة التحكم الخاصة به أو للرئيسية
       const fallbackUrl = "/";
       return NextResponse.redirect(new URL(fallbackUrl, req.url));
     }
   }
 
-  // إذا كان المسار عاماً أو الصلاحيات صحيحة
   return NextResponse.next();
 }

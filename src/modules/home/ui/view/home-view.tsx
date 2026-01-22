@@ -11,6 +11,7 @@ import { Section } from "@/app/admin/[adminId]/courses/sections/[id]/edit/page";
 import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import LatestNewsUser from "../components/lastEvents";
+import Employment from "@/components/employment";
 const CoursesUser = dynamic(() => import("@/components/users/CoursesUser"), {
   loading: () => <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />,
 });
@@ -20,7 +21,7 @@ const StudentWorksHome = dynamic(
     loading: () => (
       <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />
     ),
-  }
+  },
 );
 export type ServiceRequests = InferSelectModel<typeof serviceRequests>;
 export type SliderType = InferSelectModel<typeof sliders>;
@@ -38,6 +39,14 @@ type UserCourse = {
   approvedAt: Date | null;
   currency: string | null;
 };
+export type Job = {
+  id: string;
+  title: string;
+  description: string | null;
+  department: string | null;
+  isActive: boolean;
+  createdAt: Date;
+};
 const HomeView = ({
   services,
   sliders,
@@ -45,6 +54,7 @@ const HomeView = ({
   allCourses,
   sections,
   studentStories,
+  jobs,
 }: {
   services: Services;
   sliders: SliderType[];
@@ -59,6 +69,7 @@ const HomeView = ({
     mediaUrl: string | null;
     studentName: string | null;
   }[];
+  jobs: Job[];
 }) => {
   return (
     <div className="min-h-screen w-full bg-white">
@@ -104,6 +115,11 @@ const HomeView = ({
       <div className="p-6">
         <CoursesUser allCourses={allCourses} />
       </div>
+
+      <div>
+        <Employment jobs={jobs} />
+      </div>
+
       <div className="py-12 bg-gray-50/50">
         <StudentWorksHome studentStories={studentStories} />
       </div>

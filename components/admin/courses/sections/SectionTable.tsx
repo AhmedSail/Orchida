@@ -39,11 +39,13 @@ import {
   XCircle,
   AlertCircle,
   Lock,
+  ExternalLink,
 } from "lucide-react";
 
 type Section = {
   id: string;
   number: number;
+  instructorId: string;
   instructorName: string;
   instructorSpecialty: string;
   startDate: string;
@@ -563,6 +565,15 @@ const SectionActions = ({
         </DropdownMenuItem>
       )}
 
+      {role === "admin" && (
+        <Link href={`/instructor/${section.instructorId}/home`}>
+          <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
+            <ExternalLink className="size-4 text-orange-500" />
+            <span className="font-bold">دخول كمدرب</span>
+          </DropdownMenuItem>
+        </Link>
+      )}
+
       <DropdownMenuSeparator className="my-1 opacity-50" />
 
       <DropdownMenuLabel className="px-3 py-2 text-xs font-black text-slate-400 uppercase tracking-widest">
@@ -578,7 +589,7 @@ const SectionActions = ({
 
       {(section.status === "open" || section.status === "in_progress") && (
         <Link
-          href={`/${role}/${userId}/courses/sections/${section.id}/celender`}
+          href={`/instructor/${section.instructorId}/courses/sections/${section.id}/celender`}
         >
           <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
             <Calendar className="size-4 text-emerald-500" />
@@ -588,7 +599,7 @@ const SectionActions = ({
       )}
 
       <Link
-        href={`/${role}/${userId}/courses/sections/${section.id}/attendance`}
+        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/attendance`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <FileSpreadsheet className="size-4 text-purple-500" />
@@ -603,7 +614,7 @@ const SectionActions = ({
       </DropdownMenuLabel>
 
       <Link
-        href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`}
+        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/newStudentWork`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <Plus className="size-4 text-emerald-500" />
@@ -612,7 +623,7 @@ const SectionActions = ({
       </Link>
 
       <Link
-        href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`}
+        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/allStudentsWork`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <Eye className="size-4 text-slate-500" />

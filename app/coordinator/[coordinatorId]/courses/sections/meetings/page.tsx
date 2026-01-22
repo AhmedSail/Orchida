@@ -61,10 +61,6 @@ const page = async () => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ تحقق من الرول
-  if (role !== "coordinator") {
-    redirect("/"); // لو مش أدمن رجعه للصفحة الرئيسية أو صفحة خطأ
-  }
   return (
     <div>
       <MeetingsTable meetings={allMeetings} courses={AllCourses} />
