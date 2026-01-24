@@ -17,11 +17,17 @@ export const metadata: Metadata = {
   title: "اوركيدة",
   description: "اوكيدة| الدفع",
 };
-const page = async ({ params }: { params: { courseId: string } }) => {
+const page = async ({
+  params,
+}: {
+  params: Promise<{ id: string; courseId: string }>;
+}) => {
   const param = await params;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session) {
-    redirect("/sign-in");
+    redirect(
+      `/sign-in?callbackUrl=${encodeURIComponent(`/${param.id}/myCourses/${param.courseId}/payment`)}`,
+    );
   }
   const myCourses = await db
     .select({
@@ -31,12 +37,13 @@ const page = async ({ params }: { params: { courseId: string } }) => {
       enrolledAt: courseEnrollments.createdAt,
       status: courseEnrollments.confirmationStatus,
       price: courses.price,
+      currency: courses.currency,
       paymentStatus: courseEnrollments.paymentStatus,
     })
     .from(courseEnrollments)
     .innerJoin(
       courseSections,
-      eq(courseEnrollments.sectionId, courseSections.id)
+      eq(courseEnrollments.sectionId, courseSections.id),
     )
     .innerJoin(courses, eq(courseSections.courseId, courses.id))
     .where(eq(courseEnrollments.id, param.courseId));

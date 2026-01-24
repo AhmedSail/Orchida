@@ -20,7 +20,7 @@ import { FaGithub, FaGoogle } from "react-icons/fa";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { OctagonAlertIcon } from "lucide-react";
 import { Link } from "next-view-transitions";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Spinner } from "@/components/ui/spinner";
 
 const formSchema = z
@@ -37,8 +37,11 @@ const formSchema = z
 
 export default function SignUpView() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [error, setError] = useState<string | null>(null);
   const [pending, setPending] = useState(false);
+  const callbackURL =
+    searchParams.get("callbackURL") || searchParams.get("callbackUrl") || "/";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
@@ -48,18 +51,18 @@ export default function SignUpView() {
         name: data.name,
         email: data.email,
         password: data.password,
-        callbackURL: baseUrl,
+        callbackURL,
       },
       {
         onSuccess: () => {
           setPending(false);
-          router.push("/");
+          router.push(callbackURL);
         },
         onError: ({ error }) => {
           setPending(false);
           setError(error?.message ?? "خطأ غير متوقع");
         },
-      }
+      },
     );
   };
   const onSocial = async (provider: "github" | "google") => {
@@ -68,7 +71,7 @@ export default function SignUpView() {
     await authClient.signIn.social(
       {
         provider: provider,
-        callbackURL: baseUrl,
+        callbackURL,
       },
       {
         onSuccess: () => {
@@ -78,7 +81,7 @@ export default function SignUpView() {
           setPending(false);
           setError(error?.message ?? "خطأ غير متوقع");
         },
-      }
+      },
     );
   };
   const form = useForm<z.infer<typeof formSchema>>({
@@ -219,7 +222,10 @@ export default function SignUpView() {
                 <div className="text-center text-white">
                   {" "}
                   لديك حساب بالفعل؟{" "}
-                  <Link href="/sign-in" className="underline">
+                  <Link
+                    href={`/sign-in?callbackURL=${encodeURIComponent(callbackURL)}`}
+                    className="underline"
+                  >
                     تسجيل الدخول
                   </Link>
                 </div>
