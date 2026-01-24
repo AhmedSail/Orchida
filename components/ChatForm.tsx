@@ -21,7 +21,11 @@ import {
   BookOpen,
   PlusCircle,
   Hash,
+  Image as ImageIcon2,
+  X,
+  Loader2,
 } from "lucide-react";
+import { toast } from "sonner";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
 import Avatar from "react-avatar";
@@ -58,6 +62,7 @@ interface ReplyType {
   postId: string;
   userId: string;
   content: string;
+  imageUrl?: string | null;
   authorName?: string | null;
   userImage?: string | null;
   roleUser: string | null;
@@ -68,6 +73,7 @@ interface Post {
   id: string;
   authorId: string;
   content: string;
+  imageUrl?: string | null;
   status: string;
   instructorReply?: string | null;
   authorName?: string | null;
@@ -80,18 +86,54 @@ interface ChatFormProps {
   section: Section[];
   userData: UserData[];
   posts: Post[];
+  isEmbedded?: boolean;
 }
 
-const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
+const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
   const user = userData[0];
   const sec = section[0];
 
   const [newPost, setNewPost] = useState("");
+  const [newPostImage, setNewPostImage] = useState<string | null>(null);
   const [replyContent, setReplyContent] = useState("");
+  const [replyImage, setReplyImage] = useState<string | null>(null);
   const [replyPostId, setReplyPostId] = useState<string | null>(null);
   const [localPosts, setLocalPosts] = useState<Post[]>(posts);
+  const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "forum">("forum");
   const router = useRouter();
+
+  const handleImageUpload = async (
+    e: React.ChangeEvent<HTMLInputElement>,
+    type: "post" | "reply",
+  ) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setIsUploading(true);
+    const formData = new FormData();
+    formData.append("file", file);
+
+    try {
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData,
+      });
+      const data = await res.json();
+      if (data.url) {
+        if (type === "post") {
+          setNewPostImage(data.url);
+        } else {
+          setReplyImage(data.url);
+        }
+        toast.success("تم رفع الصورة بنجاح");
+      }
+    } catch (err) {
+      toast.error("فشل في رفع الصورة");
+    } finally {
+      setIsUploading(false);
+    }
+  };
 
   const handleAddPost = async () => {
     if (!newPost.trim()) return;
@@ -102,6 +144,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
         body: JSON.stringify({
           authorId: user.id,
           content: newPost,
+          imageUrl: newPostImage,
           role: user.role,
         }),
       });
@@ -112,11 +155,13 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
           authorName: user.name,
           userImage: user.image,
           roleUser: user.role,
+          imageUrl: newPostImage,
           replies: [],
         },
         ...localPosts,
       ]);
       setNewPost("");
+      setNewPostImage(null);
       Swal.fire({
         title: "تم النشر ✅",
         text: "مشاركتك قيد المراجعة أو تم نشرها بنجاح",
@@ -218,6 +263,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
       body: JSON.stringify({
         userId: user.id,
         content: replyContent,
+        imageUrl: replyImage,
       }),
     });
     const data = await res.json();
@@ -234,6 +280,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                   authorName: user.name,
                   roleUser: user.role,
                   userImage: user.image,
+                  imageUrl: replyImage,
                 },
               ],
             }
@@ -241,6 +288,7 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
       ),
     );
     setReplyContent("");
+    setReplyImage(null);
     setReplyPostId(null);
     Swal.fire({
       title: "✅ تم الإضافة",
@@ -256,84 +304,90 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
   return (
     <div className="space-y-8 pb-12" dir="rtl">
       {/* Cinematic Header */}
-      <div className="relative overflow-hidden p-8 md:p-14 rounded-[48px] bg-indigo-950 border border-indigo-900 shadow-2xl">
-        <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
-        <div className="absolute -top-24 -right-24 size-96 bg-primary/20 rounded-full blur-3xl" />
+      {!isEmbedded && (
+        <div className="relative overflow-hidden p-8 md:p-14 rounded-[48px] bg-indigo-950 border border-indigo-900 shadow-2xl">
+          <div className="absolute top-0 right-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-10" />
+          <div className="absolute -top-24 -right-24 size-96 bg-primary/20 rounded-full blur-3xl" />
 
-        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
-          <div className="space-y-6">
+          <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-8">
+            <div className="space-y-6">
+              <motion.div
+                initial={{ opacity: 0, x: 20 }}
+                animate={{ opacity: 1, x: 0 }}
+                className="flex items-center gap-2 text-indigo-300 tracking-widest font-black uppercase text-xs"
+              >
+                <Activity className="size-4 animate-pulse" />
+                <span>المنتدى الطلابي التفاعلي | أكاديمية أوركيدة</span>
+              </motion.div>
+
+              <motion.h1
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="text-3xl md:text-5xl font-black text-white leading-tight"
+              >
+                مرحباً <span className="text-primary">{user.name}</span>
+                <br />
+                <span className="text-indigo-200/60 text-xl md:text-2xl font-bold mt-2 block">
+                  شارك مهاراتك، اسأل، وتعاون مع زملائك في {sec.courseTitle}
+                </span>
+              </motion.h1>
+            </div>
+
             <motion.div
-              initial={{ opacity: 0, x: 20 }}
-              animate={{ opacity: 1, x: 0 }}
-              className="flex items-center gap-2 text-indigo-300 tracking-widest font-black uppercase text-xs"
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="hidden lg:flex items-center gap-8 bg-white/5 backdrop-blur-2xl p-8 rounded-[40px] border border-white/10"
             >
-              <Activity className="size-4 animate-pulse" />
-              <span>المنتدى الطلابي التفاعلي | أكاديمية أوركيدة</span>
-            </motion.div>
-
-            <motion.h1
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-3xl md:text-5xl font-black text-white leading-tight"
-            >
-              مرحباً <span className="text-primary">{user.name}</span>
-              <br />
-              <span className="text-indigo-200/60 text-xl md:text-2xl font-bold mt-2 block">
-                شارك مهاراتك، اسأل، وتعاون مع زملائك في {sec.courseTitle}
-              </span>
-            </motion.h1>
-          </div>
-
-          <motion.div
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            className="hidden lg:flex items-center gap-8 bg-white/5 backdrop-blur-2xl p-8 rounded-[40px] border border-white/10"
-          >
-            <div className="text-center px-4">
-              <span className="block text-4xl font-black text-white">
-                {localPosts.length}
-              </span>
-              <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">
-                مشاركة نشطة
-              </span>
-            </div>
-            <div className="w-px h-12 bg-white/10" />
-            <div className="flex flex-col items-center gap-2">
-              <div className="size-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-lg shadow-primary/20">
-                <MessageSquare className="size-6" />
+              <div className="text-center px-4">
+                <span className="block text-4xl font-black text-white">
+                  {localPosts.length}
+                </span>
+                <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">
+                  مشاركة نشطة
+                </span>
               </div>
-              <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">
-                بيئة تعلم حيّة
-              </span>
-            </div>
-          </motion.div>
+              <div className="w-px h-12 bg-white/10" />
+              <div className="flex flex-col items-center gap-2">
+                <div className="size-12 rounded-2xl bg-primary/20 flex items-center justify-center text-primary border border-primary/30 shadow-lg shadow-primary/20">
+                  <MessageSquare className="size-6" />
+                </div>
+                <span className="text-[10px] text-indigo-300 font-bold uppercase tracking-widest">
+                  بيئة تعلم حيّة
+                </span>
+              </div>
+            </motion.div>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* Tabs Navigation */}
-      <div className="flex flex-wrap gap-3 p-2 bg-slate-100 dark:bg-zinc-900 rounded-[32px] border border-slate-200 dark:border-zinc-800">
-        <button
-          onClick={() => {
-            const targetRole =
-              user.role === "user" ? "dashboardUser" : "instructor";
-            router.push(`/${targetRole}/${user.id}/courses/${sec?.id}/content`);
-          }}
-          className="px-8 py-4 rounded-3xl flex items-center gap-3 transition-all duration-300 text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-white/5"
-        >
-          <BookOpen className="size-5" />
-          <span className="font-black text-sm">المحتوى التعليمي</span>
-        </button>
-        <button className="relative px-8 py-4 rounded-3xl flex items-center gap-3 bg-white dark:bg-zinc-800 shadow-xl shadow-black/5">
-          <MessageSquare className="size-5 text-indigo-500" />
-          <span className="font-black text-sm text-slate-800 dark:text-white">
-            المنتدى الطلابي
-          </span>
-          <motion.div
-            layoutId="active-tab"
-            className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-          />
-        </button>
-      </div>
+      {!isEmbedded && (
+        <div className="flex flex-wrap gap-3 p-2 bg-slate-100 dark:bg-zinc-900 rounded-[32px] border border-slate-200 dark:border-zinc-800">
+          <button
+            onClick={() => {
+              const targetRole =
+                user.role === "user" ? "dashboardUser" : "instructor";
+              router.push(
+                `/${targetRole}/${user.id}/courses/${sec?.id}/content`,
+              );
+            }}
+            className="px-8 py-4 rounded-3xl flex items-center gap-3 transition-all duration-300 text-slate-500 hover:text-primary hover:bg-white dark:hover:bg-white/5"
+          >
+            <BookOpen className="size-5" />
+            <span className="font-black text-sm">المحتوى التعليمي</span>
+          </button>
+          <button className="relative px-8 py-4 rounded-3xl flex items-center gap-3 bg-white dark:bg-zinc-800 shadow-xl shadow-black/5">
+            <MessageSquare className="size-5 text-indigo-500" />
+            <span className="font-black text-sm text-slate-800 dark:text-white">
+              المنتدى الطلابي
+            </span>
+            <motion.div
+              layoutId="active-tab"
+              className="absolute -bottom-1 left-1/2 -translate-x-1/2 w-8 h-1 bg-primary rounded-full shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+            />
+          </button>
+        </div>
+      )}
 
       <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
         {/* Posts Area */}
@@ -474,6 +528,19 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                       {post.content}
                     </div>
 
+                    {post.imageUrl && (
+                      <div className="mt-6 rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-lg group/img relative">
+                        <Image
+                          src={post.imageUrl}
+                          alt="post image"
+                          width={800}
+                          height={500}
+                          className="w-full h-auto object-cover hover:scale-[1.02] transition-transform duration-500 cursor-zoom-in"
+                          unoptimized
+                        />
+                      </div>
+                    )}
+
                     {/* Instructor Reply Section */}
                     {post.instructorReply && (
                       <div className="mt-8 p-8 rounded-[36px] bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20 relative group/reply-box">
@@ -542,6 +609,18 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                               <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
                                 {reply.content}
                               </p>
+                              {reply.imageUrl && (
+                                <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
+                                  <Image
+                                    src={reply.imageUrl}
+                                    alt="reply image"
+                                    width={400}
+                                    height={300}
+                                    className="w-full h-auto object-cover"
+                                    unoptimized
+                                  />
+                                </div>
+                              )}
                             </div>
                           </div>
                         ))}
@@ -549,27 +628,73 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
                     )}
 
                     {/* Reply Input */}
-                    <div className="mt-10 flex gap-4 items-end">
-                      <div className="grow relative">
-                        <Textarea
-                          placeholder="أضف ردك أو وجه استفسارك هنا..."
-                          value={replyPostId === post.id ? replyContent : ""}
-                          onChange={(e) => {
-                            setReplyPostId(post.id);
-                            setReplyContent(e.target.value);
-                          }}
-                          className="min-h-[100px] rounded-[28px] bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 focus:ring-4 focus:ring-primary/10 transition-all p-6 text-lg"
-                        />
+                    <div className="mt-10 space-y-4">
+                      {replyPostId === post.id && replyImage && (
+                        <div className="relative size-32 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-xl group">
+                          <Image
+                            src={replyImage}
+                            alt="preview"
+                            fill
+                            className="object-cover"
+                            unoptimized
+                          />
+                          <button
+                            onClick={() => {
+                              setReplyImage(null);
+                            }}
+                            className="absolute top-1 right-1 size-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        </div>
+                      )}
+
+                      <div className="flex gap-4 items-end">
+                        <div className="grow relative">
+                          <Textarea
+                            placeholder="أضف ردك أو وجه استفسارك هنا..."
+                            value={replyPostId === post.id ? replyContent : ""}
+                            onChange={(e) => {
+                              setReplyPostId(post.id);
+                              setReplyContent(e.target.value);
+                            }}
+                            className="min-h-[100px] rounded-[28px] bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 focus:ring-4 focus:ring-primary/10 transition-all p-6 text-lg"
+                          />
+                          <div className="absolute left-4 bottom-4 flex items-center gap-2">
+                            <input
+                              type="file"
+                              id={`reply-image-${post.id}`}
+                              className="hidden"
+                              accept="image/*"
+                              onChange={(e) => {
+                                setReplyPostId(post.id);
+                                handleImageUpload(e, "reply");
+                              }}
+                            />
+                            <label
+                              htmlFor={`reply-image-${post.id}`}
+                              className="size-10 rounded-xl bg-white dark:bg-zinc-900 border border-slate-200 dark:border-zinc-800 flex items-center justify-center text-slate-500 hover:text-primary hover:border-primary transition-all cursor-pointer"
+                            >
+                              {isUploading ? (
+                                <Loader2 className="size-5 animate-spin" />
+                              ) : (
+                                <ImageIcon2 className="size-5" />
+                              )}
+                            </label>
+                          </div>
+                        </div>
+                        <Button
+                          onClick={() => handleAddReply(post.id)}
+                          disabled={
+                            (!replyContent.trim() && !replyImage) ||
+                            replyPostId !== post.id ||
+                            isUploading
+                          }
+                          className="size-16 rounded-[24px] bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 shadow-xl shadow-indigo-600/30 transition-all active:scale-90 flex items-center justify-center"
+                        >
+                          <Send className="size-8" />
+                        </Button>
                       </div>
-                      <Button
-                        onClick={() => handleAddReply(post.id)}
-                        disabled={
-                          !replyContent.trim() || replyPostId !== post.id
-                        }
-                        className="size-16 rounded-[24px] bg-indigo-600 hover:bg-indigo-700 text-white shrink-0 shadow-xl shadow-indigo-600/30 transition-all active:scale-90 flex items-center justify-center"
-                      >
-                        <Send className="size-8" />
-                      </Button>
                     </div>
                   </motion.div>
                 );
@@ -600,15 +725,55 @@ const ChatForm = ({ section, userData, posts }: ChatFormProps) => {
               </div>
 
               <div className="space-y-5 relative z-10">
-                <Textarea
-                  placeholder="ما هو موضوعك اليوم؟"
-                  value={newPost}
-                  onChange={(e) => setNewPost(e.target.value)}
-                  className="min-h-[220px] rounded-[36px] p-8 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 text-xl font-medium shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
-                />
+                {newPostImage && (
+                  <div className="relative w-full aspect-video rounded-[32px] overflow-hidden border-4 border-primary/10 group">
+                    <Image
+                      src={newPostImage}
+                      alt="new post preview"
+                      fill
+                      className="object-cover"
+                      unoptimized
+                    />
+                    <button
+                      onClick={() => setNewPostImage(null)}
+                      className="absolute top-4 right-4 size-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="size-6" />
+                    </button>
+                  </div>
+                )}
+
+                <div className="relative">
+                  <Textarea
+                    placeholder="ما هو موضوعك اليوم؟"
+                    value={newPost}
+                    onChange={(e) => setNewPost(e.target.value)}
+                    className="min-h-[220px] rounded-[36px] p-8 bg-slate-50 dark:bg-zinc-950 border-slate-200 dark:border-zinc-800 text-xl font-medium shadow-inner focus:ring-4 focus:ring-primary/10 transition-all"
+                  />
+                  <div className="absolute left-6 bottom-6 flex items-center gap-3">
+                    <input
+                      type="file"
+                      id="new-post-image"
+                      className="hidden"
+                      accept="image/*"
+                      onChange={(e) => handleImageUpload(e, "post")}
+                    />
+                    <label
+                      htmlFor="new-post-image"
+                      className="size-14 rounded-2xl bg-white dark:bg-zinc-900 border-2 border-slate-100 dark:border-zinc-800 flex items-center justify-center text-slate-400 hover:text-primary hover:border-primary transition-all cursor-pointer shadow-sm group/btn"
+                    >
+                      {isUploading ? (
+                        <Loader2 className="size-7 animate-spin" />
+                      ) : (
+                        <ImageIcon2 className="size-7 group-hover/btn:scale-110 transition-transform" />
+                      )}
+                    </label>
+                  </div>
+                </div>
+
                 <Button
                   onClick={handleAddPost}
-                  disabled={!newPost.trim()}
+                  disabled={(!newPost.trim() && !newPostImage) || isUploading}
                   className="w-full h-16 rounded-[28px] bg-primary hover:bg-primary/95 text-white font-black text-xl shadow-2xl shadow-primary/30 transition-all active:scale-95 flex items-center gap-3 justify-center group"
                 >
                   <Send className="size-6 transition-transform group-hover:translate-x-1" />

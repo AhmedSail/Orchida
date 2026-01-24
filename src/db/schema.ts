@@ -373,6 +373,7 @@ export const sectionForumPosts = pgTable("sectionForumPosts", {
     .notNull()
     .references(() => users.id), // 👈 سواء طالب أو مدرب
   content: text("content").notNull(),
+  imageUrl: varchar("imageUrl", { length: 1024 }), // ✅ إضافة رابط الصورة
   status: varchar("status", { length: 20 }).notNull().default("pending"), // pending | approved | rejected
   instructorReply: text("instructorReply"), // رد المدرب على مشاركة طالب
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -387,6 +388,7 @@ export const sectionForumReplies = pgTable("sectionForumReplies", {
     .notNull()
     .references(() => users.id), // الطالب أو المدرب اللي رد
   content: text("content").notNull(),
+  imageUrl: varchar("imageUrl", { length: 1024 }), // ✅ إضافة رابط الصورة
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(), // ✅ إضافة وقت آخر تعديل
 });

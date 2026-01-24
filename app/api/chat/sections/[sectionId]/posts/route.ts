@@ -7,21 +7,22 @@ import { randomUUID } from "crypto";
 // ✅ إضافة مشاركة جديدة
 export async function POST(
   req: Request,
-  context: { params: Promise<{ sectionId: string }> }
+  context: { params: Promise<{ sectionId: string }> },
 ) {
   const param = await context.params;
   const body = await req.json();
-  const { authorId, content, role } = body;
+  const { authorId, content, role, imageUrl } = body;
   const sectionId = param.sectionId;
   const status = role === "instructor" ? "approved" : "pendingForSelf";
 
-  const newPost = await db
+  const [newPost] = await db
     .insert(sectionForumPosts)
     .values({
       id: randomUUID(),
       sectionId,
       authorId,
       content,
+      imageUrl, // ✅ تخزين رابط الصورة
       status,
       instructorReply: null,
       createdAt: new Date(),
@@ -39,5 +40,5 @@ export async function POST(
     .where(eq(users.id, authorId))
     .limit(1);
 
-  return NextResponse.json({ post: newPost[0] });
+  return NextResponse.json({ post: newPost });
 }

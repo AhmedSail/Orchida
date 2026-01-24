@@ -7,26 +7,27 @@ import { randomUUID } from "crypto";
 // ✅ إضافة رد
 export async function POST(
   req: Request,
-  context: { params: Promise<{ postId: string }> }
+  context: { params: Promise<{ postId: string }> },
 ) {
   const param = await context.params;
   const postId = param.postId;
   const body = await req.json();
-  const { userId, content } = body;
+  const { userId, content, imageUrl } = body;
 
-  const newReply = await db
+  const [newReply] = await db
     .insert(sectionForumReplies)
     .values({
       id: randomUUID(),
       postId,
       userId,
       content,
+      imageUrl,
       createdAt: new Date(),
       updatedAt: new Date(),
     })
     .returning();
 
-  return NextResponse.json({ reply: newReply[0] });
+  return NextResponse.json({ reply: newReply });
 }
 
 // ✅ حذف رد

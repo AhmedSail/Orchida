@@ -1,7 +1,7 @@
 "use client";
-
 import React, { useState, useEffect } from "react";
 import SectionContent from "./SectionContent";
+import ChatForm from "../ChatForm";
 import {
   AllChapters,
   AllContent,
@@ -84,6 +84,8 @@ interface Props {
   contents: AllContent[];
   role?: string;
   students: Student[];
+  posts?: any[];
+  userData?: any[];
 }
 
 const Clasification = ({
@@ -97,6 +99,8 @@ const Clasification = ({
   role,
   students,
   instructorSections,
+  posts = [],
+  userData = [],
 }: Props) => {
   const [activeTab, setActiveTab] = useState<
     "content" | "members" | "forum" | "recommendations" | "aiPrompts"
@@ -152,10 +156,7 @@ const Clasification = ({
       label: "المنتدى والنقاش",
       icon: MessageSquare,
       color: "text-purple-500",
-      action: () => {
-        const targetRole = role === "user" ? "dashboardUser" : "instructor";
-        router.push(`/${targetRole}/${userId}/courses/${section.id}/chat`);
-      },
+      action: () => setActiveTab("forum"),
     },
     {
       id: "recommendations" as const,
@@ -723,31 +724,22 @@ const Clasification = ({
         )}
 
         {activeTab === "forum" && (
-          <div className="flex flex-col items-center justify-center p-20 bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 shadow-xl text-center gap-8">
-            <div className="size-24 rounded-[32px] bg-purple-100 dark:bg-purple-950/30 flex items-center justify-center text-purple-600 shadow-2xl shadow-purple-500/10">
-              <MessageSquare className="size-12" />
-            </div>
-            <div className="space-y-3">
-              <h2 className="text-3xl font-black text-slate-800 dark:text-white">
-                المنتدى الطلابي التفاعلي
-              </h2>
-              <p className="text-slate-500 font-medium max-w-sm">
-                هذا القسم مخصص للمناقشات الأكاديمية وتبادل الخبرات بين الطلاب
-                والمدربين.
-              </p>
-            </div>
-            <Button
-              onClick={() => {
-                const targetRole =
-                  role === "user" ? "dashboardUser" : "instructor";
-                router.push(
-                  `/${targetRole}/${userId}/courses/${section.id}/chat`,
-                );
-              }}
-              className="h-14 px-10 rounded-2xl bg-purple-600 hover:bg-purple-700 text-white font-black text-lg shadow-xl shadow-purple-600/20 active:scale-95 transition-all"
-            >
-              دخول المنتدى الآن
-            </Button>
+          <div className="animate-in fade-in slide-in-from-bottom-4 duration-500">
+            <ChatForm
+              section={[
+                {
+                  id: section.id,
+                  sectionNumber: section.sectionNumber,
+                  startDate: section.startDate,
+                  endDate: section.endDate,
+                  courseTitle: section.courseTitle,
+                  status: section.sectionStatus,
+                },
+              ]}
+              userData={userData}
+              posts={posts}
+              isEmbedded={true}
+            />
           </div>
         )}
 
