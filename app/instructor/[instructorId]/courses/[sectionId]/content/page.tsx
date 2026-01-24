@@ -9,8 +9,10 @@ import {
   courses,
   courseSections,
   users,
+  sectionForumPosts,
+  sectionForumReplies,
 } from "@/src/db/schema";
-import { and, eq, InferSelectModel } from "drizzle-orm";
+import { and, eq, InferSelectModel, inArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -95,10 +97,60 @@ const page = async ({
   const chapters = await db.select().from(courseChapters);
   const contents = await db.select().from(chapterContent);
 
+  // ✅ جلب بيانات المستخدم كاملة لـ ChatForm
+  const userData = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      image: users.image,
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  // ✅ جلب المشاركات (Posts)
+  const posts = await db
+    .select({
+      id: sectionForumPosts.id,
+      authorId: sectionForumPosts.authorId,
+      content: sectionForumPosts.content,
+      status: sectionForumPosts.status,
+      instructorReply: sectionForumPosts.instructorReply,
+      authorName: users.name,
+      userImage: users.image,
+      roleUser: users.role,
+      imageUrl: sectionForumPosts.imageUrl,
+    })
+    .from(sectionForumPosts)
+    .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
+    .where(eq(sectionForumPosts.sectionId, sectionId));
+
+  // ✅ جلب الردود (Replies)
+  const replies = await db
+    .select({
+      id: sectionForumReplies.id,
+      postId: sectionForumReplies.postId,
+      userId: sectionForumReplies.userId,
+      content: sectionForumReplies.content,
+      authorName: users.name,
+      roleUser: users.role,
+      userImage: users.image,
+      imageUrl: sectionForumReplies.imageUrl,
+    })
+    .from(sectionForumReplies)
+    .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+
+  const postsWithReplies = posts.map((post) => ({
+    ...post,
+    replies: replies.filter((r) => r.postId === post.id),
+  }));
+
   return (
     <div>
       <Clasification
-        user={session.user.name}
+        user={session.user.name ?? ""}
         instructorSections={instructorSections}
         section={section[0]}
         allModules={allModules}
@@ -111,6 +163,8 @@ const page = async ({
         contents={contents}
         role={session.user.role}
         students={students}
+        posts={postsWithReplies}
+        userData={userData}
       />
     </div>
   );

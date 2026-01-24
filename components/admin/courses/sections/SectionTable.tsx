@@ -589,7 +589,7 @@ const SectionActions = ({
 
       {(section.status === "open" || section.status === "in_progress") && (
         <Link
-          href={`/instructor/${section.instructorId}/courses/sections/${section.id}/celender`}
+          href={`/${role}/${userId}/courses/sections/${section.id}/celender`}
         >
           <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
             <Calendar className="size-4 text-emerald-500" />
@@ -599,7 +599,7 @@ const SectionActions = ({
       )}
 
       <Link
-        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/attendance`}
+        href={`/${role}/${userId}/courses/sections/${section.id}/attendance`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <FileSpreadsheet className="size-4 text-purple-500" />
@@ -614,7 +614,7 @@ const SectionActions = ({
       </DropdownMenuLabel>
 
       <Link
-        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/newStudentWork`}
+        href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <Plus className="size-4 text-emerald-500" />
@@ -623,7 +623,7 @@ const SectionActions = ({
       </Link>
 
       <Link
-        href={`/instructor/${section.instructorId}/courses/sections/${section.id}/allStudentsWork`}
+        href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`}
       >
         <DropdownMenuItem className="gap-2.5 rounded-xl py-2.5 cursor-pointer">
           <Eye className="size-4 text-slate-500" />

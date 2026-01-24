@@ -9,9 +9,19 @@ import {
   courseSections,
   courseEnrollments,
   meetings,
-  users, // 👈 لازم نستدعي جدول اللقاءات
+  users,
+  sectionForumPosts,
+  sectionForumReplies,
 } from "@/src/db/schema";
-import { and, eq, InferSelectModel, or, isNull, lte } from "drizzle-orm";
+import {
+  and,
+  eq,
+  InferSelectModel,
+  or,
+  isNull,
+  lte,
+  inArray,
+} from "drizzle-orm";
 import { User } from "lucide-react";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -138,11 +148,69 @@ const Page = async ({
     );
   }
 
+  // ✅ جلب بيانات المستخدم كاملة لـ ChatForm
+  const userData = await db
+    .select({
+      id: users.id,
+      name: users.name,
+      email: users.email,
+      role: users.role,
+      image: users.image,
+    })
+    .from(users)
+    .where(eq(users.id, session.user.id))
+    .limit(1);
+
+  // ✅ جلب المشاركات (Posts) - الطالب يرى فقط المعتمدة أو الخاصة به
+  const posts = await db
+    .select({
+      id: sectionForumPosts.id,
+      authorId: sectionForumPosts.authorId,
+      content: sectionForumPosts.content,
+      status: sectionForumPosts.status,
+      instructorReply: sectionForumPosts.instructorReply,
+      authorName: users.name,
+      userImage: users.image,
+      roleUser: users.role,
+      imageUrl: sectionForumPosts.imageUrl,
+    })
+    .from(sectionForumPosts)
+    .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
+    .where(
+      and(
+        eq(sectionForumPosts.sectionId, param.sectionId),
+        or(
+          eq(sectionForumPosts.status, "approved"),
+          eq(sectionForumPosts.authorId, session.user.id),
+        ),
+      ),
+    );
+
+  // ✅ جلب الردود (Replies)
+  const replies = await db
+    .select({
+      id: sectionForumReplies.id,
+      postId: sectionForumReplies.postId,
+      userId: sectionForumReplies.userId,
+      content: sectionForumReplies.content,
+      authorName: users.name,
+      roleUser: users.role,
+      userImage: users.image,
+      imageUrl: sectionForumReplies.imageUrl,
+    })
+    .from(sectionForumReplies)
+    .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+
+  const postsWithReplies = posts.map((post) => ({
+    ...post,
+    replies: replies.filter((r) => r.postId === post.id),
+  }));
+
   // ✅ عرض المحتوى إذا الشرط غير محقق
   return (
     <div>
       <Clasification
-        user={session.user.name}
+        user={session.user.name ?? ""}
         section={section[0]}
         allModules={allModules}
         userId={session.user.id}
@@ -151,6 +219,8 @@ const Page = async ({
         contents={contents}
         IBAN={IBAN}
         role={session.user.role}
+        posts={postsWithReplies}
+        userData={userData}
       />
     </div>
   );
