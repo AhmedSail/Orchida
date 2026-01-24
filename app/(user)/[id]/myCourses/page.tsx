@@ -15,7 +15,9 @@ const Page = async ({ params }: { params: { id: string } }) => {
   const param = await params;
   const session = await auth.api.getSession({ headers: await headers() });
   if (!session?.user.id) {
-    redirect("/sign-in");
+    redirect(
+      `/sign-in?callbackUrl=${encodeURIComponent(`/${param.id}/myCourses`)}`,
+    );
   }
   // جلب بيانات الدورة والشعبة مع التسجيل
   const myCourses = await db
@@ -26,12 +28,13 @@ const Page = async ({ params }: { params: { id: string } }) => {
       enrolledAt: courseEnrollments.createdAt,
       status: courseEnrollments.confirmationStatus,
       price: courses.price,
+      currency: courses.currency,
       paymentStatus: courseEnrollments.paymentStatus,
     })
     .from(courseEnrollments)
     .innerJoin(
       courseSections,
-      eq(courseEnrollments.sectionId, courseSections.id)
+      eq(courseEnrollments.sectionId, courseSections.id),
     )
     .innerJoin(courses, eq(courseSections.courseId, courses.id))
     .where(eq(courseEnrollments.studentId, param.id));

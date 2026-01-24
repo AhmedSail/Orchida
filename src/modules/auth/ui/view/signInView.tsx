@@ -42,7 +42,8 @@ function SignInForm() {
   const [pending, setPending] = useState(false);
   const router = useRouter();
   const searchParams = useSearchParams();
-  const callbackURL = searchParams.get("callbackURL") || "/";
+  const callbackURL =
+    searchParams.get("callbackURL") || searchParams.get("callbackUrl") || "/";
   const baseUrl = typeof window !== "undefined" ? window.location.origin : "";
   const onSubmit = async (data: z.infer<typeof formSchema>) => {
     setError(null);
@@ -61,7 +62,7 @@ function SignInForm() {
             setError("يرجى تأكيد البريد الإلكتروني الخاص بك");
           }
         },
-      }
+      },
     );
   };
   const onSocial = async (provider: "github" | "google") => {
@@ -80,7 +81,7 @@ function SignInForm() {
           setPending(false);
           setError(error?.message ?? "خطأ غير متوقع");
         },
-      }
+      },
     );
   };
   const form = useForm<z.infer<typeof formSchema>>({
@@ -199,7 +200,10 @@ function SignInForm() {
                 </div>
                 <div className="text-center text-white">
                   لا تمتلك حساباً؟{" "}
-                  <Link href="/sign-up" className="underline">
+                  <Link
+                    href={`/sign-up?callbackURL=${encodeURIComponent(callbackURL)}`}
+                    className="underline"
+                  >
                     سجّل الآن
                   </Link>
                 </div>

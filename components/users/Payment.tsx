@@ -34,6 +34,7 @@ type MyCourse = {
   enrolledAt: Date;
   status: string;
   price: string | null;
+  currency: string;
   paymentStatus: string | null;
 };
 
@@ -233,7 +234,13 @@ const Payment = ({
                     <span className="text-4xl font-black">
                       {myCourses.price}
                     </span>
-                    <span className="text-xl font-bold">$</span>
+                    <span className="text-xl font-bold">
+                      {myCourses.currency === "ILS"
+                        ? "₪"
+                        : myCourses.currency === "USD"
+                          ? "$"
+                          : "JOD"}
+                    </span>
                   </div>
                 </div>
               </div>
@@ -423,10 +430,7 @@ const Payment = ({
                     {loading ? (
                       <Clock className="size-6 animate-spin" />
                     ) : (
-                      <>
-                        <DollarSign className="size-6" />
-                        تأكيد وإرسال
-                      </>
+                      <>تأكيد وإرسال</>
                     )}
                   </Button>
                 </form>

@@ -33,6 +33,7 @@ type MyCourse = {
   enrolledAt: Date;
   status: string;
   price: string | null;
+  currency: string;
   paymentStatus: string | null;
 };
 
@@ -215,7 +216,15 @@ const MyCourses = ({
                     })}
                   </TableCell>
                   <TableCell className="font-black text-primary">
-                    {course.price ? `${course.price}$` : "—"}
+                    {course.price
+                      ? `${course.price} ${
+                          course.currency === "ILS"
+                            ? "₪"
+                            : course.currency === "USD"
+                              ? "$"
+                              : "JOD"
+                        }`
+                      : "—"}
                   </TableCell>
                   <TableCell>{getPaymentBadge(course.paymentStatus)}</TableCell>
                   <TableCell>{getStatusBadge(course.status)}</TableCell>
@@ -230,7 +239,7 @@ const MyCourses = ({
                           onClick={() => {
                             setLoadingPaymentId(course.enrollmentId);
                             router.push(
-                              `/${userId}/myCourses/${course.enrollmentId}/payment`
+                              `/${userId}/myCourses/${course.enrollmentId}/payment`,
                             );
                           }}
                           disabled={loadingPaymentId === course.enrollmentId}
