@@ -70,63 +70,105 @@ export default function InstructorMediaLibraryContent({
     setUploading(true);
     setUploadProgress(0);
 
-    const formData = new FormData();
-    formData.append("file", file);
+    try {
+      // Step 1: Get Presigned URL
+      const presignedRes = await fetch("/api/r2-library/presigned", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          fileName: file.name,
+          fileType: file.type || "application/octet-stream",
+        }),
+      });
 
-    const xhr = new XMLHttpRequest();
-    xhr.open("POST", "/api/r2-library");
+      if (!presignedRes.ok) throw new Error("Failed to get upload URL");
+      const { uploadUrl, key, publicUrl } = await presignedRes.json();
 
-    xhr.upload.onprogress = (event) => {
-      if (event.lengthComputable) {
-        const percentComplete = Math.round((event.loaded / event.total) * 100);
-        setUploadProgress(percentComplete);
-      }
-    };
+      // Step 2: Direct Upload to R2 using XHR (to track progress)
+      const uploadFile = () => {
+        return new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          xhr.open("PUT", uploadUrl);
+          xhr.setRequestHeader(
+            "Content-Type",
+            file.type || "application/octet-stream",
+          );
 
-    xhr.onload = () => {
-      if (xhr.status === 200) {
-        try {
-          const data = JSON.parse(xhr.responseText);
-          // Add to list immediately
-          const newFile: MediaFile = {
-            key: data.key,
-            url: data.url,
-            name: data.name,
-            type: data.type,
-            size: file.size,
-            lastModified: new Date().toISOString(),
+          xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+              const percentComplete = Math.round(
+                (event.loaded / event.total) * 100,
+              );
+              setUploadProgress(percentComplete);
+            }
           };
-          setFiles((prev) => [newFile, ...prev]);
-          Swal.fire({
-            icon: "success",
-            title: "تم الرفع بنجاح",
-            toast: true,
-            position: "top-end",
-            showConfirmButton: false,
-            timer: 3000,
-          });
-        } catch (e) {
-          Swal.fire("خطأ", "فشل تحليل الاستجابة", "error");
-        }
-      } else {
-        try {
-          const error = JSON.parse(xhr.responseText);
-          Swal.fire("خطأ", error.error || "فشل الرفع", "error");
-        } catch {
-          Swal.fire("خطأ", "فشل الرفع", "error");
-        }
-      }
+
+          xhr.onload = () => {
+            if (
+              xhr.status === 200 ||
+              xhr.status === 201 ||
+              xhr.status === 204
+            ) {
+              resolve();
+            } else {
+              reject(new Error(`Upload failed with status ${xhr.status}`));
+            }
+          };
+
+          xhr.onerror = () => reject(new Error("Direct upload failed"));
+          xhr.send(file);
+        });
+      };
+
+      await uploadFile();
+
+      // Step 3: Complete upload on server (save metadata to DB)
+      let type: "image" | "video" | "file" = "file";
+      if (file.type.startsWith("image/")) type = "image";
+      else if (file.type.startsWith("video/")) type = "video";
+
+      const completeRes = await fetch("/api/r2-library", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          isPresigned: true,
+          key,
+          url: publicUrl,
+          name: file.name,
+          type,
+          size: file.size,
+        }),
+      });
+
+      if (!completeRes.ok) throw new Error("Failed to save file metadata");
+      const data = await completeRes.json();
+
+      // Add to list immediately
+      const newFile: MediaFile = {
+        key: data.key,
+        url: data.url,
+        name: data.name,
+        type: data.type,
+        size: file.size,
+        lastModified: new Date().toISOString(),
+      };
+      setFiles((prev) => [newFile, ...prev]);
+
+      Swal.fire({
+        icon: "success",
+        title: "تم الرفع بنجاح",
+        toast: true,
+        position: "top-end",
+        showConfirmButton: false,
+        timer: 3000,
+      });
+    } catch (error: any) {
+      console.error("Upload process failed:", error);
+      Swal.fire("خطأ", error.message || "فشل الرفع", "error");
+    } finally {
       setUploading(false);
       setUploadProgress(0);
-    };
-
-    xhr.onerror = () => {
-      Swal.fire("خطأ", "فشل الاتصال بالخادم", "error");
-      setUploading(false);
-      setUploadProgress(0);
-    };
-
-    xhr.send(formData);
+    }
   };
 
   const handleDelete = async (e: React.MouseEvent, key: string) => {

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const { fileName, fileType, folder = "general" } = await req.json();
+    const { fileName, fileType } = await req.json();
 
     if (!fileName || !fileType) {
       return NextResponse.json({ error: "Missing file info" }, { status: 400 });
@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
     const userId = session.user.id;
     const uniqueId = uuidv4().substring(0, 8);
     const safeName = fileName.replace(/[^a-zA-Z0-9.-]/g, "_");
-    const key = `${folder}/${userId}/${uniqueId}-${safeName}`;
+    const key = `instructors/${userId}/${uniqueId}-${safeName}`;
 
     const command = new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
@@ -30,6 +30,7 @@ export async function POST(req: NextRequest) {
       ContentType: fileType,
     });
 
+    // Generate Presigned URL (valid for 1 hour)
     const uploadUrl = await getSignedUrl(r2Client, command, {
       expiresIn: 3600,
     });
