@@ -28,6 +28,7 @@ import {
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
 import { Textarea } from "./ui/textarea";
+import { uploadToR2Presigned } from "@/lib/r2-client";
 import Avatar from "react-avatar";
 
 // دالة لاستخراج أول حرفين من الاسم
@@ -118,35 +119,33 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
     if (!file) return;
 
     setIsUploading(true);
-    const formData = new FormData();
-    formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload/forum", {
-        method: "POST",
-        body: formData,
-      });
-      const data = await res.json();
-      if (data.url) {
+      const url = await uploadToR2Presigned(file, "forum");
+
+      if (url) {
         if (type === "post") {
           if (mediaType === "image") {
-            setNewPostImage(data.url);
+            setNewPostImage(url);
           } else {
-            setNewPostVideo(data.url);
+            setNewPostVideo(url);
           }
         } else {
           if (mediaType === "image") {
-            setReplyImage(data.url);
+            setReplyImage(url);
           } else {
-            setReplyVideo(data.url);
+            setReplyVideo(url);
           }
         }
         toast.success(
           `تم رفع ${mediaType === "image" ? "الصورة" : "الفيديو"} بنجاح`,
         );
       }
-    } catch (err) {
-      toast.error(`فشل في رفع ${mediaType === "image" ? "الصورة" : "الفيديو"}`);
+    } catch (err: any) {
+      toast.error(
+        err.message ||
+          `فشل في رفع ${mediaType === "image" ? "الصورة" : "الفيديو"}`,
+      );
     } finally {
       setIsUploading(false);
     }

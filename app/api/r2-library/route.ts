@@ -50,9 +50,31 @@ export async function POST(req: NextRequest) {
   const userId = session.user.id;
 
   try {
+    const body = await req.json().catch(() => null);
+
+    // Check if this is a completion of a presigned upload
+    if (body && body.isPresigned) {
+      const { key, url, name, type, size } = body;
+
+      await db.insert(instructorMediaLibrary).values({
+        instructorId: userId,
+        fileKey: key,
+        url: url,
+        name: name,
+        type: type,
+        size: size,
+      });
+
+      return NextResponse.json({
+        url,
+        key,
+        name,
+        type,
+      });
+    }
+
     const formData = await req.formData();
     const file = formData.get("file") as File;
-
     if (!file) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
