@@ -89,9 +89,7 @@ export default function JobApplicationForm({
     }
 
     if (formData.whatsapp && !validateWhatsapp(formData.whatsapp)) {
-      toast.error(
-        "رقم الواتساب غير صحيح (يجب أن يحتوي على أرقام فقط، 9-15 خانة)",
-      );
+      toast.error("رقم الواتساب غير صحيح، يرجى التأكد من الرقم");
       setLoading(false);
       return;
     }
@@ -181,7 +179,10 @@ export default function JobApplicationForm({
             window.location.href = `/sign-in?callbackUrl=${encodeURIComponent(`/jobs/${jobId}/apply`)}`;
           });
         } else {
-          throw new Error("Submission failed");
+          // Display detailed error if available
+          throw new Error(
+            result.details || result.error || "Submission failed",
+          );
         }
       } else {
         Swal.fire({
@@ -198,9 +199,12 @@ export default function JobApplicationForm({
     } catch (error: any) {
       console.error(error);
       Swal.fire({
-        title: "خطأ",
-        text: "حدث خطأ أثناء تقديم الطلب، يرجى المحاولة لاحقاً.",
+        title: "خطأ في التقديم",
+        text:
+          error.message ||
+          "حدث خطأ غير متوقع أثناء تقديم الطلب، يرجى المحاولة لاحقاً.",
         icon: "error",
+        confirmButtonText: "حاول مرة أخرى",
       });
     } finally {
       setLoading(false);
@@ -246,7 +250,7 @@ export default function JobApplicationForm({
                     required
                     className="pr-10 h-11"
                     placeholder="الاسم الرباعي"
-                    disabled
+                    disabled={!!initialData?.name}
                   />
                 </div>
               </div>
@@ -269,7 +273,7 @@ export default function JobApplicationForm({
                     required
                     className="pr-10 h-11"
                     placeholder="example@mail.com"
-                    disabled
+                    disabled={!!initialData?.email}
                   />
                 </div>
               </div>
@@ -311,7 +315,7 @@ export default function JobApplicationForm({
                     onChange={handleChange}
                     required
                     className="pr-10 h-11"
-                    placeholder="059xxxxxxx"
+                    placeholder="+97259xxxxxxx"
                   />
                 </div>
                 <p className="text-xs text-gray-400 mr-1">

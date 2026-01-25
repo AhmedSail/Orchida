@@ -112,31 +112,58 @@ export async function submitApplication(data: {
     return { success: false, error: "ALREADY_APPLIED" };
   }
 
+  // Robust number parsing helper (handles Arabic-Indic digits too)
+  const parseSafeInt = (val: string | number | undefined | null) => {
+    if (val === undefined || val === null || val === "") return null;
+    const str = String(val).replace(/[٠-٩]/g, (d) =>
+      "٠١٢٣٤٥٦٧٨٩".indexOf(d).toString(),
+    );
+    const parsed = parseInt(str, 10);
+    return isNaN(parsed) ? null : parsed;
+  };
+
   try {
+    console.log(
+      "Submitting job application for user:",
+      session.user.id,
+      "job:",
+      data.jobId,
+    );
+    console.log("Application data:", {
+      ...data,
+      cv: data.cv ? "EXISTS" : "MISSING",
+    });
+
     await db.insert(jobApplications).values({
       id: crypto.randomUUID(),
       jobId: data.jobId,
-      userId: session.user.id, // Use session user id
+      userId: session.user.id,
       applicantName: data.name,
       applicantEmail: data.email,
       applicantPhone: data.phone,
       applicantWhatsapp: data.whatsapp,
       applicantMajor: data.major,
       applicantEducation: data.education,
-      applicantExperienceYears: data.experienceYears
-        ? parseInt(data.experienceYears)
-        : null,
+      applicantExperienceYears: parseSafeInt(data.experienceYears),
       applicantGender: data.gender,
       applicantLocation: data.location,
-      applicantAge: data.age ? parseInt(data.age) : null,
+      applicantAge: parseSafeInt(data.age),
       applicantCV: data.cv,
       notes: data.notes,
     });
+
+    console.log("Application submitted successfully");
     revalidatePath("/admin");
     return { success: true };
-  } catch (error) {
-    console.error("Error submitting application:", error);
-    return { success: false, error: "DATABASE_ERROR" };
+  } catch (error: any) {
+    console.error("Error in submitApplication action:", error);
+    // Log specific info about the data that failed
+    return {
+      success: false,
+      error: "DATABASE_ERROR",
+      details:
+        process.env.NODE_ENV === "development" ? error.message : undefined,
+    };
   }
 }
 
