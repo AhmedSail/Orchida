@@ -35,6 +35,9 @@ export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة الطالب",
   description: "المحتوى ",
 };
+
+export const dynamic = "force-dynamic";
+
 const Page = async ({
   params,
 }: {
@@ -173,6 +176,7 @@ const Page = async ({
       userImage: users.image,
       roleUser: users.role,
       imageUrl: sectionForumPosts.imageUrl,
+      videoUrl: sectionForumPosts.videoUrl, // ✅ إضافة الفيديو
     })
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
@@ -197,6 +201,8 @@ const Page = async ({
       roleUser: users.role,
       userImage: users.image,
       imageUrl: sectionForumReplies.imageUrl,
+      videoUrl: sectionForumReplies.videoUrl, // ✅ إضافة الفيديو
+      parentReplyId: sectionForumReplies.parentReplyId, // ✅ إضافة الرد المتداخل
     })
     .from(sectionForumReplies)
     .leftJoin(users, eq(sectionForumReplies.userId, users.id));

@@ -374,6 +374,7 @@ export const sectionForumPosts = pgTable("sectionForumPosts", {
     .references(() => users.id), // 👈 سواء طالب أو مدرب
   content: text("content").notNull(),
   imageUrl: varchar("imageUrl", { length: 1024 }), // ✅ إضافة رابط الصورة
+  videoUrl: varchar("videoUrl", { length: 1024 }), // ✅ إضافة رابط الفيديو
   status: varchar("status", { length: 20 }).notNull().default("pending"), // pending | approved | rejected
   instructorReply: text("instructorReply"), // رد المدرب على مشاركة طالب
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -389,6 +390,8 @@ export const sectionForumReplies = pgTable("sectionForumReplies", {
     .references(() => users.id), // الطالب أو المدرب اللي رد
   content: text("content").notNull(),
   imageUrl: varchar("imageUrl", { length: 1024 }), // ✅ إضافة رابط الصورة
+  videoUrl: varchar("videoUrl", { length: 1024 }), // ✅ إضافة رابط الفيديو
+  parentReplyId: text("parentReplyId"), // ✅ للرد على رد (instructor only) - self-reference
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(), // ✅ إضافة وقت آخر تعديل
 });

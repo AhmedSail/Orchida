@@ -1,32 +1,41 @@
-// app/api/upload/content/route.ts
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { PutObjectCommand } from "@aws-sdk/client-s3";
 import { r2Client, R2_BUCKET_NAME, R2_PUBLIC_DOMAIN } from "@/lib/r2-server";
 import { v4 as uuidv4 } from "uuid";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
 
-export async function POST(req: Request) {
+export async function POST(req: NextRequest) {
+  const session = await auth.api.getSession({ headers: await headers() });
+  if (!session?.user?.id) {
+    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+  }
+
+  const userId = session.user.id;
+
   try {
     const formData = await req.formData();
     const file = formData.get("file") as File;
 
     if (!file) {
-      return NextResponse.json({ error: "لم يتم رفع أي ملف" }, { status: 400 });
+      return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
-    // ✅ تحقق من الحجم (10MB = 10 * 1024 * 1024 بايت)
-    if (file.size > 10 * 1024 * 1024) {
+    // التحقق من نوع الملف (صورة أو فيديو)
+    const isImage = file.type.startsWith("image/");
+    const isVideo = file.type.startsWith("video/");
+
+    if (!isImage && !isVideo) {
       return NextResponse.json(
-        { error: "حجم الملف أكبر من 10MB، الرجاء اختيار ملف أصغر" },
+        { error: "Only images and videos are allowed" },
         { status: 400 },
       );
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
-
-    // إنشاء مفتاح فريد في مجلد content_of_courses
     const uniqueId = uuidv4().substring(0, 8);
     const fileName = `${uniqueId}-${file.name.replace(/[^a-zA-Z0-9.-]/g, "_")}`;
-    const key = `content_of_courses/${fileName}`;
+    const key = `forum/${userId}/${fileName}`;
 
     const command = new PutObjectCommand({
       Bucket: R2_BUCKET_NAME,
@@ -44,12 +53,12 @@ export async function POST(req: Request) {
     }
 
     return NextResponse.json({
-      url, // رابط العرض العادي
-      downloadUrl: url, // في R2 الرابط واحد، والمتصفح يتعرف عليه من Content-Type
-      public_id: key,
+      url,
+      key,
+      type: isImage ? "image" : "video",
     });
   } catch (error: any) {
-    console.error("Content upload error:", error);
-    return NextResponse.json({ error: "فشل رفع الملف" }, { status: 500 });
+    console.error("Forum media upload error:", error);
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }

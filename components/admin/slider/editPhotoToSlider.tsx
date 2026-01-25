@@ -21,7 +21,7 @@ import { useRouter, useParams } from "next/navigation";
 import { sliders } from "@/src/db/schema";
 import { InferSelectModel } from "drizzle-orm";
 import Image from "next/image";
-import { uploadToCloudinary } from "@/utils/cloudinary";
+
 import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 
 // ✅ Zod schema
@@ -32,7 +32,7 @@ const sliderSchema = z.object({
   isActive: z.boolean(),
   order: z.preprocess(
     (val) => Number(val),
-    z.number().min(1, "ترتيب العرض يجب أن يكون رقم موجب").default(1)
+    z.number().min(1, "ترتيب العرض يجب أن يكون رقم موجب").default(1),
   ),
 });
 
@@ -50,7 +50,7 @@ export default function EditSliderPage({
 }) {
   const [loading, setLoading] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | undefined>(
-    slider.imageUrl
+    slider.imageUrl,
   );
   const router = useRouter();
   const { id } = useParams();
@@ -232,7 +232,7 @@ export default function EditSliderPage({
                     value={field.value ?? 1}
                     onChange={(e) =>
                       field.onChange(
-                        e.target.value ? Number(e.target.value) : 1
+                        e.target.value ? Number(e.target.value) : 1,
                       )
                     }
                   />

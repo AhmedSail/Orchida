@@ -1,22 +1,26 @@
-// app/instructor/[instructorId]/courses/[sectionId]/chat/page.tsx
+// app/dashboardUser/[userId]/courses/[sectionId]/chat/page.tsx
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/src/db";
 import { courseSections, courses, users } from "@/src/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { and, eq, or } from "drizzle-orm";
 import React from "react";
 import ChatForm from "@/components/ChatForm";
 import { sectionForumPosts, sectionForumReplies } from "@/src/db/schema";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة الطالب",
   description: "المنتدى الطلابي",
 };
+
+export const dynamic = "force-dynamic";
+
 const Page = async ({
   params,
 }: {
-  params: { instructorId: string; sectionId: string };
+  params: Promise<{ instructorId: string; sectionId: string }>;
 }) => {
   const { sectionId } = await params;
 
@@ -74,6 +78,8 @@ const Page = async ({
       id: sectionForumPosts.id,
       authorId: sectionForumPosts.authorId,
       content: sectionForumPosts.content,
+      imageUrl: sectionForumPosts.imageUrl,
+      videoUrl: sectionForumPosts.videoUrl, // ✅ جلب الفيديو
       status: sectionForumPosts.status,
       instructorReply: sectionForumPosts.instructorReply,
       authorName: users.name,
@@ -87,7 +93,13 @@ const Page = async ({
         ? eq(sectionForumPosts.sectionId, sectionId) // المدرب يشوف الكل
         : and(
             eq(sectionForumPosts.sectionId, sectionId),
-            inArray(sectionForumPosts.status, ["approved", "pendingForSelf"]), // الطالب يشوف بس approved
+            or(
+              eq(sectionForumPosts.status, "approved"),
+              and(
+                eq(sectionForumPosts.status, "pending"),
+                eq(sectionForumPosts.authorId, user.id),
+              ),
+            ),
           ),
     );
 
@@ -98,12 +110,17 @@ const Page = async ({
       postId: sectionForumReplies.postId,
       userId: sectionForumReplies.userId,
       content: sectionForumReplies.content,
+      imageUrl: sectionForumReplies.imageUrl,
+      videoUrl: sectionForumReplies.videoUrl, // ✅ جلب الفيديو
+      parentReplyId: sectionForumReplies.parentReplyId, // ✅ للرد على رد
       authorName: users.name,
       roleUser: users.role,
       userImage: users.image,
     })
     .from(sectionForumReplies)
     .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+
+  console.log("Student Page Replies:", JSON.stringify(replies, null, 2));
 
   const postsWithReplies = posts.map((post) => ({
     ...post,

@@ -11,9 +11,9 @@ export async function POST(
 ) {
   const param = await context.params;
   const body = await req.json();
-  const { authorId, content, role, imageUrl } = body;
+  const { authorId, content, role, imageUrl, videoUrl } = body;
   const sectionId = param.sectionId;
-  const status = role === "instructor" ? "approved" : "pendingForSelf";
+  const status = role === "instructor" ? "approved" : "pending";
 
   const [newPost] = await db
     .insert(sectionForumPosts)
@@ -23,6 +23,7 @@ export async function POST(
       authorId,
       content,
       imageUrl, // ✅ تخزين رابط الصورة
+      videoUrl, // ✅ تخزين رابط الفيديو
       status,
       instructorReply: null,
       createdAt: new Date(),
@@ -39,6 +40,11 @@ export async function POST(
     .from(users)
     .where(eq(users.id, authorId))
     .limit(1);
+
+  // تحديث الكاش للصفحة (اختياري، لكن مفيد)
+  // revalidatePath(`/instructor/.../chat`);
+  // بما أن المسار ديناميكي، قد يكون من الصعب توجيهه بدقة هنا بدون معرفة كل المعلمات،
+  // ولكن force-dynamic في الصفحة يجب أن يحل المشكلة.
 
   return NextResponse.json({ post: newPost });
 }
