@@ -11,6 +11,7 @@ import {
   users,
   sectionForumPosts,
   sectionForumReplies,
+  instructors,
 } from "@/src/db/schema";
 import { and, eq, InferSelectModel, inArray } from "drizzle-orm";
 import { headers } from "next/headers";
@@ -25,6 +26,9 @@ export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة المدرب",
   description: " المحتوى",
 };
+
+export const dynamic = "force-dynamic";
+
 const page = async ({
   params,
 }: {
@@ -122,6 +126,7 @@ const page = async ({
       userImage: users.image,
       roleUser: users.role,
       imageUrl: sectionForumPosts.imageUrl,
+      videoUrl: sectionForumPosts.videoUrl, // ✅ إضافة الفيديو
     })
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
@@ -138,6 +143,8 @@ const page = async ({
       roleUser: users.role,
       userImage: users.image,
       imageUrl: sectionForumReplies.imageUrl,
+      videoUrl: sectionForumReplies.videoUrl, // ✅ إضافة الفيديو
+      parentReplyId: sectionForumReplies.parentReplyId, // ✅ إضافة الرد المتداخل
     })
     .from(sectionForumReplies)
     .leftJoin(users, eq(sectionForumReplies.userId, users.id));
@@ -147,10 +154,23 @@ const page = async ({
     replies: replies.filter((r) => r.postId === post.id),
   }));
 
+  // ✅ تحديد الاسم المعروض (للمدرب نستخدم الاسم من جدول instructors)
+  let displayUserName = session.user.name ?? "";
+  if (session.user.role === "instructor") {
+    const instructorRecord = await db
+      .select({ name: instructors.name })
+      .from(instructors)
+      .where(eq(instructors.id, session.user.id))
+      .limit(1);
+    if (instructorRecord.length > 0) {
+      displayUserName = instructorRecord[0].name;
+    }
+  }
+
   return (
     <div>
       <Clasification
-        user={session.user.name ?? ""}
+        user={displayUserName}
         instructorSections={instructorSections}
         section={section[0]}
         allModules={allModules}

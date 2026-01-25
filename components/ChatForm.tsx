@@ -63,6 +63,8 @@ interface ReplyType {
   userId: string;
   content: string;
   imageUrl?: string | null;
+  videoUrl?: string | null; // ✅ دعم الفيديو
+  parentReplyId?: string | null; // ✅ للرد على رد
   authorName?: string | null;
   userImage?: string | null;
   roleUser: string | null;
@@ -74,6 +76,7 @@ interface Post {
   authorId: string;
   content: string;
   imageUrl?: string | null;
+  videoUrl?: string | null; // ✅ دعم الفيديو
   status: string;
   instructorReply?: string | null;
   authorName?: string | null;
@@ -95,17 +98,21 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
 
   const [newPost, setNewPost] = useState("");
   const [newPostImage, setNewPostImage] = useState<string | null>(null);
+  const [newPostVideo, setNewPostVideo] = useState<string | null>(null); // ✅ فيديو المشاركة
   const [replyContent, setReplyContent] = useState("");
   const [replyImage, setReplyImage] = useState<string | null>(null);
+  const [replyVideo, setReplyVideo] = useState<string | null>(null); // ✅ فيديو الرد
   const [replyPostId, setReplyPostId] = useState<string | null>(null);
+  const [replyToReplyId, setReplyToReplyId] = useState<string | null>(null); // ✅ للرد على رد
   const [localPosts, setLocalPosts] = useState<Post[]>(posts);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "forum">("forum");
   const router = useRouter();
 
-  const handleImageUpload = async (
+  const handleMediaUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
     type: "post" | "reply",
+    mediaType: "image" | "video",
   ) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -115,28 +122,38 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
     formData.append("file", file);
 
     try {
-      const res = await fetch("/api/upload", {
+      const res = await fetch("/api/upload/forum", {
         method: "POST",
         body: formData,
       });
       const data = await res.json();
       if (data.url) {
         if (type === "post") {
-          setNewPostImage(data.url);
+          if (mediaType === "image") {
+            setNewPostImage(data.url);
+          } else {
+            setNewPostVideo(data.url);
+          }
         } else {
-          setReplyImage(data.url);
+          if (mediaType === "image") {
+            setReplyImage(data.url);
+          } else {
+            setReplyVideo(data.url);
+          }
         }
-        toast.success("تم رفع الصورة بنجاح");
+        toast.success(
+          `تم رفع ${mediaType === "image" ? "الصورة" : "الفيديو"} بنجاح`,
+        );
       }
     } catch (err) {
-      toast.error("فشل في رفع الصورة");
+      toast.error(`فشل في رفع ${mediaType === "image" ? "الصورة" : "الفيديو"}`);
     } finally {
       setIsUploading(false);
     }
   };
 
   const handleAddPost = async () => {
-    if (!newPost.trim()) return;
+    if (!newPost.trim() && !newPostImage && !newPostVideo) return;
     try {
       const res = await fetch(`/api/chat/sections/${sec.id}/posts`, {
         method: "POST",
@@ -145,6 +162,7 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
           authorId: user.id,
           content: newPost,
           imageUrl: newPostImage,
+          videoUrl: newPostVideo, // ✅ إرسال الفيديو
           role: user.role,
         }),
       });
@@ -156,12 +174,14 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
           userImage: user.image,
           roleUser: user.role,
           imageUrl: newPostImage,
+          videoUrl: newPostVideo,
           replies: [],
         },
         ...localPosts,
       ]);
       setNewPost("");
       setNewPostImage(null);
+      setNewPostVideo(null);
       Swal.fire({
         title: "تم النشر ✅",
         text: "مشاركتك قيد المراجعة أو تم نشرها بنجاح",
@@ -256,7 +276,7 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
   };
 
   const handleAddReply = async (postId: string) => {
-    if (!replyContent.trim()) return;
+    if (!replyContent.trim() && !replyImage && !replyVideo) return;
     const res = await fetch(`/api/chat/posts/${postId}/replies`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -264,6 +284,8 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
         userId: user.id,
         content: replyContent,
         imageUrl: replyImage,
+        videoUrl: replyVideo, // ✅ إرسال الفيديو
+        parentReplyId: replyToReplyId, // ✅ للرد على رد
       }),
     });
     const data = await res.json();
@@ -281,6 +303,8 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                   roleUser: user.role,
                   userImage: user.image,
                   imageUrl: replyImage,
+                  videoUrl: replyVideo,
+                  parentReplyId: replyToReplyId,
                 },
               ],
             }
@@ -289,7 +313,9 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
     );
     setReplyContent("");
     setReplyImage(null);
+    setReplyVideo(null);
     setReplyPostId(null);
+    setReplyToReplyId(null);
     Swal.fire({
       title: "✅ تم الإضافة",
       text: "تم نشر الرد بنجاح",
@@ -512,7 +538,8 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                           </>
                         )}
                         {user.role === "instructor" &&
-                          post.status === "pending" && (
+                          (post.status === "pending" ||
+                            post.status === "pendingForSelf") && (
                             <Button
                               size="sm"
                               onClick={() => handleApprovePost(post.id)}
@@ -541,6 +568,19 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                       </div>
                     )}
 
+                    {post.videoUrl && (
+                      <div className="mt-6 rounded-[32px] overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-lg">
+                        <video
+                          src={post.videoUrl}
+                          controls
+                          className="w-full h-auto"
+                          preload="metadata"
+                        >
+                          متصفحك لا يدعم عرض الفيديو.
+                        </video>
+                      </div>
+                    )}
+
                     {/* Instructor Reply Section */}
                     {post.instructorReply && (
                       <div className="mt-8 p-8 rounded-[36px] bg-indigo-600 text-white shadow-2xl shadow-indigo-600/20 relative group/reply-box">
@@ -566,69 +606,138 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                             النقاش الجاري ({post.replies.length} ردود)
                           </span>
                         </div>
-                        {post.replies.map((reply) => (
-                          <div
-                            key={reply.id}
-                            className="flex gap-5 group/reply"
-                          >
-                            <div className="size-12 rounded-[18px] shrink-0 transition-transform group-hover/reply:scale-110">
-                              {reply.userImage ? (
-                                <Image
-                                  src={reply.userImage}
-                                  alt={reply.authorName || "User"}
-                                  width={48}
-                                  height={48}
-                                  className="rounded-[18px] object-cover size-12"
-                                  unoptimized
-                                />
-                              ) : (
-                                <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-700 shadow-sm">
-                                  <Avatar
-                                    name={getInitials(
-                                      reply.authorName || "User",
+                        {post.replies
+                          .filter((r) => !r.parentReplyId) // Root replies
+                          .map((reply) => {
+                            const childReplies = post.replies?.filter(
+                              (r) => r.parentReplyId === reply.id,
+                            );
+
+                            // دالة لعرض الرد (سواء أب أو ابن)
+                            const renderSingleReply = (
+                              r: ReplyType,
+                              isChild = false,
+                            ) => (
+                              <div
+                                key={r.id}
+                                className={`flex gap-5 group/reply ${
+                                  isChild
+                                    ? "mr-12 md:mr-16 mt-2 relative before:absolute before:-right-6 md:before:-right-8 before:top-[-24px] before:w-6 before:h-12 before:border-b-2 before:border-r-2 before:border-slate-200 dark:before:border-zinc-700 before:rounded-br-xl"
+                                    : ""
+                                }`}
+                              >
+                                <div className="size-12 rounded-[18px] shrink-0 transition-transform group-hover/reply:scale-110">
+                                  {r.userImage ? (
+                                    <Image
+                                      src={r.userImage}
+                                      alt={r.authorName || "User"}
+                                      width={48}
+                                      height={48}
+                                      className="rounded-[18px] object-cover size-12"
+                                      unoptimized
+                                    />
+                                  ) : (
+                                    <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-700 shadow-sm">
+                                      <Avatar
+                                        name={getInitials(
+                                          r.authorName || "User",
+                                        )}
+                                        size="44"
+                                        round="16px"
+                                        color="#675795"
+                                        fgColor="#fff"
+                                      />
+                                    </div>
+                                  )}
+                                </div>
+                                <div className="grow space-y-2">
+                                  <div className="flex items-center gap-2">
+                                    <span className="font-black text-slate-800 dark:text-white">
+                                      {r.authorName}
+                                    </span>
+                                    {r.roleUser === "instructor" && (
+                                      <Badge className="text-[8px] bg-indigo-600 text-white rounded-lg px-2 h-4 flex items-center">
+                                        مدرب
+                                      </Badge>
                                     )}
-                                    size="44"
-                                    round="16px"
-                                    color="#675795"
-                                    fgColor="#fff"
-                                  />
+                                  </div>
+                                  <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
+                                    {r.content}
+                                  </p>
+                                  {r.imageUrl && (
+                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
+                                      <Image
+                                        src={r.imageUrl}
+                                        alt="reply image"
+                                        width={400}
+                                        height={300}
+                                        className="w-full h-auto object-cover"
+                                        unoptimized
+                                      />
+                                    </div>
+                                  )}
+                                  {r.videoUrl && (
+                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
+                                      <video
+                                        src={r.videoUrl}
+                                        controls
+                                        className="w-full h-auto"
+                                        preload="metadata"
+                                      >
+                                        متصفحك لا يدعم عرض الفيديو.
+                                      </video>
+                                    </div>
+                                  )}
+
+                                  {!isChild && (
+                                    <button
+                                      onClick={() => {
+                                        setReplyPostId(post.id);
+                                        setReplyToReplyId(r.id);
+                                        const textarea =
+                                          document.getElementById(
+                                            `reply-input-${post.id}`,
+                                          );
+                                        if (textarea) textarea.focus();
+                                      }}
+                                      className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mt-2"
+                                    >
+                                      <Reply className="size-3" />
+                                      رد على هذا التعليق
+                                    </button>
+                                  )}
                                 </div>
-                              )}
-                            </div>
-                            <div className="grow space-y-2">
-                              <div className="flex items-center gap-2">
-                                <span className="font-black text-slate-800 dark:text-white">
-                                  {reply.authorName}
-                                </span>
-                                {reply.roleUser === "instructor" && (
-                                  <Badge className="text-[8px] bg-indigo-600 text-white rounded-lg px-2 h-4 flex items-center">
-                                    مدرب
-                                  </Badge>
-                                )}
                               </div>
-                              <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
-                                {reply.content}
-                              </p>
-                              {reply.imageUrl && (
-                                <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
-                                  <Image
-                                    src={reply.imageUrl}
-                                    alt="reply image"
-                                    width={400}
-                                    height={300}
-                                    className="w-full h-auto object-cover"
-                                    unoptimized
-                                  />
-                                </div>
-                              )}
-                            </div>
-                          </div>
-                        ))}
+                            );
+
+                            return (
+                              <React.Fragment key={reply.id}>
+                                {renderSingleReply(reply)}
+                                {childReplies?.map((child) =>
+                                  renderSingleReply(child, true),
+                                )}
+                              </React.Fragment>
+                            );
+                          })}
                       </div>
                     )}
 
                     {/* Reply Input */}
                     <div className="mt-10 space-y-4">
+                      {replyPostId === post.id && replyToReplyId && (
+                        <div className="flex items-center justify-between bg-indigo-50 dark:bg-indigo-900/20 p-3 rounded-2xl border border-indigo-100 dark:border-indigo-900/50">
+                          <span className="text-xs font-bold text-indigo-600 dark:text-indigo-300 flex items-center gap-2">
+                            <Reply className="size-3" />
+                            جاري الرد على تعليق فرعي
+                          </span>
+                          <button
+                            onClick={() => setReplyToReplyId(null)}
+                            className="text-xs text-slate-400 hover:text-red-500"
+                          >
+                            إلغاء
+                          </button>
+                        </div>
+                      )}
                       {replyPostId === post.id && replyImage && (
                         <div className="relative size-32 rounded-2xl overflow-hidden border-2 border-primary/20 shadow-xl group">
                           <Image
@@ -649,9 +758,31 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                         </div>
                       )}
 
+                      {replyPostId === post.id && replyVideo && (
+                        <div className="relative w-full max-w-sm rounded-2xl overflow-hidden border-2 border-primary/20 shadow-xl group">
+                          <video
+                            src={replyVideo}
+                            controls
+                            className="w-full h-auto"
+                            preload="metadata"
+                          >
+                            متصفحك لا يدعم عرض الفيديو.
+                          </video>
+                          <button
+                            onClick={() => {
+                              setReplyVideo(null);
+                            }}
+                            className="absolute top-1 right-1 size-7 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        </div>
+                      )}
+
                       <div className="flex gap-4 items-end">
                         <div className="grow relative">
                           <Textarea
+                            id={`reply-input-${post.id}`}
                             placeholder="أضف ردك أو وجه استفسارك هنا..."
                             value={replyPostId === post.id ? replyContent : ""}
                             onChange={(e) => {
@@ -665,10 +796,18 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                               type="file"
                               id={`reply-image-${post.id}`}
                               className="hidden"
-                              accept="image/*"
+                              accept="image/*,video/*"
                               onChange={(e) => {
                                 setReplyPostId(post.id);
-                                handleImageUpload(e, "reply");
+                                const isVideo =
+                                  e.target.files?.[0]?.type.startsWith(
+                                    "video/",
+                                  );
+                                handleMediaUpload(
+                                  e,
+                                  "reply",
+                                  isVideo ? "video" : "image",
+                                );
                               }}
                             />
                             <label
@@ -686,7 +825,9 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                         <Button
                           onClick={() => handleAddReply(post.id)}
                           disabled={
-                            (!replyContent.trim() && !replyImage) ||
+                            (!replyContent.trim() &&
+                              !replyImage &&
+                              !replyVideo) ||
                             replyPostId !== post.id ||
                             isUploading
                           }
@@ -743,6 +884,25 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                   </div>
                 )}
 
+                {newPostVideo && (
+                  <div className="relative w-full rounded-[32px] overflow-hidden border-4 border-primary/10 group">
+                    <video
+                      src={newPostVideo}
+                      controls
+                      className="w-full h-auto"
+                      preload="metadata"
+                    >
+                      متصفحك لا يدعم عرض الفيديو.
+                    </video>
+                    <button
+                      onClick={() => setNewPostVideo(null)}
+                      className="absolute top-4 right-4 size-10 rounded-full bg-red-500 text-white flex items-center justify-center shadow-xl opacity-0 group-hover:opacity-100 transition-opacity"
+                    >
+                      <X className="size-6" />
+                    </button>
+                  </div>
+                )}
+
                 <div className="relative">
                   <Textarea
                     placeholder="ما هو موضوعك اليوم؟"
@@ -755,8 +915,16 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                       type="file"
                       id="new-post-image"
                       className="hidden"
-                      accept="image/*"
-                      onChange={(e) => handleImageUpload(e, "post")}
+                      accept="image/*,video/*"
+                      onChange={(e) => {
+                        const isVideo =
+                          e.target.files?.[0]?.type.startsWith("video/");
+                        handleMediaUpload(
+                          e,
+                          "post",
+                          isVideo ? "video" : "image",
+                        );
+                      }}
                     />
                     <label
                       htmlFor="new-post-image"
@@ -773,7 +941,10 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
 
                 <Button
                   onClick={handleAddPost}
-                  disabled={(!newPost.trim() && !newPostImage) || isUploading}
+                  disabled={
+                    (!newPost.trim() && !newPostImage && !newPostVideo) ||
+                    isUploading
+                  }
                   className="w-full h-16 rounded-[28px] bg-primary hover:bg-primary/95 text-white font-black text-xl shadow-2xl shadow-primary/30 transition-all active:scale-95 flex items-center gap-3 justify-center group"
                 >
                   <Send className="size-6 transition-transform group-hover:translate-x-1" />

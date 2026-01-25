@@ -12,7 +12,9 @@ export async function POST(
   const param = await context.params;
   const postId = param.postId;
   const body = await req.json();
-  const { userId, content, imageUrl } = body;
+  const { userId, content, imageUrl, videoUrl, parentReplyId } = body;
+
+  console.log("Creating Reply:", { userId, content, parentReplyId, videoUrl }); // 👈 Log for debugging
 
   const [newReply] = await db
     .insert(sectionForumReplies)
@@ -22,6 +24,8 @@ export async function POST(
       userId,
       content,
       imageUrl,
+      videoUrl, // ✅ دعم الفيديو
+      parentReplyId, // ✅ للرد على رد (instructor only)
       createdAt: new Date(),
       updatedAt: new Date(),
     })

@@ -3,20 +3,24 @@ import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import { db } from "@/src/db";
-import { courseSections, courses, users } from "@/src/db/schema";
-import { and, eq, inArray } from "drizzle-orm";
+import { courseSections, courses, users, instructors } from "@/src/db/schema";
+import { and, eq, inArray, or } from "drizzle-orm";
 import React from "react";
 import ChatForm from "@/components/ChatForm";
 import { sectionForumPosts, sectionForumReplies } from "@/src/db/schema";
 import { Metadata } from "next";
+
 export const metadata: Metadata = {
   title: "لوحة التحكم | لوحة المدرب",
   description: " المنتدى الطلابي",
 };
+
+export const dynamic = "force-dynamic";
+
 const Page = async ({
   params,
 }: {
-  params: { instructorId: string; sectionId: string };
+  params: Promise<{ instructorId: string; sectionId: string }>;
 }) => {
   const { sectionId } = await params;
 
@@ -70,11 +74,31 @@ const Page = async ({
 
   const user = userData[0];
 
+  let finalUserData = userData;
+  if (user && user.role === "instructor") {
+    const instructorRecord = await db
+      .select({ name: instructors.name })
+      .from(instructors)
+      .where(eq(instructors.id, user.id))
+      .limit(1);
+
+    if (instructorRecord.length > 0) {
+      finalUserData = [
+        {
+          ...user,
+          name: instructorRecord[0].name,
+        },
+      ];
+    }
+  }
+
   const posts = await db
     .select({
       id: sectionForumPosts.id,
       authorId: sectionForumPosts.authorId,
       content: sectionForumPosts.content,
+      imageUrl: sectionForumPosts.imageUrl,
+      videoUrl: sectionForumPosts.videoUrl, // ✅ جلب الفيديو
       status: sectionForumPosts.status,
       instructorReply: sectionForumPosts.instructorReply,
       authorName: users.name,
@@ -88,7 +112,13 @@ const Page = async ({
         ? eq(sectionForumPosts.sectionId, sectionId) // المدرب والآدمين يشوفوا الكل
         : and(
             eq(sectionForumPosts.sectionId, sectionId),
-            inArray(sectionForumPosts.status, ["approved", "pendingForSelf"]), // الطالب يشوف بس approved
+            or(
+              eq(sectionForumPosts.status, "approved"),
+              and(
+                eq(sectionForumPosts.status, "pending"),
+                eq(sectionForumPosts.authorId, user.id),
+              ),
+            ),
           ),
     );
 
@@ -99,12 +129,17 @@ const Page = async ({
       postId: sectionForumReplies.postId,
       userId: sectionForumReplies.userId,
       content: sectionForumReplies.content,
+      imageUrl: sectionForumReplies.imageUrl,
+      videoUrl: sectionForumReplies.videoUrl, // ✅ جلب الفيديو
+      parentReplyId: sectionForumReplies.parentReplyId, // ✅ للرد على رد
       authorName: users.name,
       roleUser: users.role,
       userImage: users.image,
     })
     .from(sectionForumReplies)
     .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+
+  console.log("Fetched Replies:", JSON.stringify(replies, null, 2)); // 👈 Debug logs active
 
   const postsWithReplies = posts.map((post) => ({
     ...post,
@@ -115,7 +150,7 @@ const Page = async ({
     <div>
       <ChatForm
         section={section}
-        userData={userData}
+        userData={finalUserData}
         posts={postsWithReplies}
       />
     </div>
