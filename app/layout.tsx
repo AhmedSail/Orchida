@@ -15,25 +15,66 @@ const baseUrl =
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
   title: {
-    default: "اوركيدة",
-    template: "%s | اوركيدة",
+    default: "أوركيدة للخدمات الرقمية والأكاديمية",
+    template: "%s | أوركيدة",
   },
-  description: "خدمات أوركيدة الرقمية والأكاديمية",
+  description:
+    "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم. نقدم خدمات البرمجة، التصميم، التسويق، ودورات تدريبية احترافية.",
+  keywords: [
+    "أوركيدة",
+    "خدمات رقمية",
+    "تدريب أكاديمي",
+    "برمجة",
+    "تصميم",
+    "تسويق",
+    "فلسطين",
+    "غزة",
+  ],
+  authors: [{ name: "Orchida" }],
+  creator: "Orchida",
+  publisher: "Orchida",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   alternates: {
     canonical: baseUrl,
   },
   openGraph: {
-    title: "اوركيدة",
-    description: "خدمات أوركيدة الرقمية والأكاديمية",
+    title: "أوركيدة للخدمات الرقمية والأكاديمية",
+    description:
+      "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم.",
     url: baseUrl,
-    siteName: "اوركيدة",
+    siteName: "أوركيدة",
     locale: "ar_SA",
     type: "website",
+    images: [
+      {
+        url: "/logo.png",
+        width: 800,
+        height: 600,
+        alt: "شعار أوركيدة",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",
-    title: "اوركيدة",
-    description: "خدمات أوركيدة الرقمية والأكاديمية",
+    title: "أوركيدة للخدمات الرقمية والأكاديمية",
+    description:
+      "أوركيدة، شريكك الأمثل للحلول الرقمية المتكاملة والتدريب الأكاديمي المتقدم.",
+    images: ["/logo.png"],
+  },
+  robots: {
+    index: true,
+    follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-video-preview": -1,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+    },
   },
 };
 

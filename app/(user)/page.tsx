@@ -156,7 +156,7 @@ const page = async () => {
       {
         "@type": "SiteNavigationElement",
         position: 4,
-        name: "الدورات والبرامج التدريبية",
+        name: "الدورات التدريبية",
         url: `${baseUrl}/courses`,
       },
       {
