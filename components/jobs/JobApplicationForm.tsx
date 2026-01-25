@@ -83,25 +83,45 @@ export default function JobApplicationForm({
 
     // Explicit Validation
     if (!formData.gender) {
-      toast.error("يرجى اختيار الجنس");
+      Swal.fire({
+        title: "بيانات ناقصة",
+        text: "يرجى اختيار الجنس",
+        icon: "warning",
+        confirmButtonText: "موافق",
+      });
       setLoading(false);
       return;
     }
 
     if (formData.whatsapp && !validateWhatsapp(formData.whatsapp)) {
-      toast.error("رقم الواتساب غير صحيح، يرجى التأكد من الرقم");
+      Swal.fire({
+        title: "خطأ في البيانات",
+        text: "رقم الواتساب غير صحيح، يرجى التأكد من الرقم",
+        icon: "warning",
+        confirmButtonText: "موافق",
+      });
       setLoading(false);
       return;
     }
 
     if (!cvFile) {
-      toast.error("يرجى إرفاق السيرة الذاتية");
+      Swal.fire({
+        title: "ملف مفقود",
+        text: "يرجى إرفاق السيرة الذاتية",
+        icon: "warning",
+        confirmButtonText: "موافق",
+      });
       setLoading(false);
       return;
     }
 
     if (cvFile.size > 5 * 1024 * 1024) {
-      toast.error("حجم السيرة الذاتية كبير جداً (الأقصى 5 ميجابايت)");
+      Swal.fire({
+        title: "حجم الملف كبير جداً",
+        text: "الحد الأقصى لحجم السيرة الذاتية هو 5 ميجابايت. يرجى ضغط الملف أو اختيار ملف أصغر.",
+        icon: "warning",
+        confirmButtonText: "فهمت",
+      });
       setLoading(false);
       return;
     }
@@ -146,7 +166,14 @@ export default function JobApplicationForm({
             err.message === "LARGE_FILE"
               ? "حجم الملف كبير جداً، يرجى اختيار ملف أصغر من 5 ميجابايت"
               : "فشل رفع السيرة الذاتية، يرجى المحاولة مرة أخرى أو التأكد من اتصالك بالإنترنت";
-          toast.error(errorMsg);
+
+          Swal.fire({
+            title: "خطأ في الرفع",
+            text: errorMsg,
+            icon: "error",
+            confirmButtonText: "حاول مرة أخرى",
+          });
+
           setLoading(false);
           setUploadProgress(0);
           clearInterval(progressInterval);
