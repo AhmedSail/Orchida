@@ -71,7 +71,8 @@ export default function JobApplicationForm({
   };
 
   const validateWhatsapp = (number: string) => {
-    const whatsappRegex = /^\d{9,15}$/;
+    // allow digits, +, spaces, dashes, and parentheses
+    const whatsappRegex = /^[\d+ \-()]{9,20}$/;
     return whatsappRegex.test(number);
   };
 
@@ -97,6 +98,12 @@ export default function JobApplicationForm({
 
     if (!cvFile) {
       toast.error("يرجى إرفاق السيرة الذاتية");
+      setLoading(false);
+      return;
+    }
+
+    if (cvFile.size > 5 * 1024 * 1024) {
+      toast.error("حجم السيرة الذاتية كبير جداً (الأقصى 5 ميجابايت)");
       setLoading(false);
       return;
     }
@@ -132,11 +139,16 @@ export default function JobApplicationForm({
             setUploadProgress(100);
             clearInterval(progressInterval);
           } else {
-            throw new Error("Upload failed");
+            if (res.status === 413) throw new Error("LARGE_FILE");
+            throw new Error(`Upload failed with status: ${res.status}`);
           }
-        } catch (err) {
-          console.error(err);
-          toast.error("فشل رفع السيرة الذاتية، يرجى المحاولة مرة أخرى");
+        } catch (err: any) {
+          console.error("Upload process error:", err);
+          const errorMsg =
+            err.message === "LARGE_FILE"
+              ? "حجم الملف كبير جداً، يرجى اختيار ملف أصغر من 5 ميجابايت"
+              : "فشل رفع السيرة الذاتية، يرجى المحاولة مرة أخرى أو التأكد من اتصالك بالإنترنت";
+          toast.error(errorMsg);
           setLoading(false);
           setUploadProgress(0);
           clearInterval(progressInterval);
@@ -178,6 +190,8 @@ export default function JobApplicationForm({
           icon: "success",
           confirmButtonColor: "#10b981",
           confirmButtonText: "حسناً",
+        }).then(() => {
+          window.location.href = "/";
         });
       }
       // Optional: Clear form or redirect

@@ -112,27 +112,32 @@ export async function submitApplication(data: {
     return { success: false, error: "ALREADY_APPLIED" };
   }
 
-  await db.insert(jobApplications).values({
-    id: crypto.randomUUID(),
-    jobId: data.jobId,
-    userId: session.user.id, // Use session user id
-    applicantName: data.name,
-    applicantEmail: data.email,
-    applicantPhone: data.phone,
-    applicantWhatsapp: data.whatsapp,
-    applicantMajor: data.major,
-    applicantEducation: data.education,
-    applicantExperienceYears: data.experienceYears
-      ? parseInt(data.experienceYears)
-      : null,
-    applicantGender: data.gender,
-    applicantLocation: data.location,
-    applicantAge: data.age ? parseInt(data.age) : null,
-    applicantCV: data.cv,
-    notes: data.notes,
-  });
-  revalidatePath("/admin");
-  return { success: true };
+  try {
+    await db.insert(jobApplications).values({
+      id: crypto.randomUUID(),
+      jobId: data.jobId,
+      userId: session.user.id, // Use session user id
+      applicantName: data.name,
+      applicantEmail: data.email,
+      applicantPhone: data.phone,
+      applicantWhatsapp: data.whatsapp,
+      applicantMajor: data.major,
+      applicantEducation: data.education,
+      applicantExperienceYears: data.experienceYears
+        ? parseInt(data.experienceYears)
+        : null,
+      applicantGender: data.gender,
+      applicantLocation: data.location,
+      applicantAge: data.age ? parseInt(data.age) : null,
+      applicantCV: data.cv,
+      notes: data.notes,
+    });
+    revalidatePath("/admin");
+    return { success: true };
+  } catch (error) {
+    console.error("Error submitting application:", error);
+    return { success: false, error: "DATABASE_ERROR" };
+  }
 }
 
 export async function deleteApplication(id: string) {
