@@ -39,6 +39,21 @@ const config: NextConfig = {
       bodySizeLimit: "2gb", // زيادة الحد الأقصى لحجم الملفات المرفوعة (للفيديوهات الطويلة)
     },
   },
+  async redirects() {
+    return [
+      {
+        source: "/:path*",
+        has: [
+          {
+            type: "host",
+            value: "orchida-ods.com",
+          },
+        ],
+        destination: "https://www.orchida-ods.com/:path*",
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default config;

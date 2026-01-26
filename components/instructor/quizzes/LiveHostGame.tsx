@@ -27,6 +27,7 @@ interface Participant {
   realName?: string;
   phone?: string;
   score: number;
+  totalTime: number;
 }
 
 interface Quiz {
@@ -126,6 +127,7 @@ export default function LiveHostGame({
               ? {
                   ...p,
                   score: (p.score || 0) + data.pointsEarned,
+                  totalTime: (p.totalTime || 0) + (data.responseTime || 0),
                   status: data.status,
                 }
               : p,
@@ -305,7 +307,11 @@ export default function LiveHostGame({
 
   if (hostState === "monitoring") {
     // Top players sort
-    const sortedPlayers = [...participants].sort((a, b) => b.score - a.score);
+    // Top players sort: Score Desc, then Time Asc
+    const sortedPlayers = [...participants].sort((a, b) => {
+      if (b.score !== a.score) return b.score - a.score;
+      return (a.totalTime || 0) - (b.totalTime || 0);
+    });
 
     return (
       <div className="min-h-screen bg-slate-100 flex flex-col p-6" dir="rtl">
@@ -364,7 +370,10 @@ export default function LiveHostGame({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-5xl mb-12">
         {participants
-          .sort((a, b) => b.score - a.score)
+          .sort((a, b) => {
+            if (b.score !== a.score) return b.score - a.score;
+            return (a.totalTime || 0) - (b.totalTime || 0);
+          })
           .slice(0, 3)
           .map((p, idx) => (
             <div

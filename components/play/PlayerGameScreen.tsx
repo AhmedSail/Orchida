@@ -36,6 +36,7 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
   const [nickname, setNickname] = useState("");
   const [score, setScore] = useState(0);
   const [rank, setRank] = useState(0);
+  const [questionStartTime, setQuestionStartTime] = useState<number>(0);
 
   // New fetcher for survival mode
   const fetchMyQuestion = async () => {
@@ -53,6 +54,7 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
         setCurrentQuestion(data.question);
         setGameState("question");
         setHasAnswered(false);
+        setQuestionStartTime(Date.now());
         // Refresh rank/score
         fetchParticipantData();
       } else if (data.status === "waiting_host") {
@@ -71,7 +73,10 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
       const res = await fetch(`/api/quizzes/sessions/participants?pin=${pin}`);
       if (res.ok) {
         const participants: any[] = await res.json();
-        const sorted = participants.sort((a, b) => b.score - a.score);
+        const sorted = participants.sort((a, b) => {
+          if (b.score !== a.score) return b.score - a.score;
+          return (a.totalTime || 0) - (b.totalTime || 0);
+        });
         const myIndex = sorted.findIndex((p) => p.id === participantId);
         const me = sorted[myIndex];
 
@@ -116,6 +121,8 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
     if (hasAnswered || gameState !== "question") return;
     setHasAnswered(true);
     try {
+      const responseTime = Date.now() - questionStartTime;
+
       const res = await fetch("/api/quizzes/responses", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -124,7 +131,7 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
           participantId,
           questionId: currentQuestion.id,
           optionId,
-          responseTime: 0,
+          responseTime,
         }),
       });
 
@@ -161,8 +168,11 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
           );
           if (res.ok) {
             const participants: any[] = await res.json();
-            // Sort by score descending
-            const sorted = participants.sort((a, b) => b.score - a.score);
+            // Sort by score descending, then time ascending
+            const sorted = participants.sort((a, b) => {
+              if (b.score !== a.score) return b.score - a.score;
+              return (a.totalTime || 0) - (b.totalTime || 0);
+            });
             const myRankIdx = sorted.findIndex((p) => p.id === participantId);
             if (myRankIdx !== -1) {
               setFinalRank({
