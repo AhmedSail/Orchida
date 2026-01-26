@@ -112,6 +112,7 @@ export async function POST(req: Request) {
       questionId,
       pointsEarned,
       isCorrect,
+      responseTime,
       status: isCorrect ? "active" : "eliminated",
     });
 

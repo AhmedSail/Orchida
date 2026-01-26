@@ -38,9 +38,6 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
-  alternates: {
-    canonical: baseUrl,
-  },
   openGraph: {
     title: "أوركيدة للخدمات الرقمية والأكاديمية",
     description:
