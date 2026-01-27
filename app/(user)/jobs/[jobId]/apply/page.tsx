@@ -79,6 +79,38 @@ export default async function ApplyPage({
     );
   }
 
+  if (!job.isActive) {
+    return (
+      <div className="min-h-[60vh] flex items-center justify-center p-4">
+        <div className="max-w-md w-full bg-white rounded-2xl shadow-xl p-8 text-center border border-gray-100">
+          <div className="w-16 h-16 bg-orange-50 text-orange-500 rounded-full flex items-center justify-center mx-auto mb-6">
+            <AlertCircle size={32} />
+          </div>
+          <h1 className="text-2xl font-bold text-gray-900 mb-2">
+            هذه الوظيفة مغلقة حالياً
+          </h1>
+          <p className="text-gray-500 mb-8 leading-relaxed">
+            عذراً، التقديم على وظيفة{" "}
+            <span className="font-bold text-gray-800">{job.title}</span> مغلق
+            حالياً أو غير متاح لاستقبال طلبات جديدة في الوقت الحالي.
+          </p>
+          <div className="space-y-3">
+            <Button asChild className="w-full h-12 text-base rounded-xl">
+              <Link href="/">تصفح الوظائف المتاحة</Link>
+            </Button>
+            <Button
+              asChild
+              variant="outline"
+              className="w-full h-12 text-base rounded-xl"
+            >
+              <Link href="/">العودة للرئيسية</Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const userResults = await db
     .select()
     .from(users)
@@ -115,6 +147,7 @@ export default async function ApplyPage({
           <JobApplicationForm
             jobId={jobId}
             userId={session.user.id}
+            isActive={job.isActive}
             initialData={{
               name: user?.name,
               email: user?.email,

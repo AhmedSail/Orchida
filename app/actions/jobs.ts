@@ -96,6 +96,22 @@ export async function submitApplication(data: {
     return { success: false, error: "UNAUTHORIZED" };
   }
 
+  // Check if job is active
+  const jobResults = await db
+    .select()
+    .from(jobs)
+    .where(eq(jobs.id, data.jobId))
+    .limit(1);
+  const job = jobResults[0];
+
+  if (!job) {
+    return { success: false, error: "JOB_NOT_FOUND" };
+  }
+
+  if (!job.isActive) {
+    return { success: false, error: "JOB_CLOSED" };
+  }
+
   // Check if already applied
   const existingApplications = await db
     .select()
