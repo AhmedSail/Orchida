@@ -27,6 +27,8 @@ import { useRouter } from "next/navigation";
 import { Section } from "@/app/admin/[adminId]/courses/sections/[id]/edit/page";
 import { Instructor } from "@/app/admin/[adminId]/instructor/page";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
+import { Switch } from "@/components/ui/switch";
+import { FormDescription } from "@/components/ui/form";
 
 const formSchema = z.object({
   courseId: z.string().min(1, "مطلوب"),
@@ -47,6 +49,7 @@ const formSchema = z.object({
     "closed",
     "cancelled",
   ]),
+  isHidden: z.boolean(),
 });
 
 export default function EditSectionForm({
@@ -82,6 +85,7 @@ export default function EditSectionForm({
       notes: section.notes || "",
       instructorId: section.instructorId || "",
       status: section.status,
+      isHidden: section.isHidden ?? false,
     },
   });
 
@@ -137,14 +141,14 @@ export default function EditSectionForm({
           { value: "cancelled", label: "ملغاة" },
         ]
       : section.status === "pending_approval"
-      ? []
-      : [
-          { value: "open", label: "نشطة" },
-          { value: "in_progress", label: "قيد التنفيذ" },
-          { value: "completed", label: "مكتملة" },
-          { value: "closed", label: "مغلقة" },
-          { value: "cancelled", label: "ملغاة" },
-        ];
+        ? []
+        : [
+            { value: "open", label: "نشطة" },
+            { value: "in_progress", label: "قيد التنفيذ" },
+            { value: "completed", label: "مكتملة" },
+            { value: "closed", label: "مغلقة" },
+            { value: "cancelled", label: "ملغاة" },
+          ];
 
   return (
     <div className="mt-10">
@@ -334,6 +338,29 @@ export default function EditSectionForm({
                 <FormLabel>ملاحظات</FormLabel>
                 <FormControl>
                   <Textarea placeholder="أي ملاحظات إضافية..." {...field} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          {/* إخفاء الشعبة */}
+          <FormField
+            control={form.control}
+            name="isHidden"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>إخفاء الشعبة</FormLabel>
+                  <FormDescription>
+                    عند تفعيل هذا الخيار، ستختفي الشعبة من الصفحة الرئيسية وصفحة
+                    الدورات.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 </FormControl>
               </FormItem>
             )}

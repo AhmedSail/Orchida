@@ -40,6 +40,7 @@ import {
   AlertCircle,
   Lock,
   ExternalLink,
+  EyeOff,
 } from "lucide-react";
 
 type Section = {
@@ -61,6 +62,7 @@ type Section = {
     | "cancelled";
   interestedCount: number;
   registeredCount: number;
+  isHidden: boolean;
 };
 
 type Courses = {
@@ -296,8 +298,15 @@ const SectionTable = ({
                       className="group border-b border-slate-50 dark:border-zinc-900 hover:bg-slate-50/50 dark:hover:bg-zinc-900/20 transition-colors"
                     >
                       <TableCell className="px-6 py-4">
-                        <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
-                          #{section.number}
+                        <div className="relative">
+                          <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
+                            #{section.number}
+                          </div>
+                          {section.isHidden && (
+                            <div className="absolute -top-2 -right-2 size-5 bg-red-500 rounded-full flex items-center justify-center text-white ring-2 ring-white dark:ring-zinc-950">
+                              <EyeOff className="size-3" />
+                            </div>
+                          )}
                         </div>
                       </TableCell>
                       <TableCell className="px-6 py-4">
@@ -424,8 +433,15 @@ const SectionTable = ({
                 >
                   <div className="flex justify-between items-start mb-4">
                     <div className="flex items-center gap-3">
-                      <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
-                        #{section.number}
+                      <div className="relative">
+                        <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
+                          #{section.number}
+                        </div>
+                        {section.isHidden && (
+                          <div className="absolute -top-1 -right-1 size-4 bg-red-500 rounded-full flex items-center justify-center text-white ring-2 ring-white dark:ring-zinc-950">
+                            <EyeOff className="size-2.5" />
+                          </div>
+                        )}
                       </div>
                       <div className="flex flex-col">
                         <Badge

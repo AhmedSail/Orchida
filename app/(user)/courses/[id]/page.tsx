@@ -1,7 +1,7 @@
 import CourseSelected from "@/components/users/CourseSelected";
 import { db } from "@/src/db";
 import { courses, courseSections, instructors } from "@/src/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { eq, desc, and } from "drizzle-orm";
 import React from "react";
 type Instructor = {
   id: string | null; // معرف المدرّس
@@ -67,7 +67,12 @@ const page = async ({ params }: { params: { id: string } }) => {
     })
     .from(courseSections)
     .leftJoin(instructors, eq(courseSections.instructorId, instructors.id))
-    .where(eq(courseSections.courseId, courseId.id))
+    .where(
+      and(
+        eq(courseSections.courseId, courseId.id),
+        eq(courseSections.isHidden, false),
+      ),
+    )
     .orderBy(desc(courseSections.createdAt))
     .limit(1);
 

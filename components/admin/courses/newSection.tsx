@@ -22,6 +22,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { useState } from "react";
+import { Switch } from "@/components/ui/switch";
 import Swal from "sweetalert2";
 
 import { useRouter } from "next/navigation";
@@ -40,6 +41,7 @@ const formSchema = z
     courseType: z.enum(["in_center", "online", "hybrid", "external"]),
     notes: z.string().optional(),
     instructorId: z.string().min(1, "مطلوب"), // ✅ إضافة حقل المدرب
+    isHidden: z.boolean(),
   })
   .refine(
     (data) => {
@@ -51,7 +53,7 @@ const formSchema = z
     {
       path: ["startDate"],
       message: "تاريخ البداية يجب أن يكون بعد تاريخ اليوم",
-    }
+    },
   )
   .refine(
     (data) => {
@@ -63,7 +65,7 @@ const formSchema = z
     {
       path: ["endDate"],
       message: "تاريخ النهاية يجب أن يكون بعد تاريخ البداية",
-    }
+    },
   );
 
 export default function NewSectionForm({
@@ -94,6 +96,7 @@ export default function NewSectionForm({
       courseType: "in_center",
       notes: "",
       instructorId: "", // ✅ إضافة حقل المدرب
+      isHidden: false,
     },
   });
 
@@ -314,6 +317,28 @@ export default function NewSectionForm({
                 <FormLabel>ملاحظات</FormLabel>
                 <FormControl>
                   <Textarea placeholder="أي ملاحظات إضافية..." {...field} />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isHidden"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
+                <div className="space-y-0.5">
+                  <FormLabel>إخفاء الشعبة</FormLabel>
+                  <div className="text-sm text-slate-500">
+                    عند تفعيل هذا الخيار، ستختفي الشعبة من الصفحة الرئيسية وصفحة
+                    الدورات.
+                  </div>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
                 </FormControl>
               </FormItem>
             )}

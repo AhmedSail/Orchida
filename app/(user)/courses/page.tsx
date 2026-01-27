@@ -37,6 +37,7 @@ const page = async () => {
     })
     .from(courses)
     .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
+    .where(eq(courseSections.isHidden, false))
     .groupBy(
       courses.id,
       courses.title,

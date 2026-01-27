@@ -193,6 +193,7 @@ export const courseSections = pgTable("courseSections", {
 
   approvedBy: text("approvedBy").references(() => users.id),
   approvedAt: timestamp("approvedAt"),
+  isHidden: boolean("isHidden").default(false).notNull(), // ✅ حقل جديد لإخفاء الشعبة
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
