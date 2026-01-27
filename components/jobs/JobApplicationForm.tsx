@@ -27,6 +27,7 @@ import {
   Send,
   Loader2,
   UploadCloud,
+  AlertCircle,
 } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import Swal from "sweetalert2";
@@ -35,6 +36,7 @@ import { Progress } from "@/components/ui/progress";
 interface JobApplicationFormProps {
   jobId: string;
   userId: string;
+  isActive?: boolean;
   initialData?: {
     name?: string | null;
     email?: string | null;
@@ -45,6 +47,7 @@ interface JobApplicationFormProps {
 export default function JobApplicationForm({
   jobId,
   userId,
+  isActive = true,
   initialData,
 }: JobApplicationFormProps) {
   const [formData, setFormData] = useState({
@@ -204,6 +207,15 @@ export default function JobApplicationForm({
             confirmButtonText: "تسجيل الدخول",
           }).then(() => {
             window.location.href = `/sign-in?callbackUrl=${encodeURIComponent(`/jobs/${jobId}/apply`)}`;
+          });
+        } else if (result.error === "JOB_CLOSED") {
+          Swal.fire({
+            title: "عذراً، الوظيفة مغلقة",
+            text: "تم إغلاق التقديم على هذه الوظيفة حالياً. يرجى تصفح الوظائف الأخرى المتاحة.",
+            icon: "error",
+            confirmButtonText: "موافق",
+          }).then(() => {
+            window.location.href = "/";
           });
         } else {
           // Display detailed error if available
@@ -544,12 +556,17 @@ export default function JobApplicationForm({
           <Button
             type="submit"
             className="w-full h-12 text-lg font-bold rounded-xl shadow-xl shadow-primary/20 hover:shadow-primary/30 transition-all hover:-translate-y-1"
-            disabled={loading}
+            disabled={loading || !isActive}
           >
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
                 جاري الإرسال...
+              </>
+            ) : !isActive ? (
+              <>
+                <AlertCircle className="ml-2 h-5 w-5" />
+                هذه الوظيفة مغلقة حالياً
               </>
             ) : (
               <>
