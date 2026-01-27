@@ -24,6 +24,8 @@ import {
   Image as ImageIcon2,
   X,
   Loader2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "./ui/badge";
@@ -108,6 +110,9 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
   const [localPosts, setLocalPosts] = useState<Post[]>(posts);
   const [isUploading, setIsUploading] = useState(false);
   const [activeTab, setActiveTab] = useState<"content" | "forum">("forum");
+  const [expandedPosts, setExpandedPosts] = useState<Record<string, boolean>>(
+    {},
+  );
   const router = useRouter();
 
   const handleMediaUpload = async (
@@ -149,6 +154,13 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
     } finally {
       setIsUploading(false);
     }
+  };
+
+  const toggleReplies = (postId: string) => {
+    setExpandedPosts((prev) => ({
+      ...prev,
+      [postId]: !prev[postId],
+    }));
   };
 
   const handleAddPost = async () => {
@@ -433,7 +445,11 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
           <AnimatePresence mode="popLayout">
             {localPosts
               .filter((post) => {
-                if (user.role === "instructor") return true;
+                if (
+                  user.role === "instructor" ||
+                  user.id === process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
+                )
+                  return true;
                 if (post.authorId === user.id) return true;
                 return post.status === "approved";
               })
@@ -506,17 +522,27 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                             className={`rounded-xl px-3 py-1 font-black text-[9px] uppercase tracking-widest ${
                               isInstructor
                                 ? "bg-indigo-600 text-white"
-                                : "bg-slate-100 text-slate-500 border-none"
+                                : post.authorId ===
+                                    process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
+                                  ? "bg-emerald-600 text-white"
+                                  : "bg-slate-100 text-slate-500 border-none"
                             }`}
                           >
-                            {isInstructor ? "مدرب المادة" : "طالب"}
+                            {isInstructor
+                              ? "مدرب المادة"
+                              : post.authorId ===
+                                  process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
+                                ? "مهندس الموقع"
+                                : "طالب"}
                           </Badge>
                         </div>
                       </div>
 
                       <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-all">
                         {(user.role === "instructor" ||
-                          user.id === post.authorId) && (
+                          user.id === post.authorId ||
+                          user.id ===
+                            process.env.NEXT_PUBLIC_SITE_ENGINEER_ID) && (
                           <>
                             <Button
                               variant="ghost"
@@ -536,7 +562,9 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                             </Button>
                           </>
                         )}
-                        {user.role === "instructor" &&
+                        {(user.role === "instructor" ||
+                          user.id ===
+                            process.env.NEXT_PUBLIC_SITE_ENGINEER_ID) &&
                           (post.status === "pending" ||
                             post.status === "pendingForSelf") && (
                             <Button
@@ -596,130 +624,165 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                       </div>
                     )}
 
-                    {/* Replies List */}
+                    {/* Show/Hide Replies Toggle */}
                     {post.replies && post.replies.length > 0 && (
-                      <div className="mt-10 space-y-6 pt-8 border-t border-slate-100 dark:border-zinc-800">
-                        <div className="flex items-center gap-2 text-slate-400 mb-6">
-                          <Reply className="size-5 scale-x-[-1]" />
-                          <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
-                            النقاش الجاري ({post.replies.length} ردود)
-                          </span>
-                        </div>
-                        {post.replies
-                          .filter((r) => !r.parentReplyId) // Root replies
-                          .map((reply) => {
-                            const childReplies = post.replies?.filter(
-                              (r) => r.parentReplyId === reply.id,
-                            );
-
-                            // دالة لعرض الرد (سواء أب أو ابن)
-                            const renderSingleReply = (
-                              r: ReplyType,
-                              isChild = false,
-                            ) => (
-                              <div
-                                key={r.id}
-                                className={`flex gap-5 group/reply ${
-                                  isChild
-                                    ? "mr-12 md:mr-16 mt-2 relative before:absolute before:-right-6 md:before:-right-8 before:top-[-24px] before:w-6 before:h-12 before:border-b-2 before:border-r-2 before:border-slate-200 dark:before:border-zinc-700 before:rounded-br-xl"
-                                    : ""
-                                }`}
-                              >
-                                <div className="size-12 rounded-[18px] shrink-0 transition-transform group-hover/reply:scale-110">
-                                  {r.userImage ? (
-                                    <Image
-                                      src={r.userImage}
-                                      alt={r.authorName || "User"}
-                                      width={48}
-                                      height={48}
-                                      className="rounded-[18px] object-cover size-12"
-                                      unoptimized
-                                    />
-                                  ) : (
-                                    <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-700 shadow-sm">
-                                      <Avatar
-                                        name={getInitials(
-                                          r.authorName || "User",
-                                        )}
-                                        size="44"
-                                        round="16px"
-                                        color="#675795"
-                                        fgColor="#fff"
-                                      />
-                                    </div>
-                                  )}
-                                </div>
-                                <div className="grow space-y-2">
-                                  <div className="flex items-center gap-2">
-                                    <span className="font-black text-slate-800 dark:text-white">
-                                      {r.authorName}
-                                    </span>
-                                    {r.roleUser === "instructor" && (
-                                      <Badge className="text-[8px] bg-indigo-600 text-white rounded-lg px-2 h-4 flex items-center">
-                                        مدرب
-                                      </Badge>
-                                    )}
-                                  </div>
-                                  <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
-                                    {r.content}
-                                  </p>
-                                  {r.imageUrl && (
-                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
-                                      <Image
-                                        src={r.imageUrl}
-                                        alt="reply image"
-                                        width={400}
-                                        height={300}
-                                        className="w-full h-auto object-cover"
-                                        unoptimized
-                                      />
-                                    </div>
-                                  )}
-                                  {r.videoUrl && (
-                                    <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
-                                      <video
-                                        src={r.videoUrl}
-                                        controls
-                                        className="w-full h-auto"
-                                        preload="metadata"
-                                      >
-                                        متصفحك لا يدعم عرض الفيديو.
-                                      </video>
-                                    </div>
-                                  )}
-
-                                  {!isChild && (
-                                    <button
-                                      onClick={() => {
-                                        setReplyPostId(post.id);
-                                        setReplyToReplyId(r.id);
-                                        const textarea =
-                                          document.getElementById(
-                                            `reply-input-${post.id}`,
-                                          );
-                                        if (textarea) textarea.focus();
-                                      }}
-                                      className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mt-2"
-                                    >
-                                      <Reply className="size-3" />
-                                      رد على هذا التعليق
-                                    </button>
-                                  )}
-                                </div>
-                              </div>
-                            );
-
-                            return (
-                              <React.Fragment key={reply.id}>
-                                {renderSingleReply(reply)}
-                                {childReplies?.map((child) =>
-                                  renderSingleReply(child, true),
-                                )}
-                              </React.Fragment>
-                            );
-                          })}
+                      <div className="mt-8">
+                        <Button
+                          variant="ghost"
+                          onClick={() => toggleReplies(post.id)}
+                          className="flex items-center gap-2 text-indigo-500 hover:text-indigo-600 font-black"
+                        >
+                          <MessageSquare className="size-5" />
+                          {expandedPosts[post.id]
+                            ? "إخفاء التعليقات"
+                            : `إظهار التعليقات (${post.replies.length})`}
+                          {expandedPosts[post.id] ? (
+                            <ChevronUp className="size-4" />
+                          ) : (
+                            <ChevronDown className="size-4" />
+                          )}
+                        </Button>
                       </div>
                     )}
+
+                    {/* Replies List */}
+                    {post.replies &&
+                      post.replies.length > 0 &&
+                      expandedPosts[post.id] && (
+                        <motion.div
+                          initial={{ opacity: 0, height: 0 }}
+                          animate={{ opacity: 1, height: "auto" }}
+                          exit={{ opacity: 0, height: 0 }}
+                          className="mt-10 space-y-6 pt-8 border-t border-slate-100 dark:border-zinc-800"
+                        >
+                          <div className="flex items-center gap-2 text-slate-400 mb-6">
+                            <Reply className="size-5 scale-x-[-1]" />
+                            <span className="text-[11px] font-black uppercase tracking-widest text-slate-500">
+                              النقاش الجاري ({post.replies.length} ردود)
+                            </span>
+                          </div>
+                          {post.replies
+                            .filter((r) => !r.parentReplyId) // Root replies
+                            .map((reply) => {
+                              const childReplies = post.replies?.filter(
+                                (r) => r.parentReplyId === reply.id,
+                              );
+
+                              // دالة لعرض الرد (سواء أب أو ابن)
+                              const renderSingleReply = (
+                                r: ReplyType,
+                                isChild = false,
+                              ) => (
+                                <div
+                                  key={r.id}
+                                  className={`flex gap-5 group/reply ${
+                                    isChild
+                                      ? "mr-12 md:mr-16 mt-2 relative before:absolute before:-right-6 md:before:-right-8 before:top-[-24px] before:w-6 before:h-12 before:border-b-2 before:border-r-2 before:border-slate-200 dark:before:border-zinc-700 before:rounded-br-xl"
+                                      : ""
+                                  }`}
+                                >
+                                  <div className="size-12 rounded-[18px] shrink-0 transition-transform group-hover/reply:scale-110">
+                                    {r.userImage ? (
+                                      <Image
+                                        src={r.userImage}
+                                        alt={r.authorName || "User"}
+                                        width={48}
+                                        height={48}
+                                        className="rounded-[18px] object-cover size-12"
+                                        unoptimized
+                                      />
+                                    ) : (
+                                      <div className="size-12 rounded-[18px] bg-slate-100 dark:bg-zinc-800 flex items-center justify-center border border-slate-200 dark:border-zinc-700 shadow-sm">
+                                        <Avatar
+                                          name={getInitials(
+                                            r.authorName || "User",
+                                          )}
+                                          size="44"
+                                          round="16px"
+                                          color="#675795"
+                                          fgColor="#fff"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+                                  <div className="grow space-y-2">
+                                    <div className="flex items-center gap-2">
+                                      <span className="font-black text-slate-800 dark:text-white">
+                                        {r.authorName}
+                                      </span>
+                                      {r.roleUser === "instructor" && (
+                                        <Badge className="text-[8px] bg-indigo-600 text-white rounded-lg px-2 h-4 flex items-center">
+                                          مدرب
+                                        </Badge>
+                                      )}
+                                      {r.userId ===
+                                        process.env
+                                          .NEXT_PUBLIC_SITE_ENGINEER_ID && (
+                                        <Badge className="text-[8px] bg-emerald-600 text-white rounded-lg px-2 h-4 flex items-center">
+                                          مهندس الموقع
+                                        </Badge>
+                                      )}
+                                    </div>
+                                    <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
+                                      {r.content}
+                                    </p>
+                                    {r.imageUrl && (
+                                      <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
+                                        <Image
+                                          src={r.imageUrl}
+                                          alt="reply image"
+                                          width={400}
+                                          height={300}
+                                          className="w-full h-auto object-cover"
+                                          unoptimized
+                                        />
+                                      </div>
+                                    )}
+                                    {r.videoUrl && (
+                                      <div className="mt-3 rounded-2xl overflow-hidden border border-slate-100 dark:border-zinc-800 shadow-md max-w-sm">
+                                        <video
+                                          src={r.videoUrl}
+                                          controls
+                                          className="w-full h-auto"
+                                          preload="metadata"
+                                        >
+                                          متصفحك لا يدعم عرض الفيديو.
+                                        </video>
+                                      </div>
+                                    )}
+
+                                    {!isChild && (
+                                      <button
+                                        onClick={() => {
+                                          setReplyPostId(post.id);
+                                          setReplyToReplyId(r.id);
+                                          const textarea =
+                                            document.getElementById(
+                                              `reply-input-${post.id}`,
+                                            );
+                                          if (textarea) textarea.focus();
+                                        }}
+                                        className="text-xs font-bold text-indigo-500 hover:text-indigo-600 flex items-center gap-1 mt-2"
+                                      >
+                                        <Reply className="size-3" />
+                                        رد على هذا التعليق
+                                      </button>
+                                    )}
+                                  </div>
+                                </div>
+                              );
+
+                              return (
+                                <React.Fragment key={reply.id}>
+                                  {renderSingleReply(reply)}
+                                  {childReplies?.map((child) =>
+                                    renderSingleReply(child, true),
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                        </motion.div>
+                      )}
 
                     {/* Reply Input */}
                     <div className="mt-10 space-y-4">

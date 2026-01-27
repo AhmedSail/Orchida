@@ -89,8 +89,9 @@ const Page = async ({
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
     .where(
-      user.role === "instructor"
-        ? eq(sectionForumPosts.sectionId, sectionId) // المدرب يشوف الكل
+      user.role === "instructor" ||
+        user.id === process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
+        ? eq(sectionForumPosts.sectionId, sectionId) // المدرب والمهندس يشوفوا الكل
         : and(
             eq(sectionForumPosts.sectionId, sectionId),
             or(
