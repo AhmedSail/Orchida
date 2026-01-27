@@ -58,6 +58,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       isReceiptUploaded: courseEnrollments.isReceiptUploaded,
       paymentReceiptUrl: courseEnrollments.paymentReceiptUrl,
       IBAN: courseEnrollments.IBAN,
+      swiftCode: courseEnrollments.swiftCode,
+      bankName: courseEnrollments.bankName,
       notes: courseEnrollments.notes,
     })
     .from(courseEnrollments)

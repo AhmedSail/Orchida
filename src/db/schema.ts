@@ -254,6 +254,8 @@ export const courseEnrollments = pgTable("courseEnrollments", {
   paymentReceiptUrl: varchar("paymentReceiptUrl", { length: 500 }),
   isReceiptUploaded: boolean("isReceiptUploaded").default(false).notNull(),
   IBAN: varchar("IBAN", { length: 500 }),
+  swiftCode: varchar("swiftCode", { length: 100 }),
+  bankName: varchar("bankName", { length: 255 }),
   notes: text("notes"),
   registeredAt: timestamp("registeredAt").defaultNow().notNull(),
   confirmedAt: timestamp("confirmedAt"),

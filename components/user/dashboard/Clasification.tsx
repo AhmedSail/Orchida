@@ -19,6 +19,7 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
 import SectionContent from "./SectionContent";
 import ChatForm from "../../ChatForm";
 import {
@@ -46,6 +47,8 @@ interface Props {
   chapters: AllChapters[];
   contents: AllContent[];
   IBAN: string | null;
+  swiftCode: string | null;
+  bankName: string | null;
   role?: string;
   posts?: any[];
   userData?: any[];
@@ -60,6 +63,8 @@ const Clasification = ({
   chapters,
   contents,
   IBAN,
+  swiftCode,
+  bankName,
   role,
   posts = [],
   userData = [],
@@ -323,25 +328,94 @@ const Clasification = ({
                   </div>
 
                   {/* IBAN Box (Conditional) */}
-                  {IBAN && (
+                  {(IBAN || swiftCode || bankName) && (
                     <div className="p-8 rounded-[40px] bg-emerald-50/50 dark:bg-emerald-500/5 border border-emerald-100 dark:border-emerald-500/10 shadow-sm relative overflow-hidden group">
                       <div className="absolute top-0 right-0 p-8 opacity-5 group-hover:scale-110 transition-transform">
                         <CreditCard className="size-24 text-emerald-600" />
                       </div>
-                      <div className="relative z-10 space-y-4">
+                      <div className="relative z-10 space-y-4 text-right">
                         <div className="flex items-center gap-3 text-emerald-700 dark:text-emerald-400">
                           <CreditCard className="size-6" />
                           <h3 className="text-xl font-black tracking-tight">
-                            بيانات الدفع (IBAN)
+                            معلومات البنك الاسرائيلي الخاصة في بايونير
                           </h3>
                         </div>
-                        <div className="p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 flex items-center justify-between">
-                          <span className="font-mono text-lg font-black text-slate-800 dark:text-emerald-400 tracking-wider">
-                            {IBAN}
-                          </span>
-                          <Badge className="bg-emerald-500 text-white border-none font-bold">
-                            نشط
-                          </Badge>
+
+                        <div className="space-y-3">
+                          {IBAN && (
+                            <div className="p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 flex flex-col gap-1">
+                              <span className="text-[10px] text-emerald-600 font-bold uppercase">
+                                IBAN
+                              </span>
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-lg font-black text-slate-800 dark:text-emerald-400 tracking-wider">
+                                  {IBAN}
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="size-8 text-emerald-600"
+                                  onClick={() => handleCopy(IBAN, "iban")}
+                                >
+                                  {copiedId === "iban" ? (
+                                    <Check className="size-4" />
+                                  ) : (
+                                    <Copy className="size-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {swiftCode && (
+                            <div className="p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 flex flex-col gap-1">
+                              <span className="text-[10px] text-emerald-600 font-bold uppercase">
+                                Swift Code
+                              </span>
+                              <div className="flex items-center justify-between">
+                                <span className="font-mono text-lg font-black text-slate-800 dark:text-emerald-400 tracking-wider">
+                                  {swiftCode}
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="size-8 text-emerald-600"
+                                  onClick={() => handleCopy(swiftCode, "swift")}
+                                >
+                                  {copiedId === "swift" ? (
+                                    <Check className="size-4" />
+                                  ) : (
+                                    <Copy className="size-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
+
+                          {bankName && (
+                            <div className="p-4 bg-white dark:bg-zinc-950 rounded-2xl border border-emerald-100 dark:border-emerald-900/50 flex flex-col gap-1">
+                              <span className="text-[10px] text-emerald-600 font-bold uppercase">
+                                اسم البنك
+                              </span>
+                              <div className="flex items-center justify-between">
+                                <span className="text-lg font-black text-slate-800 dark:text-emerald-400">
+                                  {bankName}
+                                </span>
+                                <Button
+                                  size="icon"
+                                  variant="ghost"
+                                  className="size-8 text-emerald-600"
+                                  onClick={() => handleCopy(bankName, "bank")}
+                                >
+                                  {copiedId === "bank" ? (
+                                    <Check className="size-4" />
+                                  ) : (
+                                    <Copy className="size-4" />
+                                  )}
+                                </Button>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
