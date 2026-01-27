@@ -86,6 +86,7 @@ interface Post {
   replies?: ReplyType[];
   userImage?: string | null;
   roleUser: string | null;
+  createdAt: string | Date;
 }
 
 interface ChatFormProps {
@@ -114,6 +115,27 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
     {},
   );
   const router = useRouter();
+
+  // دالة لتنسيق الوقت (مثال: منذ دقيقتين، 27 يناير 2024)
+  const formatArabicDate = (dateInput: string | Date) => {
+    if (!dateInput) return "";
+    const date = new Date(dateInput);
+    const now = new Date();
+    const diffInSeconds = Math.floor((now.getTime() - date.getTime()) / 1000);
+
+    if (diffInSeconds < 60) return "الآن";
+    if (diffInSeconds < 3600)
+      return `منذ ${Math.floor(diffInSeconds / 60)} دقيقة`;
+    if (diffInSeconds < 86400)
+      return `منذ ${Math.floor(diffInSeconds / 3600)} ساعة`;
+    if (diffInSeconds < 172800) return "أمس";
+
+    return date.toLocaleDateString("ar-EG", {
+      day: "numeric",
+      month: "long",
+      year: "numeric",
+    });
+  };
 
   const handleMediaUpload = async (
     e: React.ChangeEvent<HTMLInputElement>,
@@ -187,6 +209,7 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
           imageUrl: newPostImage,
           videoUrl: newPostVideo,
           replies: [],
+          createdAt: new Date(),
         },
         ...localPosts,
       ]);
@@ -316,6 +339,7 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                   imageUrl: replyImage,
                   videoUrl: replyVideo,
                   parentReplyId: replyToReplyId,
+                  createdAt: new Date(),
                 },
               ],
             }
@@ -518,23 +542,31 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                           >
                             {post.authorName}
                           </h4>
-                          <Badge
-                            className={`rounded-xl px-3 py-1 font-black text-[9px] uppercase tracking-widest ${
-                              isInstructor
-                                ? "bg-indigo-600 text-white"
+                          <div className="flex items-center gap-3">
+                            <Badge
+                              className={`rounded-xl px-3 py-1 font-black text-[9px] uppercase tracking-widest ${
+                                isInstructor
+                                  ? "bg-indigo-600 text-white"
+                                  : post.authorId ===
+                                      process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
+                                    ? "bg-emerald-600 text-white"
+                                    : "bg-slate-100 text-slate-500 border-none"
+                              }`}
+                            >
+                              {isInstructor
+                                ? "مدرب المادة"
                                 : post.authorId ===
                                     process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
-                                  ? "bg-emerald-600 text-white"
-                                  : "bg-slate-100 text-slate-500 border-none"
-                            }`}
-                          >
-                            {isInstructor
-                              ? "مدرب المادة"
-                              : post.authorId ===
-                                  process.env.NEXT_PUBLIC_SITE_ENGINEER_ID
-                                ? "مهندس الموقع"
-                                : "طالب"}
-                          </Badge>
+                                  ? "مهندس الموقع"
+                                  : "طالب"}
+                            </Badge>
+                            {post.createdAt && (
+                              <span className="text-[10px] font-bold text-slate-400 flex items-center gap-1">
+                                <Clock className="size-3" />
+                                {formatArabicDate(post.createdAt)}
+                              </span>
+                            )}
+                          </div>
                         </div>
                       </div>
 
@@ -721,6 +753,11 @@ const ChatForm = ({ section, userData, posts, isEmbedded }: ChatFormProps) => {
                                         <Badge className="text-[8px] bg-emerald-600 text-white rounded-lg px-2 h-4 flex items-center">
                                           مهندس الموقع
                                         </Badge>
+                                      )}
+                                      {r.createdAt && (
+                                        <span className="text-[10px] font-bold text-slate-400 mr-auto">
+                                          {formatArabicDate(r.createdAt)}
+                                        </span>
                                       )}
                                     </div>
                                     <p className="text-base text-slate-600 dark:text-slate-400 leading-relaxed bg-slate-100 dark:bg-zinc-800/40 p-4 rounded-[24px] whitespace-pre-wrap">
