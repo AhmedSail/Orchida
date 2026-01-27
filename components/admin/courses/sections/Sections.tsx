@@ -43,6 +43,7 @@ type Section = {
   currentEnrollment: number;
   interestedCount: number;
   registeredCount: number;
+  isHidden: boolean;
 };
 
 type Courses = {
@@ -65,7 +66,7 @@ const Sections = ({
   const [searchTerm, setSearchTerm] = useState("");
 
   const filteredCourses = courses.filter((course) =>
-    course.title.toLowerCase().includes(searchTerm.toLowerCase())
+    course.title.toLowerCase().includes(searchTerm.toLowerCase()),
   );
 
   return (

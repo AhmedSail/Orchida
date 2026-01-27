@@ -7,7 +7,7 @@ import { courseSections, courseLeads } from "@/src/db/schema";
 // ========== GET شعبة واحدة ==========
 export async function GET(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
   try {
@@ -29,7 +29,7 @@ export async function GET(
 // ========== PUT تعديل شعبة ==========
 export async function PUT(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
   try {
@@ -55,6 +55,7 @@ export async function PUT(
         courseType: values.courseType,
         status: newStatus,
         notes: values.notes,
+        isHidden: values.isHidden,
       })
       .where(eq(courseSections.id, params.id))
       .returning();
@@ -91,7 +92,7 @@ export async function PUT(
 // ========== DELETE حذف شعبة ==========
 export async function DELETE(
   req: Request,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   const params = await context.params;
   try {

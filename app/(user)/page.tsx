@@ -14,7 +14,7 @@ import {
   jobs,
 } from "@/src/db/schema";
 import { db } from "@/src";
-import { eq, inArray, desc } from "drizzle-orm";
+import { eq, inArray, desc, and } from "drizzle-orm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -45,7 +45,7 @@ const page = async () => {
     db.select().from(digitalServices),
     db.select().from(sliders),
     db.select().from(news).orderBy(desc(news.publishedAt)),
-    db.select().from(courseSections),
+    db.select().from(courseSections).where(eq(courseSections.isHidden, false)),
     db
       .select({
         id: courses.id,
@@ -67,7 +67,12 @@ const page = async () => {
       })
       .from(courses)
       .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
-      .where(inArray(courseSections.status, ["open", "in_progress"])),
+      .where(
+        and(
+          inArray(courseSections.status, ["open", "in_progress"]),
+          eq(courseSections.isHidden, false),
+        ),
+      ),
     db
       .select({
         id: studentWorks.id,

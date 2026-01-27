@@ -37,6 +37,7 @@ const page = async () => {
       instructorName: instructors.name,
       instructorEmail: instructors.email,
       instructorSpecialty: instructors.specialty,
+      isHidden: courseSections.isHidden,
 
       // ✅ جلب عدد المهتمين (Leads)
       interestedCount: sql<number>`(
@@ -87,6 +88,7 @@ const page = async () => {
         interestedCount: row.interestedCount ?? 0,
         registeredCount: row.registeredCount ?? 0,
         currentEnrollment: row.registeredCount ?? 0,
+        isHidden: row.isHidden ?? false,
       });
     }
 
