@@ -104,6 +104,7 @@ const Page = async ({
       authorName: users.name,
       userImage: users.image,
       roleUser: users.role,
+      createdAt: sectionForumPosts.createdAt,
     })
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
@@ -122,7 +123,10 @@ const Page = async ({
               ),
             ),
           ),
-    );
+    )
+    .orderBy(sectionForumPosts.createdAt);
+
+  const postsReversed = posts.reverse();
 
   // ✅ جلب الردود
   const replies = await db
@@ -137,13 +141,15 @@ const Page = async ({
       authorName: users.name,
       roleUser: users.role,
       userImage: users.image,
+      createdAt: sectionForumReplies.createdAt,
     })
     .from(sectionForumReplies)
-    .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+    .leftJoin(users, eq(sectionForumReplies.userId, users.id))
+    .orderBy(sectionForumReplies.createdAt);
 
   console.log("Fetched Replies:", JSON.stringify(replies, null, 2)); // 👈 Debug logs active
 
-  const postsWithReplies = posts.map((post) => ({
+  const postsWithReplies = postsReversed.map((post) => ({
     ...post,
     replies: replies.filter((r) => r.postId === post.id),
   }));
