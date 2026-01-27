@@ -74,6 +74,8 @@ type Student = {
   paymentReceiptUrl?: string | null;
   isReceiptUploaded?: boolean;
   IBAN: string | null;
+  swiftCode: string | null;
+  bankName: string | null;
   type: "registered" | "interested";
   status?: string | null; // for leads
   notes?: string | null;
@@ -120,6 +122,8 @@ const StudentsTable = ({
   const studentsPerPage = 10;
 
   const [ibanValues, setIbanValues] = useState<{ [key: string]: string }>({});
+  const [swiftValues, setSwiftValues] = useState<{ [key: string]: string }>({});
+  const [bankValues, setBankValues] = useState<{ [key: string]: string }>({});
   const [editMode, setEditMode] = useState<{ [key: string]: boolean }>({});
 
   // SMS States
@@ -137,6 +141,25 @@ const StudentsTable = ({
     name: string;
     type: "registered" | "interested";
   } | null>(null);
+
+  const bankPresets = [
+    {
+      name: "Bank Hapoalim (CMN)",
+      iban: "IL160400625125708006290",
+      swift: "POALILITCMN",
+    },
+    {
+      name: "Bank Hapoalim (CLS)",
+      iban: "IL049303680000350086517",
+      swift: "POALILITCLS",
+    },
+    {
+      name: "Bank Hapoalim (CBS)",
+      iban: "IL110930523480013367678",
+      swift: "POALILITCBS",
+    },
+    { name: "Bank Hapoalim (FMT)", iban: "", swift: "POALILITFMT" },
+  ];
 
   useEffect(() => {
     // جلب القوالب
@@ -695,7 +718,7 @@ const StudentsTable = ({
               className="rounded-xl border-gray-200"
               onClick={() => setShowIBAN(!showIBAN)}
             >
-              {showIBAN ? "إخفاء IBAN" : "رفع IBAN"}
+              {showIBAN ? "إخفاء التفاصيل البنكية" : "فتح التفاصيل البنكية"}
             </Button>
           </div>
         </div>
@@ -793,7 +816,13 @@ const StudentsTable = ({
               <TableHead className="text-right">إشعار الدفع</TableHead>
               <TableHead className="text-right">الحالة</TableHead>
               <TableHead className="text-right">نوع الحضور</TableHead>
-              {showIBAN && <TableHead className="text-right">IBAN</TableHead>}
+              {showIBAN && (
+                <>
+                  <TableHead className="text-right">IBAN</TableHead>
+                  <TableHead className="text-right">Swift Code</TableHead>
+                  <TableHead className="text-right">اسم البنك</TableHead>
+                </>
+              )}
               <TableHead className="text-center">إجراءات</TableHead>
             </TableRow>
           </TableHeader>
@@ -931,33 +960,105 @@ const StudentsTable = ({
                   </TableCell>
 
                   {showIBAN && (
-                    <TableCell>
-                      <div className="flex items-center gap-2">
+                    <>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <input
+                            className="bg-gray-50 border-none rounded-lg px-3 py-1 text-sm w-[150px] focus:ring-1 focus:ring-blue-500"
+                            placeholder="IBAN"
+                            value={ibanValues[s.id] ?? s.IBAN ?? ""}
+                            onChange={(e) =>
+                              setIbanValues({
+                                ...ibanValues,
+                                [s.id]: e.target.value,
+                              })
+                            }
+                          />
+                        </div>
+                      </TableCell>
+                      <TableCell>
                         <input
-                          className="bg-gray-50 border-none rounded-lg px-3 py-1 text-sm w-[150px] focus:ring-1 focus:ring-blue-500"
-                          placeholder="أدخل IBAN"
-                          value={ibanValues[s.id] ?? s.IBAN ?? ""}
+                          className="bg-gray-50 border-none rounded-lg px-3 py-1 text-sm w-[120px] focus:ring-1 focus:ring-blue-500"
+                          placeholder="Swift Code"
+                          value={swiftValues[s.id] ?? s.swiftCode ?? ""}
                           onChange={(e) =>
-                            setIbanValues({
-                              ...ibanValues,
+                            setSwiftValues({
+                              ...swiftValues,
                               [s.id]: e.target.value,
                             })
                           }
                         />
-                        <Button
-                          size="icon"
-                          variant="ghost"
-                          className="h-8 w-8 text-emerald-600"
-                          onClick={() =>
-                            handleUpdateEnrollment(s.id, {
-                              IBAN: ibanValues[s.id],
-                            })
-                          }
-                        >
-                          <CheckCircle className="w-4 h-4" />
-                        </Button>
-                      </div>
-                    </TableCell>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <input
+                            className="bg-gray-50 border-none rounded-lg px-3 py-1 text-sm w-[150px] focus:ring-1 focus:ring-blue-500"
+                            placeholder="اسم البنك"
+                            value={bankValues[s.id] ?? s.bankName ?? ""}
+                            onChange={(e) =>
+                              setBankValues({
+                                ...bankValues,
+                                [s.id]: e.target.value,
+                              })
+                            }
+                          />
+                          <Button
+                            size="icon"
+                            variant="ghost"
+                            className="h-8 w-8 text-emerald-600"
+                            onClick={() =>
+                              handleUpdateEnrollment(s.id, {
+                                IBAN: ibanValues[s.id] ?? s.IBAN,
+                                swiftCode: swiftValues[s.id] ?? s.swiftCode,
+                                bankName: bankValues[s.id] ?? s.bankName,
+                              })
+                            }
+                          >
+                            <CheckCircle className="w-4 h-4" />
+                          </Button>
+
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button
+                                size="icon"
+                                variant="ghost"
+                                className="h-8 w-8 text-blue-600"
+                              >
+                                <Sparkles className="w-4 h-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              {bankPresets.map((preset, idx) => (
+                                <DropdownMenuItem
+                                  key={idx}
+                                  onClick={() => {
+                                    setIbanValues({
+                                      ...ibanValues,
+                                      [s.id]: preset.iban,
+                                    });
+                                    setSwiftValues({
+                                      ...swiftValues,
+                                      [s.id]: preset.swift,
+                                    });
+                                    setBankValues({
+                                      ...bankValues,
+                                      [s.id]: "Bank Hapoalim",
+                                    });
+                                    handleUpdateEnrollment(s.id, {
+                                      IBAN: preset.iban,
+                                      swiftCode: preset.swift,
+                                      bankName: "Bank Hapoalim",
+                                    });
+                                  }}
+                                >
+                                  استخدام {preset.name}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </TableCell>
+                    </>
                   )}
 
                   <TableCell>

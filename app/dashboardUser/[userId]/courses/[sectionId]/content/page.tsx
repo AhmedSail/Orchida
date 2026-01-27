@@ -97,6 +97,8 @@ const Page = async ({
       paymentStatus: courseEnrollments.paymentStatus,
       confirmationStatus: courseEnrollments.confirmationStatus,
       IBAN: courseEnrollments.IBAN,
+      swiftCode: courseEnrollments.swiftCode,
+      bankName: courseEnrollments.bankName,
     })
     .from(courseEnrollments)
     .where(
@@ -110,6 +112,8 @@ const Page = async ({
   const paymentStatus = enrollment[0]?.paymentStatus;
   const confirmationStatus = enrollment[0]?.confirmationStatus;
   const IBAN = enrollment[0]?.IBAN;
+  const swiftCode = enrollment[0]?.swiftCode;
+  const bankName = enrollment[0]?.bankName;
 
   // ✅ جلب اللقاءات الخاصة بالشعبة وحساب المؤرشفة
   const sectionMeetings = await db
@@ -224,6 +228,8 @@ const Page = async ({
         chapters={chapters}
         contents={contents}
         IBAN={IBAN}
+        swiftCode={swiftCode}
+        bankName={bankName}
         role={session.user.role}
         posts={postsWithReplies}
         userData={userData}

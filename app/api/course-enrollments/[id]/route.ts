@@ -84,13 +84,22 @@ export async function PUT(
   }
 
   const body = await req.json();
-  const { paymentStatus, confirmationStatus, IBAN, sectionId } = body;
+  const {
+    paymentStatus,
+    confirmationStatus,
+    IBAN,
+    swiftCode,
+    bankName,
+    sectionId,
+  } = body;
 
   const updateData: any = {};
   if (paymentStatus !== undefined) updateData.paymentStatus = paymentStatus;
   if (confirmationStatus !== undefined)
     updateData.confirmationStatus = confirmationStatus;
   if (IBAN !== undefined) updateData.IBAN = IBAN;
+  if (swiftCode !== undefined) updateData.swiftCode = swiftCode;
+  if (bankName !== undefined) updateData.bankName = bankName;
   if (sectionId !== undefined) {
     // التحقق من وجود الشعبة الجديدة
     const section = await db.query.courseSections.findFirst({
