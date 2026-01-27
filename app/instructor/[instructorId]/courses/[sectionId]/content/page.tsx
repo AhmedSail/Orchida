@@ -127,10 +127,14 @@ const page = async ({
       roleUser: users.role,
       imageUrl: sectionForumPosts.imageUrl,
       videoUrl: sectionForumPosts.videoUrl, // ✅ إضافة الفيديو
+      createdAt: sectionForumPosts.createdAt,
     })
     .from(sectionForumPosts)
     .leftJoin(users, eq(sectionForumPosts.authorId, users.id))
-    .where(eq(sectionForumPosts.sectionId, sectionId));
+    .where(eq(sectionForumPosts.sectionId, sectionId))
+    .orderBy(sectionForumPosts.createdAt);
+
+  const postsReversed = posts.reverse();
 
   // ✅ جلب الردود (Replies)
   const replies = await db
@@ -145,11 +149,13 @@ const page = async ({
       imageUrl: sectionForumReplies.imageUrl,
       videoUrl: sectionForumReplies.videoUrl, // ✅ إضافة الفيديو
       parentReplyId: sectionForumReplies.parentReplyId, // ✅ إضافة الرد المتداخل
+      createdAt: sectionForumReplies.createdAt,
     })
     .from(sectionForumReplies)
-    .leftJoin(users, eq(sectionForumReplies.userId, users.id));
+    .leftJoin(users, eq(sectionForumReplies.userId, users.id))
+    .orderBy(sectionForumReplies.createdAt);
 
-  const postsWithReplies = posts.map((post) => ({
+  const postsWithReplies = postsReversed.map((post) => ({
     ...post,
     replies: replies.filter((r) => r.postId === post.id),
   }));
