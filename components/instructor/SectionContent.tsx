@@ -270,6 +270,7 @@ const SectionContent = ({
           description: data.description,
           contentType,
           fileUrl,
+          imageUrls: data.imageUrls,
           attachmentName,
           removeFile: data.removeFile,
           scheduledAt: data.scheduledAt,

@@ -17,6 +17,7 @@ export async function PUT(
       description,
       contentType,
       fileUrl,
+      imageUrls,
       attachmentName,
       removeFile,
     } = body;
@@ -33,6 +34,7 @@ export async function PUT(
 
     let videoUrl = existing[0].videoUrl;
     let imageUrl = existing[0].imageUrl;
+    let imageUrlsDb = existing[0].imageUrls;
     let attachmentUrl = existing[0].attachmentUrl;
     let attachmentNameDb = existing[0].attachmentName;
     let contentTypes = existing[0].contentType;
@@ -41,9 +43,23 @@ export async function PUT(
     if (removeFile) {
       videoUrl = null;
       imageUrl = null;
+      imageUrlsDb = null;
       attachmentUrl = null;
       attachmentNameDb = null;
       contentTypes = "text";
+    }
+
+    if (imageUrls) {
+      imageUrlsDb = imageUrls;
+      // also set imageUrl for fallback (first image)
+      try {
+        const parsed = JSON.parse(imageUrls);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          imageUrl = parsed[0];
+        }
+      } catch (e) {
+        console.error("Failed to parse imageUrls", e);
+      }
     }
 
     // ✅ إذا في ملف جديد مرفوع من الكلينت
@@ -65,6 +81,7 @@ export async function PUT(
         description,
         videoUrl,
         imageUrl,
+        imageUrls: imageUrlsDb,
         contentType,
         attachmentUrl,
         attachmentName: attachmentNameDb,
