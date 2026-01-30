@@ -59,6 +59,7 @@ interface Props {
       removeFile?: boolean;
       textContent?: string;
       scheduledAt?: string;
+      imageUrls?: string;
     },
   ) => Promise<void>;
 }
@@ -69,9 +70,10 @@ export default function EditContentDialog({
   content,
   onUpdate,
 }: Props) {
-  const [file, setFile] = useState<File | null>(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState<number>(0);
+  const [fileUrl, setFileUrl] = useState<string>(content.imageUrl || "");
+  const [fileUrls, setFileUrls] = useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [showLibrary, setShowLibrary] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<ContentForm>({
@@ -102,23 +104,41 @@ export default function EditContentDialog({
           ? new Date(content.scheduledAt).toISOString().slice(0, 16)
           : "",
       });
-      setFile(null);
-      setUploadProgress(0);
+      setFileUrl(
+        content.contentType === "image"
+          ? content.imageUrl || ""
+          : content.videoUrl || content.attachmentUrl || "",
+      );
+      try {
+        const urls = content.imageUrls ? JSON.parse(content.imageUrls) : [];
+        setFileUrls(Array.isArray(urls) ? urls : []);
+      } catch {
+        setFileUrls(content.imageUrl ? [content.imageUrl] : []);
+      }
     }
   }, [active, content, form]);
 
-  const handleFileChange = (selectedFile: File | undefined) => {
-    if (!selectedFile) return;
-    setFile(selectedFile);
+  const handleLibrarySelect = (selected: {
+    url: string;
+    type: "image" | "video" | "file";
+    name: string;
+  }) => {
+    const typeMap = {
+      image: "image",
+      video: "video",
+      file: "attachment",
+    } as const;
 
-    // Auto-detect content type based on file
-    const mimeType = selectedFile.type;
-    if (mimeType.startsWith("image/")) form.setValue("contentType", "image");
-    else if (mimeType.startsWith("video/"))
-      form.setValue("contentType", "video");
-    else form.setValue("contentType", "attachment");
+    const newType = (typeMap[selected.type] as any) || "attachment";
 
-    form.setValue("attachmentName", selectedFile.name);
+    if (newType === "image") {
+      setFileUrls((prev) => [...prev, selected.url]);
+    } else {
+      setFileUrl(selected.url);
+    }
+
+    form.setValue("contentType", newType);
+    form.setValue("attachmentName", selected.name);
   };
 
   const handleSave = async (data: ContentForm) => {
@@ -128,32 +148,18 @@ export default function EditContentDialog({
       contentType: data.contentType,
       textContent: data.textContent,
       scheduledAt: data.scheduledAt,
-      file: file,
+      imageUrls:
+        data.contentType === "image" ? JSON.stringify(fileUrls) : undefined,
     });
     setActive(false);
   };
 
   const getFileIcon = () => {
-    if (file) {
-      const type = file.type;
-      if (type.startsWith("image/"))
-        return <ImageIcon className="size-10 text-emerald-500" />;
-      if (type.startsWith("video/"))
-        return <Video className="size-10 text-blue-500" />;
-      return <FileText className="size-10 text-orange-500" />;
-    }
-
-    // Return icon based on existing content if no new file
-    switch (content.contentType) {
-      case "image":
-        return <ImageIcon className="size-10 text-emerald-500" />;
-      case "video":
-        return <Video className="size-10 text-blue-500" />;
-      case "attachment":
-        return <FileText className="size-10 text-orange-500" />;
-      default:
-        return <UploadCloud className="size-10 text-primary/40" />;
-    }
+    const type = form.getValues("contentType");
+    if (type === "image")
+      return <ImageIcon className="size-10 text-emerald-500" />;
+    if (type === "video") return <Video className="size-10 text-blue-500" />;
+    return <FileText className="size-10 text-orange-500" />;
   };
 
   return (
@@ -287,118 +293,82 @@ export default function EditContentDialog({
                     </FormItem>
                   )}
                 />
+              ) : contentType === "image" ? (
+                <div className="space-y-4">
+                  <FormLabel className="font-bold text-slate-700">
+                    الصور (يمكنك اختيار أكثر من صورة)
+                  </FormLabel>
+
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                    {fileUrls.map((url, index) => (
+                      <div
+                        key={index}
+                        className="relative group aspect-video rounded-2xl overflow-hidden border border-slate-200 cursor-zoom-in"
+                        onClick={() => setSelectedImage(url)}
+                      >
+                        <img
+                          src={url}
+                          className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                          alt={`selected-${index}`}
+                        />
+                        <button
+                          type="button"
+                          onClick={() =>
+                            setFileUrls((prev) =>
+                              prev.filter((_, i) => i !== index),
+                            )
+                          }
+                          className="absolute top-2 right-2 size-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                        >
+                          <X className="size-4" />
+                        </button>
+                      </div>
+                    ))}
+                    <div
+                      onClick={() => setShowLibrary(true)}
+                      className="aspect-video rounded-2xl border-2 border-dashed border-slate-300 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center cursor-pointer transition-all gap-2 group"
+                    >
+                      <Plus className="size-6 text-slate-400 group-hover:text-primary" />
+                      <span className="text-xs font-bold text-slate-400 group-hover:text-primary">
+                        إضافة صورة
+                      </span>
+                    </div>
+                  </div>
+                </div>
               ) : (
                 <div className="space-y-4">
                   <FormLabel className="font-bold text-slate-700">
-                    الملف التعليمي
+                    ملف المحتوى (الفيديو / المرفق)
                   </FormLabel>
 
-                  {/* Current File Preview if exists and no new file selected */}
-                  {!file &&
-                    (content.videoUrl ||
-                      content.imageUrl ||
-                      content.attachmentUrl) && (
-                      <div className="p-4 bg-slate-50 rounded-2xl border border-slate-100 mb-4">
-                        <p className="text-xs font-bold text-slate-400 mb-2">
-                          المحتوى الحالي:
-                        </p>
-                        {content.imageUrl && (
-                          <div className="relative aspect-video w-full rounded-xl overflow-hidden shadow-sm">
-                            <Image
-                              fill
-                              src={content.imageUrl}
-                              alt={content.title}
-                              className="object-cover"
-                            />
-                          </div>
-                        )}
-                        {content.videoUrl && (
-                          <div className="rounded-xl overflow-hidden shadow-sm border bg-black aspect-video flex items-center justify-center">
-                            <Video className="size-12 text-white/20" />
-                            <p className="absolute text-white/50 text-xs font-bold mt-16 text-center px-4 truncate w-full">
-                              {content.videoUrl.split("/").pop()}
-                            </p>
-                          </div>
-                        )}
-                        {content.attachmentUrl && (
-                          <div className="flex items-center gap-3 p-3 bg-white rounded-xl border border-slate-200">
-                            <FileText className="size-6 text-orange-500" />
-                            <span className="text-sm font-bold text-slate-600 truncate flex-1">
-                              {content.attachmentName || "ملف مرفق"}
-                            </span>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                  <motion.div
-                    onDragOver={(e) => {
-                      e.preventDefault();
-                      setIsDragging(true);
-                    }}
-                    onDragLeave={() => setIsDragging(false)}
-                    onDrop={(e) => {
-                      e.preventDefault();
-                      setIsDragging(false);
-                      const droppedFile = e.dataTransfer.files?.[0];
-                      if (droppedFile) handleFileChange(droppedFile);
-                    }}
-                    onClick={() => fileInputRef.current?.click()}
-                    className={`
-                      relative group cursor-pointer border-2 border-dashed rounded-[32px] p-8 transition-all duration-300
-                      ${
-                        isDragging
-                          ? "bg-primary/10 border-primary scale-95"
-                          : "bg-slate-50 border-slate-200 hover:border-primary/50 hover:bg-white"
-                      }
-                      ${file ? "border-emerald-500/50 bg-emerald-50/50" : ""}
-                    `}
-                  >
-                    <input
-                      type="file"
-                      ref={fileInputRef}
-                      className="hidden"
-                      onChange={(e) => handleFileChange(e.target.files?.[0])}
-                      accept={
-                        contentType === "video"
-                          ? "video/*"
-                          : contentType === "image"
-                            ? "image/*"
-                            : "*"
-                      }
-                    />
-
-                    <div className="flex flex-col items-center justify-center text-center gap-4">
-                      <div
-                        className={`p-4 rounded-2xl ${
-                          file ? "bg-emerald-100" : "bg-white"
-                        } shadow-xl group-hover:scale-110 transition-transform`}
-                      >
-                        {getFileIcon()}
-                      </div>
-
-                      {file ? (
-                        <div className="animate-in fade-in slide-in-from-bottom-2">
-                          <p className="text-lg font-black text-emerald-700 truncate max-w-xs">
-                            {file.name}
-                          </p>
-                          <p className="text-sm text-emerald-600/60 font-medium">
-                            {(file.size / (1024 * 1024)).toFixed(2)} MB • جاهز
-                            للرفع
-                          </p>
-                        </div>
-                      ) : (
-                        <div>
-                          <p className="text-lg font-black text-slate-700">
-                            انقر هنا لتغيير الملف أو اسحبه
-                          </p>
-                          <p className="text-sm text-slate-500 font-medium">
-                            يمكنك استبدال الملف الحالي بملف جديد
-                          </p>
-                        </div>
+                  <div className="relative group overflow-hidden rounded-3xl border border-slate-200 bg-slate-50 p-6 flex items-center gap-6">
+                    <div className="size-16 rounded-2xl bg-white shadow-md flex items-center justify-center border border-slate-100">
+                      {getFileIcon()}
+                    </div>
+                    <div className="grow">
+                      <h4 className="font-bold text-slate-800 text-lg truncate">
+                        {form.watch("attachmentName") || "لم يتم اختيار ملف"}
+                      </h4>
+                      {fileUrl && (
+                        <a
+                          href={fileUrl}
+                          target="_blank"
+                          rel="noreferrer"
+                          className="text-xs font-bold text-primary hover:underline"
+                        >
+                          معاينة الملف
+                        </a>
                       )}
                     </div>
-                  </motion.div>
+                    <Button
+                      type="button"
+                      variant="secondary"
+                      onClick={() => setShowLibrary(true)}
+                      className="shrink-0 font-bold"
+                    >
+                      تغيير الملف
+                    </Button>
+                  </div>
                 </div>
               )}
 
@@ -432,6 +402,37 @@ export default function EditContentDialog({
           </Form>
         </div>
       </DialogContent>
+      <InstructorMediaLibrary
+        open={showLibrary}
+        onOpenChange={setShowLibrary}
+        onSelect={handleLibrarySelect}
+      />
+
+      {/* Lightbox for Preview */}
+      <Dialog
+        open={!!selectedImage}
+        onOpenChange={(open) => !open && setSelectedImage(null)}
+      >
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 overflow-hidden bg-black/90 border-none">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 size-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all"
+            >
+              <X className="size-6" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </Dialog>
   );
 }
+import InstructorMediaLibrary from "./InstructorMediaLibrary";
+import { FolderOpen, Plus } from "lucide-react";

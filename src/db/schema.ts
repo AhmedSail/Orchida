@@ -359,6 +359,7 @@ export const chapterContent = pgTable("chapterContent", {
   videoUrl: varchar("videoUrl", { length: 500 }),
   textContent: text("textContent"),
   imageUrl: varchar("imageUrl", { length: 500 }),
+  imageUrls: text("imageUrls"),
   attachmentUrl: varchar("attachmentUrl", { length: 500 }),
   attachmentName: varchar("attachmentName", { length: 255 }),
   orderIndex: integer("orderIndex").notNull(), // ترتيب المحتوى داخل الفصل

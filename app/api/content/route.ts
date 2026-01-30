@@ -24,11 +24,12 @@ export async function POST(req: Request) {
     const textContent = formData.get("textContent") as string | null;
     const attachmentName = formData.get("attachmentName") as string | null;
     const fileUrl = formData.get("fileUrl") as string | null;
+    const imageUrls = formData.get("imageUrls") as string | null;
     const scheduledAtStr = formData.get("scheduledAt") as string | null;
     const scheduledAt = scheduledAtStr ? new Date(scheduledAtStr) : null;
 
     // تحقق من وجود رابط الملف إذا لم يكن المحتوى نصيًا
-    if (!fileUrl && contentType !== "text") {
+    if (!fileUrl && !imageUrls && contentType !== "text") {
       return NextResponse.json(
         { error: "يجب توفير رابط الملف للأنواع غير النصية" },
         { status: 400 },
@@ -45,6 +46,7 @@ export async function POST(req: Request) {
       textContent: contentType === "text" ? textContent : null,
       videoUrl: contentType === "video" ? fileUrl : null,
       imageUrl: contentType === "image" ? fileUrl : null,
+      imageUrls: contentType === "image" ? imageUrls : null,
       attachmentUrl: contentType === "attachment" ? fileUrl : null,
       attachmentName,
       orderIndex: 1,

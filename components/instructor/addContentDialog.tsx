@@ -1,4 +1,4 @@
-import React, { useRef } from "react";
+"use client";
 import {
   Dialog,
   DialogContent,
@@ -34,6 +34,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import InstructorMediaLibrary from "./InstructorMediaLibrary";
 import { FolderOpen } from "lucide-react";
+import React, { useRef } from "react";
 
 const contentSchema = z.object({
   title: z.string().min(2, "العنوان مطلوب"),
@@ -68,6 +69,8 @@ export default function AddContentDialog({
   });
 
   const [fileUrl, setFileUrl] = React.useState<string>("");
+  const [fileUrls, setFileUrls] = React.useState<string[]>([]);
+  const [selectedImage, setSelectedImage] = React.useState<string | null>(null);
   const [showLibrary, setShowLibrary] = React.useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -77,6 +80,7 @@ export default function AddContentDialog({
     if (!active) {
       form.reset();
       setFileUrl("");
+      setFileUrls([]);
     }
   }, [active, form]);
 
@@ -85,8 +89,6 @@ export default function AddContentDialog({
     type: "image" | "video" | "file";
     name: string;
   }) => {
-    setFileUrl(selected.url);
-
     // Map library type to form content type
     const typeMap = {
       image: "image",
@@ -94,10 +96,15 @@ export default function AddContentDialog({
       file: "attachment",
     } as const;
 
-    form.setValue(
-      "contentType",
-      (typeMap[selected.type] as any) || "attachment",
-    );
+    const newType = (typeMap[selected.type] as any) || "attachment";
+
+    if (newType === "image") {
+      setFileUrls((prev) => [...prev, selected.url]);
+    } else {
+      setFileUrl(selected.url);
+    }
+
+    form.setValue("contentType", newType);
     form.setValue("attachmentName", selected.name);
   };
 
@@ -114,6 +121,14 @@ export default function AddContentDialog({
         if (data.textContent) {
           formData.append("textContent", data.textContent);
         }
+      } else if (data.contentType === "image") {
+        if (fileUrls.length === 0) {
+          Swal.fire("تنبيه", "يرجى اختيار صور من المكتبة", "warning");
+          return;
+        }
+        formData.append("imageUrls", JSON.stringify(fileUrls));
+        // Also set fileUrl for backward compatibility (the first image)
+        formData.append("fileUrl", fileUrls[0]);
       } else {
         if (!fileUrl) {
           Swal.fire("تنبيه", "يرجى اختيار ملف من المكتبة", "warning");
@@ -308,10 +323,52 @@ export default function AddContentDialog({
                       </FormItem>
                     )}
                   />
+                ) : contentType === "image" ? (
+                  <div className="space-y-4">
+                    <FormLabel className="font-bold text-slate-700">
+                      الصور (يمكنك اختيار أكثر من صورة)
+                    </FormLabel>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 gap-4">
+                      {fileUrls.map((url, index) => (
+                        <div
+                          key={index}
+                          className="relative group aspect-video rounded-2xl overflow-hidden border border-slate-200 cursor-zoom-in"
+                          onClick={() => setSelectedImage(url)}
+                        >
+                          <img
+                            src={url}
+                            className="w-full h-full object-cover group-hover:scale-105 transition-transform"
+                            alt={`selected-${index}`}
+                          />
+                          <button
+                            type="button"
+                            onClick={() =>
+                              setFileUrls((prev) =>
+                                prev.filter((_, i) => i !== index),
+                              )
+                            }
+                            className="absolute top-2 right-2 size-8 rounded-full bg-red-500 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                          >
+                            <X className="size-4" />
+                          </button>
+                        </div>
+                      ))}
+                      <div
+                        onClick={() => setShowLibrary(true)}
+                        className="aspect-video rounded-2xl border-2 border-dashed border-slate-300 hover:border-primary hover:bg-primary/5 flex flex-col items-center justify-center cursor-pointer transition-all gap-2 group"
+                      >
+                        <Plus className="size-6 text-slate-400 group-hover:text-primary" />
+                        <span className="text-xs font-bold text-slate-400 group-hover:text-primary">
+                          إضافة صورة
+                        </span>
+                      </div>
+                    </div>
+                  </div>
                 ) : (
                   <div className="space-y-4">
                     <FormLabel className="font-bold text-slate-700">
-                      ملف المحتوى (الفيديو / الصورة / المرفق)
+                      ملف المحتوى (الفيديو / المرفق)
                     </FormLabel>
 
                     {!fileUrl ? (
@@ -376,7 +433,10 @@ export default function AddContentDialog({
                       type="submit"
                       disabled={
                         form.formState.isSubmitting ||
-                        (contentType !== "text" && !fileUrl)
+                        (contentType !== "text" &&
+                          contentType !== "image" &&
+                          !fileUrl) ||
+                        (contentType === "image" && fileUrls.length === 0)
                       }
                       className="flex-2 h-14 rounded-2xl bg-primary hover:bg-primary/90 text-white font-black text-lg shadow-xl shadow-primary/20 transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
@@ -412,6 +472,30 @@ export default function AddContentDialog({
         onOpenChange={setShowLibrary}
         onSelect={handleLibrarySelect}
       />
+
+      {/* Lightbox for Preview */}
+      <Dialog
+        open={!!selectedImage}
+        onOpenChange={(open) => !open && setSelectedImage(null)}
+      >
+        <DialogContent className="max-w-[90vw] max-h-[90vh] p-0 overflow-hidden bg-black/90 border-none">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {selectedImage && (
+              <img
+                src={selectedImage}
+                alt="Preview"
+                className="max-w-full max-h-[85vh] object-contain rounded-lg shadow-2xl"
+              />
+            )}
+            <button
+              onClick={() => setSelectedImage(null)}
+              className="absolute top-4 right-4 size-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all"
+            >
+              <X className="size-6" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

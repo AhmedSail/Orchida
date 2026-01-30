@@ -77,6 +77,9 @@ const Clasification = ({
   const [aiPrompts, setAiPrompts] = useState<any[]>([]);
   const [loadingPrompts, setLoadingPrompts] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
+  const [selectedExpandedImage, setSelectedExpandedImage] = useState<
+    string | null
+  >(null);
   const router = useRouter();
 
   const fetchRecommendations = async () => {
@@ -478,7 +481,10 @@ const Clasification = ({
                       transition={{ delay: index * 0.1 }}
                       className="group relative flex flex-col bg-white dark:bg-zinc-950 rounded-[40px] border border-slate-200 dark:border-zinc-800 overflow-hidden shadow-xl hover:shadow-2xl transition-all h-full"
                     >
-                      <div className="relative h-44 overflow-hidden">
+                      <div
+                        className="relative h-44 overflow-hidden cursor-zoom-in"
+                        onClick={() => setSelectedExpandedImage(rec.imageUrl)}
+                      >
                         {rec.imageUrl ? (
                           <img
                             src={rec.imageUrl}
@@ -490,7 +496,9 @@ const Clasification = ({
                             <ImageIcon className="size-16" />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-linear-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-300">
+                          <Maximize2 className="size-8 text-white/70" />
+                        </div>
                       </div>
 
                       <div className="p-6 flex flex-col flex-1 space-y-3">
@@ -561,9 +569,34 @@ const Clasification = ({
           )}
         </motion.div>
       </AnimatePresence>
+
+      <Dialog
+        open={!!selectedExpandedImage}
+        onOpenChange={(open) => !open && setSelectedExpandedImage(null)}
+      >
+        <DialogContent className="max-w-[95vw] max-h-[95vh] p-0 overflow-hidden bg-black/95 border-none">
+          <div className="relative w-full h-full flex items-center justify-center p-4">
+            {selectedExpandedImage && (
+              <img
+                src={selectedExpandedImage}
+                alt="Expanded Recommendation"
+                className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl"
+              />
+            )}
+            <button
+              onClick={() => setSelectedExpandedImage(null)}
+              className="absolute top-4 right-4 size-10 rounded-full bg-white/10 hover:bg-white/20 backdrop-blur-md flex items-center justify-center text-white transition-all z-50"
+            >
+              <X className="size-6" />
+            </button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+import { Dialog, DialogContent } from "@/components/ui/dialog";
+import { Maximize2, X } from "lucide-react";
 
 // Placeholder Badge if UI folder doesn't have it (though most our projects do)
 const Badge = ({
