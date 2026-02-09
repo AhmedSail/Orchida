@@ -193,14 +193,18 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
 
       if (data.status === "eliminated") {
         setTimeout(() => setGameState("eliminated"), 1000);
-      } else if (data.status === "correct") {
-        // Wait for next question or manual trigger
-        // Do nothing, let user wait. Host will trigger next question or user polls.
-        // Actually, we are polling or waiting for socket game-started?
-        // Current logic: socket.on('game-started') triggers fetchMyQuestion.
-        // So we just wait.
       } else {
-        toast.error("حدث خطأ ما");
+        // Handle correct/wrong/submitted states
+        if (data.status === "correct") {
+          toast.success("إجابة صحيحة! 🎉");
+        } else if (data.status === "wrong") {
+          toast.error("إجابة خاطئة 😔");
+        } else {
+          toast.success("تم تسجيل الإجابة");
+        }
+
+        // Fetch next question immediately
+        fetchMyQuestion();
       }
     } catch (e) {
       toast.error("فشل في إرسال الإجابة");

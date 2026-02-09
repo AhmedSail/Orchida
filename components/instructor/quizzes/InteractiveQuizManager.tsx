@@ -105,32 +105,19 @@ export default function InteractiveQuizManager({
 
   const handleStartSession = async (quizId: string) => {
     try {
-      const { value: timeLimit, isDismissed } = await Swal.fire({
-        title: "وقت المسابقة (دقائق)",
-        text: "حدد الوقت المتاح لكل متسابق لإنهاء المسابقة بالكامل",
-        input: "number",
-        inputValue: 10,
-        inputPlaceholder: "أدخل الوقت بالدقائق",
-        showCancelButton: true,
-        confirmButtonText: "بدء الجلسة",
-        cancelButtonText: "إلغاء",
-        confirmButtonColor: "#10b981",
-      });
-
-      if (isDismissed) return;
-
       setLoading(true);
       const res = await fetch("/api/quizzes/sessions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           quizId,
-          timeLimit: timeLimit ? parseInt(timeLimit) : 0,
+          timeLimit: 0,
         }),
       });
 
       if (res.ok) {
         const session = await res.json();
+        // Construct target URL correctly using basePath
         const targetUrl = `${basePath}/quizzes/live/${session.pin}`;
         console.log("📍 Redirecting to:", targetUrl);
         console.log("📦 Session data:", session);
