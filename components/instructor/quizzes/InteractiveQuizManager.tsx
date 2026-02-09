@@ -164,194 +164,254 @@ export default function InteractiveQuizManager({
   };
 
   return (
-    <div className="space-y-8 p-6" dir="rtl">
-      {/* Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-black text-slate-900 flex items-center gap-3">
-            <Trophy className="size-8 text-amber-500" />
-            المسابقات التفاعلية
-          </h1>
-          <p className="text-slate-500 mt-1">
-            أنشئ وادر مسابقاتك الخاصة لزيادة تفاعل الطلاب
-          </p>
+    <div className="min-h-screen bg-slate-50 p-6 md:p-10 font-sans" dir="rtl">
+      <div className="max-w-7xl mx-auto space-y-10">
+        {/* Header Section */}
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-end gap-6">
+          <div className="space-y-2">
+            <h1 className="text-4xl font-black text-slate-900 flex items-center gap-3">
+              <span className="p-3 bg-linear-to-br from-indigo-500 to-purple-600 rounded-2xl shadow-lg shadow-indigo-500/20 text-white">
+                <Gamepad2 className="size-8" />
+              </span>
+              المسابقات التفاعلية
+            </h1>
+            <p className="text-slate-500 font-medium text-lg max-w-lg leading-relaxed">
+              إدارة جميع المسابقات الخاصة بك، إنشاء تحديات جديدة، ومتابعة
+              النتائج المباشرة.
+            </p>
+          </div>
+          <Link href={`${basePath}/quizzes/new`}>
+            <Button className="h-14 px-8 rounded-2xl bg-slate-900 hover:bg-slate-800 text-white font-bold text-lg shadow-xl shadow-slate-900/20 hover:shadow-2xl hover:scale-105 transition-all duration-300 gap-3 group">
+              <Plus className="size-6 group-hover:rotate-90 transition-transform duration-500" />
+              إنشاء مسابقة جديدة
+            </Button>
+          </Link>
         </div>
-        <Link href={`${basePath}/quizzes/new`}>
-          <Button className="rounded-2xl h-12 px-6 gap-2 bg-primary hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all hover:scale-105">
-            <Plus className="size-5" />
-            إنشاء مسابقة جديدة
-          </Button>
-        </Link>
-      </div>
 
-      {/* Stats & Search */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-        <Card className="rounded-[24px] border-slate-200 shadow-sm bg-blue-50/50">
-          <CardContent className="p-6 flex items-center gap-4">
-            <div className="size-12 rounded-2xl bg-blue-500 flex items-center justify-center text-white shrink-0">
-              <Gamepad2 className="size-6" />
+        {/* Stats & Search Bar */}
+        <div className="grid grid-cols-1 md:grid-cols-12 gap-6 bg-white p-4 rounded-[32px] shadow-sm border border-slate-100">
+          <div className="md:col-span-3 bg-indigo-50 rounded-[24px] p-6 flex flex-col justify-center relative overflow-hidden group">
+            <div className="absolute top-0 left-0 w-full h-1 bg-linear-to-r from-indigo-500 to-purple-500" />
+            <div className="relative z-10">
+              <span className="text-indigo-600 font-bold text-sm uppercase tracking-wider mb-2 block">
+                إجمالي المسابقات
+              </span>
+              <div className="flex items-baseline gap-2">
+                <span className="text-5xl font-black text-slate-900">
+                  {quizzes.length}
+                </span>
+                <span className="text-slate-400 font-bold">مسابقة</span>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-bold text-slate-500">
-                مجموع المسابقات
-              </p>
-              <h3 className="text-2xl font-black text-slate-900">
-                {quizzes.length}
-              </h3>
-            </div>
-          </CardContent>
-        </Card>
+            <Trophy className="absolute -bottom-4 -left-4 size-24 text-indigo-100 group-hover:scale-110 transition-transform duration-500" />
+          </div>
 
-        <div className="md:col-span-3 flex items-center gap-4">
-          <div className="relative flex-1">
-            <Search className="absolute right-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
-            <Input
-              placeholder="ابحث عن مسابقة..."
-              className="pr-12 h-14 rounded-2xl border-slate-200 bg-white focus:ring-primary shadow-sm"
+          <div className="md:col-span-9 flex items-center bg-slate-50 rounded-[24px] px-6 border border-slate-100 focus-within:border-indigo-300 focus-within:ring-4 focus-within:ring-indigo-100 transition-all duration-300">
+            <Search className="size-6 text-slate-400 ml-4" />
+            <input
+              type="text"
+              placeholder="ابحث عن اسم المسابقة..."
+              className="w-full h-24 bg-transparent border-none focus:ring-0 text-xl font-bold text-slate-700 placeholder:text-slate-300"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
         </div>
-      </div>
 
-      {/* Quiz List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <AnimatePresence mode="popLayout">
-          {filteredQuizzes.map((quiz, index) => (
-            <motion.div
-              key={quiz.id}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              transition={{ delay: index * 0.05 }}
-            >
-              <Card className="rounded-[32px] border-slate-200 overflow-hidden group hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-500">
-                <div className="relative h-44 bg-slate-100">
-                  {quiz.coverImage ? (
-                    <img
-                      src={quiz.coverImage}
-                      alt={quiz.title}
-                      className="size-full object-cover group-hover:scale-110 transition-transform duration-700"
-                    />
-                  ) : (
-                    <div className="size-full flex items-center justify-center bg-linear-to-br from-indigo-500 to-purple-600">
-                      <Trophy className="size-16 text-white/20" />
+        {/* Quiz Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          <AnimatePresence mode="popLayout">
+            {filteredQuizzes.map((quiz, index) => (
+              <motion.div
+                key={quiz.id}
+                layout
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9 }}
+                transition={{ duration: 0.4, delay: index * 0.05 }}
+                className="group relative"
+              >
+                <div className="absolute -inset-0.5 bg-linear-to-br from-indigo-500 via-purple-500 to-pink-500 rounded-[34px] opacity-0 group-hover:opacity-100 blur transition duration-500" />
+
+                <Card className="relative h-full flex flex-col rounded-[32px] border-slate-100 overflow-hidden bg-white shadow-sm hover:shadow-2xl transition-all duration-500">
+                  {/* Card Image Area */}
+                  <div className="relative h-56 bg-slate-100 overflow-hidden">
+                    <div className="absolute inset-0 bg-linear-to-t from-slate-900/60 to-transparent z-10" />
+
+                    {quiz.coverImage ? (
+                      <img
+                        src={quiz.coverImage}
+                        alt={quiz.title}
+                        className="size-full object-cover group-hover:scale-110 transition-transform duration-700"
+                      />
+                    ) : (
+                      <div className="size-full flex items-center justify-center bg-linear-to-br from-indigo-600 to-violet-600 group-hover:scale-110 transition-transform duration-700">
+                        <Gamepad2 className="size-20 text-white/20 rotate-12" />
+                      </div>
+                    )}
+
+                    <div className="absolute top-4 right-4 z-20 flex gap-2">
+                      <Badge className="bg-white/20 backdrop-blur-md text-white border-none px-3 py-1.5 rounded-xl font-bold">
+                        {quiz.questionCount} سؤال
+                      </Badge>
+                      {quiz.latestSessionStatus && (
+                        <Badge
+                          className={`border-none px-3 py-1.5 rounded-xl font-bold backdrop-blur-md ${
+                            quiz.latestSessionStatus === "active" ||
+                            quiz.latestSessionStatus === "in_progress"
+                              ? "bg-emerald-500/80 text-white animate-pulse"
+                              : "bg-slate-900/50 text-white"
+                          }`}
+                        >
+                          {quiz.latestSessionStatus === "active" ||
+                          quiz.latestSessionStatus === "in_progress"
+                            ? "مباشر الآن"
+                            : "منتهية"}
+                        </Badge>
+                      )}
                     </div>
-                  )}
-                  <div className="absolute top-4 right-4">
-                    <Badge className="bg-white/90 backdrop-blur-md text-slate-900 border-none shadow-sm rounded-xl py-1 px-3">
-                      {quiz.questionCount} أسئلة
-                    </Badge>
-                  </div>
-                </div>
 
-                <CardContent className="p-6">
-                  <div className="flex justify-between items-start gap-4 mb-4">
-                    <div>
-                      <h3 className="text-xl font-bold text-slate-900 line-clamp-1">
+                    <div className="absolute bottom-4 right-4 left-4 z-20">
+                      <h3 className="text-2xl font-black text-white leading-tight drop-shadow-md line-clamp-2">
                         {quiz.title}
                       </h3>
-                      <p className="text-sm text-slate-500 mt-1 line-clamp-2">
-                        {quiz.description || "لا يوجد وصف لهذه المسابقة"}
-                      </p>
-                    </div>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          className="rounded-xl shrink-0"
-                        >
-                          <MoreVertical className="size-5 text-slate-400" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent
-                        align="end"
-                        className="rounded-xl w-40"
-                      >
-                        <DropdownMenuItem asChild>
-                          <Link
-                            href={`${basePath}/quizzes/${quiz.id}/edit`}
-                            className="flex items-center gap-2 cursor-pointer"
-                          >
-                            <Edit className="size-4" /> تعديل المسابقة
-                          </Link>
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleDelete(quiz.id)}
-                          className="flex items-center gap-2 text-red-600 focus:text-red-700 cursor-pointer"
-                        >
-                          <Trash2 className="size-4" /> حذف المسابقة
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  <div className="flex items-center gap-2 pt-4 border-t border-slate-100">
-                    <Button
-                      onClick={() => {
-                        if (quiz.latestSessionStatus === "finished") {
-                          // Go to results page directly
-                          router.push(
-                            `${basePath}/quizzes/live/${quiz.latestSessionPin}?state=final`,
-                          );
-                        } else if (
-                          quiz.latestSessionStatus === "active" ||
-                          quiz.latestSessionStatus === "waiting"
-                        ) {
-                          router.push(
-                            `${basePath}/quizzes/live/${quiz.latestSessionPin}`,
-                          );
-                        } else {
-                          handleStartSession(quiz.id);
-                        }
-                      }}
-                      disabled={loading}
-                      className={`flex-1 rounded-2xl h-11 text-white font-bold gap-2 shadow-sm ${
-                        quiz.latestSessionStatus === "finished"
-                          ? "bg-blue-500 hover:bg-blue-600"
-                          : quiz.latestSessionStatus === "waiting" ||
-                              quiz.latestSessionStatus === "in_progress"
-                            ? "bg-amber-500 hover:bg-amber-600"
-                            : "bg-emerald-500 hover:bg-emerald-600"
-                      }`}
-                    >
-                      {quiz.latestSessionStatus === "finished" ? (
-                        <>
-                          <Trophy className="size-4" /> عرض النتائج
-                        </>
-                      ) : quiz.latestSessionStatus === "waiting" ||
-                        quiz.latestSessionStatus === "in_progress" ? (
-                        <>
-                          <Timer className="size-4" /> متابعة المسابقة
-                        </>
-                      ) : (
-                        <>
-                          <Play className="size-4" /> بدء المسابقة الآن
-                        </>
+                      {quiz.description && (
+                        <p className="text-white/80 text-sm mt-1 line-clamp-1 font-medium">
+                          {quiz.description}
+                        </p>
                       )}
-                    </Button>
+                    </div>
                   </div>
-                </CardContent>
-              </Card>
-            </motion.div>
-          ))}
-        </AnimatePresence>
 
-        {filteredQuizzes.length === 0 && (
-          <div className="col-span-full py-20 flex flex-col items-center justify-center gap-4 bg-slate-50 rounded-[40px] border-2 border-dashed border-slate-200">
-            <div className="size-20 rounded-full bg-slate-100 flex items-center justify-center">
-              <Gamepad2 className="size-10 text-slate-300" />
-            </div>
-            <p className="text-slate-500 font-bold">لا توجد مسابقات حالياً</p>
-            <Link href={`${basePath}/quizzes/new`}>
-              <Button variant="outline" className="rounded-xl border-slate-300">
-                أنشئ مسابقتك الأولى
+                  <CardContent className="p-6 flex-1 flex flex-col justify-between gap-6">
+                    {/* Action Area */}
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between text-sm text-slate-400 font-bold px-1">
+                        <span className="flex items-center gap-1">
+                          <Timer className="size-4" />
+                          تم الإنشاء:{" "}
+                          {new Date(quiz.createdAt).toLocaleDateString("ar-EG")}
+                        </span>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-3 pt-4 border-t border-slate-50">
+                      <Button
+                        onClick={() => {
+                          if (quiz.latestSessionStatus === "finished") {
+                            router.push(
+                              `${basePath}/quizzes/live/${quiz.latestSessionPin}?state=final`,
+                            );
+                          } else if (
+                            quiz.latestSessionStatus === "active" ||
+                            quiz.latestSessionStatus === "waiting" ||
+                            quiz.latestSessionStatus === "in_progress"
+                          ) {
+                            // Assuming active/waiting/in_progress all mean joinable/viewable
+                            router.push(
+                              `${basePath}/quizzes/live/${quiz.latestSessionPin}`,
+                            );
+                          } else {
+                            handleStartSession(quiz.id);
+                          }
+                        }}
+                        disabled={loading}
+                        className={`flex-1 h-12 rounded-2xl font-bold text-base shadow-lg transition-all hover:scale-105 active:scale-95 ${
+                          quiz.latestSessionStatus === "active" ||
+                          quiz.latestSessionStatus === "in_progress" ||
+                          quiz.latestSessionStatus === "waiting"
+                            ? "bg-emerald-500 hover:bg-emerald-600 text-white shadow-emerald-500/20"
+                            : quiz.latestSessionStatus === "finished"
+                              ? "bg-slate-800 hover:bg-slate-900 text-white shadow-slate-900/20"
+                              : "bg-indigo-600 hover:bg-indigo-700 text-white shadow-indigo-500/20"
+                        }`}
+                      >
+                        {quiz.latestSessionStatus === "active" ||
+                        quiz.latestSessionStatus === "waiting" ||
+                        quiz.latestSessionStatus === "in_progress" ? (
+                          <>
+                            {" "}
+                            <Timer className="size-5 ml-2" /> متابعة الجلسة{" "}
+                          </>
+                        ) : quiz.latestSessionStatus === "finished" ? (
+                          <>
+                            {" "}
+                            <Trophy className="size-5 ml-2" /> النتائج{" "}
+                          </>
+                        ) : (
+                          <>
+                            {" "}
+                            <Play className="size-5 ml-2" /> ابدأ الآن{" "}
+                          </>
+                        )}
+                      </Button>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            className="size-12 rounded-2xl border-2 border-slate-100 hover:bg-slate-50 hover:border-slate-200 text-slate-400 hover:text-slate-600 transition-colors"
+                          >
+                            <MoreVertical className="size-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                          align="end"
+                          className="rounded-[20px] p-2 w-48 shadow-xl border-slate-100"
+                        >
+                          <DropdownMenuItem
+                            asChild
+                            className="rounded-xl p-3 cursor-pointer focus:bg-indigo-50 focus:text-indigo-600 font-bold text-slate-600"
+                          >
+                            <Link
+                              href={`${basePath}/quizzes/${quiz.id}/edit`}
+                              className="flex items-center gap-3"
+                            >
+                              <Edit className="size-4" /> تعديل المسابقة
+                            </Link>
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleDelete(quiz.id)}
+                            className="rounded-xl p-3 cursor-pointer text-red-500 focus:bg-red-50 focus:text-red-700 font-bold flex items-center gap-3 mt-1"
+                          >
+                            <Trash2 className="size-4" /> حذف المسابقة
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </CardContent>
+                </Card>
+              </motion.div>
+            ))}
+          </AnimatePresence>
+
+          {filteredQuizzes.length === 0 && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="col-span-full py-32 flex flex-col items-center justify-center text-center space-y-6 bg-white rounded-[40px] border-2 border-dashed border-slate-200"
+            >
+              <div className="size-24 rounded-3xl bg-slate-50 flex items-center justify-center rotate-3 transform shadow-sm">
+                <Search className="size-10 text-slate-300" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black text-slate-900">
+                  لا توجد مسابقات مطابقة
+                </h3>
+                <p className="text-slate-400 font-medium">
+                  جرب البحث بكلمات مختلفة أو ابدأ بإنشاء مسابقة جديدة
+                </p>
+              </div>
+              <Button
+                variant="outline"
+                onClick={() => setSearchTerm("")}
+                className="rounded-xl border-slate-200 text-slate-500 font-bold"
+              >
+                مسح البحث
               </Button>
-            </Link>
-          </div>
-        )}
+            </motion.div>
+          )}
+        </div>
       </div>
     </div>
   );

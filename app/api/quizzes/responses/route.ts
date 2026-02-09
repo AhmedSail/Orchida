@@ -105,9 +105,9 @@ export async function POST(req: Request) {
       .set(updateData)
       .where(eq(quizParticipants.id, participantId));
 
-    // 6. Trigger pusher event to host
-    const { pusherServer } = await import("@/lib/pusher");
-    await pusherServer.trigger(`session-${pin}`, "answer-submitted", {
+    // 6. Trigger Socket.io event to host
+    const { emitToRoom } = await import("@/lib/socket-client");
+    await emitToRoom(`session-${pin}`, "answer-submitted", {
       participantId,
       questionId,
       pointsEarned,
