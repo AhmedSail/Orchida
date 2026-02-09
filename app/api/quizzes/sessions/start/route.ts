@@ -22,8 +22,10 @@ export async function POST(req: Request) {
       })
       .where(eq(quizSessions.pin, pin));
 
-    const { pusherServer } = await import("@/lib/pusher");
-    await pusherServer.trigger(`session-${pin}`, "game-started", {});
+    const { emitToRoom } = await import("@/lib/socket-client");
+    await emitToRoom(`session-${pin}`, "game-started", {
+      timestamp: new Date().toISOString(),
+    });
 
     return NextResponse.json({ success: true });
   } catch (error) {

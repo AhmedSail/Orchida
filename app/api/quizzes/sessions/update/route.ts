@@ -23,19 +23,21 @@ export async function POST(req: Request) {
       // Allow admins even if not host? Our current system says host is the creator/admin starting it.
     }
 
-    // 2. Map host state to Pusher events
-    const { pusherServer } = await import("@/lib/pusher");
+    // 2. Map host state to Socket.io events
+    const { emitToRoom } = await import("@/lib/socket-client");
 
     if (event === "show-results") {
-      await pusherServer.trigger(`session-${pin}`, "show-results", {});
+      await emitToRoom(`session-${pin}`, "show-results", {});
     } else if (event === "game-finished") {
       await db
         .update(quizSessions)
         .set({ status: "finished" })
         .where(eq(quizSessions.pin, pin));
-      await pusherServer.trigger(`session-${pin}`, "game-finished", {});
+      await emitToRoom(`session-${pin}`, "game-finished", {
+        timestamp: new Date().toISOString(),
+      });
     } else if (event === "show-leaderboard") {
-      await pusherServer.trigger(`session-${pin}`, "show-leaderboard", data);
+      await emitToRoom(`session-${pin}`, "show-leaderboard", data);
     }
 
     return NextResponse.json({ success: true });

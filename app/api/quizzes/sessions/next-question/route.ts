@@ -53,9 +53,9 @@ export async function POST(req: Request) {
       })
       .where(eq(quizSessions.id, quizSession.id));
 
-    // 3. Trigger pusher event with question data (WITHOUT isCorrect flag for players)
-    const { pusherServer } = await import("@/lib/pusher");
-    await pusherServer.trigger(`session-${pin}`, "new-question", {
+    // 3. Trigger Socket.io event with question data (WITHOUT isCorrect flag for players)
+    const { emitToRoom } = await import("@/lib/socket-client");
+    await emitToRoom(`session-${pin}`, "new-question", {
       id: question.id,
       text: question.text,
       type: question.type,

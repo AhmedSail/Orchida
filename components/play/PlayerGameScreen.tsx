@@ -14,7 +14,7 @@ import {
   Star,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
-import PusherClient from "pusher-js";
+import { io, Socket } from "socket.io-client";
 import { toast } from "sonner";
 
 interface Props {
@@ -96,29 +96,83 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
     fetchMyQuestion();
     fetchParticipantData();
 
-    // 1. Pusher real-time listening
-    const pusher = new PusherClient(process.env.NEXT_PUBLIC_PUSHER_KEY!, {
-      cluster: process.env.NEXT_PUBLIC_PUSHER_CLUSTER!,
-    });
+    // 1. Socket.io real-time listening
+    const socketUrl =
+      process.env.NEXT_PUBLIC_SOCKET_URL || "http://localhost:3001";
+    let socket: Socket | null = null;
 
-    const channel = pusher.subscribe(`session-${pin}`);
+    try {
+      socket = io(socketUrl, {
+        transports: ["websocket", "polling"],
+        reconnection: true,
+        reconnectionAttempts: 5,
+        reconnectionDelay: 1000,
+      });
 
-    channel.bind("game-started", () => {
-      fetchMyQuestion();
-    });
+      socket.on("connect", () => {
+        console.log("✅ Player Socket.io connected:", socket?.id);
+        // Join the quiz room
+        socket?.emit("join-room", `session-${pin}`);
+      });
 
-    channel.bind("game-finished", () => {
-      setGameState("finished");
-    });
+      socket.on("disconnect", () => {
+        console.log("❌ Player Socket.io disconnected");
+      });
+
+      socket.on("game-started", () => {
+        console.log("🎮 Player: Game started");
+        fetchMyQuestion();
+      });
+
+      socket.on("game-finished", () => {
+        console.log("🏁 Player: Game finished");
+        setGameState("finished");
+      });
+    } catch (error) {
+      console.error("Failed to initialize Socket.io:", error);
+    }
 
     return () => {
-      pusher.unsubscribe(`session-${pin}`);
-      pusher.disconnect();
+      try {
+        if (socket) {
+          socket.emit("leave-room", `session-${pin}`);
+          socket.close();
+        }
+      } catch (e) {
+        console.error("Cleanup error:", e);
+      }
     };
   }, [pin, participantId]);
 
+  // Timer Logic
+  const [timeLeft, setTimeLeft] = useState(0);
+  const [totalTime, setTotalTime] = useState(0);
+
+  useEffect(() => {
+    if (gameState === "question" && currentQuestion?.timer) {
+      setTotalTime(currentQuestion.timer);
+      // Reset timer based on when we received the question
+      // Ideally, server sends "startTime", but for now we rely on client receive time
+      // or we can just start countdown from full duration for simplicity in client-side sync
+      // Better: set timeLeft to duration and decrement.
+      setTimeLeft(currentQuestion.timer);
+
+      const timerInterval = setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 0) {
+            clearInterval(timerInterval);
+            return 0;
+          }
+          return prev - 1; // Decrement by 1 second
+        });
+      }, 1000);
+
+      return () => clearInterval(timerInterval);
+    }
+  }, [currentQuestion, gameState]);
+
   const handleAnswer = async (optionId: string) => {
-    if (hasAnswered || gameState !== "question") return;
+    if (hasAnswered || gameState !== "question" || timeLeft <= 0) return;
     setHasAnswered(true);
     try {
       const responseTime = Date.now() - questionStartTime;
@@ -140,9 +194,11 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
       if (data.status === "eliminated") {
         setTimeout(() => setGameState("eliminated"), 1000);
       } else if (data.status === "correct") {
-        setTimeout(() => {
-          fetchMyQuestion();
-        }, 1000);
+        // Wait for next question or manual trigger
+        // Do nothing, let user wait. Host will trigger next question or user polls.
+        // Actually, we are polling or waiting for socket game-started?
+        // Current logic: socket.on('game-started') triggers fetchMyQuestion.
+        // So we just wait.
       } else {
         toast.error("حدث خطأ ما");
       }
@@ -150,6 +206,8 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
       toast.error("فشل في إرسال الإجابة");
     }
   };
+
+  // ... (rest of imports and setup)
 
   const [finalRank, setFinalRank] = useState<{
     rank: number;
@@ -222,32 +280,57 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
   }
 
   if (gameState === "question") {
+    const progressPercentage = (timeLeft / totalTime) * 100;
+    const isTimeCritical = timeLeft < 5;
+
     return (
       <div className="min-h-screen bg-slate-900 p-4 flex flex-col" dir="rtl">
-        <div className="flex justify-between items-center mb-6 bg-white/5 p-4 rounded-2xl border border-white/10">
-          <div className="flex items-center gap-3">
-            <div className="size-10 bg-primary/20 rounded-full flex items-center justify-center">
-              <User className="size-5 text-primary" />
-            </div>
-            <div className="text-right">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">
-                اللاعب{" "}
-                {rank > 0 && (
-                  <span className="text-emerald-400 text-xs">#{rank}</span>
-                )}
-              </p>
-              <p className="font-bold text-white text-sm">{nickname}</p>
-            </div>
-          </div>
-          <div className="flex items-center gap-3">
-            <div className="text-left">
-              <p className="text-[10px] text-slate-400 font-bold uppercase">
-                النقاط
-              </p>
-              <p className="font-black text-amber-500 text-lg">{score}</p>
-            </div>
-            <div className="size-10 bg-amber-500/20 rounded-full flex items-center justify-center">
-              <Star className="size-5 text-amber-500" />
+        {/* Header with Timer */}
+        <div className="flex justify-between items-stretch mb-6 gap-3">
+          <div className="flex flex-col gap-2 flex-1">
+            <div className="flex justify-between items-center bg-white/5 p-4 rounded-2xl border border-white/10 relative overflow-hidden">
+              {/* Progress Bar Background */}
+              <div className="absolute bottom-0 left-0 right-0 h-1 bg-white/10">
+                <motion.div
+                  className={`h-full ${isTimeCritical ? "bg-red-500" : "bg-emerald-500"}`}
+                  initial={{ width: "100%" }}
+                  animate={{ width: `${progressPercentage}%` }}
+                  transition={{ duration: 1, ease: "linear" }}
+                />
+              </div>
+
+              <div className="flex items-center gap-3 relative z-10">
+                <div className="size-10 bg-primary/20 rounded-full flex items-center justify-center">
+                  <User className="size-5 text-primary" />
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-white text-sm truncate max-w-[100px]">
+                    {nickname}
+                  </p>
+                  <p className="text-[10px] text-slate-400 font-bold uppercase">
+                    النقاط: <span className="text-amber-500">{score}</span>
+                  </p>
+                </div>
+              </div>
+
+              {/* Timer Display */}
+              <div
+                className={`flex flex-col items-center justify-center px-4 py-1 rounded-xl border ${isTimeCritical ? "bg-red-500/20 border-red-500/50" : "bg-slate-800 border-white/10"}`}
+              >
+                <div className="flex items-center gap-2">
+                  <Clock
+                    className={`size-4 ${isTimeCritical ? "text-red-400 animate-pulse" : "text-slate-400"}`}
+                  />
+                  <span
+                    className={`text-2xl font-black tabular-nums leading-none ${isTimeCritical ? "text-red-400" : "text-white"}`}
+                  >
+                    {timeLeft}
+                  </span>
+                </div>
+                <span className="text-[8px] uppercase font-bold text-slate-500">
+                  ثانية
+                </span>
+              </div>
             </div>
           </div>
         </div>
@@ -266,8 +349,18 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
           </div>
         ) : (
           <div className="flex-1 flex flex-col gap-4">
-            <div className="p-8 bg-white/5 rounded-[32px] border border-white/10 text-center mb-4 min-h-[160px] flex items-center justify-center">
-              <h2 className="text-2xl font-bold text-white leading-relaxed">
+            <div className="p-8 bg-white/5 rounded-[32px] border border-white/10 text-center mb-4 min-h-[160px] flex items-center justify-center relative overflow-hidden">
+              {/* Timeout Overlay */}
+              {timeLeft === 0 && (
+                <div className="absolute inset-0 bg-red-500/90 z-20 flex flex-col items-center justify-center backdrop-blur-sm animate-in fade-in">
+                  <Clock className="size-16 text-white mb-4" />
+                  <h2 className="text-3xl font-black text-white">
+                    انتهى الوقت!
+                  </h2>
+                </div>
+              )}
+
+              <h2 className="text-2xl font-bold text-white leading-relaxed relative z-10">
                 {currentQuestion?.text}
               </h2>
             </div>
@@ -276,11 +369,22 @@ export default function PlayerGameScreen({ pin, participantId }: Props) {
               {currentQuestion?.options?.map((option: any, idx: number) => (
                 <button
                   key={option.id}
+                  disabled={timeLeft === 0}
                   onClick={() => handleAnswer(option.id)}
-                  className="relative h-full min-h-[80px] rounded-[24px] bg-white/10 hover:bg-white/20 active:scale-95 border-2 border-white/10 hover:border-primary/50 text-white text-xl font-bold transition-all flex items-center justify-between px-8 group"
+                  className={`relative h-full min-h-[80px] rounded-[24px] border-2 text-white text-xl font-bold transition-all flex items-center justify-between px-8 group ${
+                    timeLeft === 0
+                      ? "bg-slate-800 border-slate-700 opacity-50 cursor-not-allowed"
+                      : "bg-white/10 hover:bg-white/20 active:scale-95 border-white/10 hover:border-primary/50"
+                  }`}
                 >
                   <span>{option.text}</span>
-                  <div className="size-8 rounded-full bg-white/10 group-hover:bg-primary group-hover:text-white flex items-center justify-center text-sm font-black transition-colors">
+                  <div
+                    className={`size-8 rounded-full flex items-center justify-center text-sm font-black transition-colors ${
+                      timeLeft === 0
+                        ? "bg-slate-700 text-slate-500"
+                        : "bg-white/10 group-hover:bg-primary group-hover:text-white"
+                    }`}
+                  >
                     {idx + 1}
                   </div>
                 </button>
