@@ -443,8 +443,14 @@ export default function LiveHostGame({
                   )}
                 </div>
               </div>
-              <div className="text-2xl font-black text-emerald-500">
-                {p.score}
+              <div className="flex flex-col items-end gap-1">
+                <div className="text-2xl font-black text-emerald-500">
+                  {p.score}
+                </div>
+                <div className="flex items-center gap-1 text-xs text-slate-500 font-bold bg-slate-100 px-2 py-1 rounded-lg">
+                  <Clock className="size-3" />
+                  <span>{((p.totalTime || 0) / 1000).toFixed(1)} ثانية</span>
+                </div>
               </div>
             </motion.div>
           ))}
