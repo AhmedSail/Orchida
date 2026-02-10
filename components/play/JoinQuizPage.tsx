@@ -4,15 +4,10 @@ import React, { useState } from "react";
 import { Gamepad2, ArrowLeft } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-  CardDescription,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import Image from "next/image";
 
 export default function JoinQuizPage() {
   const [pin, setPin] = useState("");
@@ -73,38 +68,50 @@ export default function JoinQuizPage() {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 flex items-center justify-center p-4 overflow-hidden relative">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4 overflow-hidden relative direction-rtl">
       {/* Background Decor */}
-      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none opacity-20">
-        <div className="absolute -top-20 -left-20 size-80 bg-primary/30 rounded-full blur-[100px]" />
-        <div className="absolute -bottom-20 -right-20 size-80 bg-purple-500/30 rounded-full blur-[100px]" />
+      <div className="absolute top-0 left-0 w-full h-full overflow-hidden pointer-events-none">
+        <div className="absolute -top-20 -left-20 size-96 bg-primary/10 rounded-full blur-[100px]" />
+        <div className="absolute top-1/3 right-0 size-80 bg-secondary/50 rounded-full blur-[100px]" />
+        <div className="absolute -bottom-20 -right-20 size-96 bg-primary/10 rounded-full blur-[100px]" />
       </div>
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.9 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        className="w-full max-w-md z-10"
+        transition={{ duration: 0.5, type: "spring" }}
+        className="w-full max-w-md z-10 relative"
       >
         <div className="text-center mb-10">
-          <div className="size-24 bg-white rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-primary/20 rotate-12 mb-6">
+          <motion.div
+            whileHover={{ rotate: 0, scale: 1.05 }}
+            className="size-24 bg-card rounded-[32px] flex items-center justify-center mx-auto shadow-2xl shadow-primary/10 rotate-12 mb-6 border border-border"
+          >
             <Gamepad2 className="size-12 text-primary -rotate-12" />
-          </div>
-          <h1 className="text-4xl font-black text-white tracking-widest uppercase italic">
-            Orchida Quiz
+          </motion.div>
+          <h1 className="text-4xl font-black text-foreground tracking-widest uppercase italic">
+            مسابقة أوركيدة
           </h1>
-          <p className="text-slate-400 mt-2 font-bold italic">
+          <p className="text-muted-foreground mt-2 font-bold italic">
             أدخل الرمز وابدأ التحدي!
           </p>
         </div>
 
-        <Card className="rounded-[40px] border-none shadow-[0_20px_50px_rgba(0,0,0,0.3)] bg-slate-800/50 backdrop-blur-xl ring-1 ring-white/10 overflow-hidden border-b-8 border-slate-900">
+        <Card className="rounded-[40px] border-border/50 shadow-2xl bg-card/80 backdrop-blur-xl ring-1 ring-white/10 overflow-hidden">
           <CardContent className="p-8">
             {step === 1 ? (
               <div className="space-y-6">
+                <Image
+                  src="/logo.png"
+                  alt="Logo"
+                  width={100}
+                  height={100}
+                  className="mx-auto"
+                />
                 <Input
                   type="text"
-                  placeholder="رمز المسابقة (PIN)"
-                  className="h-20 text-center text-4xl font-black tracking-[0.3em] rounded-3xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all uppercase"
+                  placeholder="PIN"
+                  className="h-20 text-center text-4xl font-black tracking-[0.3em] rounded-3xl bg-secondary/50 border-input text-foreground placeholder:text-muted-foreground/50 focus:ring-primary focus:border-primary transition-all uppercase shadow-inner"
                   maxLength={6}
                   value={pin}
                   onChange={(e) =>
@@ -113,7 +120,7 @@ export default function JoinQuizPage() {
                   onKeyDown={(e) => e.key === "Enter" && handleCheckPin()}
                 />
                 <Button
-                  className="w-full h-16 rounded-3xl text-xl font-black bg-white text-slate-900 hover:bg-slate-100 shadow-xl shadow-white/5 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-16 rounded-3xl text-xl font-black bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   onClick={handleCheckPin}
                   disabled={loading}
                 >
@@ -122,24 +129,24 @@ export default function JoinQuizPage() {
               </div>
             ) : (
               <div className="space-y-6">
-                <div className="flex items-center gap-2 mb-4">
+                <div className="flex items-center gap-2 mb-4 justify-between">
+                  <span className="text-muted-foreground font-bold uppercase text-xs tracking-widest">
+                    بيانات اللاعب
+                  </span>
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-white hover:bg-white/10"
+                    className="text-muted-foreground hover:text-foreground hover:bg-secondary/80 rounded-full"
                     onClick={() => setStep(1)}
                   >
                     <ArrowLeft className="size-5" />
                   </Button>
-                  <span className="text-slate-400 font-bold uppercase text-xs tracking-widest">
-                    خطوة واحدة متبقية
-                  </span>
                 </div>
                 <div className="space-y-4">
                   <Input
                     type="text"
                     placeholder="اسمك المستعار (للمسابقة)"
-                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-secondary/30 border-input text-foreground placeholder:text-muted-foreground/50 focus:ring-primary focus:border-primary transition-all"
                     maxLength={15}
                     value={nickname}
                     onChange={(e) => setNickname(e.target.value)}
@@ -147,7 +154,7 @@ export default function JoinQuizPage() {
                   <Input
                     type="text"
                     placeholder="اسمك الحقيقي"
-                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-secondary/30 border-input text-foreground placeholder:text-muted-foreground/50 focus:ring-primary focus:border-primary transition-all"
                     maxLength={50}
                     value={realName}
                     onChange={(e) => setRealName(e.target.value)}
@@ -155,7 +162,7 @@ export default function JoinQuizPage() {
                   <Input
                     type="tel"
                     placeholder="رقم الهاتف"
-                    className="h-14 text-center text-xl font-bold rounded-2xl bg-slate-900/50 border-slate-700 text-white placeholder:text-slate-600 focus:ring-primary focus:border-primary transition-all"
+                    className="h-14 text-center text-xl font-bold rounded-2xl bg-secondary/30 border-input text-foreground placeholder:text-muted-foreground/50 focus:ring-primary focus:border-primary transition-all"
                     maxLength={15}
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
@@ -163,7 +170,7 @@ export default function JoinQuizPage() {
                   />
                 </div>
                 <Button
-                  className="w-full h-16 rounded-3xl text-xl font-black bg-primary text-white hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
+                  className="w-full h-16 rounded-3xl text-xl font-black bg-primary text-primary-foreground hover:bg-primary/90 shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98]"
                   onClick={handleJoin}
                   disabled={loading}
                 >
@@ -174,7 +181,7 @@ export default function JoinQuizPage() {
           </CardContent>
         </Card>
 
-        <p className="text-center text-slate-500 mt-8 text-xs font-bold uppercase tracking-widest">
+        <p className="text-center text-muted-foreground/60 mt-8 text-xs font-bold uppercase tracking-widest">
           أوركيدة للخدمات الرقمية والأكاديمية &copy; 2026
         </p>
       </motion.div>
