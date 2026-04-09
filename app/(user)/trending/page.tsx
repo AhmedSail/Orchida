@@ -7,6 +7,9 @@ import { Metadata } from "next";
 export const metadata: Metadata = {
   title: "المنتجات الرائجة | أوركيدة",
   description: "استعرض آخر المنتجات الرائجة في أوركيدة للخدمات الرقمية.",
+  alternates: {
+    canonical: "https://www.orchida-ods.com/trending",
+  },
 };
 
 export default async function TrendingPage() {
