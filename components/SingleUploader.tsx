@@ -11,6 +11,7 @@ type SingleUploaderProps = {
   onChange: (url: string) => void;
   initialUrl?: string;
   required?: boolean;
+  onUploadChange?: (isUploading: boolean) => void;
 };
 
 export function SingleUploader({
@@ -18,6 +19,7 @@ export function SingleUploader({
   onChange,
   initialUrl = "",
   required = false,
+  onUploadChange,
 }: SingleUploaderProps) {
   const [fileUrl, setFileUrl] = useState<string>(initialUrl);
   const [previewUrl, setPreviewUrl] = useState<string>(initialUrl);
@@ -33,6 +35,7 @@ export function SingleUploader({
 
   async function handleFileUpload(file: File) {
     setProgress(0);
+    onUploadChange?.(true);
 
     // إنشاء معاينة فورية
     const objectUrl = URL.createObjectURL(file);
@@ -49,9 +52,11 @@ export function SingleUploader({
       setFileUrl(url);
       setPreviewUrl(url); // تحديث الرابط بالرابط الحقيقي
       setProgress("COMPLETE");
+      onUploadChange?.(false);
       onChange(url);
     } catch (err) {
       setProgress("ERROR");
+      onUploadChange?.(false);
       setPreviewUrl("");
       setIsVideo(false);
       Swal.fire({

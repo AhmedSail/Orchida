@@ -92,6 +92,11 @@ export function AppSidebar({ user }: { user: User }) {
       icon: MessageSquareText,
       url: `/admin/${user.id}/sms/templates`,
     },
+    {
+      title: "المنتجات الرائجة",
+      icon: Trophy,
+      url: `/admin/${user.id}/trending-products`,
+    },
   ];
 
   const NavItem = ({ item }: { item: (typeof menuItems)[0] }) => (
