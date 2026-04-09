@@ -121,8 +121,8 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
                       course.currency === "ILS"
                         ? "₪"
                         : course.currency === "USD"
-                        ? "$"
-                        : "JOD"
+                          ? "$"
+                          : "JOD"
                     }`
                   : "مجاني"}
               </div>
@@ -191,7 +191,7 @@ const CoursesUser = ({ allCourses }: { allCourses: UserCourse[] }) => {
           }}
           disabled={loadingAll}
           variant="outline"
-          className="px-8 h-12 rounded-full border-2 border-primary text-primary hover:bg-primary hover:text-white transition-all duration-300 text-lg group bg-transparent"
+          className="h-16 px-14 rounded-full bg-gray-900 text-white hover:bg-primary transition-all  hover:text-white duration-500 shadow-2xl hover:scale-105 text-lg font-bold"
         >
           {loadingAll ? (
             <div className="w-5 h-5 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
