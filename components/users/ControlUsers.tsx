@@ -649,38 +649,63 @@ const ControlUsers = ({
 
       {/* Pagination Section */}
       {totalPages > 1 && (
-        <div className="flex justify-center items-center gap-4 pt-10">
+        <div className="flex justify-center items-center gap-4 pt-10 flex-wrap">
           <Button
             variant="outline"
             disabled={currentPage === 1}
             onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
-            className="rounded-2xl size-12 p-0 border-slate-200"
+            className="rounded-2xl size-12 p-0 border-slate-200 shadow-sm"
           >
             <ChevronRight className="size-5" />
           </Button>
 
-          <div className="flex gap-2">
-            {Array.from({ length: totalPages }).map((_, i) => (
-              <Button
-                key={i}
-                variant={currentPage === i + 1 ? "default" : "ghost"}
-                onClick={() => setCurrentPage(i + 1)}
-                className={`size-12 rounded-2xl font-black text-lg transition-all ${
-                  currentPage === i + 1
-                    ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
-                    : "text-slate-400 hover:bg-primary/5 hover:text-primary"
-                }`}
-              >
-                {i + 1}
-              </Button>
-            ))}
+          <div className="flex items-center gap-2">
+            {Array.from({ length: totalPages }).map((_, i) => {
+              const pageNumber = i + 1;
+              const isFirstPage = pageNumber === 1;
+              const isLastPage = pageNumber === totalPages;
+              const isAdjacent = Math.abs(pageNumber - currentPage) <= 1;
+
+              if (isFirstPage || isLastPage || isAdjacent) {
+                return (
+                  <Button
+                    key={pageNumber}
+                    variant={currentPage === pageNumber ? "default" : "ghost"}
+                    onClick={() => setCurrentPage(pageNumber)}
+                    className={`size-12 rounded-2xl font-black text-lg transition-all ${
+                      currentPage === pageNumber
+                        ? "bg-primary text-white shadow-lg shadow-primary/20 scale-110"
+                        : "text-slate-400 hover:bg-primary/5 hover:text-primary"
+                    }`}
+                  >
+                    {pageNumber}
+                  </Button>
+                );
+              }
+
+              if (
+                (pageNumber === currentPage - 2 && pageNumber > 1) ||
+                (pageNumber === currentPage + 2 && pageNumber < totalPages)
+              ) {
+                return (
+                  <span
+                    key={pageNumber}
+                    className="text-slate-300 font-bold px-1 self-end pb-3 select-none"
+                  >
+                    ...
+                  </span>
+                );
+              }
+
+              return null;
+            })}
           </div>
 
           <Button
             variant="outline"
             disabled={currentPage === totalPages}
             onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
-            className="rounded-2xl size-12 p-0 border-slate-200"
+            className="rounded-2xl size-12 p-0 border-slate-200 shadow-sm"
           >
             <ChevronLeft className="size-5" />
           </Button>
