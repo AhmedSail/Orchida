@@ -3,6 +3,7 @@ import { Tajawal } from "next/font/google";
 import "../globals.css";
 import { Header } from "../../components/Header";
 import Footer from "../../components/Footer";
+import FloatingContact from "../../components/FloatingContact";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { db } from "@/src/db";
@@ -70,6 +71,8 @@ export default async function RootLayout({
         role={session?.user?.role ?? null}
         user={user}
       />
+
+      <FloatingContact links={result} />
 
       {children}
       <Footer result={result} />
