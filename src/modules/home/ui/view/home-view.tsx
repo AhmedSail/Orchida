@@ -12,6 +12,8 @@ import dynamic from "next/dynamic";
 import { useEffect, useState } from "react";
 import LatestNewsUser from "../components/lastEvents";
 import Employment from "@/components/employment";
+import TrendingProductsHome from "../components/trendingProductsHome";
+import { TrendingProduct } from "@/components/admin/trendingProducts/TrendingProductsTable";
 const CoursesUser = dynamic(() => import("@/components/users/CoursesUser"), {
   loading: () => <div className="h-96 animate-pulse bg-gray-100 rounded-3xl" />,
 });
@@ -55,6 +57,7 @@ const HomeView = ({
   sections,
   studentStories,
   jobs,
+  trendingProducts,
 }: {
   services: Services;
   sliders: SliderType[];
@@ -70,6 +73,7 @@ const HomeView = ({
     studentName: string | null;
   }[];
   jobs: Job[];
+  trendingProducts: TrendingProduct[];
 }) => {
   return (
     <div className="min-h-screen w-full bg-white">
@@ -111,6 +115,8 @@ const HomeView = ({
           </motion.div>
         </div>
       </div>
+
+      <TrendingProductsHome products={trendingProducts} />
 
       <div className="p-6">
         <CoursesUser allCourses={allCourses} />

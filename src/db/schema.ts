@@ -1180,6 +1180,19 @@ export const quizResponsesRelations = relations(quizResponses, ({ one }) => ({
     references: [quizQuestions.id],
   }),
 }));
+// 17. Trending Products
+export const trendingProducts = pgTable("trendingProducts", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  name: varchar("name", { length: 255 }).notNull(),
+  description: text("description"),
+  imageUrl: varchar("imageUrl", { length: 1024 }),
+  link: varchar("link", { length: 1024 }),
+  isActive: boolean("isActive").default(true).notNull(),
+  order: integer("order").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
 // 18. AI Prompts
 export const aiPrompts = pgTable("aiPrompts", {
   id: uuid("id").defaultRandom().primaryKey(),

@@ -12,6 +12,7 @@ import {
   studentWorks,
   users,
   jobs,
+  trendingProducts,
 } from "@/src/db/schema";
 import { db } from "@/src";
 import { eq, inArray, desc, and } from "drizzle-orm";
@@ -41,6 +42,7 @@ const page = async () => {
     rowData,
     studentStories,
     activeJobs,
+    trendingProductsData,
   ] = await Promise.all([
     db.select().from(digitalServices),
     db.select().from(sliders),
@@ -87,6 +89,11 @@ const page = async () => {
       .where(eq(studentWorks.status, "approved"))
       .limit(6),
     db.select().from(jobs),
+    db
+      .select()
+      .from(trendingProducts)
+      .where(eq(trendingProducts.isActive, true))
+      .orderBy(desc(trendingProducts.order), desc(trendingProducts.createdAt)),
   ]);
 
   const rows = rowData;
@@ -199,6 +206,7 @@ const page = async () => {
         sections={sections}
         studentStories={studentStories}
         jobs={activeJobs}
+        trendingProducts={trendingProductsData}
       />
     </div>
   );

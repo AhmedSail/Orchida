@@ -29,6 +29,7 @@ export default function Footer({ result }: { result: Links }) {
   const navItems = [
     { title: "الرئيسية", href: "/" },
     { title: "آخر المستجدات", href: "/latest" },
+    { title: "المنتجات الرائجة", href: "/trending" },
     { title: "الخدمات الرقمية", href: "/digital-services" },
     { title: "اتصل بنا", href: "/contact" },
     { title: "من نحن", href: "/about" },
