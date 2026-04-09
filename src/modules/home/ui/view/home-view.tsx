@@ -116,7 +116,22 @@ const HomeView = ({
         </div>
       </div>
 
-      <TrendingProductsHome products={trendingProducts} />
+      <div>
+        <TrendingProductsHome products={trendingProducts} />
+        <motion.div
+          className="flex justify-center items-center mt-16"
+          initial={{ opacity: 0, y: 30 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+        >
+          <Button
+            asChild
+            className="h-16 px-14 rounded-full bg-gray-900 text-white hover:bg-primary transition-all duration-500 shadow-2xl hover:scale-105 text-lg font-bold"
+          >
+            <Link href="/trending">عرض جميع المنتجات</Link>
+          </Button>
+        </motion.div>
+      </div>
 
       <div className="p-6">
         <CoursesUser allCourses={allCourses} />
