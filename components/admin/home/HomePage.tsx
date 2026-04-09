@@ -289,7 +289,7 @@ const HomePage = ({
                         </TableCell>
                         <TableCell className="text-center">
                           <a
-                            href={`/admin/${userId}/leads?courseId=${sec.sectionId}`}
+                            href={`/admin/${userId}/courses/sections/${sec.sectionId}/students`}
                             className="flex flex-col items-center gap-1 hover:scale-105 transition-transform cursor-pointer"
                           >
                             <span className="font-black text-amber-600 text-base leading-none">
