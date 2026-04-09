@@ -1,94 +1,75 @@
 import { MetadataRoute } from "next";
 import { db } from "@/src/db";
-import { digitalServices, courses, works } from "@/src/db/schema";
+import { courses, news, digitalServices } from "@/src/db/schema";
+import { eq } from "drizzle-orm";
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
-  const baseUrl =
-    process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
-
-  // Fetch all dynamic IDs
-  const allServices = await db
-    .select({ id: digitalServices.id })
-    .from(digitalServices);
-  const allCourses = await db.select({ id: courses.id }).from(courses);
-  const allWorks = await db.select({ id: works.id }).from(works);
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "https://www.orchida-ods.com";
 
   // Static routes
-  const routes: MetadataRoute.Sitemap = [
-    {
-      url: baseUrl,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 1,
-    },
-    {
-      url: `${baseUrl}/latest`,
-      lastModified: new Date(),
-      changeFrequency: "daily",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/about`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/contact`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.8,
-    },
-    {
-      url: `${baseUrl}/services`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-    {
-      url: `${baseUrl}/courses`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.9,
-    },
-  ];
+  const staticRoutes = [
+    "",
+    "/about",
+    "/contact",
+    "/courses",
+    "/latest",
+    "/services",
+    "/trending",
+  ].map((route) => ({
+    url: `${baseUrl}${route}`,
+    lastModified: new Date(),
+    changeFrequency: "daily" as const,
+    priority: route === "" ? 1 : 0.8,
+  }));
 
-  // Dynamic routes: Services (Works only)
-  allServices.forEach((service) => {
-    // Works filtered by service
-    routes.push({
-      url: `${baseUrl}/services/${service.id}/works`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    });
-  });
+  try {
+    // Dynamic routes: Courses
+    const coursesData = await db
+      .select({ id: courses.id, updatedAt: courses.updatedAt })
+      .from(courses)
+      .where(eq(courses.isActive, true));
 
-  // Dynamic routes: Courses
-  allCourses.forEach((course) => {
-    routes.push({
+    const courseRoutes = coursesData.map((course) => ({
       url: `${baseUrl}/courses/${course.id}`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
-      priority: 0.8,
-    });
-    routes.push({
-      url: `${baseUrl}/courses/${course.id}/register`,
-      lastModified: new Date(),
-      changeFrequency: "weekly",
+      lastModified: course.updatedAt,
+      changeFrequency: "weekly" as const,
       priority: 0.7,
-    });
-  });
+    }));
 
-  // Dynamic routes: Individual Work Pages
-  allWorks.forEach((work) => {
-    routes.push({
-      url: `${baseUrl}/workPage/${work.id}`,
-      lastModified: new Date(),
-      changeFrequency: "monthly",
-      priority: 0.7,
-    });
-  });
+    // Dynamic routes: News/Latest
+    const newsData = await db
+      .select({ id: news.id, updatedAt: news.updatedAt })
+      .from(news)
+      .where(eq(news.isActive, true));
 
-  return routes;
+    const newsRoutes = newsData.map((item) => ({
+      url: `${baseUrl}/latest/${item.id}`,
+      lastModified: item.updatedAt,
+      changeFrequency: "weekly" as const,
+      priority: 0.6,
+    }));
+
+    // Dynamic routes: Digital Services
+    const servicesData = await db
+      .select({ id: digitalServices.id, updatedAt: digitalServices.updatedAt })
+      .from(digitalServices)
+      .where(eq(digitalServices.isActive, true));
+
+    const serviceRoutes = servicesData.map((service) => ({
+      url: `${baseUrl}/services/${service.id}`,
+      lastModified: service.updatedAt,
+      changeFrequency: "monthly" as const,
+      priority: 0.6,
+    }));
+
+    return [
+      ...staticRoutes,
+      ...courseRoutes,
+      ...newsRoutes,
+      ...serviceRoutes,
+    ];
+  } catch (error) {
+    console.error("Error generating sitemap:", error);
+    return staticRoutes;
+  }
 }

@@ -8,6 +8,9 @@ export const metadata: Metadata = {
   title: "آخر المستجدات والأخبار",
   description:
     "اطلع على آخر أخبار ومستجدات أوركيدة، شريكك الأمثل للحلول الرقمية والتدريب.",
+  alternates: {
+    canonical: "https://www.orchida-ods.com/latest",
+  },
 };
 export default async function Page() {
   // ✅ جلب الأخبار من قاعدة البيانات بترتيب تنازلي (الأحدث أولاً)
