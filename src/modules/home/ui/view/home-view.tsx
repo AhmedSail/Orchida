@@ -116,6 +116,13 @@ const HomeView = ({
         </div>
       </div>
 
+      <div className="p-6">
+        <CoursesUser allCourses={allCourses} />
+      </div>
+
+      <div>
+        <Employment jobs={jobs} />
+      </div>
       <div>
         <TrendingProductsHome products={trendingProducts} />
         <motion.div
@@ -132,15 +139,6 @@ const HomeView = ({
           </Button>
         </motion.div>
       </div>
-
-      <div className="p-6">
-        <CoursesUser allCourses={allCourses} />
-      </div>
-
-      <div>
-        <Employment jobs={jobs} />
-      </div>
-
       <div className="py-12 bg-gray-50/50">
         <StudentWorksHome studentStories={studentStories} />
       </div>
