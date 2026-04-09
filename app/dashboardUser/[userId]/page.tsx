@@ -12,23 +12,49 @@ import {
   studentWorks,
   users,
   jobs,
+  trendingProducts,
 } from "@/src/db/schema";
 import { db } from "@/src";
-import { eq } from "drizzle-orm";
+import { eq, desc } from "drizzle-orm";
 
 const page = async () => {
-  // ✅ جيب الخدمات
-  const services = await db.select().from(digitalServices);
+  // ✅ جلب البيانات بالتوازي
+  const [
+    services,
+    slidersPhoto,
+    newsData,
+    jobsData,
+    allCourses,
+    sections,
+    stories,
+    trendingProductsData,
+  ] = await Promise.all([
+    db.select().from(digitalServices),
+    db.select().from(sliders),
+    db.select().from(news).orderBy(desc(news.publishedAt)),
+    db.select().from(jobs),
+    db.select().from(courses).where(eq(courses.isActive, true)),
+    db.select().from(courseSections).where(eq(courseSections.isHidden, false)),
+    db
+      .select({
+        id: studentWorks.id,
+        title: studentWorks.title,
+        description: studentWorks.description,
+        type: studentWorks.type,
+        mediaUrl: studentWorks.mediaUrl,
+        studentName: users.name,
+      })
+      .from(studentWorks)
+      .innerJoin(users, eq(studentWorks.studentId, users.id))
+      .where(eq(studentWorks.status, "approved"))
+      .limit(6),
+    db
+      .select()
+      .from(trendingProducts)
+      .where(eq(trendingProducts.isActive, true))
+      .orderBy(desc(trendingProducts.order), desc(trendingProducts.createdAt)),
+  ]);
 
-  const slidersPhoto = await db.select().from(sliders);
-  const newsData = await db.select().from(news);
-  const jobsData = await db.select().from(jobs);
-  const allCourses = await db
-    .select()
-    .from(courses)
-    .where(eq(courses.isActive, true));
-  const sections = await db.select().from(courseSections);
-  const stories = await db.select().from(studentWorks);
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
@@ -45,7 +71,8 @@ const page = async () => {
         allCourses={allCourses}
         sections={sections}
         jobs={jobsData}
-        studentStories={[]}
+        studentStories={stories}
+        trendingProducts={trendingProductsData}
       />
     </div>
   );
