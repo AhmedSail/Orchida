@@ -22,6 +22,9 @@ import {
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
 
+import { authClient } from "@/lib/auth-client";
+import Swal from "sweetalert2";
+
 interface PricingRule {
   serviceType: string;
   provider: string;
@@ -37,6 +40,9 @@ export default function VideoGenView() {
   const [resolution, setResolution] = useState("High 720p"); // Default for Veo
   const [duration, setDuration] = useState("6"); // e.g. "6" or "10"
 
+  // Auth State
+  const { data: session } = authClient.useSession();
+
   // User Credits State
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
@@ -50,6 +56,34 @@ export default function VideoGenView() {
   const [firstImage, setFirstImage] = useState<File | null>(null);
   const [lastImage, setLastImage] = useState<File | null>(null);
   const [grokImage, setGrokImage] = useState<File | null>(null);
+
+  // Helper: File to Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Helper: Base64 to File
+  const base64ToFile = (base64: string, filename: string): File => {
+    try {
+      const arr = base64.split(",");
+      const mime = arr[0].match(/:(.*?);/)![1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, { type: mime });
+    } catch (e) {
+      console.error("Base64 to File error:", e);
+      return null as any;
+    }
+  };
 
   // Input refs
   const firstImageRef = React.useRef<HTMLInputElement>(null);
@@ -105,22 +139,92 @@ export default function VideoGenView() {
   const cost = calculateCost();
 
   React.useEffect(() => {
-    // Fetch initial user balance
+    // 1. Fetch initial user balance
     getStudentInternalCredits().then((res) => {
       if (res.success && res.balance !== undefined) {
         setUserBalance(res.balance);
       }
     });
 
-    // Fetch dynamic pricing rules
+    // 2. Fetch dynamic pricing rules
     getAllAiPricingAction().then((rules) => {
       if (rules) {
         setPricingRules(rules as PricingRule[]);
       }
     });
+
+    // 3. Load saved state from localStorage
+    const savedState = localStorage.getItem("ai_video_state");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.provider) setProvider(parsed.provider);
+        if (parsed.prompt) setPrompt(parsed.prompt);
+        if (parsed.orientation) setOrientation(parsed.orientation);
+        if (parsed.resolution) setResolution(parsed.resolution);
+        if (parsed.duration) setDuration(parsed.duration);
+        
+        // Restore images from Base64
+        if (parsed.firstImageBase64) {
+          setFirstImage(base64ToFile(parsed.firstImageBase64, parsed.firstImageName || "first.png"));
+        }
+        if (parsed.lastImageBase64) {
+          setLastImage(base64ToFile(parsed.lastImageBase64, parsed.lastImageName || "last.png"));
+        }
+        if (parsed.grokImageBase64) {
+          setGrokImage(base64ToFile(parsed.grokImageBase64, parsed.grokImageName || "grok.png"));
+        }
+      } catch (e) {
+        console.error("Error loading saved state:", e);
+      }
+    }
   }, []);
 
+  // Save state to localStorage whenever it changes
+  React.useEffect(() => {
+    const saveState = async () => {
+      const state: any = { provider, prompt, orientation, resolution, duration };
+      
+      // Handle images
+      if (firstImage) {
+        state.firstImageBase64 = await fileToBase64(firstImage);
+        state.firstImageName = firstImage.name;
+      }
+      if (lastImage) {
+        state.lastImageBase64 = await fileToBase64(lastImage);
+        state.lastImageName = lastImage.name;
+      }
+      if (grokImage) {
+        state.grokImageBase64 = await fileToBase64(grokImage);
+        state.grokImageName = grokImage.name;
+      }
+
+      localStorage.setItem("ai_video_state", JSON.stringify(state));
+    };
+
+    saveState();
+  }, [provider, prompt, orientation, resolution, duration, firstImage, lastImage, grokImage]);
+
   const handleGenerate = async () => {
+    // Check if user is logged in
+    if (!session) {
+      Swal.fire({
+        title: "يجب تسجيل الدخول",
+        text: "يرجى تسجيل الدخول لتتمكن من استخدام خدمات الذكاء الاصطناعي",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "تسجيل الدخول",
+        cancelButtonText: "إلغاء",
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const callbackUrl = encodeURIComponent(window.location.href);
+          window.location.href = `/sign-in?callbackUrl=${callbackUrl}`;
+        }
+      });
+      return;
+    }
+
     if (!prompt.trim()) {
       setGenerationError("Please enter a text prompt to generate video");
       return;

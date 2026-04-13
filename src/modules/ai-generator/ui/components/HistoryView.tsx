@@ -18,12 +18,14 @@ import {
   Hourglass,
   Filter,
   Trash2,
+  Lock,
 } from "lucide-react";
 import { 
   fetchGenerationHistoryAction, 
   deleteGenerationAction 
 } from "@/app/actions/ai-common";
 import Swal from 'sweetalert2';
+import { authClient } from "@/lib/auth-client";
 
 type HistoryItem = {
   id: string;
@@ -54,7 +56,10 @@ export default function HistoryView() {
   const [filter, setFilter] = useState<"all" | "video" | "image">("all");
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
 
+  const { data: session } = authClient.useSession();
+
   const loadHistory = useCallback(async (p: number, f: typeof filter) => {
+    if (!session) return;
     setIsLoading(true);
     setError(null);
     try {
@@ -151,7 +156,23 @@ export default function HistoryView() {
       </div>
 
       <div className="max-w-[1100px] mx-auto px-4">
-        {/* Controls Bar */}
+        {!session ? (
+          <div className="flex flex-col items-center justify-center py-24 text-zinc-400 bg-white rounded-3xl border border-zinc-100 shadow-sm">
+            <div className="bg-zinc-50 p-6 rounded-full mb-6">
+              <Lock className="w-12 h-12 opacity-20" />
+            </div>
+            <p className="font-bold text-xl mb-2 text-zinc-800">سجل التوليدات محمي</p>
+            <p className="text-sm mb-6 text-zinc-500">يجب تسجيل الدخول لتتمكن من استعراض تاريخ توليداتك السابقة</p>
+            <button 
+              onClick={() => window.location.href = "/sign-in"}
+              className="bg-primary hover:bg-primary/90 text-white font-bold px-10 py-3 rounded-2xl shadow-lg shadow-primary/20 transition-all active:scale-95"
+            >
+              تسجيل الدخول الآن
+            </button>
+          </div>
+        ) : (
+          <>
+            {/* Controls Bar */}
         <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
           {/* Filter Tabs */}
           <div className="flex bg-white border border-zinc-200 rounded-xl p-1 gap-1 shadow-sm">
@@ -351,6 +372,8 @@ export default function HistoryView() {
               <ChevronLeft className="w-4 h-4" />
             </button>
           </div>
+        )}
+          </>
         )}
       </div>
 
