@@ -105,17 +105,14 @@ const TrendingProductsHome = ({
                     {product.description}
                   </p>
 
-                  <div className="mt-auto pt-4 border-t border-gray-50 flex items-center justify-between gap-4 w-full">
-                    <span className="text-[9px] font-black text-gray-400 uppercase tracking-widest shrink-0">
-                      Trending Now
-                    </span>
+                  <div className="mt-auto pt-4 border-t border-gray-50 gap-4 w-full">
                     {product.link && (
                       <Link
                         href={product.link}
                         target="_blank"
-                        className="inline-flex items-center gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-[10px] font-black hover:bg-primary hover:text-white transition-all duration-300 whitespace-nowrap"
+                        className="inline-flex items-center justify-center w-full  gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-[12px] font-black hover:bg-primary hover:text-white transition-all duration-300 whitespace-nowrap"
                       >
-                        Aliexpress
+                        اضغط هنا لعرض المنتج على موقع AliExpress
                         <ExternalLink className="w-3 h-3" />
                       </Link>
                     )}

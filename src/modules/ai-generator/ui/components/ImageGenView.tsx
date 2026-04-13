@@ -24,6 +24,9 @@ import { getStudentInternalCredits } from "@/app/actions/ai-credits";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
 import Image from "next/image";
 
+import { authClient } from "@/lib/auth-client";
+import Swal from "sweetalert2";
+
 interface PricingRule {
   serviceType: string;
   provider: string;
@@ -42,26 +45,96 @@ export default function ImageGenView() {
   const [imageReference, setImageReference] = useState<File | null>(null);
   const [orientation, setOrientation] = useState("Square (1:1)");
 
+  // Helper: File to Base64
+  const fileToBase64 = (file: File): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+  };
+
+  // Helper: Base64 to File
+  const base64ToFile = (base64: string, filename: string): File => {
+    try {
+      const arr = base64.split(",");
+      const mime = arr[0].match(/:(.*?);/)![1];
+      const bstr = atob(arr[1]);
+      let n = bstr.length;
+      const u8arr = new Uint8Array(n);
+      while (n--) {
+        u8arr[n] = bstr.charCodeAt(n);
+      }
+      return new File([u8arr], filename, { type: mime });
+    } catch (e) {
+      console.error("Base64 to File error:", e);
+      return null as any;
+    }
+  };
+
   // States for generation
   const [isGenerating, setIsGenerating] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
+  // Auth & Balance
+  const { data: session } = authClient.useSession();
   const [userBalance, setUserBalance] = useState<number | null>(null);
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
 
   useEffect(() => {
+    // 1. Fetch credits
     getStudentInternalCredits().then((res) => {
       if (res.success && res.balance !== undefined) {
         setUserBalance(res.balance);
       }
     });
 
+    // 2. Fetch pricing
     getAllAiPricingAction().then((rules) => {
       if (rules) {
         setPricingRules(rules as PricingRule[]);
       }
     });
+
+    // 3. Load saved state
+    const savedState = localStorage.getItem("ai_image_state");
+    if (savedState) {
+      try {
+        const parsed = JSON.parse(savedState);
+        if (parsed.provider) setProvider(parsed.provider);
+        if (parsed.prompt) setPrompt(parsed.prompt);
+        if (parsed.aspectRatio) setAspectRatio(parsed.aspectRatio);
+        if (parsed.outputFormat) setOutputFormat(parsed.outputFormat);
+        if (parsed.resolution) setResolution(parsed.resolution);
+        if (parsed.numResults) setNumResults(parsed.numResults);
+        if (parsed.orientation) setOrientation(parsed.orientation);
+
+        // Restore image
+        if (parsed.imageBase64) {
+          setImageReference(base64ToFile(parsed.imageBase64, parsed.imageName || "ref.png"));
+        }
+      } catch (e) {
+        console.error("Error loading image state:", e);
+      }
+    }
   }, []);
+
+  // Save state
+  useEffect(() => {
+    const saveState = async () => {
+      const state: any = { provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation };
+      
+      if (imageReference) {
+        state.imageBase64 = await fileToBase64(imageReference);
+        state.imageName = imageReference.name;
+      }
+
+      localStorage.setItem("ai_image_state", JSON.stringify(state));
+    };
+
+    saveState();
+  }, [provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation, imageReference]);
 
   const cost = (() => {
     const resQuality = resolution || "Standard";
@@ -76,6 +149,25 @@ export default function ImageGenView() {
   })();
 
   const handleGenerate = async () => {
+    // Check if user is logged in
+    if (!session) {
+      Swal.fire({
+        title: "يجب تسجيل الدخول",
+        text: "يرجى تسجيل الدخول لتتمكن من استخدام خدمات الذكاء الاصطناعي",
+        icon: "warning",
+        showCancelButton: true,
+        confirmButtonText: "تسجيل الدخول",
+        cancelButtonText: "إلغاء",
+        reverseButtons: true,
+      }).then((result) => {
+        if (result.isConfirmed) {
+          const callbackUrl = encodeURIComponent(window.location.href);
+          window.location.href = `/sign-in?callbackUrl=${callbackUrl}`;
+        }
+      });
+      return;
+    }
+
     if (!prompt.trim()) {
       setGenerationError("يرجى إدخال وصف للصورة");
       return;
