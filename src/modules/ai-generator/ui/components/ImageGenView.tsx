@@ -1,0 +1,520 @@
+import React, { useState, useEffect } from "react";
+import {
+  Image as ImageIcon,
+  ChevronDown,
+  Monitor,
+  Smartphone,
+  Square,
+  ArrowRight,
+  Loader2,
+  AlertCircle,
+  Zap,
+  Download,
+  Maximize,
+  Clock,
+} from "lucide-react";
+import {
+  generateImageAction,
+} from "@/app/actions/ai-image";
+import {
+  checkGenerationStatus,
+  updateGenerationStatusAction,
+} from "@/app/actions/ai-common";
+import { getStudentInternalCredits } from "@/app/actions/ai-credits";
+import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
+import Image from "next/image";
+
+interface PricingRule {
+  serviceType: string;
+  provider: string;
+  quality: string;
+  duration: number | null;
+  credits: number;
+}
+
+export default function ImageGenView() {
+  const [provider, setProvider] = useState("Imagen");
+  const [prompt, setPrompt] = useState("");
+  const [aspectRatio, setAspectRatio] = useState("1:1");
+  const [outputFormat, setOutputFormat] = useState("JPEG");
+  const [resolution, setResolution] = useState("1K");
+  const [numResults, setNumResults] = useState(1);
+  const [imageReference, setImageReference] = useState<File | null>(null);
+  const [orientation, setOrientation] = useState("Square (1:1)");
+
+  // States for generation
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(null);
+  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
+
+  useEffect(() => {
+    getStudentInternalCredits().then((res) => {
+      if (res.success && res.balance !== undefined) {
+        setUserBalance(res.balance);
+      }
+    });
+
+    getAllAiPricingAction().then((rules) => {
+      if (rules) {
+        setPricingRules(rules as PricingRule[]);
+      }
+    });
+  }, []);
+
+  const cost = (() => {
+    const resQuality = resolution || "Standard";
+    
+    // Exact match provider & quality
+    const match = pricingRules.find(r => 
+      r.serviceType === "image" && 
+      r.provider.toLowerCase() === provider.toLowerCase() && 
+      r.quality === resQuality
+    );
+    return match ? match.credits : 1;
+  })();
+
+  const handleGenerate = async () => {
+    if (!prompt.trim()) {
+      setGenerationError("يرجى إدخال وصف للصورة");
+      return;
+    }
+
+    setIsGenerating(true);
+    setGenerationError(null);
+    setResultImageUrl(null);
+
+    try {
+      const data: any = {
+        prompt,
+        model:
+          provider === "Imagen"
+            ? "nano-banana-pro"
+            : provider === "Grok"
+              ? "nano-banana-pro" 
+              : "imagen-4",
+        aspectRatio:
+          provider === "Grok"
+            ? orientation.includes("16:9")
+              ? "16:9"
+              : orientation.includes("9:16")
+                ? "9:16"
+                : orientation.includes("2:3")
+                  ? "2:3"
+                  : orientation.includes("3:2")
+                    ? "3:2"
+                    : "1:1"
+            : aspectRatio,
+        outputFormat,
+        numResults: provider === "Grok" ? numResults : 1,
+        cost,
+      };
+
+      // Force empty resolution for Grok to override backend defaults, use state for Imagen
+      data.resolution = provider === "Grok" ? "" : resolution;
+
+      const encodedData = Buffer.from(JSON.stringify(data)).toString("base64");
+      const res = await generateImageAction(encodedData);
+
+      if (res.success) {
+        const uuid = res.data.uuid || res.data.id;
+
+        if (uuid) {
+          // البدء بفحص الحالة (Polling)
+          startPolling(uuid);
+        } else {
+          // إذا أرسل الـ API الرابط مباشرة (حالة نادرة في بعض المحركات)
+          const imgUrl =
+            res.data.image_url ||
+            res.data.url ||
+            (res.data.data && res.data.data[0]?.url);
+          if (imgUrl) {
+            setResultImageUrl(imgUrl);
+            setIsGenerating(false);
+          } else {
+            setGenerationError("لم يتم استلام معرف للمهمة أو رابط مباشر.");
+            setIsGenerating(false);
+          }
+        }
+
+        // Refresh credits
+        getStudentInternalCredits().then((cr) => {
+          if (cr.success) setUserBalance(cr.balance ?? userBalance);
+        });
+      } else {
+        setGenerationError(res.error || "فشل بدء المهمة");
+        setIsGenerating(false);
+      }
+    } catch (err: any) {
+      setGenerationError(err.message || "حدث خطأ غير متوقع");
+      setIsGenerating(false);
+    }
+  };
+
+  const startPolling = (uuid: string) => {
+    const intervalId = setInterval(async () => {
+      try {
+        const statusRes = await checkGenerationStatus(uuid);
+        if (!statusRes.success) return; // تخطي هذه الدورة لو حدث خطأ شبكة
+
+        const status = statusRes.data.status;
+        if (status === 2 || String(status).toLowerCase() === "completed") {
+          clearInterval(intervalId);
+          setIsGenerating(false);
+
+          // استخراج الرابط من هيكليات مختلفة للـ API
+          const foundUrl =
+            statusRes.data.image_url ||
+            statusRes.data.url ||
+            (statusRes.data.data && statusRes.data.data[0]?.url) ||
+            (statusRes.data.generated_image &&
+              statusRes.data.generated_image[0]?.image_url);
+
+          if (foundUrl) {
+            setResultImageUrl(foundUrl);
+            // تحديث السجل المحلي بالاكتمال
+            updateGenerationStatusAction(uuid, "completed", foundUrl);
+          } else {
+            setGenerationError(
+              "اكتمل التوليد ولكن لم نجد الرابط في البيانات المستلمة.",
+            );
+          }
+        } else if (status === 3 || String(status).toLowerCase() === "failed") {
+          clearInterval(intervalId);
+          setIsGenerating(false);
+          setGenerationError(
+            `فشل توليد الصورة: ${statusRes.data.error || "خطأ غير معروف"}`,
+          );
+          updateGenerationStatusAction(uuid, "failed");
+        }
+      } catch (e) {
+        console.error("Polling error:", e);
+      }
+    }, 4000); // فحص كل 4 ثوانٍ
+  };
+
+  return (
+    <div className="relative z-10 w-full pb-20" dir="rtl">
+      {/* Header Section */}
+      <div className="text-center px-4 mb-4">
+        <div className="inline-flex items-center justify-center p-3 bg-primary/10 rounded-2xl mb-4">
+          <ImageIcon className="w-8 h-8 text-primary" />
+        </div>
+        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-2">
+          مولّد الصور الذكي
+        </h1>
+        <p className="text-zinc-500 font-medium">
+          أدخل وصفاً وحوّل كلماتك إلى لوحات فنية رائعة
+        </p>
+      </div>
+
+      {/* Main Grid Content */}
+      <div className="max-w-[1200px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6">
+        {/* Left Column - Controls */}
+        <div className="bg-white rounded-3xl p-6 border border-zinc-200 shadow-sm flex flex-col h-fit">
+          {/* Providers */}
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-zinc-700 mb-3">
+              محرك التوليد
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {[
+                {
+                  id: "Imagen",
+                  name: "G Imagen",
+                  desc: "Gemini 3 Pro",
+                  color: "bg-blue-600",
+                  disabled: false,
+                },
+                {
+                  id: "Grok",
+                  name: "✖ Grok",
+                  desc: "قيد التطوير",
+                  color: "bg-zinc-400",
+                  disabled: true,
+                },
+              ].map((p) => (
+                <button
+                  key={p.id}
+                  disabled={p.disabled}
+                  onClick={() => !p.disabled && setProvider(p.id)}
+                  className={`flex flex-1 items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition 
+                    ${p.disabled ? "opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400" : 
+                      provider === p.id ? "border-primary bg-primary/5 text-primary" : "border-zinc-100 text-zinc-500 hover:bg-zinc-50"}`}
+                >
+                  <div className="flex flex-col items-start">
+                    <span>{p.name}</span>
+                  </div>
+                  <span
+                    className={`${p.disabled ? "bg-zinc-200 text-zinc-500" : provider === p.id ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400"} text-[8px] px-1.5 py-0.5 rounded-md uppercase tracking-tighter`}
+                  >
+                    {p.desc}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+
+          {/* Prompt */}
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-zinc-700 mb-2">
+              وصف الصورة (Prompt)
+            </label>
+            <textarea
+              className="w-full border border-zinc-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-none leading-relaxed transition-all"
+              placeholder={
+                provider === "Grok"
+                  ? "وصف الصورة التي تريد توليدها باستخدام Grok..."
+                  : "صف الصورة التي تريد إنشاؤها بالتفصيل..."
+              }
+              value={prompt}
+              onChange={(e) => setPrompt(e.target.value)}
+            ></textarea>
+          </div>
+
+          {/* Image Reference */}
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-zinc-700 mb-2">
+              مرجع الصورة (Image Reference)
+            </label>
+            <button
+              onClick={() =>
+                document.getElementById("image-ref-input")?.click()
+              }
+              className="flex items-center gap-2 px-4 py-2 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition bg-white"
+            >
+              <ImageIcon className="w-4 h-4" />
+              {imageReference ? imageReference.name : "اختر صورة مرجعية"}
+            </button>
+            <input
+              id="image-ref-input"
+              type="file"
+              className="hidden"
+              accept="image/*"
+              onChange={(e) => setImageReference(e.target.files?.[0] || null)}
+            />
+          </div>
+
+          {/* Number of Results (Grok Only) */}
+          {provider === "Grok" && (
+            <div className="mb-6">
+              <label className="block text-sm font-bold text-zinc-700 mb-3">
+                عدد النتائج (Number of Results)
+              </label>
+              <div className="flex gap-2">
+                {[1, 2, 3, 4, 5, 6].map((num) => (
+                  <button
+                    key={num}
+                    onClick={() => setNumResults(num)}
+                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
+                  >
+                    {num}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Orientation / Aspect Ratio */}
+          <div className="mb-6">
+            <label className="block text-sm font-bold text-zinc-700 mb-3">
+              {provider === "Grok"
+                ? "الاتجاه (Orientation)"
+                : "أبعاد الصورة (Aspect Ratio)"}
+            </label>
+            <div className="flex flex-wrap gap-2">
+              {provider === "Grok"
+                ? // Grok Orientation Logic
+                  [
+                    {
+                      id: "Landscape (16:9)",
+                      label: "Landscape (16:9)",
+                      icon: Monitor,
+                    },
+                    {
+                      id: "Portrait (9:16)",
+                      label: "Portrait (9:16)",
+                      icon: Smartphone,
+                    },
+                    { id: "Square (1:1)", label: "Square (1:1)", icon: Square },
+                    {
+                      id: "Vertical (2:3)",
+                      label: "Vertical (2:3)",
+                      icon: Smartphone,
+                    },
+                    {
+                      id: "Horizontal (3:2)",
+                      label: "Horizontal (3:2)",
+                      icon: Monitor,
+                    },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setOrientation(item.id)}
+                      className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition min-w-[80px] ${orientation === item.id ? "border-primary bg-primary/5 text-primary" : "bg-zinc-50 border-transparent text-zinc-400 hover:bg-zinc-100"}`}
+                    >
+                      <item.icon className="w-5 h-5 mb-1.5" />
+                      <span className="text-[9px] font-bold text-center">
+                        {item.label}
+                      </span>
+                    </button>
+                  ))
+                : // Imagen Aspect Ratio Logic
+                  [
+                    { id: "1:1", label: "مربع (1:1)", icon: Square },
+                    { id: "16:9", label: "أفقي (16:9)", icon: Monitor },
+                    { id: "9:16", label: "عمودي (9:16)", icon: Smartphone },
+                    { id: "3:4", label: "3:4", icon: Smartphone },
+                    { id: "4:3", label: "4:3", icon: Monitor },
+                  ].map((item) => (
+                    <button
+                      key={item.id}
+                      onClick={() => setAspectRatio(item.id)}
+                      className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition min-w-[70px] ${aspectRatio === item.id ? "border-primary bg-primary/5 text-primary" : "bg-zinc-50 border-transparent text-zinc-400 hover:bg-zinc-100"}`}
+                    >
+                      <item.icon className="w-5 h-5 mb-1.5" />
+                      <span className="text-[10px] font-bold">
+                        {item.label}
+                      </span>
+                    </button>
+                  ))}
+            </div>
+          </div>
+
+          {/* Settings Grid (Imagen Only) */}
+          {provider !== "Grok" && (
+            <div className="grid grid-cols-2 gap-4 mb-8">
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 mb-2">
+                  صيغة الملف
+                </label>
+                <select
+                  value={outputFormat}
+                  onChange={(e) => setOutputFormat(e.target.value)}
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-zinc-50 font-semibold"
+                >
+                  <option value="JPEG">JPEG</option>
+                  <option value="PNG">PNG</option>
+                  <option value="WEBP">WEBP</option>
+                </select>
+              </div>
+              <div>
+                <label className="block text-sm font-bold text-zinc-700 mb-2">
+                  الدقة
+                </label>
+                <select
+                  value={resolution}
+                  onChange={(e) => setResolution(e.target.value)}
+                  className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-zinc-50 font-semibold"
+                >
+                  <option value="1K">1K (عادية)</option>
+                  <option value="2K">2K (عالية)</option>
+                </select>
+              </div>
+            </div>
+          )}
+
+          {/* Error Message */}
+          {generationError && (
+            <div className="mb-4 bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl text-xs flex items-center gap-2 animate-pulse">
+              <AlertCircle className="w-4 h-4" />
+              {generationError}
+            </div>
+          )}
+
+          {/* Generate Button Area */}
+          <div className="mt-auto border-t border-zinc-100 pt-6">
+            <div className="flex justify-between items-center bg-white p-2 rounded-2xl">
+              <div className="flex flex-col px-2">
+                <span className="text-[10px] text-zinc-400 font-bold uppercase tracking-wider">
+                  الرصيد: {userBalance ?? "..."}
+                </span>
+                <span className="text-[10px] font-bold text-primary">
+                  التكلفة المتوقعة: {cost} كريدت
+                </span>
+              </div>
+              <button
+                onClick={handleGenerate}
+                disabled={isGenerating}
+                className={`px-8 py-3.5 rounded-xl font-black flex items-center gap-2 transition-all shadow-lg shadow-primary/20 hover:scale-[1.02] active:scale-95 disabled:opacity-50 ${provider === "Grok" ? "bg-blue-600 text-white" : "bg-primary text-white"}`}
+              >
+                {isGenerating ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    جارٍ الرسم...
+                  </>
+                ) : (
+                  <>
+                    توليد باستخدام {provider}{" "}
+                    <Zap className="w-4 h-4 fill-white" />
+                  </>
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Right Column - Results */}
+        <div className="bg-white rounded-3xl p-6 border border-zinc-200 shadow-sm flex flex-col min-h-[500px]">
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-xl font-black text-zinc-800">معاينة النتيجة</h2>
+            {resultImageUrl && (
+              <a
+                href={resultImageUrl}
+                download
+                target="_blank"
+                className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition"
+              >
+                <Download className="w-4 h-4" /> تحميل بجودة عالية
+              </a>
+            )}
+          </div>
+
+          <div className="relative rounded-2xl overflow-hidden flex-1 bg-zinc-50 border-2 border-dashed border-zinc-100 flex items-center justify-center p-4">
+            {isGenerating ? (
+              <div className="flex flex-col items-center">
+                <div className="relative mb-6">
+                  <Loader2 className="w-16 h-16 text-primary animate-spin" />
+                  <ImageIcon className="w-6 h-6 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+                </div>
+                <p className="text-zinc-600 font-bold text-lg animate-pulse">
+                  فناننا الرقمي يرسم الآن...
+                </p>
+                <p className="text-zinc-400 text-xs mt-2">
+                  عادةً ما يستغرق التوليد من 5 إلى 15 ثانية
+                </p>
+              </div>
+            ) : resultImageUrl ? (
+              <div className="relative w-full h-full group flex items-center justify-center">
+                <Image
+                  src={resultImageUrl}
+                  width={500}
+                  height={500}
+                  alt="Generated AI"
+                  className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition group-hover:scale-[1.01]"
+                />
+                <button
+                  onClick={() => window.open(resultImageUrl, "_blank")}
+                  className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg"
+                >
+                  <Maximize className="w-5 h-5" />
+                </button>
+              </div>
+            ) : (
+              <div className="flex flex-col items-center text-zinc-300">
+                <div className="w-24 h-24 bg-zinc-100 rounded-full flex items-center justify-center mb-6">
+                  <ImageIcon className="w-12 h-12 opacity-20" />
+                </div>
+                <p className="text-lg font-bold">جاهز للإبداع؟</p>
+                <p className="text-sm mt-1">
+                  اكتب وصفاً في الجهة المقابلة واضغط توليد
+                </p>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}

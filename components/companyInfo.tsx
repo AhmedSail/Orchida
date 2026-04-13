@@ -18,8 +18,9 @@ import {
   MapPin,
   Clock,
   CreditCard,
-  Video,
   ExternalLink,
+  Settings2,
+  Video,
 } from "lucide-react";
 
 import {
@@ -54,6 +55,7 @@ type CompanyFormValues = {
   whatsappUrl?: string;
   linkedinUrl?: string;
   tiktokUrl?: string;
+  geminiGenApiKey?: string;
 };
 
 // ✅ مخطط البيانات
@@ -104,6 +106,7 @@ const companySchema = z.object({
     .url("رابط تيك توك غير صالح")
     .optional()
     .or(z.literal("")),
+  geminiGenApiKey: z.string().optional(),
 });
 
 const EditCompanyInfo = ({
@@ -135,6 +138,7 @@ const EditCompanyInfo = ({
       whatsappUrl: company.whatsappUrl ?? "",
       linkedinUrl: company.linkedinUrl ?? "",
       tiktokUrl: company.tiktokUrl ?? "",
+      geminiGenApiKey: company.geminiGenApiKey ?? "",
     },
   });
 
@@ -492,7 +496,44 @@ const EditCompanyInfo = ({
             </div>
           </div>
 
-          {/* Section 4: Media Content */}
+          {/* Section 4: AI Settings */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={Settings2}
+              title="إعدادات الذكاء الاصطناعي"
+              desc="إعدادات الربط مع خدمات توليد الفيديو والصور."
+            />
+            <div className="grid grid-cols-1 gap-y-6">
+              <FormField
+                control={form.control}
+                name="geminiGenApiKey"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel className="flex items-center gap-2 font-bold text-slate-700">
+                      <CreditCard size={14} className="text-slate-400" />
+                      GeminiGen API Key
+                    </FormLabel>
+                    <FormControl>
+                      <Input
+                        placeholder="أدخل مفتاح الـ API الخاص بـ GeminiGen"
+                        {...field}
+                        disabled={!isEditing}
+                        className="rounded-xl border-slate-200 focus:ring-primary/20 h-11"
+                        dir="ltr"
+                        type="password"
+                      />
+                    </FormControl>
+                    <p className="text-[10px] text-slate-400 mt-1">
+                      سيتم استخدامه لعمليات توليد الفيديو والصور وفحص الرصيد.
+                    </p>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Section 5: Media Content */}
           <div className="space-y-6">
             <SectionHeader
               icon={MessageSquare}

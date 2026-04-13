@@ -24,6 +24,7 @@ type CompanyFormValues = {
   whatsappUrl?: string;
   linkedinUrl?: string;
   tiktokUrl?: string;
+  geminiGenApiKey?: string;
 };
 
 const page = async () => {
@@ -54,6 +55,7 @@ const page = async () => {
     whatsappUrl: c?.whatsappUrl ?? "",
     linkedinUrl: c?.linkedinUrl ?? "",
     tiktokUrl: c?.tiktokUrl ?? "",
+    geminiGenApiKey: c?.geminiGenApiKey ?? "",
   };
 
   return (

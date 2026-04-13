@@ -1,0 +1,124 @@
+"use server";
+
+import { db } from "@/src/db";
+import { aiGenerations } from "@/src/db/schema";
+import { auth } from "@/lib/auth";
+import { headers } from "next/headers";
+import { checkAndDeductCredits, getGeminiGenApiKey } from "./ai-common";
+import { API_BASE } from "./ai-constants";
+import { getAiPricingAction } from "./ai-pricing";
+
+
+export async function generateVideoAction(clientFormData: FormData) {
+  try {
+    const sessionData = await auth.api.getSession({ headers: await headers() });
+    if (!sessionData?.session?.userId) throw new Error("Unauthorized");
+
+    const provider = clientFormData.get("provider") as string;
+    const model = clientFormData.get("model") as string;
+    const prompt = clientFormData.get("prompt") as string;
+    const durationStr = clientFormData.get("duration") as string;
+    const resolution = clientFormData.get("resolution") as string;
+    const aspectRatio = clientFormData.get("aspectRatio") as string;
+    const duration = parseInt(durationStr) || 0;
+
+    // Fetch dynamic cost from DB
+    const resQuality = resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p";
+    const dynamicCost = await getAiPricingAction("video", provider, resQuality, duration);
+    const cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(clientFormData.get("cost")) || 5);
+
+    await checkAndDeductCredits(sessionData.session.userId, cost, `Video Generation: ${provider} (${resQuality}, ${duration}s)`);
+
+
+    const apiKey = await getGeminiGenApiKey();
+    if (!apiKey) throw new Error("API Key configuration error.");
+
+    const endpointMap: Record<string, string> = {
+      "Veo": "veo",
+      "Grok": "grok",
+      "Sora": "sora",
+      "Bytedance": "seedance"
+    };
+    
+    const endpointProvider = endpointMap[provider] || (provider ? provider.toLowerCase() : "veo");
+
+    const apiFormData = new FormData();
+    apiFormData.append("prompt", prompt);
+    apiFormData.append("model", model || `${endpointProvider}-2`);
+    
+    if(endpointProvider === "veo" || endpointProvider === "sora" || endpointProvider === "grok") {
+        apiFormData.append("resolution", resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p");
+    }
+    
+    if (endpointProvider !== "veo" && durationStr) {
+        apiFormData.append("duration", durationStr);
+    }
+    
+    if (provider === "Grok") {
+      const grokRatioMap: Record<string, string> = {
+        "Landscape (16:9)": "landscape",
+        "Portrait (9:16)": "portrait",
+        "Square (1:1)": "square",
+        "Vertical (2:3)": "2:3",
+        "Horizontal (3:2)": "3:2"
+      };
+      if (aspectRatio) {
+        apiFormData.append("aspect_ratio", grokRatioMap[aspectRatio] || "landscape");
+      }
+    } else {
+      const aspectRatioMap: Record<string, string> = {
+        "Landscape (16:9)": "16:9", "Portrait (9:16)": "9:16", "Square (1:1)": "1:1", "Vertical (2:3)": "2:3", "Horizontal (3:2)": "3:2"
+      };
+      if (aspectRatio) {
+         apiFormData.append("aspect_ratio", aspectRatioMap[aspectRatio] || "16:9");
+      }
+    }
+
+    if (provider === "Veo") {
+       const firstImage = clientFormData.get("firstImage") as File;
+       if (firstImage && firstImage.size > 0) apiFormData.append("image_start", firstImage);
+       const lastImage = clientFormData.get("lastImage") as File;
+       if (lastImage && lastImage.size > 0) apiFormData.append("image_end", lastImage);
+    } else if (provider === "Grok") {
+       const grokImage = clientFormData.get("image") as File;
+       if (grokImage && grokImage.size > 0) apiFormData.append("image", grokImage);
+    }
+
+    let response;
+    try {
+      response = await fetch(`${API_BASE}/video-gen/${endpointProvider}`, {
+        method: "POST",
+        headers: { "x-api-key": apiKey },
+        body: apiFormData
+      });
+    } catch (networkError) {
+      await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Network Error (${provider})`);
+      throw new Error("Failed to connect to AI server. Your credits have been safely refunded.");
+    }
+
+    if (!response.ok) {
+      const rawText = await response.text();
+      await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: GeminiGen API Error (${provider})`);
+      throw new Error(`AI Video Generation Error: ${rawText || response.statusText}. Your credits have been refunded.`);
+    }
+
+    const result = await response.json();
+
+    await db.insert(aiGenerations).values({
+      userId: sessionData.session.userId,
+      taskUuid: result.uuid || result.id?.toString(),
+      type: "video",
+      provider,
+      model: model || `${endpointProvider}-2`,
+      prompt,
+      status: "pending",
+      resolution,
+      duration: parseInt(durationStr) || 0,
+      creditCost: cost,
+    });
+
+    return { success: true, data: result };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

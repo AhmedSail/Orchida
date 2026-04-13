@@ -1,6 +1,6 @@
 import ControlUsers from "@/components/users/ControlUsers";
 import { db } from "@/src";
-import { session, users } from "@/src/db/schema";
+import { session, users, userCredits } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -11,8 +11,18 @@ export const metadata: Metadata = {
   description: "لوحة المدير | صلاحيات المستخدمين",
 };
 const page = async () => {
-  // ✅ جلب جميع المستخدمين
-  const allUsers = await db.select().from(users);
+  // ✅ جلب المستخدمين مع رصيد الكريدت
+  const allUsersWithCredits = await db.select({
+    user: users,
+    credits: userCredits
+  })
+  .from(users)
+  .leftJoin(userCredits, eq(users.id, userCredits.userId));
+
+  const allUsers = allUsersWithCredits.map(res => ({
+    ...res.user,
+    creditsBalance: res.credits?.balance || 0
+  }));
 
   // ✅ جلب جميع الجلسات
   const sessionsList = await db.select().from(session);
