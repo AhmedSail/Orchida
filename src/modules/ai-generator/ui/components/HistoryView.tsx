@@ -300,9 +300,9 @@ export default function HistoryView() {
                       </span>
                       
                       <div className="flex items-center gap-3">
-                        {item.status === "completed" && videoUrl && (
+                        {item.status === "completed" && (videoUrl || getImageUrl(item)) && (
                           <a
-                            href={videoUrl}
+                            href={(videoUrl || getImageUrl(item))!}
                             download
                             onClick={(e) => e.stopPropagation()}
                             className="flex items-center gap-1 text-[11px] font-semibold text-primary hover:underline"
@@ -375,9 +375,9 @@ export default function HistoryView() {
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                {getVideoUrl(selectedItem) && (
+                {(getVideoUrl(selectedItem) || getImageUrl(selectedItem)) && (
                   <a
-                    href={getVideoUrl(selectedItem)!}
+                    href={(getVideoUrl(selectedItem) || getImageUrl(selectedItem))!}
                     download
                     className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition"
                   >
@@ -394,19 +394,33 @@ export default function HistoryView() {
               </div>
             </div>
 
-            {/* Video Player */}
+            {/* Media Player */}
             <div className="aspect-video bg-black">
-              {getVideoUrl(selectedItem) ? (
-                <video
-                  src={getVideoUrl(selectedItem)!}
-                  controls
-                  autoPlay
-                  className="w-full h-full object-contain"
-                />
+              {selectedItem.type === "video" ? (
+                getVideoUrl(selectedItem) ? (
+                  <video
+                    src={getVideoUrl(selectedItem)!}
+                    controls
+                    autoPlay
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-zinc-500">
+                    لا يوجد رابط فيديو متاح
+                  </div>
+                )
               ) : (
-                <div className="flex items-center justify-center h-full text-zinc-500">
-                  لا يوجد رابط فيديو متاح
-                </div>
+                getImageUrl(selectedItem) ? (
+                  <img
+                    src={getImageUrl(selectedItem)!}
+                    alt={selectedItem.prompt}
+                    className="w-full h-full object-contain"
+                  />
+                ) : (
+                  <div className="flex items-center justify-center h-full text-zinc-500">
+                    لا يوجد رابط صورة متاح
+                  </div>
+                )
               )}
             </div>
           </div>
