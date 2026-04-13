@@ -40,6 +40,7 @@ export async function PUT(req: Request) {
         whatsappUrl: body.whatsappUrl,
         linkedinUrl: body.linkedinUrl,
         tiktokUrl: body.tiktokUrl,
+        geminiGenApiKey: body.geminiGenApiKey,
 
         updatedAt: new Date(), // ✅ تحديث وقت آخر تعديل
       })

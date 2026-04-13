@@ -177,6 +177,7 @@ function NavList({
     { id: 3, title: "المسابقات", href: "/competitions" },
     { id: 7, title: "المنتجات الرائجة", href: "/trending" },
     { id: 4, title: "الخدمات الرقمية", href: "/services" },
+    { id: 8, title: "الذكاء الاصطناعي", href: "/ai" },
     { id: 5, title: "اتصل بنا", href: "/contact" },
     { id: 6, title: "من نحن", href: "/about" },
   ];

@@ -26,6 +26,16 @@ const config: NextConfig = {
         pathname: "**",
       },
       {
+        protocol: "https",
+        hostname: "*.cloudflarestorage.com",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "cdn.geminigen.ai",
+        pathname: "**",
+      },
+      {
         protocol: "http",
         hostname: "localhost",
         pathname: "**",

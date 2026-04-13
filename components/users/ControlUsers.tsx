@@ -55,17 +55,25 @@ import {
   Send,
   Loader2,
   MessageSquare as MessageSquareIcon,
+  Zap,
+  TrendingUp,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { toast } from "sonner";
 import Swal from "sweetalert2";
 import withReactContent from "sweetalert2-react-content";
+import {
+  updateUserCreditsAction,
+  getWelcomeBonusAction,
+  updateWelcomeBonusAction,
+} from "@/app/actions/ai-credits";
 
 const MySwal = withReactContent(Swal);
 
 // ✅ دالة معرفة إذا المستخدم نشط الآن بناءً على الجلسة
 const isOnline = (userId: string, sessions: any[]) => {
   const activeSession = sessions.find(
-    (s) => s.userId === userId && new Date(s.expiresAt) > new Date()
+    (s) => s.userId === userId && new Date(s.expiresAt) > new Date(),
   );
   return Boolean(activeSession);
 };
@@ -130,8 +138,18 @@ const ControlUsers = ({
   const [searchTerm, setSearchTerm] = useState("");
 
   const [open, setOpen] = useState(false);
-  const [selectedUser, setSelectedUser] = useState<User | null>(null);
+  const [selectedUser, setSelectedUser] = useState<any | null>(null);
   const [role, setRole] = useState<string>("user");
+
+  // Credit Modal States
+  const [creditOpen, setCreditOpen] = useState(false);
+  const [creditAmount, setCreditAmount] = useState(0);
+  const [creditNote, setCreditNote] = useState("");
+  const [isUpdatingCredits, setIsUpdatingCredits] = useState(false);
+
+  // Default Bonus Settings
+  const [defaultBonus, setDefaultBonus] = useState(50);
+  const [isUpdatingBonus, setIsUpdatingBonus] = useState(false);
 
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [smsMessage, setSmsMessage] = useState("");
@@ -152,7 +170,14 @@ const ControlUsers = ({
         console.error("Failed to fetch templates", e);
       }
     };
+
+    const fetchBonus = async () => {
+      const res = await getWelcomeBonusAction();
+      if (res.success) setDefaultBonus(res.amount);
+    };
+
     fetchTemplates();
+    fetchBonus();
   }, []);
 
   const toggleSelectAll = () => {
@@ -165,7 +190,7 @@ const ControlUsers = ({
 
   const toggleSelectUser = (id: string) => {
     setSelectedIds((prev) =>
-      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id]
+      prev.includes(id) ? prev.filter((i) => i !== id) : [...prev, id],
     );
   };
 
@@ -238,6 +263,53 @@ const ControlUsers = ({
     window.location.reload();
   };
 
+  const openCreditModal = (user: any) => {
+    setSelectedUser(user);
+    setCreditAmount(0);
+    setCreditNote("شحن يدوي من الإدارة");
+    setCreditOpen(true);
+  };
+
+  const handleUpdateCredits = async () => {
+    if (!selectedUser || creditAmount === 0) return;
+
+    setIsUpdatingCredits(true);
+    try {
+      const res = await updateUserCreditsAction(
+        selectedUser.id,
+        creditAmount,
+        creditNote,
+      );
+      if (res.success) {
+        MySwal.fire("تم بنجاح", "تم تحديث رصيد المستخدم", "success");
+        setCreditOpen(false);
+        window.location.reload();
+      } else {
+        MySwal.fire("خطأ", res.error || "فشل التحديث", "error");
+      }
+    } catch (e) {
+      MySwal.fire("خطأ", "حدث خطأ غير متوقع", "error");
+    } finally {
+      setIsUpdatingCredits(false);
+    }
+  };
+
+  const handleUpdateBonus = async () => {
+    setIsUpdatingBonus(true);
+    try {
+      const res = await updateWelcomeBonusAction(defaultBonus);
+      if (res.success) {
+        toast.success("تم تحديث الرصيد الافتراضي بنجاح");
+      } else {
+        toast.error("فشل التحديث");
+      }
+    } catch (e) {
+      toast.error("خطأ غير متوقع");
+    } finally {
+      setIsUpdatingBonus(false);
+    }
+  };
+
   const filteredUsers = allUsers.filter((user) => {
     const online = isOnline(user.id, sessions);
     const roleMatch = roleFilter === "all" || user.role === roleFilter;
@@ -257,7 +329,7 @@ const ControlUsers = ({
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
   const paginatedUsers = filteredUsers.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   return (
@@ -324,6 +396,36 @@ const ControlUsers = ({
             <SelectItem value="offline">غير متصل</SelectItem>
           </SelectContent>
         </Select>
+
+        {/* Dynamic Welcome Bonus Config */}
+        <div className="flex items-center gap-3 bg-white dark:bg-zinc-950 px-4 py-2 rounded-2xl border border-slate-200 dark:border-zinc-800 shadow-sm ml-auto">
+          <div className="flex flex-col">
+            <span className="text-[10px] font-bold text-slate-400">
+              الرصيد الافتراضي للحسابات الجديدة
+            </span>
+            <div className="flex items-center gap-2">
+              <Zap className="size-4 text-emerald-500" />
+              <input
+                type="number"
+                className="w-16 bg-transparent font-black text-slate-800 border-none outline-none p-0 focus:ring-0"
+                value={defaultBonus}
+                onChange={(e) => setDefaultBonus(parseInt(e.target.value) || 0)}
+              />
+            </div>
+          </div>
+          <Button
+            size="sm"
+            className="rounded-xl h-9 bg-slate-900 hover:bg-black text-xs font-bold"
+            onClick={handleUpdateBonus}
+            disabled={isUpdatingBonus}
+          >
+            {isUpdatingBonus ? (
+              <Loader2 className="animate-spin size-3" />
+            ) : (
+              "حفظ"
+            )}
+          </Button>
+        </div>
       </div>
 
       {/* SMS Sending Panel */}
@@ -415,6 +517,9 @@ const ControlUsers = ({
                 الحالة
               </TableHead>
               <TableHead className="px-6 py-5 font-bold text-slate-500 text-center">
+                الرصيد (Lightning)
+              </TableHead>
+              <TableHead className="px-6 py-5 font-bold text-slate-500 text-center">
                 الدور الحالي
               </TableHead>
               <TableHead className="px-6 py-5 font-bold text-slate-500 text-center">
@@ -438,7 +543,7 @@ const ControlUsers = ({
                     className={cn(
                       "group border-b border-slate-50 dark:border-zinc-900 hover:bg-slate-50/50 dark:hover:bg-zinc-900/20 transition-colors",
                       selectedIds.includes(user.id) &&
-                        "bg-blue-50/30 dark:bg-blue-500/5"
+                        "bg-blue-50/30 dark:bg-blue-500/5",
                     )}
                   >
                     <TableCell className="px-6 py-5">
@@ -474,7 +579,7 @@ const ControlUsers = ({
                             <span>{user.phone}</span>
                             <a
                               href={`https://wa.me/${(user.phone.startsWith(
-                                "05"
+                                "05",
                               ) && user.phone.length === 10
                                 ? "970" + user.phone.substring(1)
                                 : user.phone
@@ -510,6 +615,15 @@ const ControlUsers = ({
                           <span className="text-xs font-black">غائب</span>
                         </div>
                       )}
+                    </TableCell>
+                    <TableCell className="px-6 py-5 text-center">
+                      <button
+                        onClick={() => openCreditModal(user)}
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all font-black text-sm"
+                      >
+                        <Zap className="size-4" />
+                        {(user as any).creditsBalance || 0}
+                      </button>
                     </TableCell>
                     <TableCell className="px-6 py-5 text-center">
                       <Badge
@@ -783,6 +897,78 @@ const ControlUsers = ({
                 className="w-full h-14 rounded-2xl font-bold text-slate-500"
               >
                 إلغاء
+              </Button>
+            </div>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Credit Management Modal */}
+      <Dialog open={creditOpen} onOpenChange={setCreditOpen}>
+        <DialogContent
+          className="w-[90%] sm:max-w-md rounded-[32px] p-8 border-none shadow-2xl overflow-hidden"
+          dir="rtl"
+        >
+          <div className="absolute top-0 left-0 w-full h-2 bg-linear-to-l from-emerald-500 to-emerald-300" />
+          <DialogHeader className="pt-4 space-y-4">
+            <div className="size-16 rounded-3xl bg-emerald-50 flex items-center justify-center text-emerald-600 mx-auto">
+              <Zap className="size-8" />
+            </div>
+            <DialogTitle className="text-2xl font-black text-center text-slate-800">
+              إدارة رصيد الكريدت
+            </DialogTitle>
+            <p className="text-sm text-slate-500 text-center font-medium">
+              تحديث رصيد المستخدم: <strong>{selectedUser?.name}</strong>
+              <br />
+              الرصيد الحالي:{" "}
+              <span className="text-emerald-600 font-black">
+                {selectedUser?.creditsBalance || 0}
+              </span>
+            </p>
+          </DialogHeader>
+
+          <div className="py-6 space-y-4">
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400">
+                القيمة المراد إضافتها (أو خصمها)
+              </label>
+              <Input
+                type="number"
+                placeholder="مثلاً 50 أو -20"
+                className="h-14 rounded-2xl bg-slate-50 border-slate-200 text-center text-xl font-black"
+                value={creditAmount}
+                onChange={(e) => setCreditAmount(parseInt(e.target.value) || 0)}
+              />
+              <p className="text-[10px] text-slate-400 text-center italic">
+                أدخل قيمة موجبة للشحن، وقيمة سالبة للخصم.
+              </p>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-bold text-slate-400">
+                ملاحظة (سبب الشحن)
+              </label>
+              <Input
+                placeholder="شحن يدوي، تعويض، شراء رصيد..."
+                className="h-12 rounded-2xl bg-slate-50 border-slate-200"
+                value={creditNote}
+                onChange={(e) => setCreditNote(e.target.value)}
+              />
+            </div>
+          </div>
+
+          <DialogFooter className="gap-2 sm:gap-0">
+            <div className="flex flex-col w-full gap-2">
+              <Button
+                onClick={handleUpdateCredits}
+                disabled={isUpdatingCredits || creditAmount === 0}
+                className="w-full h-14 rounded-2xl font-black text-lg bg-emerald-600 hover:bg-emerald-700 text-white shadow-xl shadow-emerald-100 transition-all active:scale-95"
+              >
+                {isUpdatingCredits ? (
+                  <Loader2 className="animate-spin" />
+                ) : (
+                  "تأكيد تحديث الرصيد"
+                )}
               </Button>
             </div>
           </DialogFooter>

@@ -450,6 +450,7 @@ export const companies = pgTable("companies", {
   whatsappUrl: text("whatsappUrl").default("#"), // رابط واتساب
   linkedinUrl: text("linkedinUrl").default("#"), // رابط لينكدإن
   tiktokUrl: text("tiktokUrl").default("#"), // رابط تيك توك
+  geminiGenApiKey: text("geminiGenApiKey"), // API Key الخاص بخدمة GeminiGen
 
   createdAt: timestamp("createdAt").defaultNow().notNull(), // وقت الإنشاء
   updatedAt: timestamp("updatedAt").defaultNow().notNull(), // آخر تحديث
@@ -1212,3 +1213,88 @@ export const aiPromptsRelations = relations(aiPrompts, ({ one }) => ({
     references: [courseSections.id],
   }),
 }));
+
+// ==========================================
+// 19. AI Credits System
+// ==========================================
+export const userCredits = pgTable("userCredits", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  balance: integer("balance").default(50).notNull(), // رصيد البداية (50 نقطة مجانية مثلاً)
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const creditTransactions = pgTable("creditTransactions", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  amount: integer("amount").notNull(), // الرقم سيكون بالسالب عند الاستهلاك (مثلاً -5) وبالموجب عند الشحن (مثلاً +100)
+  description: varchar("description", { length: 255 }), // شرح الحركة، مثلاً: "Video Generation with Grok", "Purchased 100 credits"
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const userCreditsRelations = relations(userCredits, ({ one }) => ({
+  user: one(users, {
+    fields: [userCredits.userId],
+    references: [users.id],
+  }),
+}));
+
+export const creditTransactionsRelations = relations(
+  creditTransactions,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [creditTransactions.userId],
+      references: [users.id],
+    }),
+  }),
+);
+
+// ==========================================
+// 20. AI Generation History
+// ==========================================
+export const aiGenerations = pgTable("aiGenerations", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  taskUuid: varchar("taskUuid", { length: 128 }), // UUID من GeminiGen API
+  type: varchar("type", { length: 10 }).notNull(), // "video" | "image"
+  provider: varchar("provider", { length: 50 }), // "Veo", "Grok", etc.
+  model: varchar("model", { length: 100 }),
+  prompt: text("prompt"),
+  status: varchar("status", { length: 20 }).default("pending"), // "pending" | "completed" | "failed"
+  resultUrl: text("resultUrl"), // رابط الفيديو أو الصورة الناتجة
+  thumbnailUrl: text("thumbnailUrl"),
+  resolution: varchar("resolution", { length: 20 }),
+  duration: integer("duration"), // بالثواني (للفيديوهات)
+  creditCost: integer("creditCost").default(0),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const aiGenerationsRelations = relations(aiGenerations, ({ one }) => ({
+  user: one(users, {
+    fields: [aiGenerations.userId],
+    references: [users.id],
+  }),
+}));
+
+// ==========================================
+// 21. Dynamic Service Pricing
+// ==========================================
+export const aiServicePricing = pgTable("aiServicePricing", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  serviceType: varchar("serviceType", { length: 20 }).notNull(), // "video" | "image"
+  provider: varchar("provider", { length: 50 }).notNull(), // "Veo", "Grok", "Imagen", etc.
+  quality: varchar("quality", { length: 50 }).notNull(), // "720p", "1080p", "Standard", etc.
+  duration: integer("duration"), // Duration in seconds (for videos)
+  credits: integer("credits").notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
