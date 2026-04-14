@@ -115,6 +115,9 @@ export default function VideoGenView() {
     if (firstImageRef.current) firstImageRef.current.value = "";
     if (lastImageRef.current) lastImageRef.current.value = "";
     if (grokImageRef.current) grokImageRef.current.value = "";
+
+    // Clear persistence
+    localStorage.removeItem("ai_video_state");
     
     Swal.fire({
       toast: true,
@@ -233,62 +236,83 @@ export default function VideoGenView() {
     }
   }, []);
 
-  // 1. Save lightweight options (provider, prompt, orientation, etc.)
+  // Use effects for temporary object URLs to prevent memory leaks and refresh bugs
+  const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
+  const [lastImageUrl, setLastImageUrl] = useState<string | null>(null);
+  const [grokImageUrl, setGrokImageUrl] = useState<string | null>(null);
+
   React.useEffect(() => {
-    const savedState = localStorage.getItem("ai_video_state");
-    const currentSettings = savedState ? JSON.parse(savedState) : {};
-    
-    const newState = {
-      ...currentSettings,
-      provider,
-      veoModel,
-      grokMode,
-      prompt,
-      orientation,
-      resolution,
-      duration,
-    };
-    
-    // We don't overwrite images here, they are handled by the other effect
-    localStorage.setItem("ai_video_state", JSON.stringify(newState));
-  }, [provider, grokMode, prompt, orientation, resolution, duration]);
+    if (firstImage) {
+      const url = URL.createObjectURL(firstImage);
+      setFirstImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setFirstImageUrl(null);
+  }, [firstImage]);
 
-  // 2. Save images separately (expensive operations)
   React.useEffect(() => {
-    const saveImages = async () => {
-      const savedState = localStorage.getItem("ai_video_state");
-      const currentSettings = savedState ? JSON.parse(savedState) : {};
+    if (lastImage) {
+      const url = URL.createObjectURL(lastImage);
+      setLastImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setLastImageUrl(null);
+  }, [lastImage]);
 
-      // Only update image fields
-      if (firstImage) {
-        currentSettings.firstImageBase64 = await fileToBase64(firstImage);
-        currentSettings.firstImageName = firstImage.name;
-      } else {
-        delete currentSettings.firstImageBase64;
-        delete currentSettings.firstImageName;
+  React.useEffect(() => {
+    if (grokImage) {
+      const url = URL.createObjectURL(grokImage);
+      setGrokImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+    setGrokImageUrl(null);
+  }, [grokImage]);
+
+  // Consolidated Persistence Effect (Prevents race conditions between options and images)
+  React.useEffect(() => {
+    const saveState = async () => {
+      try {
+        const stateToSave: any = {
+          provider,
+          veoModel,
+          grokMode,
+          prompt,
+          orientation,
+          resolution,
+          duration,
+        };
+
+        if (firstImage) {
+          stateToSave.firstImageBase64 = await fileToBase64(firstImage);
+          stateToSave.firstImageName = firstImage.name;
+        }
+        if (lastImage) {
+          stateToSave.lastImageBase64 = await fileToBase64(lastImage);
+          stateToSave.lastImageName = lastImage.name;
+        }
+        if (grokImage) {
+          stateToSave.grokImageBase64 = await fileToBase64(grokImage);
+          stateToSave.grokImageName = grokImage.name;
+        }
+
+        localStorage.setItem("ai_video_state", JSON.stringify(stateToSave));
+      } catch (e) {
+        console.error("Persistence error:", e);
       }
-
-      if (lastImage) {
-        currentSettings.lastImageBase64 = await fileToBase64(lastImage);
-        currentSettings.lastImageName = lastImage.name;
-      } else {
-        delete currentSettings.lastImageBase64;
-        delete currentSettings.lastImageName;
-      }
-
-      if (grokImage) {
-        currentSettings.grokImageBase64 = await fileToBase64(grokImage);
-        currentSettings.grokImageName = grokImage.name;
-      } else {
-        delete currentSettings.grokImageBase64;
-        delete currentSettings.grokImageName;
-      }
-
-      localStorage.setItem("ai_video_state", JSON.stringify(currentSettings));
     };
 
-    saveImages();
-  }, [firstImage, lastImage, grokImage]);
+    const timer = setTimeout(saveState, 500); // Debounce to prevent lag on typing
+    return () => clearTimeout(timer);
+  }, [
+    provider,
+    prompt,
+    orientation,
+    resolution,
+    duration,
+    firstImage,
+    lastImage,
+    grokImage,
+  ]);
 
   const handleEnhancePrompt = async (type: "video" | "image" = "video") => {
     if (!prompt.trim()) return;
@@ -385,9 +409,9 @@ export default function VideoGenView() {
         resolution,
         aspectRatio: orientation,
         cost,
-        hasFirstImage: !!firstImage,
-        hasLastImage: !!lastImage,
-        hasGrokImage: !!grokImage,
+        firstImage: firstImage ? { name: firstImage.name, size: firstImage.size } : "none",
+        lastImage: lastImage ? { name: lastImage.name, size: lastImage.size } : "none",
+        grokImage: grokImage ? { name: grokImage.name, size: grokImage.size } : "none",
       });
 
       const res = await generateVideoAction(formData);
@@ -632,10 +656,12 @@ export default function VideoGenView() {
                   >
                     {firstImage ? (
                       <div className="absolute inset-0 w-full h-full group">
-                        <img
-                          src={URL.createObjectURL(firstImage)}
-                          className="w-full h-full object-cover"
-                        />
+                        {firstImageUrl && (
+                          <img
+                            src={firstImageUrl}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
@@ -670,10 +696,12 @@ export default function VideoGenView() {
                   >
                     {lastImage ? (
                       <div className="absolute inset-0 w-full h-full group">
-                        <img
-                          src={URL.createObjectURL(lastImage)}
-                          className="w-full h-full object-cover"
-                        />
+                        {lastImageUrl && (
+                          <img
+                            src={lastImageUrl}
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                         <button
                           onClick={(e) => {
                             e.stopPropagation();
