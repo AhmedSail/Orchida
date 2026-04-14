@@ -15,7 +15,7 @@ export async function generateImageAction(formDataStringBase64: string) {
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
 
     const data = JSON.parse(Buffer.from(formDataStringBase64, 'base64').toString('utf8'));
-    const { prompt, model, aspectRatio, outputFormat, resolution, numResults } = data;
+    const { provider, prompt, model, aspectRatio, outputFormat, resolution, numResults } = data;
     
     // Fetch dynamic cost from DB
     const resQuality = resolution || "Standard";
@@ -32,25 +32,46 @@ export async function generateImageAction(formDataStringBase64: string) {
     apiFormData.append("prompt", prompt);
     apiFormData.append("model", model || "nano-banana-pro");
 
-    // منطق فائق البساطة: فقط الموديلات الرسمية هي التي تأخذ باراميترات إضافية
-    const officialModels = ["nano-banana-pro", "nano-banana-2", "imagen-4"];
-    const isOfficialModel = officialModels.includes(model);
+    if (provider === "Grok") {
+      const grokRatioMap: Record<string, string> = {
+        "Landscape": "landscape",
+        "Portrait": "portrait",
+        "Square": "square"
+      };
+      apiFormData.append("orientation", grokRatioMap[aspectRatio] || "landscape");
+      
+      const numResult = data.numResults?.toString();
+      if (numResult) apiFormData.append("num_result", numResult);
 
-    if (isOfficialModel) {
-      apiFormData.append("aspect_ratio", aspectRatio || "1:1");
+      if (data.imageReference) {
+        const buffer = Buffer.from(data.imageReference, 'base64');
+        apiFormData.append("files", new Blob([buffer]), "reference.jpg");
+      }
+    } else {
+      const aspectRatioMap: Record<string, string> = {
+        "Landscape": "16:9",
+        "Portrait": "9:16",
+        "Square": "1:1"
+      };
+      apiFormData.append("aspect_ratio", aspectRatioMap[aspectRatio] || "1:1");
       apiFormData.append("output_format", outputFormat?.toLowerCase() || "jpeg");
       apiFormData.append("style", data.style || "Photorealistic");
       if (resolution) {
         apiFormData.append("resolution", resolution);
       }
+      if (numResults) {
+        apiFormData.append("num_results", numResults.toString());
+      }
     }
 
-    // لا نرسل num_results أيضاً إلا للموديلات الرسمية إذا دعمتها
-    if (isOfficialModel && numResults) {
-      apiFormData.append("num_results", numResults.toString());
-    }
+    const endpointMap: Record<string, string> = {
+      "Flux": "flux",
+      "Ideogram": "ideogram",
+      "Grok": "grok"
+    };
+    const endpoint = endpointMap[provider] || "generate_image";
 
-    const response = await fetch(`${API_BASE}/generate_image`, {
+    const response = await fetch(`${API_BASE}/${endpoint}`, {
       method: "POST",
       headers: { "x-api-key": apiKey },
       body: apiFormData

@@ -12,14 +12,14 @@ import {
   Download,
   Maximize,
   Clock,
+  Sparkles,
 } from "lucide-react";
-import {
-  generateImageAction,
-} from "@/app/actions/ai-image";
+import { generateImageAction } from "@/app/actions/ai-image";
 import {
   checkGenerationStatus,
   updateGenerationStatusAction,
   refundFailedTaskAction,
+  enhancePromptAction,
 } from "@/app/actions/ai-common";
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
@@ -45,6 +45,8 @@ export default function ImageGenView() {
   const [numResults, setNumResults] = useState(1);
   const [imageReference, setImageReference] = useState<File | null>(null);
   const [orientation, setOrientation] = useState("Square (1:1)");
+  const [model] = useState("nano-banana-pro"); // Locked to Nano Banana Pro
+  const [style] = useState("Photorealistic"); // Locked to Photorealistic for best results
 
   // Helper: File to Base64
   const fileToBase64 = (file: File): Promise<string> => {
@@ -76,8 +78,9 @@ export default function ImageGenView() {
 
   // States for generation
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
-  const [resultImageUrl, setResultImageUrl] = useState<string | null>(null);
+  const [resultImageUrls, setResultImageUrls] = useState<string[]>([]);
   // Auth & Balance
   const { data: session } = authClient.useSession();
   const [userBalance, setUserBalance] = useState<number | null>(null);
@@ -109,13 +112,13 @@ export default function ImageGenView() {
         if (parsed.prompt) setPrompt(parsed.prompt);
         if (parsed.aspectRatio) setAspectRatio(parsed.aspectRatio);
         if (parsed.outputFormat) setOutputFormat(parsed.outputFormat);
-        if (parsed.resolution) setResolution(parsed.resolution);
-        if (parsed.numResults) setNumResults(parsed.numResults);
         if (parsed.orientation) setOrientation(parsed.orientation);
 
         // Restore image
         if (parsed.imageBase64) {
-          setImageReference(base64ToFile(parsed.imageBase64, parsed.imageName || "ref.png"));
+          setImageReference(
+            base64ToFile(parsed.imageBase64, parsed.imageName || "ref.png"),
+          );
         }
       } catch (e) {
         console.error("Error loading image state:", e);
@@ -128,30 +131,85 @@ export default function ImageGenView() {
     }
   }, []);
 
-  // Save state
+  // 1. Save lightweight options (provider, prompt, orientation, etc.)
   useEffect(() => {
-    const saveState = async () => {
-      const state: any = { provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation };
-      
-      if (imageReference) {
-        state.imageBase64 = await fileToBase64(imageReference);
-        state.imageName = imageReference.name;
-      }
+    const savedState = localStorage.getItem("ai_image_state");
+    const currentSettings = savedState ? JSON.parse(savedState) : {};
 
-      localStorage.setItem("ai_image_state", JSON.stringify(state));
+    const newState = {
+      ...currentSettings,
+      provider,
+      prompt,
+      aspectRatio,
+      outputFormat,
+      resolution,
+      numResults,
+      orientation,
     };
 
-    saveState();
-  }, [provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation, imageReference]);
+    localStorage.setItem("ai_image_state", JSON.stringify(newState));
+  }, [
+    provider,
+    prompt,
+    aspectRatio,
+    outputFormat,
+    resolution,
+    numResults,
+    orientation,
+  ]);
+
+  // 2. Save images separately (expensive operations)
+  useEffect(() => {
+    const saveImages = async () => {
+      const savedState = localStorage.getItem("ai_image_state");
+      const currentSettings = savedState ? JSON.parse(savedState) : {};
+
+      if (imageReference) {
+        currentSettings.imageBase64 = await fileToBase64(imageReference);
+        currentSettings.imageName = imageReference.name;
+      } else {
+        delete currentSettings.imageBase64;
+        delete currentSettings.imageName;
+      }
+
+      localStorage.setItem("ai_image_state", JSON.stringify(currentSettings));
+    };
+
+    saveImages();
+  }, [imageReference]);
+
+  const handleEnhancePrompt = async () => {
+    if (!prompt.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const res = await enhancePromptAction(prompt, "image");
+      if (res.success && res.enhancedPrompt) {
+        setPrompt(res.enhancedPrompt);
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "تم تحسين الوصف بنجاح ✨",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      }
+    } catch (e) {
+      console.error("Enhancement error", e);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const cost = (() => {
     const resQuality = resolution || "Standard";
-    
+
     // Exact match provider & quality
-    const match = pricingRules.find(r => 
-      r.serviceType === "image" && 
-      r.provider.toLowerCase() === provider.toLowerCase() && 
-      r.quality === resQuality
+    const match = pricingRules.find(
+      (r) =>
+        r.serviceType === "image" &&
+        r.provider.toLowerCase() === provider.toLowerCase() &&
+        r.quality === resQuality,
     );
     return match ? match.credits : 1;
   })();
@@ -183,17 +241,15 @@ export default function ImageGenView() {
 
     setIsGenerating(true);
     setGenerationError(null);
-    setResultImageUrl(null);
+    setResultImageUrls([]);
 
     try {
       const data: any = {
         prompt,
         model:
           provider === "Imagen"
-            ? "nano-banana-pro"
-            : provider === "Grok"
-              ? "nano-banana-pro" 
-              : "imagen-4",
+            ? model
+            : "imagen-4",
         aspectRatio:
           provider === "Grok"
             ? orientation.includes("16:9")
@@ -209,6 +265,8 @@ export default function ImageGenView() {
         outputFormat,
         numResults: provider === "Grok" ? numResults : 1,
         cost,
+        provider,
+        style,
       };
 
       // Force empty resolution for Grok to override backend defaults, use state for Imagen
@@ -233,7 +291,7 @@ export default function ImageGenView() {
             res.data.url ||
             (res.data.data && res.data.data[0]?.url);
           if (imgUrl) {
-            setResultImageUrl(imgUrl);
+            setResultImageUrls([imgUrl]);
             setIsGenerating(false);
           } else {
             setGenerationError("لم يتم استلام معرف للمهمة أو رابط مباشر.");
@@ -267,18 +325,26 @@ export default function ImageGenView() {
           setIsGenerating(false);
           localStorage.removeItem("pending_image_gen");
 
-          // استخراج الرابط من هيكليات مختلفة للـ API
-          const foundUrl =
-            statusRes.data.image_url ||
-            statusRes.data.url ||
-            (statusRes.data.data && statusRes.data.data[0]?.url) ||
-            (statusRes.data.generated_image &&
-              statusRes.data.generated_image[0]?.image_url);
+          const foundUrls = [];
+          if (statusRes.data.image_url) foundUrls.push(statusRes.data.image_url);
+          else if (statusRes.data.url) foundUrls.push(statusRes.data.url);
+          else if (statusRes.data.data && Array.isArray(statusRes.data.data)) {
+            statusRes.data.data.forEach((item: any) => {
+              if (item.url) foundUrls.push(item.url);
+            });
+          } else if (
+            statusRes.data.generated_image &&
+            Array.isArray(statusRes.data.generated_image)
+          ) {
+            statusRes.data.generated_image.forEach((item: any) => {
+              if (item.image_url) foundUrls.push(item.image_url);
+            });
+          }
 
-          if (foundUrl) {
-            setResultImageUrl(foundUrl);
-            // تحديث السجل المحلي بالاكتمال
-            updateGenerationStatusAction(uuid, "completed", foundUrl);
+          if (foundUrls.length > 0) {
+            setResultImageUrls(foundUrls);
+            // تحديث السجل المحلي بالاكتمال (نأخذ أول صورة للمعينة)
+            updateGenerationStatusAction(uuid, "completed", foundUrls[0]);
             window.dispatchEvent(new CustomEvent("balanceUpdated"));
           } else {
             setGenerationError(
@@ -291,16 +357,20 @@ export default function ImageGenView() {
           localStorage.removeItem("pending_image_gen");
 
           // Extract error message reliably
-          let errorInfo = statusRes.data.error || statusRes.data.message || statusRes.data.reason || "مشكلة تقنية في الخادم المزود";
-          if (typeof errorInfo === 'object') {
+          let errorInfo =
+            statusRes.data.error ||
+            statusRes.data.message ||
+            statusRes.data.reason ||
+            "مشكلة تقنية في الخادم المزود";
+          if (typeof errorInfo === "object") {
             errorInfo = errorInfo.message || JSON.stringify(errorInfo);
           }
 
           const displayError = `فشل توليد الصورة: ${errorInfo}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
           setGenerationError(displayError);
-          
+
           updateGenerationStatusAction(uuid, "failed");
-          
+
           // استرجاع الكريديت
           refundFailedTaskAction(uuid, errorInfo).then(() => {
             getStudentInternalCredits().then((cr) => {
@@ -363,8 +433,13 @@ export default function ImageGenView() {
                   disabled={p.disabled}
                   onClick={() => !p.disabled && setProvider(p.id)}
                   className={`flex flex-1 items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition 
-                    ${p.disabled ? "opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400" : 
-                      provider === p.id ? "border-primary bg-primary/5 text-primary" : "border-zinc-100 text-zinc-500 hover:bg-zinc-50"}`}
+                    ${
+                      p.disabled
+                        ? "opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400"
+                        : provider === p.id
+                          ? "border-primary bg-primary/5 text-primary"
+                          : "border-zinc-100 text-zinc-500 hover:bg-zinc-50"
+                    }`}
                 >
                   <div className="flex flex-col items-start">
                     <span>{p.name}</span>
@@ -381,9 +456,23 @@ export default function ImageGenView() {
 
           {/* Prompt */}
           <div className="mb-6">
-            <label className="block text-sm font-bold text-zinc-700 mb-2">
-              وصف الصورة (Prompt)
-            </label>
+            <div className="flex justify-between items-end mb-2">
+              <label className="block text-sm font-bold text-zinc-700">
+                وصف الصورة (Prompt)
+              </label>
+              <button
+                onClick={handleEnhancePrompt}
+                disabled={isEnhancing || !prompt.trim()}
+                className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition disabled:opacity-50"
+              >
+                {isEnhancing ? (
+                  <Loader2 className="w-3 h-3 animate-spin" />
+                ) : (
+                  <Sparkles className="w-3 h-3" />
+                )}
+                تحسين الوصف ذكياً ✨
+              </button>
+            </div>
             <textarea
               className="w-full border border-zinc-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-none leading-relaxed transition-all"
               placeholder={
@@ -423,23 +512,23 @@ export default function ImageGenView() {
           {provider === "Grok" && (
             <div className="mb-6">
               <label className="block text-sm font-bold text-zinc-700 mb-3">
-                عدد النتائج (Number of Results)
+                عدد الصور (Number of Results)
               </label>
-              <div className="flex gap-2">
-                {[1, 2, 3, 4, 5, 6].map((num) => (
+              <div className="flex flex-wrap gap-2">
+                {[1, 2, 4, 8].map((num) => (
                   <button
                     key={num}
                     onClick={() => setNumResults(num)}
-                    className={`w-10 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
+                    className={`w-12 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
                   >
                     {num}
                   </button>
                 ))}
               </div>
+              <p className="text-[10px] text-zinc-400 mt-2 font-medium">سيتم توليد مصفوفة من {numResults} صور.</p>
             </div>
           )}
 
-          {/* Orientation / Aspect Ratio */}
           <div className="mb-6">
             <label className="block text-sm font-bold text-zinc-700 mb-3">
               {provider === "Grok"
@@ -531,8 +620,9 @@ export default function ImageGenView() {
                   onChange={(e) => setResolution(e.target.value)}
                   className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-zinc-50 font-semibold"
                 >
-                  <option value="1K">1K (عادية)</option>
-                  <option value="2K">2K (عالية)</option>
+                  <option value="1K">1K (HD)</option>
+                  <option value="2K">2K (Full HD)</option>
+                  <option value="4K">4K (Ultra HD)</option>
                 </select>
               </div>
             </div>
@@ -582,14 +672,14 @@ export default function ImageGenView() {
         <div className="bg-white rounded-3xl p-6 border border-zinc-200 shadow-sm flex flex-col min-h-[500px]">
           <div className="flex items-center justify-between mb-6">
             <h2 className="text-xl font-black text-zinc-800">معاينة النتيجة</h2>
-            {resultImageUrl && (
+            {resultImageUrls.length > 0 && (
               <a
-                href={resultImageUrl}
+                href={resultImageUrls[0]}
                 download
                 target="_blank"
                 className="flex items-center gap-2 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition"
               >
-                <Download className="w-4 h-4" /> تحميل بجودة عالية
+                <Download className="w-4 h-4" /> تحميل الكل
               </a>
             )}
           </div>
@@ -608,21 +698,33 @@ export default function ImageGenView() {
                   عادةً ما يستغرق التوليد من 5 إلى 15 ثانية
                 </p>
               </div>
-            ) : resultImageUrl ? (
-              <div className="relative w-full h-full group flex items-center justify-center">
-                <Image
-                  src={resultImageUrl}
-                  width={500}
-                  height={500}
-                  alt="Generated AI"
-                  className="max-w-full max-h-full object-contain rounded-xl shadow-2xl transition group-hover:scale-[1.01]"
-                />
-                <button
-                  onClick={() => window.open(resultImageUrl, "_blank")}
-                  className="absolute top-4 right-4 bg-black/50 backdrop-blur-md text-white p-2 rounded-full opacity-0 group-hover:opacity-100 transition shadow-lg"
-                >
-                  <Maximize className="w-5 h-5" />
-                </button>
+            ) : resultImageUrls.length > 0 ? (
+              <div className={`grid w-full h-full gap-2 ${resultImageUrls.length === 1 ? "grid-cols-1" : resultImageUrls.length <= 4 ? "grid-cols-2" : "grid-cols-2 md:grid-cols-4"} overflow-auto p-2`}>
+                {resultImageUrls.map((url, idx) => (
+                  <div key={idx} className="relative aspect-square group rounded-lg overflow-hidden border border-zinc-100 shadow-sm">
+                    <Image
+                      src={url}
+                      fill
+                      alt={`Generated Result ${idx + 1}`}
+                      className="object-cover transition group-hover:scale-105"
+                    />
+                    <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center gap-2">
+                       <button 
+                         onClick={() => window.open(url, '_blank')}
+                         className="p-1.5 bg-white rounded-full text-zinc-900 hover:scale-110 transition"
+                       >
+                         <Maximize className="w-4 h-4" />
+                       </button>
+                       <a 
+                         href={url} 
+                         download 
+                         className="p-1.5 bg-white rounded-full text-zinc-900 hover:scale-110 transition"
+                       >
+                         <Download className="w-4 h-4" />
+                       </a>
+                    </div>
+                  </div>
+                ))}
               </div>
             ) : (
               <div className="flex flex-col items-center text-zinc-300">

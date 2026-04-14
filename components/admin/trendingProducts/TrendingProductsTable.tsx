@@ -89,8 +89,8 @@ const TrendingProductsTable = ({
     const action = product.isActive ? "إلغاء تنشيط" : "تنشيط";
     const result = await Swal.fire({
       title: `هل تريد ${action} هذا المنتج؟`,
-      text: product.isActive 
-        ? "لن يظهر هذا المنتج للمستخدمين في الصفحة الرئيسية." 
+      text: product.isActive
+        ? "لن يظهر هذا المنتج للمستخدمين في الصفحة الرئيسية."
         : "سيظهر هذا المنتج لجميع المستخدمين في الصفحة الرئيسية.",
       icon: "question",
       showCancelButton: true,
@@ -177,16 +177,16 @@ const TrendingProductsTable = ({
         <Table>
           <TableHeader className="bg-gray-50/50">
             <TableRow>
-              <TableHead className="text-right pr-6 py-5 font-bold text-gray-700">
+              <TableHead className="text-right pr-6 py-5 font-bold text-gray-700 w-[45%]">
                 المنتج
               </TableHead>
-              <TableHead className="text-center font-bold text-gray-700">
+              <TableHead className="text-center font-bold text-gray-700 w-[15%]">
                 الترتيب
               </TableHead>
-              <TableHead className="text-center font-bold text-gray-700">
+              <TableHead className="text-center font-bold text-gray-700 w-[20%]">
                 الحالة / الظهور
               </TableHead>
-              <TableHead className="text-left pl-6 font-bold text-gray-700">
+              <TableHead className="text-left pl-6 font-bold text-gray-700 w-[20%]">
                 الإجراءات
               </TableHead>
             </TableRow>
@@ -202,7 +202,7 @@ const TrendingProductsTable = ({
                   key={product.id}
                   className="group hover:bg-primary/2 transition-colors border-b border-gray-50 last:border-0"
                 >
-                  <TableCell className="py-5 pr-6">
+                  <TableCell className="py-5 pr-6 max-w-md">
                     <div className="flex items-center gap-4">
                       <div className="relative w-16 h-16 rounded-2xl overflow-hidden border-2 border-white shadow-sm shrink-0 group-hover:shadow-md transition-shadow">
                         {product.imageUrl ? (
@@ -220,14 +220,18 @@ const TrendingProductsTable = ({
                         )}
                       </div>
                       <div className="flex flex-col">
-                        <span className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight">
-                          {product.name}
+                        <span className="font-black text-gray-900 text-lg leading-tight uppercase tracking-tight line-clamp-2 ">
+                          {product.name
+                            ? product.name.length > 50
+                              ? product.name.substring(0, 50) + "..."
+                              : product.name
+                            : "لا يوجد وصف"}
                         </span>
                         <p className="text-gray-500 text-xs mt-1 font-medium max-w-[250px] leading-relaxed">
-                          {product.description 
-                            ? (product.description.length > 50 
-                                ? product.description.substring(0, 50) + "..." 
-                                : product.description)
+                          {product.description
+                            ? product.description.length > 50
+                              ? product.description.substring(0, 50) + "..."
+                              : product.description
                             : "لا يوجد وصف"}
                         </p>
                         {product.link && (
@@ -240,6 +244,15 @@ const TrendingProductsTable = ({
                             <ExternalLink className="w-2.5 h-2.5" />
                             تصفح الرابط
                           </a>
+                        )}
+                        {product.source && (
+                          <div className="mt-2">
+                            <Badge
+                              className={`rounded-lg px-2 py-0.5 text-[9px] font-black uppercase tracking-tighter ${product.source === "CJ" ? "bg-orange-500 text-white" : "bg-red-600 text-white"}`}
+                            >
+                              {product.source}
+                            </Badge>
+                          </div>
                         )}
                       </div>
                     </div>
@@ -263,15 +276,23 @@ const TrendingProductsTable = ({
                         <>
                           <Eye className="w-4 h-4 group-hover:hidden" />
                           <EyeOff className="w-4 h-4 hidden group-hover:block" />
-                          <span className="group-hover:hidden">نشط (إلغاء؟)</span>
-                          <span className="hidden group-hover:inline">إلغاء التنشيط</span>
+                          <span className="group-hover:hidden">
+                            نشط (إلغاء؟)
+                          </span>
+                          <span className="hidden group-hover:inline">
+                            إلغاء التنشيط
+                          </span>
                         </>
                       ) : (
                         <>
                           <EyeOff className="w-4 h-4 group-hover:hidden" />
                           <Eye className="w-4 h-4 hidden group-hover:block" />
-                          <span className="group-hover:hidden">مخفي (تفعيل؟)</span>
-                          <span className="hidden group-hover:inline">تفعيل النشاط</span>
+                          <span className="group-hover:hidden">
+                            مخفي (تفعيل؟)
+                          </span>
+                          <span className="hidden group-hover:inline">
+                            تفعيل النشاط
+                          </span>
                         </>
                       )}
                     </button>

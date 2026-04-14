@@ -1188,6 +1188,7 @@ export const trendingProducts = pgTable("trendingProducts", {
   description: text("description"),
   imageUrl: varchar("imageUrl", { length: 1024 }),
   link: varchar("link", { length: 1024 }),
+  source: varchar("source", { length: 50 }).default("AliExpress"),
   isActive: boolean("isActive").default(true).notNull(),
   order: integer("order").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),

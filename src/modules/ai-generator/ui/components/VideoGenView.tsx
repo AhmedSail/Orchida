@@ -12,12 +12,15 @@ import {
   Search,
   Loader2,
   AlertCircle,
+  Sparkles,
+  Info,
 } from "lucide-react";
 import { generateVideoAction } from "@/app/actions/ai-video";
 import {
   checkGenerationStatus,
   refundFailedTaskAction,
   updateGenerationStatusAction,
+  enhancePromptAction,
 } from "@/app/actions/ai-common";
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
@@ -35,6 +38,8 @@ interface PricingRule {
 
 export default function VideoGenView() {
   const [provider, setProvider] = useState("Veo");
+  const [veoModel] = useState("veo-3.1-fast"); // Locked to Veo 3.1 Fast as requested
+  const [grokMode] = useState("normal"); // Locked to Normal as requested
   const [prompt, setPrompt] = useState("");
   const [orientation, setOrientation] = useState("Landscape (16:9)");
   const [resolution, setResolution] = useState("High 720p"); // Default for Veo
@@ -92,6 +97,7 @@ export default function VideoGenView() {
 
   // API Generation states
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isEnhancing, setIsEnhancing] = useState(false);
   const [generationTaskId, setGenerationTaskId] = useState<string | null>(null);
   const [resultVideoUrl, setResultVideoUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
@@ -165,16 +171,31 @@ export default function VideoGenView() {
         if (parsed.orientation) setOrientation(parsed.orientation);
         if (parsed.resolution) setResolution(parsed.resolution);
         if (parsed.duration) setDuration(parsed.duration);
-        
+
         // Restore images from Base64
         if (parsed.firstImageBase64) {
-          setFirstImage(base64ToFile(parsed.firstImageBase64, parsed.firstImageName || "first.png"));
+          setFirstImage(
+            base64ToFile(
+              parsed.firstImageBase64,
+              parsed.firstImageName || "first.png",
+            ),
+          );
         }
         if (parsed.lastImageBase64) {
-          setLastImage(base64ToFile(parsed.lastImageBase64, parsed.lastImageName || "last.png"));
+          setLastImage(
+            base64ToFile(
+              parsed.lastImageBase64,
+              parsed.lastImageName || "last.png",
+            ),
+          );
         }
         if (parsed.grokImageBase64) {
-          setGrokImage(base64ToFile(parsed.grokImageBase64, parsed.grokImageName || "grok.png"));
+          setGrokImage(
+            base64ToFile(
+              parsed.grokImageBase64,
+              parsed.grokImageName || "grok.png",
+            ),
+          );
         }
       } catch (e) {
         console.error("Error loading saved state:", e);
@@ -188,30 +209,85 @@ export default function VideoGenView() {
     }
   }, []);
 
-  // Save state to localStorage whenever it changes
+  // 1. Save lightweight options (provider, prompt, orientation, etc.)
   React.useEffect(() => {
-    const saveState = async () => {
-      const state: any = { provider, prompt, orientation, resolution, duration };
-      
-      // Handle images
+    const savedState = localStorage.getItem("ai_video_state");
+    const currentSettings = savedState ? JSON.parse(savedState) : {};
+    
+    const newState = {
+      ...currentSettings,
+      provider,
+      veoModel,
+      grokMode,
+      prompt,
+      orientation,
+      resolution,
+      duration,
+    };
+    
+    // We don't overwrite images here, they are handled by the other effect
+    localStorage.setItem("ai_video_state", JSON.stringify(newState));
+  }, [provider, grokMode, prompt, orientation, resolution, duration]);
+
+  // 2. Save images separately (expensive operations)
+  React.useEffect(() => {
+    const saveImages = async () => {
+      const savedState = localStorage.getItem("ai_video_state");
+      const currentSettings = savedState ? JSON.parse(savedState) : {};
+
+      // Only update image fields
       if (firstImage) {
-        state.firstImageBase64 = await fileToBase64(firstImage);
-        state.firstImageName = firstImage.name;
-      }
-      if (lastImage) {
-        state.lastImageBase64 = await fileToBase64(lastImage);
-        state.lastImageName = lastImage.name;
-      }
-      if (grokImage) {
-        state.grokImageBase64 = await fileToBase64(grokImage);
-        state.grokImageName = grokImage.name;
+        currentSettings.firstImageBase64 = await fileToBase64(firstImage);
+        currentSettings.firstImageName = firstImage.name;
+      } else {
+        delete currentSettings.firstImageBase64;
+        delete currentSettings.firstImageName;
       }
 
-      localStorage.setItem("ai_video_state", JSON.stringify(state));
+      if (lastImage) {
+        currentSettings.lastImageBase64 = await fileToBase64(lastImage);
+        currentSettings.lastImageName = lastImage.name;
+      } else {
+        delete currentSettings.lastImageBase64;
+        delete currentSettings.lastImageName;
+      }
+
+      if (grokImage) {
+        currentSettings.grokImageBase64 = await fileToBase64(grokImage);
+        currentSettings.grokImageName = grokImage.name;
+      } else {
+        delete currentSettings.grokImageBase64;
+        delete currentSettings.grokImageName;
+      }
+
+      localStorage.setItem("ai_video_state", JSON.stringify(currentSettings));
     };
 
-    saveState();
-  }, [provider, prompt, orientation, resolution, duration, firstImage, lastImage, grokImage]);
+    saveImages();
+  }, [firstImage, lastImage, grokImage]);
+
+  const handleEnhancePrompt = async (type: "video" | "image" = "video") => {
+    if (!prompt.trim()) return;
+    setIsEnhancing(true);
+    try {
+      const res = await enhancePromptAction(prompt, type);
+      if (res.success && res.enhancedPrompt) {
+        setPrompt(res.enhancedPrompt);
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "success",
+          title: "تم تحسين الوصف بنجاح ✨",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      }
+    } catch (e) {
+      console.error("Enhancement error", e);
+    } finally {
+      setIsEnhancing(false);
+    }
+  };
 
   const handleGenerate = async () => {
     // Check if user is logged in
@@ -250,7 +326,7 @@ export default function VideoGenView() {
 
       const mappedModel =
         provider === "Veo"
-          ? "veo-3.1-fast"
+          ? veoModel
           : provider === "Grok"
             ? "grok-3"
             : provider === "Bytedance"
@@ -265,6 +341,9 @@ export default function VideoGenView() {
       formData.append("resolution", resolution);
       formData.append("aspectRatio", orientation);
       formData.append("cost", cost.toString());
+      if (provider === "Grok") {
+        formData.append("mode", grokMode);
+      }
 
       // Append images if present
       if (provider === "Veo") {
@@ -273,6 +352,19 @@ export default function VideoGenView() {
       } else if (provider === "Grok") {
         if (grokImage) formData.append("image", grokImage);
       }
+
+      console.log("🚀 Sending Video Generation Request:", {
+        provider,
+        model: mappedModel,
+        prompt,
+        duration,
+        resolution,
+        aspectRatio: orientation,
+        cost,
+        hasFirstImage: !!firstImage,
+        hasLastImage: !!lastImage,
+        hasGrokImage: !!grokImage,
+      });
 
       const res = await generateVideoAction(formData);
 
@@ -377,12 +469,18 @@ export default function VideoGenView() {
         localStorage.removeItem("pending_video_gen");
 
         // Extract the error sent from the API
-        let errorData = res.data.error || res.data.message || res.data.result || res.data.reason;
-        if (typeof errorData === 'object') {
+        let errorData =
+          res.data.error ||
+          res.data.message ||
+          res.data.result ||
+          res.data.reason;
+        if (typeof errorData === "object") {
           errorData = errorData.message || JSON.stringify(errorData);
         }
-        
-        const errorMessage = errorData || "فشل الخادم في معالجة طلب الفيديو. قد يكون ذلك بسبب ضغط العمل أو قيود في المحتوى.";
+
+        const errorMessage =
+          errorData ||
+          "فشل الخادم في معالجة طلب الفيديو. قد يكون ذلك بسبب ضغط العمل أو قيود في المحتوى.";
         const displayError = `فشل إنشاء الفيديو: ${errorMessage}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
 
         setGenerationError(displayError);
@@ -446,50 +544,40 @@ export default function VideoGenView() {
                 </span>{" "}
               </button>
               <button
-                onClick={() => {
-                  setProvider("Grok");
-                  setResolution("Standard 480p");
-                  setOrientation("Landscape (16:9)");
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Grok" ? "border-primary bg-primary text-primary-foreground" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
+                disabled={true}
+                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400"
               >
                 ✖ Grok{" "}
-                <span className="bg-white/20 text-white text-[9px] px-1.5 py-0.5 rounded">
+                <span className="bg-zinc-200 text-zinc-500 text-[9px] px-1.5 py-0.5 rounded">
                   xAI
                 </span>{" "}
               </button>
             </div>
-            {provider === "Grok" && (
-              <div className="mt-3 bg-zinc-50 text-zinc-500 text-xs px-3 py-2 rounded-lg border border-zinc-100">
-                توليد فيديو سريع ومجاني بواسطة xAI
-              </div>
-            )}
+            <div className="mt-3 bg-zinc-50 text-zinc-400 text-xs px-3 py-2 rounded-lg border border-zinc-100 italic">
+               Grok فيديو قيد التطوير حالياً...
+            </div>
           </div>
 
           {/* Dynamic Content Based on Provider */}
           {provider === "Veo" && (
             <div className="space-y-6 mb-8">
-              {/* Model & Image Ref Type */}
+              {/* Fixed Model Display */}
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    الموديل
+                    الموديل (Version)
                   </label>
-                  <div className="relative">
-                    <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary bg-white">
-                      Veo 3.1 Fast
-                    </div>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+                  <div className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
+                    <Zap className="w-4 h-4" /> Veo 3.1 Fast
                   </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
                     نوع الصورة المرجعية
                   </label>
-                  <div className="flex bg-zinc-100 p-0.5 rounded-lg border border-zinc-200">
-                    <button className="flex-1 text-xs font-semibold py-1.5 rounded-md bg-white border border-primary text-primary shadow-sm">
-                      صور الإطار
-                    </button>
+                  <div className="bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 flex items-center justify-between px-3 h-[38px]">
+                    <span className="text-xs font-semibold text-primary">Frame Images</span>
+                    <Info className="w-3.5 h-3.5 text-zinc-400" />
                   </div>
                 </div>
               </div>
@@ -560,7 +648,18 @@ export default function VideoGenView() {
                   <label className="block text-sm font-semibold text-zinc-700">
                     النص التوجيهي (Prompt)
                   </label>
-                  <div className="flex bg-zinc-100 rounded-sm p-0.5 text-[11px] font-semibold"></div>
+                  <button
+                    onClick={() => handleEnhancePrompt("video")}
+                    disabled={isEnhancing || !prompt.trim()}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                  >
+                    {isEnhancing ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    تحسين الوصف ذكياً ✨
+                  </button>
                 </div>
                 <textarea
                   className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none"
@@ -579,25 +678,22 @@ export default function VideoGenView() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setOrientation("Landscape (16:9)")}
-                      className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg border transition ${orientation === "Landscape (16:9)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Landscape (16:9)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
-                      <div className="w-6 h-3.5 flex items-center justify-center">
-                        <ImageIcon className="w-4 h-4 opacity-50" />
+                      <div className="w-16 h-8 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
+                         <Monitor className="w-5 h-5 opacity-40" />
                       </div>
-                      <span className="text-[10px] font-semibold mt-1">
-                        16:9
-                      </span>
+                      <span className="text-xs font-bold">16:9 (Landscape)</span>
                     </button>
+                    
                     <button
                       onClick={() => setOrientation("Portrait (9:16)")}
-                      className={`flex flex-col items-center justify-center py-2 px-3 rounded-lg border transition ${orientation === "Portrait (9:16)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Portrait (9:16)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
-                      <div className="w-3.5 h-6 flex items-center justify-center">
-                        <ImageIcon className="w-4 h-4 opacity-50" />
+                      <div className="w-8 h-12 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
+                         <Smartphone className="w-5 h-5 opacity-40" />
                       </div>
-                      <span className="text-[10px] font-semibold mt-1">
-                        9:16
-                      </span>
+                      <span className="text-xs font-bold">9:16 (Portrait)</span>
                     </button>
                   </div>
                 </div>
@@ -700,15 +796,13 @@ export default function VideoGenView() {
                 </div>
               </div>
 
-              {/* Generation Mode */}
+              {/* Fixed Generation Mode */}
               <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                  وضع التوليد
+                <label className="block text-sm font-semibold text-zinc-700 mb-3">
+                  وضع التوليد (Generation Mode)
                 </label>
-                <div className="relative w-full md:w-1/2">
-                  <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary bg-white">
-                    عادي
-                  </div>
+                <div className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
+                  <Zap className="w-4 h-4" /> عادي (Normal)
                 </div>
               </div>
 
@@ -718,6 +812,18 @@ export default function VideoGenView() {
                   <label className="block text-sm font-semibold text-zinc-700">
                     النص التوجيهي (Prompt)
                   </label>
+                  <button
+                    onClick={() => handleEnhancePrompt("video")}
+                    disabled={isEnhancing || !prompt.trim()}
+                    className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                  >
+                    {isEnhancing ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Sparkles className="w-3 h-3" />
+                    )}
+                    تحسين الوصف ذكياً ✨
+                  </button>
                 </div>
                 <textarea
                   className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
@@ -744,6 +850,17 @@ export default function VideoGenView() {
                       icon: Smartphone,
                       label: "عمودي (9:16)",
                     },
+                    { id: "Square (1:1)", icon: Square, label: "مربع (1:1)" },
+                    {
+                      id: "Vertical (2:3)",
+                      icon: Smartphone,
+                      label: "طولي (2:3)",
+                    },
+                    {
+                      id: "Horizontal (3:2)",
+                      icon: Monitor,
+                      label: "عرضي (3:2)",
+                    },
                   ].map((item) => (
                     <button
                       key={item.id}
@@ -751,7 +868,7 @@ export default function VideoGenView() {
                       className={`flex flex-col items-center justify-center py-3 px-1 rounded-lg border transition w-[80px] ${orientation === item.id ? "border-primary text-primary bg-primary/5" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
                       <item.icon className="w-5 h-5 mb-2" />
-                      <span className="text-[10px] text-center font-medium leading-tight">
+                      <span className="text-[9px] text-center font-bold leading-tight">
                         {item.label}
                       </span>
                     </button>
@@ -817,27 +934,15 @@ export default function VideoGenView() {
                   <div className="flex gap-2">
                     <button
                       onClick={() => setDuration("6")}
-                      className={`flex-1 flex items-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "6" ? "border-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "6" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${duration === "6" ? "bg-primary" : "border border-zinc-300"}`}
-                      ></div>
-                      <span className={duration === "6" ? "text-zinc-900" : ""}>
-                        6 ثوانٍ
-                      </span>
+                       6 ثوانٍ
                     </button>
                     <button
                       onClick={() => setDuration("10")}
-                      className={`flex-1 flex items-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "10" ? "border-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "10" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
-                      <div
-                        className={`w-2 h-2 rounded-full shrink-0 ${duration === "10" ? "bg-primary" : "border border-zinc-300"}`}
-                      ></div>
-                      <span
-                        className={duration === "10" ? "text-zinc-900" : ""}
-                      >
-                        10 ثوانٍ
-                      </span>
+                       10 ثوانٍ
                     </button>
                   </div>
                 </div>
@@ -1041,7 +1146,7 @@ export default function VideoGenView() {
               <button
                 onClick={handleGenerate}
                 disabled={isGenerating}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition flex-shrink-0 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px]"
+                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition shrink-0 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px]"
               >
                 {isGenerating ? (
                   <>

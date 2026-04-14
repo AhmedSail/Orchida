@@ -46,12 +46,12 @@ export async function generateVideoAction(clientFormData: FormData) {
     apiFormData.append("prompt", prompt);
     apiFormData.append("model", model || `${endpointProvider}-2`);
     
-    if(endpointProvider === "veo" || endpointProvider === "sora" || endpointProvider === "grok") {
-        apiFormData.append("resolution", resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p");
+    if (resolution) {
+      apiFormData.append("resolution", resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p");
     }
     
-    if (endpointProvider !== "veo" && durationStr) {
-        apiFormData.append("duration", durationStr);
+    if (durationStr) {
+      apiFormData.append("duration", durationStr);
     }
     
     if (provider === "Grok") {
@@ -59,12 +59,13 @@ export async function generateVideoAction(clientFormData: FormData) {
         "Landscape (16:9)": "landscape",
         "Portrait (9:16)": "portrait",
         "Square (1:1)": "square",
-        "Vertical (2:3)": "2:3",
-        "Horizontal (3:2)": "3:2"
+        "Vertical (2:3)": "vertical",
+        "Horizontal (3:2)": "horizontal"
       };
       if (aspectRatio) {
         apiFormData.append("aspect_ratio", grokRatioMap[aspectRatio] || "landscape");
       }
+      apiFormData.append("mode", clientFormData.get("mode") as string || "custom");
     } else {
       const aspectRatioMap: Record<string, string> = {
         "Landscape (16:9)": "16:9", "Portrait (9:16)": "9:16", "Square (1:1)": "1:1", "Vertical (2:3)": "2:3", "Horizontal (3:2)": "3:2"
@@ -74,14 +75,17 @@ export async function generateVideoAction(clientFormData: FormData) {
       }
     }
 
-    if (provider === "Veo") {
-       const firstImage = clientFormData.get("firstImage") as File;
-       if (firstImage && firstImage.size > 0) apiFormData.append("image_start", firstImage);
-       const lastImage = clientFormData.get("lastImage") as File;
-       if (lastImage && lastImage.size > 0) apiFormData.append("image_end", lastImage);
-    } else if (provider === "Grok") {
-       const grokImage = clientFormData.get("image") as File;
-       if (grokImage && grokImage.size > 0) apiFormData.append("image", grokImage);
+    if (endpointProvider === "veo") {
+      const firstImage = clientFormData.get("firstImage") as File;
+      const lastImage = clientFormData.get("lastImage") as File;
+      
+      if (firstImage && firstImage.size > 0) apiFormData.append("ref_images", firstImage);
+      if (lastImage && lastImage.size > 0) apiFormData.append("ref_images", lastImage);
+      
+      apiFormData.append("mode_image", "frame");
+    } else if (endpointProvider === "grok") {
+      const grokImage = clientFormData.get("image") as File;
+      if (grokImage && grokImage.size > 0) apiFormData.append("files", grokImage);
     }
 
     let response;

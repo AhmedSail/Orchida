@@ -62,7 +62,7 @@ const TrendingProductsHome = ({
               </span>
             </h2>
             <p className="text-gray-500 mt-2 font-medium text-lg">
-              منتجات رائجة تم اختيارها من موقع علي اكسبرس AliExpress لبيعها على
+              منتجات رائجة تم اختيارها من مواقع عالمية (AliExpress و CJ) لبيعها على
               موقع ايباي eBay
             </p>
           </div>
@@ -112,7 +112,7 @@ const TrendingProductsHome = ({
                         target="_blank"
                         className="inline-flex items-center justify-center w-full  gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-[12px] font-black hover:bg-primary hover:text-white transition-all duration-300 whitespace-nowrap"
                       >
-                        اضغط هنا لعرض المنتج على موقع AliExpress
+                        اضغط هنا لعرض المنتج من {product.source || "AliExpress"}
                         <ExternalLink className="w-3 h-3" />
                       </Link>
                     )}
