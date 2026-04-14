@@ -14,6 +14,8 @@ import {
   AlertCircle,
   Sparkles,
   Info,
+  Trash2,
+  X,
 } from "lucide-react";
 import { generateVideoAction } from "@/app/actions/ai-video";
 import {
@@ -101,6 +103,28 @@ export default function VideoGenView() {
   const [generationTaskId, setGenerationTaskId] = useState<string | null>(null);
   const [resultVideoUrl, setResultVideoUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setFirstImage(null);
+    setLastImage(null);
+    setGrokImage(null);
+    setResultVideoUrl(null);
+    setRawResponseData(null);
+    setGenerationError(null);
+    if (firstImageRef.current) firstImageRef.current.value = "";
+    if (lastImageRef.current) lastImageRef.current.value = "";
+    if (grokImageRef.current) grokImageRef.current.value = "";
+    
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      icon: "info",
+      title: "تم مسح جميع الحقول 🧹",
+      showConfirmButton: false,
+      timer: 2000,
+    });
+  };
 
   // Credit calculation logic
   const calculateCost = () => {
@@ -517,10 +541,17 @@ export default function VideoGenView() {
         {/* Left Column - Controls */}
         <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm">
           {/* Tabs */}
-          <div className="flex bg-zinc-100 mx-auto w-1/2 p-1 rounded-lg mb-6">
-            <button className="flex-1 flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold py-2 rounded-md shadow">
+          <div className="flex bg-zinc-100 mx-auto w-full md:w-2/3 p-1 rounded-lg mb-6 gap-1">
+            <button className="flex-[2] flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold py-2 rounded-md shadow transition-all active:scale-95">
               <Video className="w-4 h-4" />
               إنشاء جديد
+            </button>
+            <button 
+              onClick={handleClearAll}
+              className="flex-1 flex items-center justify-center gap-2 bg-white text-zinc-500 hover:text-red-500 text-sm font-semibold py-2 rounded-md border border-zinc-200 hover:border-red-200 transition-all active:scale-95 group"
+            >
+              <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
+              مسح الحقول
             </button>
           </div>
 
@@ -544,17 +575,17 @@ export default function VideoGenView() {
                 </span>{" "}
               </button>
               <button
-                disabled={true}
-                className="flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400"
+                onClick={() => {
+                  setProvider("Grok");
+                  // Optional defaults for Grok
+                }}
+                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Grok" ? "border-primary bg-primary/10 text-primary" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
               >
-                ✖ Grok{" "}
-                <span className="bg-zinc-200 text-zinc-500 text-[9px] px-1.5 py-0.5 rounded">
+                Grok{" "}
+                <span className="bg-[#5de270] text-black text-[9px] px-1.5 py-0.5 rounded font-bold">
                   xAI
                 </span>{" "}
               </button>
-            </div>
-            <div className="mt-3 bg-zinc-50 text-zinc-400 text-xs px-3 py-2 rounded-lg border border-zinc-100 italic">
-               Grok فيديو قيد التطوير حالياً...
             </div>
           </div>
 
@@ -600,10 +631,22 @@ export default function VideoGenView() {
                     className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer overflow-hidden relative"
                   >
                     {firstImage ? (
-                      <img
-                        src={URL.createObjectURL(firstImage)}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
+                      <div className="absolute inset-0 w-full h-full group">
+                        <img
+                          src={URL.createObjectURL(firstImage)}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setFirstImage(null);
+                            if (firstImageRef.current) firstImageRef.current.value = "";
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     ) : (
                       <>
                         <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
@@ -626,10 +669,22 @@ export default function VideoGenView() {
                     className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer overflow-hidden relative"
                   >
                     {lastImage ? (
-                      <img
-                        src={URL.createObjectURL(lastImage)}
-                        className="absolute inset-0 w-full h-full object-cover"
-                      />
+                      <div className="absolute inset-0 w-full h-full group">
+                        <img
+                          src={URL.createObjectURL(lastImage)}
+                          className="w-full h-full object-cover"
+                        />
+                        <button
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setLastImage(null);
+                            if (lastImageRef.current) lastImageRef.current.value = "";
+                          }}
+                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
+                        >
+                          <X className="w-4 h-4" />
+                        </button>
+                      </div>
                     ) : (
                       <>
                         <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
@@ -660,6 +715,15 @@ export default function VideoGenView() {
                     )}
                     تحسين الوصف ذكياً ✨
                   </button>
+                  {prompt && (
+                    <button
+                      onClick={() => setPrompt("")}
+                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition ml-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      مسح
+                    </button>
+                  )}
                 </div>
                 <textarea
                   className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none"
@@ -757,10 +821,9 @@ export default function VideoGenView() {
                     الموديل
                   </label>
                   <div className="relative">
-                    <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-primary bg-white">
-                      ✖ Grok
+                    <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
+                       <Zap className="w-4 h-4" /> Grok 3 Video
                     </div>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
                   </div>
                 </div>
                 <div>
@@ -783,10 +846,20 @@ export default function VideoGenView() {
                     className="w-full flex items-center justify-center gap-2 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 transition relative overflow-hidden"
                   >
                     {grokImage ? (
-                      <span className="text-primary font-semibold truncate px-2">
-                        <ImageIcon className="w-4 h-4 inline mr-1" />{" "}
-                        {grokImage.name} (انقر للإزالة)
-                      </span>
+                      <div className="flex items-center justify-between w-full">
+                        <span className="text-primary font-semibold truncate px-2">
+                          <ImageIcon className="w-4 h-4 inline mr-1" />{" "}
+                          {grokImage.name}
+                        </span>
+                        <Trash2 
+                          className="w-4 h-4 text-red-500 hover:text-red-600 transition cursor-pointer" 
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setGrokImage(null);
+                            if (grokImageRef.current) grokImageRef.current.value = "";
+                          }}
+                        />
+                      </div>
                     ) : (
                       <>
                         <ImageIcon className="w-4 h-4" /> اختر صورة
@@ -824,6 +897,15 @@ export default function VideoGenView() {
                     )}
                     تحسين الوصف ذكياً ✨
                   </button>
+                  {prompt && (
+                    <button
+                      onClick={() => setPrompt("")}
+                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition ml-auto"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      مسح
+                    </button>
+                  )}
                 </div>
                 <textarea
                   className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
@@ -997,6 +1079,15 @@ export default function VideoGenView() {
                   <label className="block text-sm font-semibold text-zinc-700">
                     Prompt
                   </label>
+                  {prompt && (
+                    <button
+                      onClick={() => setPrompt("")}
+                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition"
+                    >
+                      <Trash2 className="w-3 h-3" />
+                      Clear
+                    </button>
+                  )}
                 </div>
                 <textarea
                   className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none"

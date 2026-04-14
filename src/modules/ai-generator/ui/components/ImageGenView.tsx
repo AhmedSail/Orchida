@@ -13,6 +13,8 @@ import {
   Maximize,
   Clock,
   Sparkles,
+  Trash2,
+  X,
 } from "lucide-react";
 import { generateImageAction } from "@/app/actions/ai-image";
 import {
@@ -81,6 +83,24 @@ export default function ImageGenView() {
   const [isEnhancing, setIsEnhancing] = useState(false);
   const [generationError, setGenerationError] = useState<string | null>(null);
   const [resultImageUrls, setResultImageUrls] = useState<string[]>([]);
+
+  const handleClearAll = () => {
+    setPrompt("");
+    setImageReference(null);
+    setResultImageUrls([]);
+    setGenerationError(null);
+    const fileInput = document.getElementById("image-ref-input") as HTMLInputElement;
+    if (fileInput) fileInput.value = "";
+    
+    Swal.fire({
+      toast: true,
+      position: "top-end",
+      icon: "info",
+      title: "تم مسح جميع الحقول 🧹",
+      showConfirmButton: false,
+      timer: 2000,
+    });
+  };
   // Auth & Balance
   const { data: session } = authClient.useSession();
   const [userBalance, setUserBalance] = useState<number | null>(null);
@@ -400,6 +420,20 @@ export default function ImageGenView() {
         <p className="text-zinc-500 font-medium">
           أدخل وصفاً وحوّل كلماتك إلى لوحات فنية رائعة
         </p>
+        
+        <div className="flex bg-zinc-100 mx-auto w-full md:w-[300px] p-1 rounded-xl mt-6 gap-1">
+          <button className="flex-[2] flex items-center justify-center gap-2 bg-primary text-primary-foreground text-xs font-bold py-2 rounded-lg shadow transition-all active:scale-95">
+            <Sparkles className="w-3.5 h-3.5" />
+            إنشاء جديد
+          </button>
+          <button 
+            onClick={handleClearAll}
+            className="flex-1 flex items-center justify-center gap-2 bg-white text-zinc-500 hover:text-red-500 text-xs font-bold py-2 rounded-lg border border-zinc-200 hover:border-red-200 transition-all active:scale-95 group"
+          >
+            <Trash2 className="w-3.5 h-3.5 group-hover:animate-bounce" />
+            مسح
+          </button>
+        </div>
       </div>
 
       {/* Main Grid Content */}
@@ -472,6 +506,15 @@ export default function ImageGenView() {
                 )}
                 تحسين الوصف ذكياً ✨
               </button>
+              {prompt && (
+                <button
+                  onClick={() => setPrompt("")}
+                  className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition ml-auto"
+                >
+                  <Trash2 className="w-3 h-3" />
+                  مسح
+                </button>
+              )}
             </div>
             <textarea
               className="w-full border border-zinc-200 rounded-2xl p-4 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[120px] resize-none leading-relaxed transition-all"
@@ -490,15 +533,32 @@ export default function ImageGenView() {
             <label className="block text-sm font-bold text-zinc-700 mb-2">
               مرجع الصورة (Image Reference)
             </label>
-            <button
-              onClick={() =>
-                document.getElementById("image-ref-input")?.click()
-              }
-              className="flex items-center gap-2 px-4 py-2 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition bg-white"
-            >
-              <ImageIcon className="w-4 h-4" />
-              {imageReference ? imageReference.name : "اختر صورة مرجعية"}
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={() =>
+                  document.getElementById("image-ref-input")?.click()
+                }
+                className="flex items-center gap-2 px-4 py-2 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition bg-white flex-1"
+              >
+                <ImageIcon className="w-4 h-4" />
+                <span className="truncate max-w-[150px]">
+                  {imageReference ? imageReference.name : "اختر صورة مرجعية"}
+                </span>
+              </button>
+              {imageReference && (
+                <button
+                  onClick={() => {
+                    setImageReference(null);
+                    const fileInput = document.getElementById("image-ref-input") as HTMLInputElement;
+                    if (fileInput) fileInput.value = "";
+                  }}
+                  className="p-2 border border-red-100 rounded-xl text-red-500 hover:bg-red-50 transition bg-white"
+                  title="مسح الصورة"
+                >
+                  <Trash2 className="w-4 h-4" />
+                </button>
+              )}
+            </div>
             <input
               id="image-ref-input"
               type="file"
