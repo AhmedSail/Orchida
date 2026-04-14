@@ -47,7 +47,7 @@ const STATUS_MAP: Record<string, { label: string; color: string; icon: React.Ele
   failed: { label: "فشل", color: "text-red-500 bg-red-50 border-red-200", icon: XCircle },
 };
 
-export default function HistoryView() {
+export default function HistoryView({ isActive }: { isActive?: boolean }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -80,8 +80,10 @@ export default function HistoryView() {
   }, []);
 
   useEffect(() => {
-    loadHistory(page, filter);
-  }, [page, filter, loadHistory]);
+    if (isActive) {
+      loadHistory(page, filter);
+    }
+  }, [page, filter, loadHistory, isActive]);
 
   const handleFilterChange = (f: typeof filter) => {
     setFilter(f);

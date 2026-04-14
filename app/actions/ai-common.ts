@@ -38,12 +38,36 @@ export async function checkAndDeductCredits(userId: string, cost: number, descri
 }
 
 // 2. دالة استرجاع الرصيد في حالة الفشل
-export async function refundFailedTaskAction(cost: number, reason: string) {
+export async function refundFailedTaskAction(taskUuid: string, reason: string) {
   try {
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) return { success: false, error: "Unauthorized" };
-    const safeCost = Math.ceil(Math.abs(Number(cost)));
-    await checkAndDeductCredits(sessionData.session.userId, -safeCost, `Refund: ${reason.substring(0, 50)}`);
+
+    // Find the original generation record to get the exact cost
+    const record = await db.query.aiGenerations.findFirst({
+      where: and(
+        eq(aiGenerations.taskUuid, taskUuid),
+        eq(aiGenerations.userId, sessionData.session.userId)
+      )
+    });
+
+    if (!record) return { success: false, error: "Record not found" };
+    if (record.isRefunded) return { success: true, message: "Already refunded" };
+
+    const cost = record.creditCost || 0;
+    if (cost <= 0) {
+       await db.update(aiGenerations).set({ isRefunded: true }).where(eq(aiGenerations.id, record.id));
+       return { success: true };
+    }
+
+    // Refund the exact amount recorded in DB
+    await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: ${reason.substring(0, 50)}`);
+
+    // Mark as refunded to prevent double refunds
+    await db.update(aiGenerations)
+      .set({ isRefunded: true, updatedAt: new Date() })
+      .where(eq(aiGenerations.id, record.id));
+
     return { success: true };
   } catch (e: any) {
     return { success: false, error: e.message };

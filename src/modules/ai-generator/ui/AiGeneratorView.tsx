@@ -42,6 +42,14 @@ export default function AiGeneratorView() {
 
     fetchBalance();
     fetchSettings();
+
+    // Listen for custom balance update events (Real-time update)
+    const handleBalanceUpdate = () => fetchBalance();
+    window.addEventListener("balanceUpdated", handleBalanceUpdate);
+
+    return () => {
+      window.removeEventListener("balanceUpdated", handleBalanceUpdate);
+    };
   }, [appMode]); // Refresh balance when switching modes
 
   return (
@@ -134,9 +142,15 @@ export default function AiGeneratorView() {
           </div>
         </div>
 
-        {appMode === "video" && <VideoGenView />}
-        {appMode === "imagen" && <ImageGenView />}
-        {appMode === "history" && <HistoryView />}
+        <div className={appMode !== "video" ? "hidden" : ""}>
+          <VideoGenView />
+        </div>
+        <div className={appMode !== "imagen" ? "hidden" : ""}>
+          <ImageGenView />
+        </div>
+        <div className={appMode !== "history" ? "hidden" : ""}>
+          <HistoryView isActive={appMode === "history"} />
+        </div>
       </div>
     </div>
   );

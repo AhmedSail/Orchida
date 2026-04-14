@@ -1274,6 +1274,7 @@ export const aiGenerations = pgTable("aiGenerations", {
   resolution: varchar("resolution", { length: 20 }),
   duration: integer("duration"), // بالثواني (للفيديوهات)
   creditCost: integer("creditCost").default(0),
+  isRefunded: boolean("isRefunded").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
