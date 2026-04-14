@@ -155,3 +155,39 @@ export async function deleteGenerationAction(id: string) {
     return { success: false, error: error.message };
   }
 }
+
+// 7. تحسين الوصف (ترجمة وتوسيع)
+export async function enhancePromptAction(prompt: string, type: "video" | "image" = "video") {
+  try {
+    const apiKey = await getGeminiGenApiKey();
+    if (!apiKey) throw new Error("API Key missing");
+
+    const systemInstruction = `You are an expert AI Prompt Engineer. 
+    Translate the user's input to English if it's in another language. 
+    Then, expand it into a detailed, professional ${type} generation prompt. 
+    Add keywords for high quality: cinematic, 4k, hyper-realistic, detailed textures, professional lighting. 
+    Keep the core meaning but make it descriptive. 
+    Return ONLY the final English prompt text.`;
+
+    const response = await fetch(`https://api.geminigen.ai/uapi/v1/chat/gemini`, {
+      method: "POST",
+      headers: { 
+        "x-api-key": apiKey,
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        messages: [
+          { role: "system", content: systemInstruction },
+          { role: "user", content: prompt }
+        ],
+        model: "gemini-1.5-flash"
+      })
+    });
+
+    if (!response.ok) throw new Error("Enhancement failed");
+    const result = await response.json();
+    return { success: true, enhancedPrompt: result.choices[0].message.content.trim() };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}

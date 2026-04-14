@@ -34,6 +34,7 @@ const TrendingProductDialog = ({
     description: "",
     imageUrl: "",
     link: "",
+    source: "AliExpress" as string,
     order: 0,
     isActive: true,
   });
@@ -47,6 +48,7 @@ const TrendingProductDialog = ({
         description: editingProduct.description || "",
         imageUrl: editingProduct.imageUrl || "",
         link: editingProduct.link || "",
+        source: editingProduct.source || "AliExpress",
         order: editingProduct.order,
         isActive: editingProduct.isActive,
       });
@@ -56,6 +58,7 @@ const TrendingProductDialog = ({
         description: "",
         imageUrl: "",
         link: "",
+        source: "AliExpress",
         order: 0,
         isActive: true,
       });
@@ -151,6 +154,18 @@ const TrendingProductDialog = ({
                 value={formData.link}
                 onChange={(e) => setFormData({ ...formData, link: e.target.value })}
               />
+            </div>
+
+            <div className="md:col-span-2 space-y-2">
+              <Label className="text-gray-700 font-bold pr-1">مصدر المنتج (Source)</Label>
+              <select
+                className="w-full h-12 rounded-xl border-gray-200 focus:ring-primary/20 bg-gray-50/50 px-3 outline-none focus:border-primary transition-all font-bold"
+                value={formData.source}
+                onChange={(e) => setFormData({ ...formData, source: e.target.value })}
+              >
+                <option value="AliExpress">AliExpress (علي اكسبريس)</option>
+                <option value="CJ">CJ Dropshipping (سي جي)</option>
+              </select>
             </div>
 
             <div className="md:col-span-2 space-y-2">

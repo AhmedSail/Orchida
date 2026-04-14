@@ -26,7 +26,7 @@ export async function GET() {
 export async function POST(req: Request) {
   try {
     const body = await req.json();
-    const { name, description, imageUrl, link, isActive, order } = body;
+    const { name, description, imageUrl, link, source, isActive, order } = body;
 
     const newProduct = await db
       .insert(trendingProducts)
@@ -36,6 +36,7 @@ export async function POST(req: Request) {
         description,
         imageUrl,
         link,
+        source: source || "AliExpress",
         isActive: isActive ?? true,
         order: order ?? 0,
         createdAt: new Date(),
