@@ -19,6 +19,7 @@ import {
 import {
   checkGenerationStatus,
   updateGenerationStatusAction,
+  refundFailedTaskAction,
 } from "@/app/actions/ai-common";
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
@@ -99,6 +100,8 @@ export default function ImageGenView() {
 
     // 3. Load saved state
     const savedState = localStorage.getItem("ai_image_state");
+    const pendingGen = localStorage.getItem("pending_image_gen");
+
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
@@ -117,6 +120,11 @@ export default function ImageGenView() {
       } catch (e) {
         console.error("Error loading image state:", e);
       }
+    }
+
+    if (pendingGen) {
+      setIsGenerating(true);
+      startPolling(pendingGen);
     }
   }, []);
 
@@ -213,6 +221,9 @@ export default function ImageGenView() {
         const uuid = res.data.uuid || res.data.id;
 
         if (uuid) {
+          // حفظ المهمة في المحرك المحلي للاستمرارية
+          localStorage.setItem("pending_image_gen", uuid);
+          window.dispatchEvent(new CustomEvent("balanceUpdated"));
           // البدء بفحص الحالة (Polling)
           startPolling(uuid);
         } else {
@@ -254,6 +265,7 @@ export default function ImageGenView() {
         if (status === 2 || String(status).toLowerCase() === "completed") {
           clearInterval(intervalId);
           setIsGenerating(false);
+          localStorage.removeItem("pending_image_gen");
 
           // استخراج الرابط من هيكليات مختلفة للـ API
           const foundUrl =
@@ -267,6 +279,7 @@ export default function ImageGenView() {
             setResultImageUrl(foundUrl);
             // تحديث السجل المحلي بالاكتمال
             updateGenerationStatusAction(uuid, "completed", foundUrl);
+            window.dispatchEvent(new CustomEvent("balanceUpdated"));
           } else {
             setGenerationError(
               "اكتمل التوليد ولكن لم نجد الرابط في البيانات المستلمة.",
@@ -275,10 +288,28 @@ export default function ImageGenView() {
         } else if (status === 3 || String(status).toLowerCase() === "failed") {
           clearInterval(intervalId);
           setIsGenerating(false);
-          setGenerationError(
-            `فشل توليد الصورة: ${statusRes.data.error || "خطأ غير معروف"}`,
-          );
+          localStorage.removeItem("pending_image_gen");
+
+          // Extract error message reliably
+          let errorInfo = statusRes.data.error || statusRes.data.message || statusRes.data.reason || "مشكلة تقنية في الخادم المزود";
+          if (typeof errorInfo === 'object') {
+            errorInfo = errorInfo.message || JSON.stringify(errorInfo);
+          }
+
+          const displayError = `فشل توليد الصورة: ${errorInfo}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
+          setGenerationError(displayError);
+          
           updateGenerationStatusAction(uuid, "failed");
+          
+          // استرجاع الكريديت
+          refundFailedTaskAction(uuid, errorInfo).then(() => {
+            getStudentInternalCredits().then((cr) => {
+              if (cr.success) {
+                setUserBalance(cr.balance ?? userBalance);
+                window.dispatchEvent(new CustomEvent("balanceUpdated"));
+              }
+            });
+          });
         }
       } catch (e) {
         console.error("Polling error:", e);

@@ -155,6 +155,8 @@ export default function VideoGenView() {
 
     // 3. Load saved state from localStorage
     const savedState = localStorage.getItem("ai_video_state");
+    const pendingGen = localStorage.getItem("pending_video_gen");
+
     if (savedState) {
       try {
         const parsed = JSON.parse(savedState);
@@ -177,6 +179,12 @@ export default function VideoGenView() {
       } catch (e) {
         console.error("Error loading saved state:", e);
       }
+    }
+
+    if (pendingGen) {
+      setIsGenerating(true);
+      setGenerationTaskId(pendingGen);
+      pollStatus(pendingGen);
     }
   }, []);
 
@@ -277,6 +285,8 @@ export default function VideoGenView() {
       // Success, started!
       const taskId = res.data.uuid;
       setGenerationTaskId(taskId);
+      localStorage.setItem("pending_video_gen", taskId);
+      window.dispatchEvent(new CustomEvent("balanceUpdated"));
 
       // Start polling
       pollStatus(taskId);
@@ -294,6 +304,7 @@ export default function VideoGenView() {
       attempts++;
       if (attempts > maxAttempts) {
         clearInterval(intervalId);
+        localStorage.removeItem("pending_video_gen");
         setGenerationError(
           "Generation timed out. Please check your history later.",
         );
@@ -309,6 +320,7 @@ export default function VideoGenView() {
       if (status === 2 || String(status).toLowerCase() === "completed") {
         clearInterval(intervalId);
         setIsGenerating(false);
+        localStorage.removeItem("pending_video_gen");
 
         console.log("🔥 Generation Completed! Full Data Object:", res.data);
 
@@ -356,29 +368,33 @@ export default function VideoGenView() {
         getStudentInternalCredits().then((r) => {
           if (r.success && r.balance !== undefined) {
             setUserBalance(r.balance);
+            window.dispatchEvent(new CustomEvent("balanceUpdated"));
           }
         });
       } else if (status === 3 || String(status).toLowerCase() === "failed") {
         clearInterval(intervalId);
         setIsGenerating(false);
+        localStorage.removeItem("pending_video_gen");
 
-        // Extract the error sent from the API (usually res.data.error, res.data.message, or res.data.result)
-        const errorMessage =
-          res.data.error ||
-          res.data.message ||
-          res.data.result ||
-          "Unknown backend error from AI server.";
-        const displayError = `Video Generation Task Failed: ${errorMessage}. Your ${cost} credits will be refunded.`;
+        // Extract the error sent from the API
+        let errorData = res.data.error || res.data.message || res.data.result || res.data.reason;
+        if (typeof errorData === 'object') {
+          errorData = errorData.message || JSON.stringify(errorData);
+        }
+        
+        const errorMessage = errorData || "فشل الخادم في معالجة طلب الفيديو. قد يكون ذلك بسبب ضغط العمل أو قيود في المحتوى.";
+        const displayError = `فشل إنشاء الفيديو: ${errorMessage}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
 
         setGenerationError(displayError);
 
         // تحديث السجل المحلي بالفشل
         updateGenerationStatusAction(uuid, "failed");
-        refundFailedTaskAction(cost, errorMessage).then(() => {
+        refundFailedTaskAction(uuid, errorMessage).then(() => {
           // Refresh user balance to reflect refund
           getStudentInternalCredits().then((r) => {
             if (r.success && r.balance !== undefined) {
               setUserBalance(r.balance);
+              window.dispatchEvent(new CustomEvent("balanceUpdated"));
             }
           });
         });

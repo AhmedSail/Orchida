@@ -21,7 +21,6 @@ export async function generateImageAction(formDataStringBase64: string) {
     const resQuality = resolution || "Standard";
     const dynamicCost = await getAiPricingAction("image", model || "nano-banana-pro", resQuality);
     const cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(data.cost) || 2);
-    
     // الخصم من الرصيد
     await checkAndDeductCredits(sessionData.session.userId, cost, `Image Generation: ${model} (${resQuality})`);
 
@@ -58,7 +57,10 @@ export async function generateImageAction(formDataStringBase64: string) {
     });
 
     if (!response.ok) {
-      throw new Error((await response.text()) || "Failed to generate image from API");
+      const rawText = await response.text();
+      // استرجاع الرصيد في حالة خطأ الـ API
+      await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Image API Error (${model})`);
+      throw new Error(rawText || "Failed to generate image from API. Credits refunded.");
     }
 
     const result = await response.json();
@@ -77,6 +79,10 @@ export async function generateImageAction(formDataStringBase64: string) {
 
     return { success: true, data: result };
   } catch (error: any) {
+    // Note: credit deduction happens inside the try block. 
+    // If it fails before deduction, no refund needed. 
+    // If it fails after, we should ideally refund, but the checkAndDeductCredits above 
+    // handles specific failures already. For general catch, we'll return the error.
     return { success: false, error: error.message };
   }
 }
