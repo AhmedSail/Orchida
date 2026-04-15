@@ -62,8 +62,8 @@ const TrendingProductsHome = ({
               </span>
             </h2>
             <p className="text-gray-500 mt-2 font-medium text-lg">
-              منتجات رائجة تم اختيارها من مواقع عالمية (AliExpress و CJ) لبيعها على
-              موقع ايباي eBay
+              منتجات رائجة تم اختيارها من مواقع عالمية (AliExpress و CJ) لبيعها
+              على موقع ايباي eBay
             </p>
           </div>
         </motion.div>
@@ -77,9 +77,12 @@ const TrendingProductsHome = ({
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ delay: index * 0.1 }}
-                className="group relative flex flex-col bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-2 aspect-square items-center text-center"
+                className="group relative flex flex-col bg-white rounded-[2.5rem] border border-gray-100 shadow-xl shadow-gray-200/40 hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 hover:-translate-y-2 items-center text-center overflow-hidden"
               >
-                <div className="relative w-full aspect-square overflow-hidden mb-6 shrink-0 bg-gray-50">
+                <Link
+                  href={`/trending/${product.id}`}
+                  className="relative w-full aspect-square overflow-hidden mb-6 shrink-0 bg-gray-50 block cursor-pointer"
+                >
                   {product.imageUrl ? (
                     <Image
                       src={product.imageUrl}
@@ -95,27 +98,40 @@ const TrendingProductsHome = ({
                       </span>
                     </div>
                   )}
-                </div>
+                </Link>
 
                 <div className="flex flex-col flex-1 w-full p-10">
-                  <h3 className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors duration-300 uppercase tracking-tight line-clamp-1">
-                    {product.name}
-                  </h3>
+                  <Link href={`/trending/${product.id}`}>
+                    <h3 className="text-lg font-black text-gray-900 group-hover:text-primary transition-colors duration-300 uppercase tracking-tight line-clamp-1 cursor-pointer">
+                      {product.name}
+                    </h3>
+                  </Link>
                   <p className="text-gray-500 mt-2 line-clamp-2 text-xs leading-relaxed font-medium">
                     {product.description}
                   </p>
 
-                  <div className="mt-auto pt-4 border-t border-gray-50 gap-4 w-full">
-                    {product.link && (
-                      <Link
-                        href={product.link}
-                        target="_blank"
-                        className="inline-flex items-center justify-center w-full  gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-[12px] font-black hover:bg-primary hover:text-white transition-all duration-300 whitespace-nowrap"
-                      >
-                        اضغط هنا لعرض المنتج من {product.source || "AliExpress"}
-                        <ExternalLink className="w-3 h-3" />
-                      </Link>
-                    )}
+                  <div className="mt-auto pt-4 border-t border-gray-50 flex flex-col gap-3 w-full">
+                    <Link
+                      href={`/trending/${product.id}`}
+                      className="inline-flex items-center justify-center w-full gap-2 bg-primary text-white px-3 py-2.5 rounded-xl text-[12px] font-black hover:bg-primary/90 transition-all duration-300 whitespace-nowrap shadow-md shadow-primary/20"
+                    >
+                      عرض تفاصيل المنتج
+                      <ArrowLeft className="w-3 h-3" />
+                    </Link>
+
+                    <div className="mt-auto border-t border-gray-50 gap-4 w-full">
+                      {product.link && (
+                        <Link
+                          href={product.link}
+                          target="_blank"
+                          className="inline-flex items-center justify-center w-full  gap-2 bg-primary/10 text-primary px-3 py-2 rounded-xl text-[12px] font-black hover:bg-primary hover:text-white transition-all duration-300 whitespace-nowrap"
+                        >
+                          اضغط هنا لعرض المنتج من{" "}
+                          {product.source || "AliExpress"}
+                          <ExternalLink className="w-3 h-3" />
+                        </Link>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
