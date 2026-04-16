@@ -15,7 +15,7 @@ export async function generateImageAction(formDataStringBase64: string) {
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
 
     const data = JSON.parse(Buffer.from(formDataStringBase64, 'base64').toString('utf8'));
-    const { provider, prompt, model, aspectRatio, outputFormat, resolution, numResults } = data;
+    const { provider, prompt, model, aspectRatio, outputFormat, resolution, numResults, orientation } = data;
     
     // Fetch dynamic cost from DB
     const resQuality = resolution || "Standard";
@@ -33,13 +33,19 @@ export async function generateImageAction(formDataStringBase64: string) {
     apiFormData.append("model", model || "nano-banana-pro");
 
     if (provider === "Grok") {
-      const grokRatioMap: Record<string, string> = {
-        "Landscape": "landscape",
-        "Portrait": "portrait",
-        "Square": "square"
-      };
-      apiFormData.append("orientation", grokRatioMap[aspectRatio] || "landscape");
-      
+      // The frontend sends orientation like "Landscape (16:9)", "Portrait (9:16)", "Square (1:1)"
+      // Map to what the Grok API expects
+      let grokOrientation = "square";
+      const orientStr = (orientation || aspectRatio || "").toLowerCase();
+      if (orientStr.includes("landscape") || orientStr.includes("16:9") || orientStr.includes("3:2")) {
+        grokOrientation = "landscape";
+      } else if (orientStr.includes("portrait") || orientStr.includes("9:16") || orientStr.includes("2:3")) {
+        grokOrientation = "portrait";
+      } else {
+        grokOrientation = "square";
+      }
+      apiFormData.append("orientation", grokOrientation);
+
       const numResult = data.numResults?.toString();
       if (numResult) apiFormData.append("num_result", numResult);
 
@@ -48,12 +54,8 @@ export async function generateImageAction(formDataStringBase64: string) {
         apiFormData.append("files", new Blob([buffer]), "reference.jpg");
       }
     } else {
-      const aspectRatioMap: Record<string, string> = {
-        "Landscape": "16:9",
-        "Portrait": "9:16",
-        "Square": "1:1"
-      };
-      apiFormData.append("aspect_ratio", aspectRatioMap[aspectRatio] || "1:1");
+      // Imagen — frontend already sends the correct ratio string ("1:1", "16:9", etc.)
+      apiFormData.append("aspect_ratio", aspectRatio || "1:1");
       apiFormData.append("output_format", outputFormat?.toLowerCase() || "jpeg");
       apiFormData.append("style", data.style || "Photorealistic");
       if (resolution) {
@@ -67,7 +69,7 @@ export async function generateImageAction(formDataStringBase64: string) {
     const endpointMap: Record<string, string> = {
       "Flux": "flux",
       "Ideogram": "ideogram",
-      "Grok": "grok"
+      "Grok": "imagen/grok"
     };
     const endpoint = endpointMap[provider] || "generate_image";
 
@@ -86,14 +88,16 @@ export async function generateImageAction(formDataStringBase64: string) {
 
     const result = await response.json();
 
-    // حفظ في السجل المحلي
+    // حفظ في السجل المحلي — Grok is async so status starts as "pending"
+    const taskUuid = result.uuid || result.id?.toString();
+    const isAsync = !!taskUuid && !(result.image_url || result.data?.[0]?.url || result.url);
     await db.insert(aiGenerations).values({
       userId: sessionData.session.userId,
-      taskUuid: result.uuid || result.id?.toString(),
+      taskUuid,
       type: "image",
       model: model || "nano-banana-pro",
       prompt,
-      status: "completed",
+      status: isAsync ? "pending" : "completed",
       resultUrl: result.image_url || result.data?.[0]?.url || result.url,
       creditCost: cost,
     });
