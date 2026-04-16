@@ -23,8 +23,8 @@ export const auth = betterAuth({
     },
   }),
   session: {
-    expiresIn: 60 * 60, // 1 hour
-    updateAge: 60 * 30, // Update session age every 30 minutes
+    expiresIn: 60 * 60 * 6, // 6 hours
+    updateAge: 60 * 60, // Update session age every hour
   },
 
   // 👇 هنا تحط إعدادات الكوكيز
