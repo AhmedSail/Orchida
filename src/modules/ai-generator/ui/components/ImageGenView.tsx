@@ -9,8 +9,17 @@ import {
   enhancePromptAction,
 } from "@/app/actions/ai-common";
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
+import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
 import { authClient } from "@/lib/auth-client";
 import Swal from "sweetalert2";
+
+interface PricingRule {
+  serviceType: string;
+  provider: string;
+  quality: string;
+  duration: number | null;
+  credits: number;
+}
 
 // Sub-components
 import { ImageGenHeader } from "./image-gen/ImageGenHeader";
@@ -33,8 +42,31 @@ export default function ImageGenView() {
   const [model] = useState("nano-banana-pro");
   const [style] = useState("Photorealistic");
 
-  // Fixed Cost
-  const cost = 3;
+  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
+
+  const cost = (() => {
+    // Map UI provider to DB provider name
+    const dbProvider = provider === "Imagen" ? "VEO" : "GROK";
+
+    // Standardize quality names for matching (e.g. 1K might be 720p in DB)
+    const checkQuality = (q: string) => {
+      if (q === "1K") return ["1K", "720p", "HD"];
+      if (q === "2K") return ["2K", "1080p", "Full HD"];
+      if (q === "4K") return ["4K", "Ultra HD"];
+      return [q];
+    };
+
+    const targetQualities = checkQuality(resolution);
+
+    const match = pricingRules.find(
+      (r) =>
+        r.serviceType === "image" &&
+        r.provider.toLowerCase() === dbProvider.toLowerCase() &&
+        targetQualities.some(tq => tq.toLowerCase() === r.quality.toLowerCase())
+    );
+
+    return match ? match.credits : 3;
+  })();
 
   // States for generation
   const [isGenerating, setIsGenerating] = useState(false);
@@ -76,6 +108,10 @@ export default function ImageGenView() {
   useEffect(() => {
     getStudentInternalCredits().then((res) => {
       if (res.success && res.balance !== undefined) setUserBalance(res.balance);
+    });
+
+    getAllAiPricingAction().then((rules) => {
+      if (rules) setPricingRules(rules as PricingRule[]);
     });
 
     const savedState = localStorage.getItem("ai_image_state");
