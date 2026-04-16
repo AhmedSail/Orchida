@@ -5,6 +5,7 @@ import { aiGenerations } from "@/src/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { checkAndDeductCredits, getGeminiGenApiKey } from "./ai-common";
+import { uploadFromUrl } from "@/lib/r2-server";
 import { API_BASE } from "./ai-constants";
 import { getAiPricingAction } from "./ai-pricing";
 
@@ -53,6 +54,23 @@ export async function generateImageAction(formDataStringBase64: string) {
         const buffer = Buffer.from(data.imageReference, 'base64');
         apiFormData.append("files", new Blob([buffer]), "reference.jpg");
       }
+    } else if (provider === "Meta AI") {
+      let metaOrientation = "square";
+      const orientStr = (orientation || aspectRatio || "").toLowerCase();
+      if (orientStr.includes("landscape") || orientStr.includes("16:9")) {
+        metaOrientation = "landscape";
+      } else if (orientStr.includes("portrait") || orientStr.includes("9:16")) {
+        metaOrientation = "portrait";
+      }
+      apiFormData.append("orientation", metaOrientation);
+
+      const numResult = data.numResults?.toString();
+      if (numResult) apiFormData.append("num_result", numResult);
+
+      if (data.imageReference) {
+        const buffer = Buffer.from(data.imageReference, 'base64');
+        apiFormData.append("files", new Blob([buffer]), "reference.jpg");
+      }
     } else {
       // Imagen — frontend already sends the correct ratio string ("1:1", "16:9", etc.)
       apiFormData.append("aspect_ratio", aspectRatio || "1:1");
@@ -69,21 +87,36 @@ export async function generateImageAction(formDataStringBase64: string) {
     const endpointMap: Record<string, string> = {
       "Flux": "flux",
       "Ideogram": "ideogram",
-      "Grok": "imagen/grok"
+      "Grok": "imagen/grok",
+      "Meta AI": "meta_ai/generate"
     };
     const endpoint = endpointMap[provider] || "generate_image";
 
-    const response = await fetch(`${API_BASE}/${endpoint}`, {
-      method: "POST",
-      headers: { "x-api-key": apiKey },
-      body: apiFormData
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds timeout
+
+    let response;
+    try {
+      response = await fetch(`${API_BASE}/${endpoint}`, {
+        method: "POST",
+        headers: { "x-api-key": apiKey },
+        body: apiFormData,
+        signal: controller.signal
+      });
+    } catch (err: any) {
+      if (err.name === 'AbortError') {
+        throw new Error("استغرقت العملية وقتاً طويلاً جداً من قبل المزود. يرجى المحاولة بعد قليل أو تقليل عدد الصور.");
+      }
+      throw err;
+    } finally {
+      clearTimeout(timeoutId);
+    }
 
     if (!response.ok) {
       const rawText = await response.text();
       // استرجاع الرصيد في حالة خطأ الـ API
       await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Image API Error (${model})`);
-      throw new Error(rawText || "Failed to generate image from API. Credits refunded.");
+      throw new Error(rawText || "فشل توليد الصورة من الـ API. تم إعادة الرصيد.");
     }
 
     const result = await response.json();
@@ -91,6 +124,13 @@ export async function generateImageAction(formDataStringBase64: string) {
     // حفظ في السجل المحلي — Grok is async so status starts as "pending"
     const taskUuid = result.uuid || result.id?.toString();
     const isAsync = !!taskUuid && !(result.image_url || result.data?.[0]?.url || result.url);
+    
+    let dbResultUrl = result.image_url || result.data?.[0]?.url || result.url;
+    if (!isAsync && dbResultUrl) {
+      const cloudUrl = await uploadFromUrl(dbResultUrl, "ai-temp");
+      if (cloudUrl) dbResultUrl = cloudUrl;
+    }
+
     await db.insert(aiGenerations).values({
       userId: sessionData.session.userId,
       taskUuid,
@@ -98,7 +138,7 @@ export async function generateImageAction(formDataStringBase64: string) {
       model: model || "nano-banana-pro",
       prompt,
       status: isAsync ? "pending" : "completed",
-      resultUrl: result.image_url || result.data?.[0]?.url || result.url,
+      resultUrl: dbResultUrl,
       creditCost: cost,
     });
 

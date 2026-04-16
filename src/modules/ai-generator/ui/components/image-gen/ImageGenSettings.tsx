@@ -72,40 +72,57 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
         />
       </div>
 
-      {/* Number of Results (Grok Only) */}
-      {provider === "Grok" && (
+      {/* Number of Results (Grok and Meta AI) */}
+      {(provider === "Grok" || provider === "Meta AI") && (
         <div className="mb-6">
           <label className="block text-sm font-bold text-zinc-700 mb-3">
             عدد الصور (Number of Results)
           </label>
           <div className="flex flex-wrap gap-2">
-            {[1, 2, 3, 4, 5, 6].map((num) => (
-              <button
-                key={num}
-                onClick={() => setNumResults(num)}
-                className={`w-12 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
-              >
-                {num}
-              </button>
-            ))}
+            {(() => {
+              let options = [1, 2, 3, 4, 5, 6];
+              if (provider === "Meta AI") {
+                options = [1, 2, 3, 4];
+              } else if (provider === "Grok" && imageReference) {
+                options = [1, 2];
+                // Ensure current selection is within limits
+                if (numResults > 2) setNumResults(1);
+              }
+              
+              return options.map((num) => (
+                <button
+                  key={num}
+                  onClick={() => setNumResults(num)}
+                  className={`w-12 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
+                >
+                  {num}
+                </button>
+              ));
+            })()}
           </div>
-          <p className="text-[10px] text-zinc-400 mt-2 font-medium">سيتم توليد مصفوفة من {numResults} صور.</p>
+          <p className="text-[10px] text-zinc-400 mt-2 font-medium">
+            {provider === "Grok" && imageReference 
+              ? "عند استخدام مرجع صورة في Grok، يقتصر التوليد على صورتين كحد أقصى."
+              : `سيتم توليد مصفوفة من ${numResults} صور.`}
+          </p>
         </div>
       )}
 
       {/* Aspect Ratio / Orientation */}
       <div className="mb-6">
         <label className="block text-sm font-bold text-zinc-700 mb-3">
-          {provider === "Grok" ? "الاتجاه (Orientation)" : "أبعاد الصورة (Aspect Ratio)"}
+          {(provider === "Grok" || provider === "Meta AI") ? "الاتجاه (Orientation)" : "أبعاد الصورة (Aspect Ratio)"}
         </label>
         <div className="flex flex-wrap gap-2">
-          {provider === "Grok" ? (
+          {(provider === "Grok" || provider === "Meta AI") ? (
             [
               { id: "Landscape (16:9)", label: "Landscape (16:9)", icon: Monitor },
               { id: "Portrait (9:16)", label: "Portrait (9:16)", icon: Smartphone },
               { id: "Square (1:1)", label: "Square (1:1)", icon: Square },
-              { id: "Vertical (2:3)", label: "Vertical (2:3)", icon: Smartphone },
-              { id: "Horizontal (3:2)", label: "Horizontal (3:2)", icon: Monitor },
+              ...(provider === "Grok" ? [
+                { id: "Vertical (2:3)", label: "Vertical (2:3)", icon: Smartphone },
+                { id: "Horizontal (3:2)", label: "Horizontal (3:2)", icon: Monitor },
+              ] : [])
             ].map((item) => (
               <button
                 key={item.id}
@@ -138,7 +155,7 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
       </div>
 
       {/* Settings Grid (Imagen Only) */}
-      {provider !== "Grok" && (
+      {(provider !== "Grok" && provider !== "Meta AI") && (
         <div className="grid grid-cols-2 gap-4 mb-8">
           <div>
             <label className="block text-sm font-bold text-zinc-700 mb-2">صيغة الملف</label>

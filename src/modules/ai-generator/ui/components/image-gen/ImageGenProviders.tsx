@@ -30,6 +30,22 @@ export const ImageGenProviders: React.FC<ImageGenProvidersProps> = ({
         محرك التوليد
       </label>
       <div className="flex flex-wrap gap-2">
+        <button
+          onClick={() => setProvider("Meta AI")}
+          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border transition-all duration-300 ${
+            provider === "Meta AI"
+              ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-lg shadow-blue-200 scale-[1.02]"
+              : "bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50"
+          }`}
+        >
+          <div className={`p-1 rounded-md ${provider === "Meta AI" ? "bg-white/20" : "bg-zinc-100"}`}>
+            <span className={`w-4 h-4 ${provider === "Meta AI" ? "text-white" : "text-zinc-500"}`}>⚡</span>
+          </div>
+          <span className="font-bold text-sm">Meta AI</span>
+          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${provider === "Meta AI" ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-400"}`}>
+            Meta
+          </span>
+        </button>
         {providers.map((p) => (
           <button
             key={p.id}

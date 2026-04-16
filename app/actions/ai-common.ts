@@ -5,6 +5,7 @@ import { userCredits, creditTransactions, aiGenerations, companies } from "@/src
 import { eq, desc, and } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { uploadFromUrl } from "@/lib/r2-server";
 
 import { API_BASE } from "./ai-constants";
 
@@ -94,16 +95,53 @@ export async function checkGenerationStatus(uuid: string) {
 }
 
 // 4. تحديث السجل المحلي
-export async function updateGenerationStatusAction(taskUuid: string, status: "completed" | "failed", resultUrl?: string, thumbnailUrl?: string) {
+export async function updateGenerationStatusAction(
+  taskUuid: string, 
+  status: "completed" | "failed", 
+  resultUrl?: string, 
+  thumbnailUrl?: string,
+  resultsJson?: string
+) {
   try {
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
 
+    let finalResultUrl = resultUrl;
+    let finalThumbnailUrl = thumbnailUrl;
+    let finalResultsJson = resultsJson;
+
+    // 1. برمجية الرفع للسحاب (R2) مع مجلد التخزين المؤقت (7 أيام)
+    if (resultUrl) {
+      const cloudUrl = await uploadFromUrl(resultUrl, "ai-temp");
+      if (cloudUrl) finalResultUrl = cloudUrl;
+    }
+
+    if (thumbnailUrl) {
+      const cloudThumb = await uploadFromUrl(thumbnailUrl, "ai-temp");
+      if (cloudThumb) finalThumbnailUrl = cloudThumb;
+    }
+
+    if (resultsJson) {
+      try {
+        const urls = JSON.parse(resultsJson);
+        if (Array.isArray(urls)) {
+          const cloudUrls = await Promise.all(
+            urls.map(u => uploadFromUrl(u, "ai-temp"))
+          );
+          const filtered = cloudUrls.filter(u => u !== null) as string[];
+          if (filtered.length > 0) finalResultsJson = JSON.stringify(filtered);
+        }
+      } catch (e) {
+        console.error("Error processing resultsJson for cloud upload:", e);
+      }
+    }
+
     await db.update(aiGenerations)
       .set({ 
         status, 
-        resultUrl: resultUrl || null,
-        thumbnailUrl: thumbnailUrl || null,
+        resultUrl: finalResultUrl || null,
+        thumbnailUrl: finalThumbnailUrl || null,
+        resultsJson: finalResultsJson || null,
         updatedAt: new Date()
       })
       .where(and(
@@ -118,23 +156,43 @@ export async function updateGenerationStatusAction(taskUuid: string, status: "co
 }
 
 // 5. جلب السجل
-export async function fetchGenerationHistoryAction(page = 1, pageSize = 12, type: "video" | "image" | "all" = "all") {
+export async function fetchGenerationHistoryAction(page = 1, pageSize = 20, type: "video" | "image" | "all" = "all") {
   try {
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
+
+    const userId = sessionData.session.userId;
     const offset = (page - 1) * pageSize;
-    let whereClause = eq(aiGenerations.userId, sessionData.session.userId);
-    if (type !== "all") {
-      whereClause = and(whereClause, eq(aiGenerations.type, type as any)) as any;
-    }
-    const list = await db.query.aiGenerations.findMany({
-      where: whereClause,
-      orderBy: [desc(aiGenerations.createdAt)],
-      limit: pageSize,
-      offset: offset,
-    });
-    return { success: true, data: list };
+
+    // Direct select only required columns for faster speed
+    const list = await db.select({
+      id: aiGenerations.id,
+      taskUuid: aiGenerations.taskUuid,
+      type: aiGenerations.type,
+      model: aiGenerations.model,
+      prompt: aiGenerations.prompt,
+      status: aiGenerations.status,
+      resultUrl: aiGenerations.resultUrl,
+      resultsJson: aiGenerations.resultsJson,
+      thumbnailUrl: aiGenerations.thumbnailUrl,
+      resolution: aiGenerations.resolution,
+      duration: aiGenerations.duration,
+      createdAt: aiGenerations.createdAt,
+    })
+      .from(aiGenerations)
+      .where(
+        and(
+          eq(aiGenerations.userId, userId),
+          type !== "all" ? eq(aiGenerations.type, type as any) : undefined
+        )
+      )
+      .orderBy(desc(aiGenerations.createdAt))
+      .limit(pageSize)
+      .offset(offset);
+      
+    return { success: true, data: list, hasMore: list.length === pageSize };
   } catch (error: any) {
+    console.error("Fetch History Error:", error);
     return { success: false, error: error.message };
   }
 }

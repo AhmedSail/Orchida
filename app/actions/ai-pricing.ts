@@ -2,7 +2,7 @@
 
 import { db } from "@/src/db";
 import { aiServicePricing } from "@/src/db/schema";
-import { eq, and } from "drizzle-orm";
+import { eq, and, isNull } from "drizzle-orm";
 
 export async function getAiPricingAction(serviceType: "video" | "image", provider: string, quality: string, duration?: number) {
   try {
@@ -74,15 +74,21 @@ export async function upsertAiPricingAction(data: {
   credits: number;
 }) {
   try {
+    const normalizedProvider = data.provider.trim();
+    const normalizedQuality = data.quality.trim();
+    const durationVal = data.duration ?? null;
+
     // Check if exists
     const existing = await db.select()
       .from(aiServicePricing)
       .where(
         and(
           eq(aiServicePricing.serviceType, data.serviceType),
-          eq(aiServicePricing.provider, data.provider),
-          eq(aiServicePricing.quality, data.quality),
-          data.duration !== undefined ? eq(aiServicePricing.duration, data.duration) : eq(aiServicePricing.duration, 0) // Treat undefined as 0 for storage? Or allow null.
+          eq(aiServicePricing.provider, normalizedProvider),
+          eq(aiServicePricing.quality, normalizedQuality),
+          durationVal !== null 
+            ? eq(aiServicePricing.duration, durationVal) 
+            : isNull(aiServicePricing.duration)
         )
       );
 
@@ -93,9 +99,9 @@ export async function upsertAiPricingAction(data: {
     } else {
       await db.insert(aiServicePricing).values({
         serviceType: data.serviceType,
-        provider: data.provider,
-        quality: data.quality,
-        duration: data.duration ?? null,
+        provider: normalizedProvider,
+        quality: normalizedQuality,
+        duration: durationVal,
         credits: data.credits,
       });
     }

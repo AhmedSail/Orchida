@@ -223,17 +223,17 @@ export default function ImageGenView() {
     try {
       const data: any = {
         prompt,
-        model: provider === "Imagen" ? model : "imagen-4",
-        aspectRatio: provider === "Grok"
+        model: provider === "Imagen" ? model : provider === "Meta AI" ? "meta-ai-image" : "Grok",
+        aspectRatio: (provider === "Grok" || provider === "Meta AI")
             ? orientation.includes("16:9") ? "16:9" : orientation.includes("9:16") ? "9:16" : orientation.includes("2:3") ? "2:3" : orientation.includes("3:2") ? "3:2" : "1:1"
             : aspectRatio,
         orientation,
         outputFormat,
-        numResults: provider === "Grok" ? numResults : 1,
+        numResults: (provider === "Grok" || provider === "Meta AI") ? numResults : 1,
         cost,
         provider,
         style,
-        resolution: provider === "Grok" ? "" : resolution,
+        resolution: (provider === "Grok" || provider === "Meta AI") ? "" : resolution,
       };
 
       const encodedData = Buffer.from(JSON.stringify(data)).toString("base64");
@@ -291,7 +291,7 @@ export default function ImageGenView() {
 
           if (foundUrls.length > 0) {
             setResultImageUrls(foundUrls);
-            updateGenerationStatusAction(uuid, "completed", foundUrls[0]);
+            updateGenerationStatusAction(uuid, "completed", foundUrls[0], undefined, JSON.stringify(foundUrls));
             window.dispatchEvent(new CustomEvent("balanceUpdated"));
           } else {
             setGenerationError("اكتمل التوليد ولكن لم نجد الرابط في البيانات المستلمة.");
