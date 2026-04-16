@@ -89,15 +89,25 @@ export async function generateVideoAction(clientFormData: FormData) {
     }
 
     let response;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 120000); // 120 seconds timeout
+
     try {
       response = await fetch(`${API_BASE}/video-gen/${endpointProvider}`, {
         method: "POST",
         headers: { "x-api-key": apiKey },
-        body: apiFormData
+        body: apiFormData,
+        signal: controller.signal
       });
-    } catch (networkError) {
+    } catch (networkError: any) {
+      if (networkError.name === 'AbortError') {
+        await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Timeout Error (${provider})`);
+        throw new Error("استغرقت العملية وقتاً طويلاً من خادم الفيديو. تم إعادة الرصيد، يرجى المحاولة لاحقاً.");
+      }
       await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Network Error (${provider})`);
-      throw new Error("Failed to connect to AI server. Your credits have been safely refunded.");
+      throw new Error("فشل الاتصال بخادم الـ AI. تم إعادة الرصيد بأمان.");
+    } finally {
+      clearTimeout(timeoutId);
     }
 
     if (!response.ok) {

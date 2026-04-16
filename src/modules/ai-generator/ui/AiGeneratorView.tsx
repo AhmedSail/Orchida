@@ -21,9 +21,23 @@ import ImageGenView from "./components/ImageGenView";
 import HistoryView from "./components/HistoryView";
 
 export default function AiGeneratorView() {
-  const [appMode, setAppMode] = useState("video"); // 'chat' | 'video' | 'imagen'
+  const [appMode, setAppMode] = useState("video"); 
   const [balance, setBalance] = useState<number | null>(null);
   const [whatsappUrl, setWhatsappUrl] = useState("");
+
+  // استرجاع التبويب النشط من الذاكرة عند التحميل
+  useEffect(() => {
+    const savedMode = localStorage.getItem("ai_app_mode");
+    if (savedMode && ["video", "imagen", "history", "chat"].includes(savedMode)) {
+      setAppMode(savedMode);
+    }
+  }, []);
+
+  // حفظ التبويب النشط عند تغييره
+  const handleModeChange = (mode: string) => {
+    setAppMode(mode);
+    localStorage.setItem("ai_app_mode", mode);
+  };
 
   useEffect(() => {
     const fetchBalance = async () => {
@@ -101,7 +115,7 @@ export default function AiGeneratorView() {
         <div className="flex justify-center pt-2 pb-6">
           <div className="flex bg-white shadow-sm border border-zinc-100 rounded-2xl p-2 gap-2 overflow-x-auto max-w-full">
             <button
-              onClick={() => setAppMode("video")}
+              onClick={() => handleModeChange("video")}
               className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "video" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <Video
@@ -114,7 +128,7 @@ export default function AiGeneratorView() {
               </span>
             </button>
             <button
-              onClick={() => setAppMode("imagen")}
+              onClick={() => handleModeChange("imagen")}
               className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "imagen" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <ImageIcon
@@ -127,7 +141,7 @@ export default function AiGeneratorView() {
               </span>
             </button>
             <button
-              onClick={() => setAppMode("history")}
+              onClick={() => handleModeChange("history")}
               className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "history" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <History

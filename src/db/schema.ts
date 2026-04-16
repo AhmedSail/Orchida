@@ -10,6 +10,7 @@ import {
   unique,
   serial,
   primaryKey,
+  index,
 } from "drizzle-orm/pg-core";
 import { relations } from "drizzle-orm";
 import { uuid } from "drizzle-orm/pg-core";
@@ -641,7 +642,9 @@ export const session = pgTable("session", {
   userId: text("user_id")
     .notNull()
     .references(() => users.id, { onDelete: "cascade" }),
-});
+}, (table) => ({
+  userIdIdx: index("session_user_id_idx").on(table.userId),
+}));
 
 // 13. account
 export const account = pgTable("account", {
@@ -1271,6 +1274,7 @@ export const aiGenerations = pgTable("aiGenerations", {
   prompt: text("prompt"),
   status: varchar("status", { length: 20 }).default("pending"), // "pending" | "completed" | "failed"
   resultUrl: text("resultUrl"), // رابط الفيديو أو الصورة الناتجة
+  resultsJson: text("resultsJson"), // ✅ حقل جديد لتخزين مصفوفة الروابط بصيغة JSON
   thumbnailUrl: text("thumbnailUrl"),
   resolution: varchar("resolution", { length: 20 }),
   duration: integer("duration"), // بالثواني (للفيديوهات)
@@ -1278,7 +1282,10 @@ export const aiGenerations = pgTable("aiGenerations", {
   isRefunded: boolean("isRefunded").default(false),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-});
+}, (table) => ({
+  userIdIdx: index("ai_gen_user_id_idx").on(table.userId),
+  createdAtIdx: index("ai_gen_created_at_idx").on(table.createdAt),
+}));
 
 export const aiGenerationsRelations = relations(aiGenerations, ({ one }) => ({
   user: one(users, {
