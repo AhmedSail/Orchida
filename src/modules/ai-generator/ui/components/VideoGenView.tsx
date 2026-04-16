@@ -25,18 +25,10 @@ import {
   enhancePromptAction,
 } from "@/app/actions/ai-common";
 import { getStudentInternalCredits } from "@/app/actions/ai-credits";
-import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
 
 import { authClient } from "@/lib/auth-client";
 import Swal from "sweetalert2";
 
-interface PricingRule {
-  serviceType: string;
-  provider: string;
-  quality: string;
-  duration: number | null;
-  credits: number;
-}
 
 export default function VideoGenView() {
   const [provider, setProvider] = useState("Veo");
@@ -52,7 +44,6 @@ export default function VideoGenView() {
 
   // User Credits State
   const [userBalance, setUserBalance] = useState<number | null>(null);
-  const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
 
   // Debug State
   const [rawResponseData, setRawResponseData] = useState<any>(null);
@@ -129,47 +120,8 @@ export default function VideoGenView() {
     });
   };
 
-  // Credit calculation logic
-  const calculateCost = () => {
-    const seconds = parseInt(duration) || 6;
-    const resQuality = resolution.includes("720")
-      ? "720p"
-      : resolution.includes("1080")
-        ? "1080p"
-        : "480p";
-
-    // 1. Try to find exact match for provider, quality, and duration
-    const exactMatch = pricingRules.find(
-      (r) =>
-        r.serviceType === "video" &&
-        r.provider.toLowerCase() === provider.toLowerCase() &&
-        r.quality === resQuality &&
-        r.duration === seconds,
-    );
-    if (exactMatch) return exactMatch.credits;
-
-    // 2. Try to find match for provider and quality with duration 0 or null (any duration)
-    const qualityMatch = pricingRules.find(
-      (r) =>
-        r.serviceType === "video" &&
-        r.provider.toLowerCase() === provider.toLowerCase() &&
-        r.quality === resQuality &&
-        (r.duration === 0 || r.duration === null),
-    );
-    if (qualityMatch) return qualityMatch.credits;
-
-    // 3. Fallback to hardcoded logic if no DB rule found
-    switch (provider) {
-      case "Grok":
-        return 1; // Updated fallback for Grok
-      case "Veo":
-        return resolution.includes("High") ? 50 : 2;
-      default:
-        return 5;
-    }
-  };
-
-  const cost = calculateCost();
+  // Fixed Cost
+  const cost = 3;
 
   React.useEffect(() => {
     // 1. Fetch initial user balance
@@ -179,14 +131,6 @@ export default function VideoGenView() {
       }
     });
 
-    // 2. Fetch dynamic pricing rules
-    getAllAiPricingAction().then((rules) => {
-      if (rules) {
-        setPricingRules(rules as PricingRule[]);
-      }
-    });
-
-    // 3. Load saved state from localStorage
     const savedState = localStorage.getItem("ai_video_state");
     const pendingGen = localStorage.getItem("pending_video_gen");
 
