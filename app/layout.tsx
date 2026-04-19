@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
 import { ViewTransitions } from "next-view-transitions";
+import PwaRegister from "@/components/PwaRegister";
 import "./globals.css";
 
 const tajawal = Tajawal({
@@ -14,6 +15,12 @@ const baseUrl =
 
 export const metadata: Metadata = {
   metadataBase: new URL(baseUrl),
+  manifest: "/manifest.json",
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "default",
+    title: "أوركيدة",
+  },
   title: {
     default: "أوركيدة للخدمات الرقمية والأكاديمية",
     template: "%s | أوركيدة",
@@ -99,6 +106,7 @@ export default function RootLayout({
         className={`${tajawal.variable} antialiased`}
         suppressHydrationWarning
       >
+        <PwaRegister />
         <ViewTransitions>{children}</ViewTransitions>
       </body>
     </html>
