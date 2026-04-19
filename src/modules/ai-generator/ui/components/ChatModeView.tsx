@@ -14,6 +14,11 @@ import {
   Zap,
   Lock,
   Gift,
+  Paperclip,
+  FileText,
+  Image as ImageIcon,
+  Video as VideoIcon,
+  X,
 } from "lucide-react";
 import { sendChatMessageAction, ChatMessage } from "@/app/actions/ai-chat";
 import {
@@ -23,19 +28,29 @@ import {
 } from "@/app/actions/ai-chat-settings";
 import { toast } from "sonner";
 
+interface MessageAttachment {
+  name: string;
+  type: string;
+  url: string;
+  file?: File;
+}
+
 interface Message {
   id: string;
   role: "user" | "assistant";
   content: string;
   timestamp: Date;
+  attachments?: MessageAttachment[];
 }
 
 export default function ChatModeView() {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
+  const [attachments, setAttachments] = useState<File[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Chat pricing state
   const [freeLimit, setFreeLimit] = useState(5);
@@ -68,9 +83,19 @@ export default function ChatModeView() {
   const freeRemaining = Math.max(0, freeLimit - usedCount);
   const isPaidMode = usedCount >= freeLimit;
 
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files.length > 0) {
+      setAttachments((prev) => [...prev, ...Array.from(e.target.files!)]);
+    }
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const handleSend = async () => {
     const trimmed = input.trim();
-    if (!trimmed || isLoading) return;
+    if ((!trimmed && attachments.length === 0) || isLoading) return;
 
     // ── 1. خصم/تحقق من الكريدت أو المجاني ──
     const consumeRes = await consumeChatMessageAction();
@@ -85,23 +110,71 @@ export default function ChatModeView() {
       window.dispatchEvent(new Event("balanceUpdated"));
     }
 
+    // تجهيز المرفقات
+    const newAttachments: MessageAttachment[] = attachments.map((f) => ({
+      name: f.name,
+      type: f.type,
+      url: URL.createObjectURL(f),
+      file: f,
+    }));
+
     const userMessage: Message = {
       id: crypto.randomUUID(),
       role: "user",
       content: trimmed,
       timestamp: new Date(),
+      attachments: newAttachments,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setAttachments([]);
     setIsLoading(true);
 
     try {
-      const history: ChatMessage[] = messages.map((m) => ({
-        role: m.role,
-        content: m.content,
-      }));
-      history.push({ role: "user", content: trimmed });
+      const fileToBase64 = (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+          const reader = new FileReader();
+          reader.readAsDataURL(file);
+          reader.onload = () => resolve(reader.result as string);
+          reader.onerror = (error) => reject(error);
+        });
+      };
+
+      const buildContent = async (msg: Message): Promise<string | any[]> => {
+        if (!msg.attachments || msg.attachments.length === 0) {
+          return msg.content || "مرفق";
+        }
+        
+        const contentArr: any[] = [];
+        if (msg.content) {
+          contentArr.push({ type: "text", text: msg.content });
+        }
+        
+        for (const att of msg.attachments) {
+          if (att.type.startsWith("image/") && att.file) {
+            const base64 = await fileToBase64(att.file);
+            contentArr.push({
+              type: "image_url",
+              image_url: { url: base64 },
+            });
+          } else {
+             // For non-image files, just send a text note that a file was attached.
+             contentArr.push({ type: "text", text: `[ملف مرفق: ${att.name}]` });
+          }
+        }
+        
+        return contentArr;
+      };
+
+      const history: ChatMessage[] = [];
+      for (const m of messages) {
+        history.push({
+          role: m.role,
+          content: await buildContent(m),
+        });
+      }
+      history.push({ role: "user", content: await buildContent(userMessage) });
 
       const res = await sendChatMessageAction(history);
 
@@ -264,7 +337,30 @@ export default function ChatModeView() {
                   ? "bg-primary text-white rounded-tr-sm"
                   : "bg-white border border-zinc-100 text-zinc-800 shadow-sm rounded-tl-sm"
               }`}>
-                {msg.content}
+                {msg.content && <div>{msg.content}</div>}
+                
+                {/* Attachments Display */}
+                {msg.attachments && msg.attachments.length > 0 && (
+                  <div className={`flex flex-wrap gap-2 ${msg.content ? "mt-3 pt-3 border-t border-primary/20" : ""}`}>
+                    {msg.attachments.map((att, i) => (
+                      <div key={i} className="flex items-center gap-2 p-2 bg-black/10 rounded-xl overflow-hidden max-w-full">
+                        {att.type.startsWith("image/") ? (
+                          <img src={att.url} alt={att.name} className="h-16 w-auto rounded-lg object-cover" />
+                        ) : att.type.startsWith("video/") ? (
+                          <div className="flex items-center gap-2 px-2">
+                            <VideoIcon className="w-4 h-4" />
+                            <span className="text-xs truncate max-w-[100px]">{att.name}</span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2 px-2">
+                            <FileText className="w-4 h-4" />
+                            <span className="text-xs truncate max-w-[100px]">{att.name}</span>
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
               <div className={`flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${
                 msg.role === "user" ? "flex-row-reverse" : "flex-row"
@@ -300,7 +396,45 @@ export default function ChatModeView() {
 
       {/* Input Area */}
       <div className="py-4 border-t border-zinc-100">
+        
+        {/* Attachments Preview Area */}
+        {attachments.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-3">
+            {attachments.map((file, idx) => (
+              <div key={idx} className="relative flex items-center gap-2 bg-zinc-100 border border-zinc-200 rounded-xl p-1.5 pr-3 max-w-[150px]">
+                {file.type.startsWith("image/") ? (
+                  <ImageIcon className="w-4 h-4 text-primary shrink-0" />
+                ) : file.type.startsWith("video/") ? (
+                  <VideoIcon className="w-4 h-4 text-blue-500 shrink-0" />
+                ) : (
+                  <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
+                )}
+                <span className="text-xs text-zinc-700 truncate font-medium flex-1">{file.name}</span>
+                <button
+                  onClick={() => removeAttachment(idx)}
+                  className="p-1 hover:bg-zinc-200 rounded-lg transition-colors"
+                >
+                  <X className="w-3 h-3 text-zinc-500" />
+                </button>
+              </div>
+            ))}
+          </div>
+        )}
+
         <div className="flex gap-3 items-end bg-white border border-zinc-200 rounded-3xl p-3 shadow-sm focus-within:border-primary/30 focus-within:shadow-md transition-all">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="w-10 h-10 rounded-2xl text-zinc-400 flex items-center justify-center hover:bg-zinc-50 hover:text-primary transition-colors shrink-0"
+          >
+            <Paperclip className="w-5 h-5" />
+          </button>
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            multiple
+            className="hidden"
+          />
           <textarea
             ref={textareaRef}
             value={input}
@@ -311,7 +445,7 @@ export default function ChatModeView() {
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading || !settingsLoaded}
+            disabled={(!input.trim() && attachments.length === 0) || isLoading || !settingsLoaded}
             className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 shrink-0"
           >
             {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
