@@ -96,12 +96,13 @@ export async function getGeminiGenAccountAPI() {
         availableCredit: data.user_credit?.available_credit || 0,
         lockedCredit: data.user_credit?.locked_credit || 0,
         planId: data.plan_id,
-        email: data.email
+        email: data.email,
+        benefits: data.user_benefits || []
       }
     };
   } catch (error) {
     console.error("Error fetching GeminiGen API:", error);
-    return { success: false, error: "Failed to fetch top-level API." };
+    return { success: false, error: "Failed to fetch account info from GeminiGen." };
   }
 }
 

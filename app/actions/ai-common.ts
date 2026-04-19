@@ -19,6 +19,11 @@ export async function getGeminiGenApiKey() {
 
 // 1. دالة فحص وتحديث الرصيد الداخلي
 export async function checkAndDeductCredits(userId: string, cost: number, description: string) {
+  if (cost <= 0) {
+    // إذا كان التكلفة 0، لا داعي للخصم أو التحقق من الرصيد
+    return;
+  }
+
   const creditsRecord = await db.query.userCredits.findFirst({
     where: eq(userCredits.userId, userId),
   });
@@ -75,7 +80,7 @@ export async function refundFailedTaskAction(taskUuid: string, reason: string) {
   }
 }
 
-// 3. فحص حالة المهمة (Polling)
+// 3. فحص حالة المهمة (Polling من السيرفر الخارجي)
 export async function checkGenerationStatus(uuid: string) {
   try {
     const apiKey = await getGeminiGenApiKey();
@@ -89,6 +94,33 @@ export async function checkGenerationStatus(uuid: string) {
 
     if (!response.ok) throw new Error("Error fetching status");
     return { success: true, data: await response.json() };
+  } catch (error: any) {
+    return { success: false, error: error.message };
+  }
+}
+
+// 3.1 فحص حالة المهمة من قاعدة البيانات المحلية (أكثر دقة مع الـ Webhook)
+export async function getInternalStatusAction(taskUuid: string) {
+  try {
+    const sessionData = await auth.api.getSession({ headers: await headers() });
+    if (!sessionData?.session?.userId) throw new Error("Unauthorized");
+
+    const record = await db.query.aiGenerations.findFirst({
+      where: and(
+        eq(aiGenerations.taskUuid, taskUuid),
+        eq(aiGenerations.userId, sessionData.session.userId)
+      )
+    });
+
+    if (!record) return { success: false, error: "Record not found" };
+
+    return { 
+      success: true, 
+      status: record.status, 
+      resultUrl: record.resultUrl,
+      resultsJson: record.resultsJson,
+      thumbnailUrl: record.thumbnailUrl
+    };
   } catch (error: any) {
     return { success: false, error: error.message };
   }

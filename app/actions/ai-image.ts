@@ -10,21 +10,55 @@ import { API_BASE } from "./ai-constants";
 import { getAiPricingAction } from "./ai-pricing";
 
 
-export async function generateImageAction(formDataStringBase64: string) {
+export async function generateImageAction(input: string | FormData) {
   try {
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
 
-    const data = JSON.parse(Buffer.from(formDataStringBase64, 'base64').toString('utf8'));
-    const { provider, prompt, model, aspectRatio, outputFormat, resolution, numResults, orientation } = data;
+    let data: any;
+    if (typeof input === "string") {
+      const decoded = Buffer.from(input, "base64").toString("utf-8");
+      data = JSON.parse(decoded);
+    } else {
+      data = Object.fromEntries(input.entries());
+      const file = input.get("files");
+      if (file) data.files = file;
+    }
+
+    const { 
+      provider, 
+      prompt, 
+      model, 
+      aspectRatio, 
+      aspect_ratio, 
+      outputFormat, 
+      output_format, 
+      resolution, 
+      numResults, 
+      num_results,
+      orientation 
+    } = data;
     
+    const finalAspectRatio = aspect_ratio || aspectRatio || "1:1";
+    const finalOutputFormat = output_format || outputFormat || "jpeg";
+    const finalNumResults = num_results || numResults || 1;
+
     // Fetch dynamic cost from DB
     const resQuality = resolution || "Standard";
-    const dynamicCost = await getAiPricingAction("image", model || "nano-banana-pro", resQuality);
-    const cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(data.cost) || 2);
-    // الخصم من الرصيد
-    await checkAndDeductCredits(sessionData.session.userId, cost, `Image Generation: ${model} (${resQuality})`);
+    
+    // إذا كانت التكلفة المرسلة هي 0، نعتمدها مباشرة (للتجربة المجانية)
+    let cost = 0;
+    if (data.cost === 0 || data.cost === "0") {
+      cost = 0;
+    } else {
+      const dynamicCost = await getAiPricingAction("image", model || "nano-banana-pro", resQuality);
+      cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(data.cost) || 2);
+    }
 
+    // الخصم من الرصيد فقط إذا كانت التكلفة أكبر من 0
+    if (cost > 0) {
+      await checkAndDeductCredits(sessionData.session.userId, cost, `Image Generation: ${model} (${resQuality})`);
+    }
 
     const apiKey = await getGeminiGenApiKey();
     if (!apiKey) throw new Error("API Key configuration error.");
@@ -33,55 +67,45 @@ export async function generateImageAction(formDataStringBase64: string) {
     apiFormData.append("prompt", prompt);
     apiFormData.append("model", model || "nano-banana-pro");
 
+    // Handle files if passed as File objects or Blobs
+    if (data.files) {
+      if (Array.isArray(data.files)) {
+        data.files.forEach((file: any, i: number) => apiFormData.append("files", file));
+      } else {
+        apiFormData.append("files", data.files);
+      }
+    } else if (data.imageReference) {
+      const buffer = Buffer.from(data.imageReference, 'base64');
+      apiFormData.append("files", new Blob([buffer]), "reference.jpg");
+    }
+
     if (provider === "Grok") {
-      // The frontend sends orientation like "Landscape (16:9)", "Portrait (9:16)", "Square (1:1)"
-      // Map to what the Grok API expects
       let grokOrientation = "square";
-      const orientStr = (orientation || aspectRatio || "").toLowerCase();
+      const orientStr = (orientation || finalAspectRatio || "").toLowerCase();
       if (orientStr.includes("landscape") || orientStr.includes("16:9") || orientStr.includes("3:2")) {
         grokOrientation = "landscape";
       } else if (orientStr.includes("portrait") || orientStr.includes("9:16") || orientStr.includes("2:3")) {
         grokOrientation = "portrait";
-      } else {
-        grokOrientation = "square";
       }
       apiFormData.append("orientation", grokOrientation);
-
-      const numResult = data.numResults?.toString();
-      if (numResult) apiFormData.append("num_result", numResult);
-
-      if (data.imageReference) {
-        const buffer = Buffer.from(data.imageReference, 'base64');
-        apiFormData.append("files", new Blob([buffer]), "reference.jpg");
-      }
+      apiFormData.append("num_result", finalNumResults.toString());
     } else if (provider === "Meta AI") {
       let metaOrientation = "square";
-      const orientStr = (orientation || aspectRatio || "").toLowerCase();
+      const orientStr = (orientation || finalAspectRatio || "").toLowerCase();
       if (orientStr.includes("landscape") || orientStr.includes("16:9")) {
         metaOrientation = "landscape";
       } else if (orientStr.includes("portrait") || orientStr.includes("9:16")) {
         metaOrientation = "portrait";
       }
       apiFormData.append("orientation", metaOrientation);
-
-      const numResult = data.numResults?.toString();
-      if (numResult) apiFormData.append("num_result", numResult);
-
-      if (data.imageReference) {
-        const buffer = Buffer.from(data.imageReference, 'base64');
-        apiFormData.append("files", new Blob([buffer]), "reference.jpg");
-      }
+      apiFormData.append("num_result", finalNumResults.toString());
     } else {
-      // Imagen — frontend already sends the correct ratio string ("1:1", "16:9", etc.)
-      apiFormData.append("aspect_ratio", aspectRatio || "1:1");
-      apiFormData.append("output_format", outputFormat?.toLowerCase() || "jpeg");
+      // Imagen
+      apiFormData.append("aspect_ratio", finalAspectRatio);
+      apiFormData.append("output_format", finalOutputFormat.toLowerCase());
       apiFormData.append("style", data.style || "Photorealistic");
-      if (resolution) {
-        apiFormData.append("resolution", resolution);
-      }
-      if (numResults) {
-        apiFormData.append("num_results", numResults.toString());
-      }
+      if (resolution) apiFormData.append("resolution", resolution);
+      apiFormData.append("num_results", finalNumResults.toString());
     }
 
     const endpointMap: Record<string, string> = {

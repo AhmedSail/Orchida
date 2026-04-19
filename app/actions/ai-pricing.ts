@@ -120,3 +120,19 @@ export async function deleteAiPricingAction(id: string) {
     await db.delete(aiServicePricing).where(eq(aiServicePricing.id, id));
     return { success: true };
 }
+
+export async function checkFreeServicesAction() {
+  try {
+    const freeServices = await db.select()
+      .from(aiServicePricing)
+      .where(eq(aiServicePricing.credits, 0));
+    
+    return {
+      success: true,
+      hasFreeImage: freeServices.some(s => s.serviceType === "image"),
+      hasFreeVideo: freeServices.some(s => s.serviceType === "video"),
+    };
+  } catch (error) {
+    return { success: false, hasFreeImage: false, hasFreeVideo: false };
+  }
+}
