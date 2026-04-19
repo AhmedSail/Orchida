@@ -9,26 +9,32 @@ import {
   History,
   Zap,
   Plus,
+  ArrowRightLeft,
 } from "lucide-react";
 import Image from "next/image";
 import {
   getStudentInternalCredits,
   getWhatsAppAction,
 } from "@/app/actions/ai-credits";
-import ChatModeView from "./components/ChatModeView";
+import AiLandingView from "./components/AiLandingView";
+import FreeTrialView from "./components/FreeTrialView";
 import VideoGenView from "./components/VideoGenView";
 import ImageGenView from "./components/ImageGenView";
 import HistoryView from "./components/HistoryView";
+import ChatModeView from "./components/ChatModeView";
 
 export default function AiGeneratorView() {
-  const [appMode, setAppMode] = useState("video"); 
+  const [appMode, setAppMode] = useState("hub");
   const [balance, setBalance] = useState<number | null>(null);
   const [whatsappUrl, setWhatsappUrl] = useState("");
 
   // استرجاع التبويب النشط من الذاكرة عند التحميل
   useEffect(() => {
     const savedMode = localStorage.getItem("ai_app_mode");
-    if (savedMode && ["video", "imagen", "history", "chat"].includes(savedMode)) {
+    if (
+      savedMode &&
+      ["hub", "video", "imagen", "history", "chat"].includes(savedMode)
+    ) {
       setAppMode(savedMode);
     }
   }, []);
@@ -115,8 +121,21 @@ export default function AiGeneratorView() {
         <div className="flex justify-center pt-2 pb-6">
           <div className="flex bg-white shadow-sm border border-zinc-100 rounded-2xl p-2 gap-2 overflow-x-auto max-w-full">
             <button
+              onClick={() => handleModeChange("hub")}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${appMode === "hub" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+            >
+              <ArrowRightLeft
+                className={`w-6 h-6 mb-2 ${appMode === "hub" ? "text-primary" : "text-zinc-400"}`}
+              />
+              <span
+                className={`text-xs font-semibold ${appMode === "hub" ? "text-primary" : "text-zinc-600"}`}
+              >
+                الرئيسية
+              </span>
+            </button>
+            <button
               onClick={() => handleModeChange("video")}
-              className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "video" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${appMode === "video" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <Video
                 className={`w-6 h-6 mb-2 ${appMode === "video" ? "text-primary" : "text-zinc-400"}`}
@@ -129,7 +148,7 @@ export default function AiGeneratorView() {
             </button>
             <button
               onClick={() => handleModeChange("imagen")}
-              className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "imagen" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${appMode === "imagen" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <ImageIcon
                 className={`w-6 h-6 mb-2 ${appMode === "imagen" ? "text-primary" : "text-zinc-400"}`}
@@ -142,7 +161,7 @@ export default function AiGeneratorView() {
             </button>
             <button
               onClick={() => handleModeChange("history")}
-              className={`flex flex-col items-center justify-center p-3 min-w-[100px] rounded-xl transition ${appMode === "history" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${appMode === "history" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
             >
               <History
                 className={`w-6 h-6 mb-2 ${appMode === "history" ? "text-primary" : "text-zinc-400"}`}
@@ -153,9 +172,28 @@ export default function AiGeneratorView() {
                 السجل
               </span>
             </button>
+            <button
+              onClick={() => handleModeChange("chat")}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${appMode === "chat" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+            >
+              <MessageSquare
+                className={`w-6 h-6 mb-2 ${appMode === "chat" ? "text-primary" : "text-zinc-400"}`}
+              />
+              <span
+                className={`text-xs font-semibold ${appMode === "chat" ? "text-primary" : "text-zinc-600"}`}
+              >
+                المحادثة
+              </span>
+            </button>
           </div>
         </div>
 
+        <div className={appMode !== "hub" ? "hidden" : ""}>
+          <AiLandingView onSelectMode={handleModeChange} />
+        </div>
+        <div className={appMode !== "chat" ? "hidden" : ""}>
+          <ChatModeView />
+        </div>
         <div className={appMode !== "video" ? "hidden" : ""}>
           <VideoGenView />
         </div>
@@ -164,6 +202,9 @@ export default function AiGeneratorView() {
         </div>
         <div className={appMode !== "history" ? "hidden" : ""}>
           <HistoryView isActive={appMode === "history"} />
+        </div>
+        <div className={appMode !== "free" ? "hidden" : ""}>
+          <FreeTrialView />
         </div>
       </div>
     </div>

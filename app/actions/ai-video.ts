@@ -23,11 +23,23 @@ export async function generateVideoAction(clientFormData: FormData) {
     const duration = parseInt(durationStr) || 0;
 
     // Fetch dynamic cost from DB
-    const resQuality = resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p";
-    const dynamicCost = await getAiPricingAction("video", provider, resQuality, duration);
-    const cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(clientFormData.get("cost")) || 5);
+    const safeResolution = resolution || "480p";
+    const resQuality = safeResolution.includes("720") ? "720p" : safeResolution.includes("1080") ? "1080p" : "480p";
+    
+    // إذا تم إرسال تكلفة 0 من الواجهة (FreeTrial)، نعتمدها مباشرة
+    const clientCost = clientFormData.get("cost");
+    let cost = 0;
+    
+    if (clientCost === "0") {
+      cost = 0;
+    } else {
+      const dynamicCost = await getAiPricingAction("video", provider, resQuality, duration);
+      cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(clientCost) || 5);
+    }
 
-    await checkAndDeductCredits(sessionData.session.userId, cost, `Video Generation: ${provider} (${resQuality}, ${duration}s)`);
+    if (cost > 0) {
+      await checkAndDeductCredits(sessionData.session.userId, cost, `Video Generation: ${provider} (${resQuality}, ${duration}s)`);
+    }
 
 
     const apiKey = await getGeminiGenApiKey();
@@ -47,11 +59,12 @@ export async function generateVideoAction(clientFormData: FormData) {
     apiFormData.append("model", model || `${endpointProvider}-2`);
     
     if (resolution) {
-      apiFormData.append("resolution", resolution.includes("720") ? "720p" : resolution.includes("1080") ? "1080p" : "480p");
+      const safeRes = resolution || "480p";
+      apiFormData.append("resolution", safeRes.includes("720") ? "720p" : safeRes.includes("1080") ? "1080p" : "480p");
     }
     
-    if (durationStr) {
-      apiFormData.append("duration", durationStr);
+    if (duration > 0) {
+      apiFormData.append("duration", duration.toString());
     }
     
     if (provider === "Grok") {
@@ -117,10 +130,17 @@ export async function generateVideoAction(clientFormData: FormData) {
     }
 
     const result = await response.json();
+    console.log("[GeminiGen API Response]:", result);
+
+    const taskUuid = result.uuid || result.id?.toString() || result.data?.uuid || result.data?.id?.toString();
+
+    if (!taskUuid) {
+      console.error("[Error] Could not find task UUID/ID in response:", result);
+    }
 
     await db.insert(aiGenerations).values({
       userId: sessionData.session.userId,
-      taskUuid: result.uuid || result.id?.toString(),
+      taskUuid: taskUuid,
       type: "video",
       provider,
       model: model || `${endpointProvider}-2`,

@@ -13,5 +13,9 @@ export default async function AiGeneratorPage() {
     headers: await headers(),
   });
 
+  if (!sessionData) {
+    redirect("/sign-in");
+  }
+
   return <AiGeneratorView />;
 }
