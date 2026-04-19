@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Plus,
   Trash2,
@@ -15,11 +15,17 @@ import {
   Zap,
   Clock,
   Layout,
+  MessageSquare,
+  Gift,
 } from "lucide-react";
 import {
   upsertAiPricingAction,
   deleteAiPricingAction,
 } from "@/app/actions/ai-pricing";
+import {
+  getChatSettingsAction,
+  saveChatSettingsAction,
+} from "@/app/actions/ai-chat-settings";
 import { toast } from "sonner";
 import { motion, AnimatePresence } from "framer-motion";
 import Swal from "sweetalert2";
@@ -42,9 +48,33 @@ export default function AiPricingTable({
   const [isAdding, setIsAdding] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [search, setSearch] = useState("");
+  const [activeTab, setActiveTab] = useState<"pricing" | "chat">("pricing");
+
+  // Chat Settings State
+  const [chatFreeMessages, setChatFreeMessages] = useState(5);
+  const [chatCreditsPerMsg, setChatCreditsPerMsg] = useState(2);
+  const [chatSettingsLoading, setChatSettingsLoading] = useState(false);
+
+  useEffect(() => {
+    getChatSettingsAction().then((s) => {
+      setChatFreeMessages(s.freeMessages);
+      setChatCreditsPerMsg(s.creditsPerMessage);
+    });
+  }, []);
+
+  const handleSaveChatSettings = async () => {
+    setChatSettingsLoading(true);
+    const res = await saveChatSettingsAction({
+      freeMessages: chatFreeMessages,
+      creditsPerMessage: chatCreditsPerMsg,
+    });
+    setChatSettingsLoading(false);
+    if (res.success) toast.success("تم حفظ إعدادات الشات!");
+    else toast.error("فشل الحفظ");
+  };
 
   const [formData, setFormData] = useState({
-    id: "", // For editing
+    id: "",
     serviceType: "video",
     provider: "Veo",
     quality: "720p",
@@ -196,8 +226,92 @@ export default function AiPricingTable({
         </button>
       </div>
 
+      {/* Tabs */}
+      <div className="flex items-center gap-3 border-b border-slate-200 pb-2">
+        <button
+          onClick={() => setActiveTab("pricing")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+            activeTab === "pricing"
+              ? "bg-slate-900 text-white shadow-lg shadow-slate-900/20"
+              : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <Layout className="w-4 h-4" />
+          تسعير التوليد
+        </button>
+        <button
+          onClick={() => setActiveTab("chat")}
+          className={`flex items-center gap-2 px-6 py-3 rounded-2xl font-bold transition-all ${
+            activeTab === "chat"
+              ? "bg-primary text-white shadow-lg shadow-primary/20"
+              : "bg-white text-slate-500 hover:bg-slate-50 border border-slate-200"
+          }`}
+        >
+          <MessageSquare className="w-4 h-4" />
+          إعدادات الشات (GPT-5)
+        </button>
+      </div>
+
+      {activeTab === "chat" && (
+        <div className="bg-white p-8 rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/50 space-y-8 animate-in fade-in slide-in-from-bottom-4">
+          <div>
+            <h2 className="text-2xl font-black text-slate-900 mb-2">تسعير الشات والمحاولات المجانية</h2>
+            <p className="text-slate-500 text-sm font-medium">
+              تحكم في عدد المحاولات المجانية لكل مستخدم جديد وتكلفة الرسالة بعد انتهاء الحد المجاني.
+            </p>
+          </div>
+
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+            <div className="space-y-3">
+              <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                <Gift className="w-4 h-4 text-emerald-500" />
+                المحاولات المجانية لكل مستخدم
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={chatFreeMessages}
+                onChange={(e) => setChatFreeMessages(parseInt(e.target.value) || 0)}
+                className="w-full h-14 px-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-800 text-lg"
+              />
+              <p className="text-xs text-slate-400 font-medium">عدد الرسائل التي يمكن للمستخدم إرسالها مجاناً.</p>
+            </div>
+
+            <div className="space-y-3">
+              <label className="text-sm font-black text-slate-700 flex items-center gap-2">
+                <Zap className="w-4 h-4 text-amber-500" />
+                تكلفة الرسالة (بالكريدت)
+              </label>
+              <input
+                type="number"
+                min="0"
+                value={chatCreditsPerMsg}
+                onChange={(e) => setChatCreditsPerMsg(parseInt(e.target.value) || 0)}
+                className="w-full h-14 px-5 rounded-2xl bg-slate-50 border border-slate-200 focus:border-primary focus:ring-4 focus:ring-primary/10 outline-none transition-all font-bold text-slate-800 text-lg"
+              />
+              <p className="text-xs text-slate-400 font-medium">عدد الكريدت الذي يتم خصمه لكل رسالة بعد انتهاء المجاني.</p>
+            </div>
+          </div>
+
+          <div className="flex justify-end pt-4 border-t border-slate-100">
+            <button
+              onClick={handleSaveChatSettings}
+              disabled={chatSettingsLoading}
+              className="flex justify-center items-center gap-2 px-8 py-4 bg-primary text-white rounded-2xl font-bold hover:shadow-xl hover:shadow-primary/20 hover:scale-105 active:scale-95 transition-all disabled:opacity-50"
+            >
+              {chatSettingsLoading ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <Save className="size-5" />
+              )}
+              <span>حفظ الإعدادات</span>
+            </button>
+          </div>
+        </div>
+      )}
+
       <AnimatePresence>
-        {isAdding && (
+        {activeTab === "pricing" && isAdding && (
           <motion.div
             initial={{ opacity: 0, y: -20, height: 0 }}
             animate={{ opacity: 1, y: 0, height: "auto" }}
@@ -345,7 +459,8 @@ export default function AiPricingTable({
       </AnimatePresence>
 
       {/* Main Table */}
-      <div className="bg-white overflow-hidden rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/40">
+      {activeTab === "pricing" && (
+        <div className="bg-white overflow-hidden rounded-[2.5rem] border border-slate-200 shadow-2xl shadow-slate-200/40">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4 bg-slate-50/50">
           <div className="relative w-full md:w-96">
             <Search className="absolute left-auto right-4 top-1/2 -translate-y-1/2 size-5 text-slate-400" />
@@ -463,7 +578,8 @@ export default function AiPricingTable({
             </div>
           )}
         </div>
-      </div>
+        </div>
+      )}
     </div>
   );
 }
