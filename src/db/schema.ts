@@ -1332,3 +1332,16 @@ export const chatUsageRelations = relations(chatUsage, ({ one }) => ({
     references: [users.id],
   }),
 }));
+
+// ==========================================
+// 23. AI Prompts Library
+// ==========================================
+export const aiPromptsLibrary = pgTable("aiPromptsLibrary", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  type: varchar("type", { length: 20 }).notNull(), // "image" | "video"
+  title: text("title"),
+  promptText: text("promptText").notNull(),
+  mediaUrl: text("mediaUrl").notNull(),
+  category: varchar("category", { length: 50 }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});

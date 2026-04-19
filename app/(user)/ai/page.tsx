@@ -1,10 +1,7 @@
 import { redirect } from "next/navigation";
-import AiGeneratorView from "@/src/modules/ai-generator/ui/AiGeneratorView";
+import AiLandingView from "@/src/modules/ai-generator/ui/components/AiLandingView";
 import { auth } from "@/lib/auth"; // Using the better-auth from lib
 import { headers } from "next/headers";
-
-// Add the emails or IDs of the allowed students here
-const ALLOWED_STUDENT_EMAILS = ["sdew2sdew0592855602@gmail.com"];
 
 export default async function AiGeneratorPage() {
   // Try to get the session from better-auth
@@ -17,5 +14,9 @@ export default async function AiGeneratorPage() {
     redirect("/sign-in");
   }
 
-  return <AiGeneratorView />;
+  return (
+    <div className="min-h-screen text-zinc-900 font-sans selection:bg-purple-200 pb-20 relative">
+      <AiLandingView />
+    </div>
+  );
 }

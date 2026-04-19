@@ -95,11 +95,10 @@ const AiServiceCard: React.FC<AiServiceCardProps> = ({
   );
 };
 
-interface AiLandingViewProps {
-  onSelectMode: (mode: string) => void;
-}
+import { useRouter } from "next/navigation";
 
-export default function AiLandingView({ onSelectMode }: AiLandingViewProps) {
+export default function AiLandingView() {
+  const router = useRouter();
   return (
     <div className="max-w-7xl mx-auto px-4 py-20 relative z-10" dir="rtl">
       {/* Hero Section */}
@@ -109,8 +108,8 @@ export default function AiLandingView({ onSelectMode }: AiLandingViewProps) {
           animate={{ opacity: 1, scale: 1 }}
           className="inline-flex items-center gap-2 bg-zinc-100 px-4 py-2 rounded-2xl mb-6"
         >
-          <Zap className="w-4 h-4 text-amber-500 fill-amber-500" />
-          <span className="text-xs font-black text-zinc-600 uppercase tracking-widest">
+          <Zap className="w-10 h-10 text-amber-500 fill-amber-500" />
+          <span className="text-xl font-black text-zinc-600 uppercase tracking-widest">
             أوركيدة للذكاء الاصطناعي
           </span>
         </motion.div>
@@ -139,37 +138,36 @@ export default function AiLandingView({ onSelectMode }: AiLandingViewProps) {
       {/* Services Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 mb-20">
         <AiServiceCard
-          title="استوديو الفيديو"
+          title="المولد الاحترافي"
           description="حول نصوصك وصورك إلى فيديوهات سنمائية مذهلة بدقة عالية باستخدام أقوى محركات الذكاء الاصطناعي سورا وفيدو."
           icon={Video}
           badge="احترافي"
           gradient="from-blue-600 to-indigo-600"
-          onClick={() => onSelectMode("video")}
+          onClick={() => router.push("/ai/pro?mode=video")}
         />
         <AiServiceCard
-          title="مولد الصور الفني"
+          title="المولد المجاني"
           description="توليد لوحات فنية وتصاميم واقعية من كلماتك فقط. يدعم جميع الأنماط والأبعاد المناسبة للسوشيال ميديا."
           icon={ImageIcon}
-          badge="احترافي"
+          badge="مجاني"
           gradient="from-purple-600 to-pink-600"
-          onClick={() => onSelectMode("imagen")}
+          onClick={() => router.push("/ai/free")}
         />
         <AiServiceCard
-          title="التجربة المجانية"
-          description="استمتع بتجربة تقنياتنا مجاناً لفترة محدودة. يمكنك توليد فيديوهات وصور بالذكاء الاصطناعي بدون تكلفة."
-          icon={Gift}
+          title="مكتبة أوامر الصور (Photo Prompts)"
+          description="تصفح آلاف الأوامر الجاهزة لتوليد أفكار مبهرة في التصميم والفن."
+          icon={Sparkles}
           badge="مجاني"
-          extraBadge="🔥 عرض لفترة محدودة فقط"
-          gradient="from-emerald-500 to-teal-600"
-          onClick={() => onSelectMode("free")}
+          gradient="from-amber-500 to-orange-500"
+          onClick={() => router.push("/ai/photo-prompts")}
         />
         <AiServiceCard
-          title="المساعد الذكي"
-          description="تحدث مع مساعدنا الذكي المدعوم بـ GPT-5 للحصول على إجابات فورية في التسويق والتصميم والبرمجة والمزيد."
-          icon={MessageSquare}
+          title="مكتبة أوامر الفيديو (Video Prompts)"
+          description="استلهم من أفضل الأوامر للحصول على فيديوهات سينمائية وواقعية مبهرة."
+          icon={Video}
           badge="مجاني"
-          gradient="from-orange-500 to-rose-500"
-          onClick={() => onSelectMode("chat")}
+          gradient="from-teal-500 to-emerald-500"
+          onClick={() => router.push("/ai/video-prompts")}
         />
       </div>
 
@@ -178,7 +176,7 @@ export default function AiLandingView({ onSelectMode }: AiLandingViewProps) {
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
-          onClick={() => onSelectMode("history")}
+          onClick={() => router.push("/ai/pro?mode=history")}
           className="flex items-center gap-3 px-8 py-4 bg-zinc-900 text-white rounded-[2rem] font-bold shadow-xl shadow-zinc-900/20 hover:bg-zinc-800 transition-all"
         >
           <History className="w-5 h-5" />

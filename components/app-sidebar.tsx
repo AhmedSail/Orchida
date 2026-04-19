@@ -465,6 +465,22 @@ export function AppSidebar({ user }: { user: User }) {
                 </Link>
               </SidebarMenuButton>
             </SidebarMenuItem>
+            <SidebarMenuItem>
+              <SidebarMenuButton
+                asChild
+                className="group h-11 px-4 transition-all duration-300 hover:bg-primary/5"
+              >
+                <Link
+                  href={`/admin/${user.id}/ai-prompts`}
+                  className="flex items-center gap-3 w-full"
+                >
+                  <ImageIcon className="size-5 text-slate-500 group-hover:text-primary transition-colors" />
+                  <span className="font-semibold text-slate-700 group-hover:text-slate-900">
+                    مكتبة مطالبات AI
+                  </span>
+                </Link>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
           </SidebarMenu>
         </SidebarGroup>
       </SidebarContent>
