@@ -189,7 +189,7 @@ export default function AiGeneratorView() {
         </div>
 
         <div className={appMode !== "hub" ? "hidden" : ""}>
-          <AiLandingView onSelectMode={handleModeChange} />
+          <AiLandingView />
         </div>
         <div className={appMode !== "chat" ? "hidden" : ""}>
           <ChatModeView />
