@@ -5,7 +5,7 @@ import { headers } from "next/headers";
 
 export interface ChatMessage {
   role: "user" | "assistant" | "system";
-  content: string;
+  content: string | any[];
 }
 
 export async function sendChatMessageAction(messages: ChatMessage[]) {
