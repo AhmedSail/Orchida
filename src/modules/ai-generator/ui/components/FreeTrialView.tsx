@@ -10,6 +10,9 @@ import {
   Clock,
   Layers,
   Zap,
+  History,
+  MessageSquare,
+  ArrowRightLeft,
 } from "lucide-react";
 import {
   checkGenerationStatus,
@@ -18,12 +21,14 @@ import {
 } from "@/app/actions/ai-common";
 import { getAllAiPricingAction } from "@/app/actions/ai-pricing";
 import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 // استدعاء المكونات المنفصلة
 import FreeVideoView from "./FreeVideoView";
 import FreeImageView from "./FreeImageView";
 
 export default function FreeTrialView() {
+  const router = useRouter();
   const [activeTab, setActiveTab] = useState<"video" | "image">("video");
   const [isGenerating, setIsGenerating] = useState(false);
   const [resultUrls, setResultUrls] = useState<string[]>([]);
@@ -48,11 +53,21 @@ export default function FreeTrialView() {
         const statusRes = await checkGenerationStatus(uuid);
         if (!statusRes.success) return;
 
-        const rawStatus = statusRes.data.status !== undefined ? statusRes.data.status : statusRes.data.order_status;
+        const rawStatus =
+          statusRes.data.status !== undefined
+            ? statusRes.data.status
+            : statusRes.data.order_status;
         const status = String(rawStatus).toLowerCase();
 
         // 1. Success Logic
-        if (rawStatus === 2 || status === "2" || status === "completed" || status === "success" || status === "succeeded" || status === "finished") {
+        if (
+          rawStatus === 2 ||
+          status === "2" ||
+          status === "completed" ||
+          status === "success" ||
+          status === "succeeded" ||
+          status === "finished"
+        ) {
           clearInterval(intervalId);
           setIsGenerating(false);
           setProgress(100);
@@ -64,7 +79,7 @@ export default function FreeTrialView() {
           else if (d.url) foundUrls.push(d.url);
           else if (d.generate_result) foundUrls.push(d.generate_result);
           else if (d.video_url) foundUrls.push(d.video_url);
-          
+
           if (d.data && Array.isArray(d.data)) {
             d.data.forEach((item: any) => {
               if (item.url) foundUrls.push(item.url);
@@ -85,11 +100,20 @@ export default function FreeTrialView() {
           }
 
           if (foundUrls.length > 0) {
-            setResultUrls(foundUrls); 
-            updateGenerationStatusAction(uuid, "completed", foundUrls[0], undefined, JSON.stringify(foundUrls));
+            setResultUrls(foundUrls);
+            updateGenerationStatusAction(
+              uuid,
+              "completed",
+              foundUrls[0],
+              undefined,
+              JSON.stringify(foundUrls),
+            );
             toast.success("اكتمل الإبداع! 🎨");
           } else {
-            const fallbackUrl = d.data?.url || d.data?.video_url || (typeof d.data === "string" ? d.data : null);
+            const fallbackUrl =
+              d.data?.url ||
+              d.data?.video_url ||
+              (typeof d.data === "string" ? d.data : null);
             if (fallbackUrl) {
               setResultUrls([fallbackUrl]);
               toast.success("اكتمل الإبداع! 🎨");
@@ -98,9 +122,12 @@ export default function FreeTrialView() {
             }
           }
           return;
-        } 
-        
-        else if (rawStatus === 3 || status === "failed" || status === "error" || status === "4") {
+        } else if (
+          rawStatus === 3 ||
+          status === "failed" ||
+          status === "error" ||
+          status === "4"
+        ) {
           clearInterval(intervalId);
           setIsGenerating(false);
           toast.error("عذراً، فشلت عملية التوليد");
@@ -125,25 +152,68 @@ export default function FreeTrialView() {
     <div className="max-w-[1200px] mx-auto px-4 py-8" dir="rtl">
       {/* Tab Switcher */}
       <div className="flex justify-center mb-10">
-        <div className="bg-zinc-100 p-1.5 rounded-2xl flex gap-2 w-full max-w-[400px]">
-          <button
-            onClick={() => {
-              setActiveTab("video");
-              setResultUrls([]);
-            }}
-            className={`flex-1 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all ${activeTab === "video" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400"}`}
-          >
-            <Video className="w-4 h-4" /> فيديو مجاني
-          </button>
-          <button
-            onClick={() => {
-              setActiveTab("image");
-              setResultUrls([]);
-            }}
-            className={`flex-1 py-3 rounded-xl text-sm font-black flex items-center justify-center gap-2 transition-all ${activeTab === "image" ? "bg-white text-zinc-900 shadow-sm" : "text-zinc-400"}`}
-          >
-            <ImageIcon className="w-4 h-4" /> صور مجانية
-          </button>
+        <div className="flex justify-center pt-2 pb-6">
+          <div className="flex bg-white shadow-sm border border-zinc-100 rounded-2xl p-2 gap-2 overflow-x-auto max-w-full">
+            <button
+              onClick={() => router.push("/ai")}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition hover:bg-zinc-50`}
+            >
+              <ArrowRightLeft className={`w-6 h-6 mb-2 text-zinc-400`} />
+              <span className={`text-xs font-semibold text-zinc-600`}>
+                الرئيسية
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("video");
+                setResultUrls([]);
+              }}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${activeTab === "video" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+            >
+              <Video
+                className={`w-6 h-6 mb-2 ${activeTab === "video" ? "text-primary" : "text-zinc-400"}`}
+              />
+              <span
+                className={`text-xs font-semibold ${activeTab === "video" ? "text-primary" : "text-zinc-600"}`}
+              >
+                فيديو مجاني
+              </span>
+            </button>
+            <button
+              onClick={() => {
+                setActiveTab("image");
+                setResultUrls([]);
+              }}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition ${activeTab === "image" ? "bg-primary/10 border border-primary/20" : "hover:bg-zinc-50"}`}
+            >
+              <ImageIcon
+                className={`w-6 h-6 mb-2 ${activeTab === "image" ? "text-primary" : "text-zinc-400"}`}
+              />
+              <span
+                className={`text-xs font-semibold ${activeTab === "image" ? "text-primary" : "text-zinc-600"}`}
+              >
+                صور مجانية
+              </span>
+            </button>
+            <button
+              onClick={() => router.push("/ai/pro?mode=chat")}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition hover:bg-zinc-50`}
+            >
+              <MessageSquare className={`w-6 h-6 mb-2 text-zinc-400`} />
+              <span className={`text-xs font-semibold text-zinc-600`}>
+                المحادثة
+              </span>
+            </button>
+            <button
+              onClick={() => router.push("/ai/pro?mode=history")}
+              className={`flex flex-col items-center justify-center p-3 min-w-[80px] rounded-xl transition hover:bg-zinc-50`}
+            >
+              <History className={`w-6 h-6 mb-2 text-zinc-400`} />
+              <span className={`text-xs font-semibold text-zinc-600`}>
+                السجل
+              </span>
+            </button>
+          </div>
         </div>
       </div>
 
@@ -174,7 +244,9 @@ export default function FreeTrialView() {
               }}
               onGenerateEnd={() => setIsGenerating(false)}
               startPolling={startPolling}
-              setResultUrl={(url: string | null) => setResultUrls(url ? [url] : [])}
+              setResultUrl={(url: string | null) =>
+                setResultUrls(url ? [url] : [])
+              }
             />
           ) : (
             <FreeImageView
@@ -186,7 +258,9 @@ export default function FreeTrialView() {
               }}
               onGenerateEnd={() => setIsGenerating(false)}
               startPolling={startPolling}
-              setResultUrl={(url: string | null) => setResultUrls(url ? [url] : [])}
+              setResultUrl={(url: string | null) =>
+                setResultUrls(url ? [url] : [])
+              }
             />
           )}
         </div>
@@ -210,16 +284,28 @@ export default function FreeTrialView() {
                       loop
                     />
                   ) : (
-                    <div className={`grid gap-4 w-full h-full ${resultUrls.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}>
+                    <div
+                      className={`grid gap-4 w-full h-full ${resultUrls.length > 1 ? "grid-cols-2" : "grid-cols-1"}`}
+                    >
                       {resultUrls.map((url, idx) => (
-                        <div key={idx} className="relative group aspect-square rounded-2xl overflow-hidden bg-zinc-800 border border-white/5">
+                        <div
+                          key={idx}
+                          className="relative group aspect-square rounded-2xl overflow-hidden bg-zinc-800 border border-white/5"
+                        >
                           <img
                             src={url}
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             alt={`Generated result ${idx + 1}`}
                           />
-                          <a href={url} download target="_blank" className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
-                             <div className="bg-white text-black p-3 rounded-full font-black text-[10px] scale-0 group-hover:scale-100 transition-transform">عرض كامل</div>
+                          <a
+                            href={url}
+                            download
+                            target="_blank"
+                            className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
+                          >
+                            <div className="bg-white text-black p-3 rounded-full font-black text-[10px] scale-0 group-hover:scale-100 transition-transform">
+                              عرض كامل
+                            </div>
                           </a>
                         </div>
                       ))}

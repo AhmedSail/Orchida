@@ -300,21 +300,23 @@ const CollapseContent = ({
               role === "user") && (
               <div>
                 <hr className="my-2" />
-                {/* @ts-ignore */}
-                <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
-                  <LayoutDashboard />
-                  <Link
-                    href={
-                      role === "user"
-                        ? `/dashboardUser/${user.id}/home`
-                        : `/${role}/${user.id}/home`
-                    }
-                    target="_blank"
-                    onClick={closeMenu}
-                  >
+                <a
+                  href={
+                    role === "user"
+                      ? `/dashboardUser/${user.id}/home`
+                      : `/${role}/${user.id}/home`
+                  }
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={closeMenu}
+                  className="block w-full"
+                >
+                  {/* @ts-ignore */}
+                  <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
+                    <LayoutDashboard />
                     لوحة التحكم الخاص بي
-                  </Link>
-                </MenuItem>
+                  </MenuItem>
+                </a>
               </div>
             )}
 
@@ -471,20 +473,22 @@ export function Header({
                   role === "user") && (
                   <div>
                     <hr className="my-2" />
-                    {/* @ts-ignore */}
-                    <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
-                      <LayoutDashboard />
-                      <Link
-                        href={
-                          role === "user"
-                            ? `/dashboardUser/${data.user.id}/home`
-                            : `/${role}/${data.user.id}/home`
-                        }
-                        target="_blank"
-                      >
+                    <a
+                      href={
+                        role === "user"
+                          ? `/dashboardUser/${data.user.id}/home`
+                          : `/${role}/${data.user.id}/home`
+                      }
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="block w-full"
+                    >
+                      {/* @ts-ignore */}
+                      <MenuItem className="flex items-center gap-2 hover:bg-gray-100">
+                        <LayoutDashboard />
                         لوحة التحكم الخاص بي
-                      </Link>
-                    </MenuItem>
+                      </MenuItem>
+                    </a>
                   </div>
                 )}
               </MenuList>
