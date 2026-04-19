@@ -1,19 +1,26 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { 
-  Send, 
-  Sparkles, 
-  Bot, 
-  User, 
-  Loader2, 
-  Trash2, 
-  Copy, 
+import {
+  Send,
+  Sparkles,
+  Bot,
+  User,
+  Loader2,
+  Trash2,
+  Copy,
   Check,
   MessageSquare,
-  Zap
+  Zap,
+  Lock,
+  Gift,
 } from "lucide-react";
 import { sendChatMessageAction, ChatMessage } from "@/app/actions/ai-chat";
+import {
+  getChatSettingsAction,
+  getChatUsageAction,
+  consumeChatMessageAction,
+} from "@/app/actions/ai-chat-settings";
 import { toast } from "sonner";
 
 interface Message {
@@ -28,9 +35,27 @@ export default function ChatModeView() {
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [copiedId, setCopiedId] = useState<string | null>(null);
-  const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
+  // Chat pricing state
+  const [freeLimit, setFreeLimit] = useState(5);
+  const [costPerMsg, setCostPerMsg] = useState(2);
+  const [usedCount, setUsedCount] = useState(0);
+  const [settingsLoaded, setSettingsLoaded] = useState(false);
+
+  useEffect(() => {
+    const load = async () => {
+      const [settings, usage] = await Promise.all([
+        getChatSettingsAction(),
+        getChatUsageAction(),
+      ]);
+      setFreeLimit(settings.freeMessages);
+      setCostPerMsg(settings.creditsPerMessage);
+      setUsedCount(usage.messageCount);
+      setSettingsLoaded(true);
+    };
+    load();
+  }, []);
 
   // Auto-resize textarea
   useEffect(() => {
@@ -40,9 +65,25 @@ export default function ChatModeView() {
     }
   }, [input]);
 
+  const freeRemaining = Math.max(0, freeLimit - usedCount);
+  const isPaidMode = usedCount >= freeLimit;
+
   const handleSend = async () => {
     const trimmed = input.trim();
     if (!trimmed || isLoading) return;
+
+    // ── 1. خصم/تحقق من الكريدت أو المجاني ──
+    const consumeRes = await consumeChatMessageAction();
+    if (!consumeRes.success) {
+      toast.error(consumeRes.error || "فشل التحقق من الرصيد");
+      return;
+    }
+
+    // تحديث العداد محلياً
+    setUsedCount((prev) => prev + 1);
+    if (!consumeRes.wasFree && consumeRes.creditDeducted) {
+      window.dispatchEvent(new Event("balanceUpdated"));
+    }
 
     const userMessage: Message = {
       id: crypto.randomUUID(),
@@ -82,16 +123,13 @@ export default function ChatModeView() {
     }
   };
 
-
   const handleCopy = async (id: string, content: string) => {
     await navigator.clipboard.writeText(content);
     setCopiedId(id);
     setTimeout(() => setCopiedId(null), 2000);
   };
 
-  const handleClear = () => {
-    setMessages([]);
-  };
+  const handleClear = () => setMessages([]);
 
   const suggestions = [
     "كيف أحسّن استراتيجية التسويق الرقمي لمشروعي؟",
@@ -102,7 +140,7 @@ export default function ChatModeView() {
 
   return (
     <div className="flex flex-col h-[calc(100vh-180px)] max-w-4xl mx-auto px-4" dir="rtl">
-      
+
       {/* Header */}
       <div className="flex items-center justify-between py-4 border-b border-zinc-100">
         <div className="flex items-center gap-3">
@@ -117,21 +155,68 @@ export default function ChatModeView() {
             </div>
           </div>
         </div>
-        
-        {messages.length > 0 && (
-          <button
-            onClick={handleClear}
-            className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
-          >
-            <Trash2 className="w-3.5 h-3.5" />
-            مسح المحادثة
-          </button>
-        )}
+
+        <div className="flex items-center gap-3">
+          {/* Usage Badge */}
+          {settingsLoaded && (
+            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border ${
+              isPaidMode
+                ? "bg-amber-50 text-amber-600 border-amber-100"
+                : "bg-emerald-50 text-emerald-600 border-emerald-100"
+            }`}>
+              {isPaidMode ? (
+                <>
+                  <Zap className="w-3 h-3" />
+                  {costPerMsg} كريدت/رسالة
+                </>
+              ) : (
+                <>
+                  <Gift className="w-3 h-3" />
+                  {freeRemaining} رسالة مجانية متبقية
+                </>
+              )}
+            </div>
+          )}
+
+          {messages.length > 0 && (
+            <button
+              onClick={handleClear}
+              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+            >
+              <Trash2 className="w-3.5 h-3.5" />
+              مسح
+            </button>
+          )}
+        </div>
       </div>
 
+      {/* Progress Bar - Free Messages */}
+      {settingsLoaded && !isPaidMode && (
+        <div className="py-2 px-1">
+          <div className="flex justify-between text-[10px] font-bold text-zinc-400 mb-1">
+            <span>المحادثات المجانية</span>
+            <span>{usedCount} / {freeLimit}</span>
+          </div>
+          <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+            <div
+              className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
+              style={{ width: `${Math.min((usedCount / freeLimit) * 100, 100)}%` }}
+            />
+          </div>
+        </div>
+      )}
+
+      {/* Paid mode notice */}
+      {settingsLoaded && isPaidMode && (
+        <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 border border-amber-100 rounded-2xl mt-2 text-xs font-bold text-amber-700">
+          <Lock className="w-3.5 h-3.5 shrink-0" />
+          انتهت رسائلك المجانية. كل رسالة الآن تكلّف {costPerMsg} كريدت من رصيدك.
+        </div>
+      )}
+
       {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6 custom-scrollbar">
-        
+      <div className="flex-1 overflow-y-auto py-6 space-y-6">
+
         {/* Empty State */}
         {messages.length === 0 && (
           <div className="flex flex-col items-center justify-center h-full text-center px-4">
@@ -142,8 +227,6 @@ export default function ChatModeView() {
             <p className="text-zinc-400 text-sm font-medium mb-8 max-w-sm">
               مساعد أوركيدة الذكي جاهز للإجابة على أسئلتك في التسويق، التصميم، البرمجة، والمزيد.
             </p>
-            
-            {/* Suggestion Pills */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
               {suggestions.map((s, i) => (
                 <button
@@ -167,20 +250,14 @@ export default function ChatModeView() {
               msg.role === "user" ? "flex-row-reverse" : "flex-row"
             }`}
           >
-            {/* Avatar */}
             <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-              msg.role === "user" 
-                ? "bg-primary text-white" 
+              msg.role === "user"
+                ? "bg-primary text-white"
                 : "bg-gradient-to-br from-purple-500 to-primary text-white"
             }`}>
-              {msg.role === "user" ? (
-                <User className="w-4 h-4" />
-              ) : (
-                <Bot className="w-4 h-4" />
-              )}
+              {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
             </div>
 
-            {/* Bubble */}
             <div className={`group relative max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
               <div className={`px-5 py-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
                 msg.role === "user"
@@ -189,30 +266,21 @@ export default function ChatModeView() {
               }`}>
                 {msg.content}
               </div>
-              
-              {/* Actions */}
               <div className={`flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${
                 msg.role === "user" ? "flex-row-reverse" : "flex-row"
               }`}>
                 <span className="text-[10px] text-zinc-400 font-medium">
                   {msg.timestamp.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}
                 </span>
-                <button
-                  onClick={() => handleCopy(msg.id, msg.content)}
-                  className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors"
-                >
-                  {copiedId === msg.id ? (
-                    <Check className="w-3 h-3 text-emerald-500" />
-                  ) : (
-                    <Copy className="w-3 h-3" />
-                  )}
+                <button onClick={() => handleCopy(msg.id, msg.content)} className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors">
+                  {copiedId === msg.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
                 </button>
               </div>
             </div>
           </div>
         ))}
 
-        {/* Loading indicator */}
+        {/* Loading */}
         {isLoading && (
           <div className="flex gap-3 animate-in fade-in duration-300">
             <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-primary text-white flex items-center justify-center shrink-0">
@@ -228,8 +296,6 @@ export default function ChatModeView() {
             </div>
           </div>
         )}
-
-        <div ref={messagesEndRef} />
       </div>
 
       {/* Input Area */}
@@ -245,17 +311,12 @@ export default function ChatModeView() {
           />
           <button
             onClick={handleSend}
-            disabled={!input.trim() || isLoading}
+            disabled={!input.trim() || isLoading || !settingsLoaded}
             className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 shrink-0"
           >
-            {isLoading ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
-            ) : (
-              <Send className="w-4 h-4" />
-            )}
+            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         </div>
-        
         <div className="flex items-center justify-center gap-1.5 mt-2">
           <Zap className="w-3 h-3 text-zinc-300" />
           <span className="text-[10px] text-zinc-400 font-medium">مدعوم بـ GPT-5 من OpenAI</span>

@@ -1306,4 +1306,29 @@ export const aiServicePricing = pgTable("aiServicePricing", {
   credits: integer("credits").notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });
+// ==========================================
+// 22. Chat Settings & Usage
+// ==========================================
+export const chatSettings = pgTable("chatSettings", {
+  id: text("id").primaryKey().$default(() => "global"),
+  freeMessages: integer("freeMessages").default(5).notNull(),
+  creditsPerMessage: integer("creditsPerMessage").default(2).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
 
+export const chatUsage = pgTable("chatUsage", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .unique()
+    .references(() => users.id, { onDelete: "cascade" }),
+  messageCount: integer("messageCount").default(0).notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+export const chatUsageRelations = relations(chatUsage, ({ one }) => ({
+  user: one(users, {
+    fields: [chatUsage.userId],
+    references: [users.id],
+  }),
+}));
