@@ -29,10 +29,19 @@ import { ImageGenSettings } from "./image-gen/ImageGenSettings";
 import { ImageGenAction } from "./image-gen/ImageGenAction";
 import { ImageGenResults } from "./image-gen/ImageGenResults";
 import { ImageGenLightbox } from "./image-gen/ImageGenLightbox";
+import { useSearchParams } from "next/navigation";
 
 export default function ImageGenView() {
+  const searchParams = useSearchParams();
   const [provider, setProvider] = useState("Imagen");
   const [prompt, setPrompt] = useState("");
+
+  useEffect(() => {
+    const urlPrompt = searchParams.get("prompt");
+    if (urlPrompt) {
+      setPrompt(decodeURIComponent(urlPrompt));
+    }
+  }, [searchParams]);
   const [aspectRatio, setAspectRatio] = useState("1:1");
   const [outputFormat, setOutputFormat] = useState("JPEG");
   const [resolution, setResolution] = useState("1K");
@@ -235,6 +244,11 @@ export default function ImageGenView() {
         style,
         resolution: (provider === "Grok" || provider === "Meta AI") ? "" : resolution,
       };
+
+      if (imageReference) {
+        const base64 = await fileToBase64(imageReference);
+        data.imageReference = base64.split(",")[1];
+      }
 
       const encodedData = Buffer.from(JSON.stringify(data)).toString("base64");
       const res = await generateImageAction(encodedData);

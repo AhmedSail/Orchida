@@ -1,9 +1,10 @@
 "use client";
 
 import React, { useState } from "react";
-import { Copy, Check } from "lucide-react";
+import { Copy, Check, Eye } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
+import Link from "next/link";
 
 export default function PromptsGrid({ prompts, type }: { prompts: any[], type: "image" | "video" }) {
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -51,11 +52,11 @@ export default function PromptsGrid({ prompts, type }: { prompts: any[], type: "
               </div>
             )}
             
-            {/* Copy overlay */}
-            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center backdrop-blur-sm">
+            {/* Action overlay */}
+            <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
               <button
                 onClick={() => handleCopy(prompt.id, prompt.promptText)}
-                className="flex items-center gap-2 bg-white text-zinc-900 px-4 py-2 rounded-xl font-bold shadow-2xl hover:scale-105 transition-transform"
+                className="w-40 flex items-center justify-center gap-2 bg-white text-zinc-900 px-4 py-2 rounded-xl font-bold shadow-2xl hover:scale-105 transition-transform"
               >
                 {copiedId === prompt.id ? (
                   <>
@@ -69,6 +70,14 @@ export default function PromptsGrid({ prompts, type }: { prompts: any[], type: "
                   </>
                 )}
               </button>
+
+              <Link
+                href={`/ai/${type === "image" ? "photo-prompts" : "video-prompts"}/${prompt.id}`}
+                className="w-40 flex items-center justify-center gap-2 bg-zinc-900/80 text-white px-4 py-2 rounded-xl font-bold shadow-2xl hover:scale-105 transition-transform backdrop-blur-md border border-white/20"
+              >
+                <Eye className="w-4 h-4" />
+                عرض التفاصيل
+              </Link>
             </div>
           </div>
 

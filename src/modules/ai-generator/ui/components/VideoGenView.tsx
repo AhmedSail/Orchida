@@ -17,6 +17,7 @@ import {
   Trash2,
   X,
 } from "lucide-react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { generateVideoAction } from "@/app/actions/ai-video";
 import {
   checkGenerationStatus,
@@ -40,10 +41,19 @@ interface PricingRule {
 
 
 export default function VideoGenView() {
+  const searchParams = useSearchParams();
   const [provider, setProvider] = useState("Veo");
   const [veoModel] = useState("veo-3.1-fast"); // Locked to Veo 3.1 Fast as requested
   const [grokMode] = useState("normal"); // Locked to Normal as requested
   const [prompt, setPrompt] = useState("");
+
+  React.useEffect(() => {
+    const urlPrompt = searchParams.get("prompt");
+    if (urlPrompt) {
+      setPrompt(decodeURIComponent(urlPrompt));
+    }
+  }, [searchParams]);
+
   const [orientation, setOrientation] = useState("Landscape (16:9)");
   const [resolution, setResolution] = useState("High 720p"); // Default for Veo
   const [duration, setDuration] = useState("6"); // e.g. "6" or "10"
