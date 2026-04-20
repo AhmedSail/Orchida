@@ -23,6 +23,24 @@ export async function getPromptsByTypeAction(type: "image" | "video") {
   }
 }
 
+// 1.5 Get Single Prompt by ID
+export async function getPromptByIdAction(id: string) {
+  try {
+    const prompt = await db
+      .select()
+      .from(aiPromptsLibrary)
+      .where(eq(aiPromptsLibrary.id, id))
+      .limit(1);
+
+    if (!prompt.length) return { success: false, error: "Prompt not found" };
+
+    return { success: true, data: prompt[0] };
+  } catch (error: any) {
+    console.error("Error fetching prompt by ID:", error);
+    return { success: false, error: "Failed to fetch prompt" };
+  }
+}
+
 // 2. Create/Add a Prompt (Admin Only)
 export async function createPromptAction(data: {
   type: "image" | "video";
