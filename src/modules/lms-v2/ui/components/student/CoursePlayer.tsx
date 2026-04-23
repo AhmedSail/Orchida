@@ -51,6 +51,7 @@ export default function CoursePlayer({
   meetings = [],
   isPreview = false,
   studentInfo = { name: "طالب أوركيدة", id: "OR-0000" },
+  userId,
 }: {
   course: any;
   lessons: any[];
@@ -61,6 +62,7 @@ export default function CoursePlayer({
   meetings?: any[];
   isPreview?: boolean;
   studentInfo?: { name: string; id: string };
+  userId?: string;
 }) {
   const [activeTab, setActiveTab] = useState<"curriculum" | "meetings">("curriculum");
   const [activeLessonId, setActiveLessonId] = useState<string | null>(
@@ -161,7 +163,7 @@ export default function CoursePlayer({
           </div>
           {!isPreview ? (
             <Link
-              href="/my-courses"
+              href={userId ? `/dashboardUser/${userId}/courses` : "/"}
               className="text-zinc-400 hover:text-zinc-800 p-2"
             >
               <X className="w-6 h-6" />
@@ -364,9 +366,20 @@ export default function CoursePlayer({
                             src={
                               field.content.includes("mediadelivery.net")
                                 ? `${field.content}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`
-                                : field.content.includes("youtube.com")
-                                  ? field.content.replace("watch?v=", "embed/")
-                                  : field.content
+                                : (() => {
+                                    const url = field.content;
+                                    // youtu.be/VIDEO_ID
+                                    const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+                                    if (shortMatch) return `https://www.youtube-nocookie.com/embed/${shortMatch[1]}`;
+                                    // youtube.com/watch?v=VIDEO_ID
+                                    const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+                                    if (watchMatch) return `https://www.youtube-nocookie.com/embed/${watchMatch[1]}`;
+                                    // youtube.com/shorts/VIDEO_ID
+                                    const shortsMatch = url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
+                                    if (shortsMatch) return `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}`;
+                                    // already an embed link or other
+                                    return url;
+                                  })()
                             }
                             className="w-full h-full"
                             allowFullScreen

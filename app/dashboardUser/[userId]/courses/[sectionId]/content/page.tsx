@@ -187,6 +187,7 @@ const Page = async ({
         sectionAvailability={availability}
         sectionNumber={currentSection.sectionNumber}
         meetings={sectionMeetings}
+        userId={session.user.id}
         studentInfo={{
           name: session.user.name || "طالب أوركيدة",
           id: `ID: ${session.user.id.slice(0, 8)}`,
