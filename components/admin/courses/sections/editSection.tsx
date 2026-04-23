@@ -50,6 +50,7 @@ const formSchema = z.object({
     "cancelled",
   ]),
   isHidden: z.boolean(),
+  isFree: z.boolean(),
 });
 
 export default function EditSectionForm({
@@ -86,6 +87,7 @@ export default function EditSectionForm({
       instructorId: section.instructorId || "",
       status: section.status,
       isHidden: section.isHidden ?? false,
+      isFree: (section as any).isFree ?? false,
     },
   });
 
@@ -354,6 +356,27 @@ export default function EditSectionForm({
                   <FormDescription>
                     عند تفعيل هذا الخيار، ستختفي الشعبة من الصفحة الرئيسية وصفحة
                     الدورات.
+                  </FormDescription>
+                </div>
+                <FormControl>
+                  <Switch
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="isFree"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm bg-emerald-50/30 border-emerald-100">
+                <div className="space-y-0.5">
+                  <FormLabel className="text-emerald-700 font-bold">شعبة مجانية</FormLabel>
+                  <FormDescription className="text-emerald-600">
+                    عند تفعيل هذا الخيار، سيتمكن الطلاب من التسجيل في هذه الشعبة مجاناً وفوراً.
                   </FormDescription>
                 </div>
                 <FormControl>

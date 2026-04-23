@@ -36,19 +36,22 @@ type Section = {
     | "completed"
     | "closed"
     | "cancelled";
+  isFree: boolean;
 };
-
 const CourseSelected = ({
   coursesSelected,
   lastInstructor,
   lastSection,
+  useQueueSystem = false,
 }: {
   coursesSelected: Courses;
   lastInstructor?: Instructor;
   lastSection?: Section;
+  useQueueSystem?: boolean;
 }) => {
-  const isRegisterEnabled =
-    lastSection?.status === "open" || lastSection?.status === "in_progress";
+  const isRegisterEnabled = useQueueSystem 
+    ? coursesSelected.isActive 
+    : (lastSection?.status === "open" || lastSection?.status === "in_progress");
   const [registerLoading, setRegisterLoading] = useState(false);
   const router = useRouter();
 
@@ -136,11 +139,13 @@ const CourseSelected = ({
                       سعر الدورة
                     </div>
                     <span className="text-xl font-bold text-primary">
-                      {coursesSelected.price
-                        ? `${coursesSelected.price} ${" "} ${
-                            coursesSelected.currency
-                          }`
-                        : "مجاني"}
+                      {lastSection?.isFree 
+                        ? "مجاني"
+                        : coursesSelected.price
+                          ? `${coursesSelected.price} ${" "} ${
+                              coursesSelected.currency
+                            }`
+                          : "مجاني"}
                     </span>
                   </div>
 
@@ -158,17 +163,19 @@ const CourseSelected = ({
                     </span>
                   </div>
 
-                  <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
-                    <div className="flex items-center gap-3 text-gray-700 font-medium">
-                      <div className="p-2 bg-white rounded-lg shadow-sm">
-                        <UserIcon className="text-purple-600" size={20} />
+                  {!useQueueSystem && (
+                    <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
+                      <div className="flex items-center gap-3 text-gray-700 font-medium">
+                        <div className="p-2 bg-white rounded-lg shadow-sm">
+                          <UserIcon className="text-purple-600" size={20} />
+                        </div>
+                        المدرب
                       </div>
-                      المدرب
+                      <span className="font-bold truncate max-w-[150px]">
+                        {lastInstructor?.name || "غير محدد"}
+                      </span>
                     </div>
-                    <span className="font-bold truncate max-w-[150px]">
-                      {lastInstructor?.name || "غير محدد"}
-                    </span>
-                  </div>
+                  )}
 
                   <div className="flex items-center justify-between p-3 bg-gray-50 rounded-xl">
                     <div className="flex items-center gap-3 text-gray-700 font-medium">
@@ -199,10 +206,10 @@ const CourseSelected = ({
                   {registerLoading ? (
                     <div className="flex items-center gap-2">
                       <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      جاري التسجيل...
+                      جاري معالجة الطلب...
                     </div>
                   ) : isRegisterEnabled ? (
-                    "سجّل الآن"
+                    useQueueSystem ? "قدّم طلباً للالتحاق" : "سجّل الآن"
                   ) : (
                     "التسجيل مغلق"
                   )}

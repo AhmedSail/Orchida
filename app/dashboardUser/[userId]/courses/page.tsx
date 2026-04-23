@@ -5,6 +5,7 @@ import {
   courses,
   courseSections,
   users,
+  courseApplications,
 } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
@@ -20,14 +21,12 @@ export const metadata: Metadata = {
 };
 
 const Page = async ({ params }: { params: { userId: string } }) => {
-  // ✅ جلب السيشن
   const session = await auth.api.getSession({ headers: await headers() });
 
   if (!session?.user?.id) {
-    redirect("/sign-in"); // لو مش مسجل دخول
+    redirect("/sign-in");
   }
 
-  // ✅ جلب بيانات المستخدم من DB
   const userRecord = await db
     .select()
     .from(users)
@@ -36,9 +35,8 @@ const Page = async ({ params }: { params: { userId: string } }) => {
 
   const role = userRecord[0]?.role;
 
-  // ✅ لو المستخدم طالب
-  if (role === "user") {
-    // الكورسات المسجل فيها
+  if (role === "user" || role === "guest") {
+    // 1. الكورسات المسجل فيها رسمياً
     const enrollments = await db
       .select({
         enrollmentId: courseEnrollments.id,
@@ -54,7 +52,22 @@ const Page = async ({ params }: { params: { userId: string } }) => {
       .leftJoin(courses, eq(courseSections.courseId, courses.id))
       .where(eq(courseEnrollments.studentId, session.user.id));
 
-    return <CourseUser enrollments={enrollments} userId={session.user.id} />;
+    // 2. طلبات الالتحاق - الاعتماد كلياً على النظام الجديد (courseApplications)
+    // تم إلغاء استخدام courseLeads بناءً على طلب المستخدم
+    const applications = await db.query.courseApplications.findMany({
+      where: (apps, { eq }) => eq(apps.userId, session.user.id),
+      with: {
+        course: true,
+      },
+    });
+
+    return (
+      <CourseUser 
+        enrollments={enrollments} 
+        applications={applications as any}
+        userId={session.user.id} 
+      />
+    );
   }
 };
 

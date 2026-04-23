@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
+import { Link } from "next-view-transitions";
 import {
   LayoutDashboard,
   BookOpen,
@@ -42,11 +43,12 @@ interface Meeting {
 
 interface Props {
   userName: string;
+  userId: string;
   enrollments: Enrollment[];
   meetings: Meeting[];
 }
 
-const HomeUser = ({ userName, enrollments, meetings }: Props) => {
+const HomeUser = ({ userName, userId, enrollments, meetings }: Props) => {
   const [activeTab, setActiveTab] = useState<
     "overview" | "courses" | "meetings" | "payments" | "settings"
   >("overview");
@@ -287,9 +289,14 @@ const HomeUser = ({ userName, enrollments, meetings }: Props) => {
                             </div>
                           </div>
 
-                          <Button className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-slate-100 text-white font-black text-lg shadow-xl shadow-black/5">
-                            دخول المحتوى
-                          </Button>
+                          <Link
+                            href={`/dashboardUser/${userId}/courses/${c.sectionId}/content`}
+                            className="w-full"
+                          >
+                            <Button className="w-full h-14 rounded-2xl bg-slate-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-slate-100 text-white font-black text-lg shadow-xl shadow-black/5">
+                              دخول المحتوى
+                            </Button>
+                          </Link>
                         </div>
                       </motion.div>
                     ))}
@@ -457,9 +464,14 @@ const HomeUser = ({ userName, enrollments, meetings }: Props) => {
                           </div>
                         </div>
 
-                        <Button className="w-full h-16 rounded-[28px] bg-slate-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-slate-100 text-white font-black text-xl shadow-2xl shadow-primary/20">
-                          فتح المحتوى
-                        </Button>
+                        <Link
+                          href={`/dashboardUser/${userId}/courses/${c.sectionId}/content`}
+                          className="w-full"
+                        >
+                          <Button className="w-full h-16 rounded-[28px] bg-slate-900 dark:bg-white dark:text-black hover:bg-black dark:hover:bg-slate-100 text-white font-black text-xl shadow-2xl shadow-primary/20">
+                            فتح المحتوى
+                          </Button>
+                        </Link>
                       </div>
                     </motion.div>
                   ))}

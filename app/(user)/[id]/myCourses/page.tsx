@@ -30,6 +30,8 @@ const Page = async ({ params }: { params: { id: string } }) => {
       price: courses.price,
       currency: courses.currency,
       paymentStatus: courseEnrollments.paymentStatus,
+      isV2: courseSections.isV2,
+      courseId: courses.id,
     })
     .from(courseEnrollments)
     .innerJoin(

@@ -35,28 +35,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { MultiUploader } from "./MultiUploader";
-
-type CompanyFormValues = {
-  name: string;
-  phoneToCall: string;
-  phoneToBank?: string;
-  email?: string;
-  address?: string;
-  workingHours?: string;
-  accountNumber?: string;
-  ibanShekel?: string;
-  ibanDinar?: string;
-  ibanDollar?: string;
-  videoUrl?: string;
-  managerMessage?: string;
-  facebookUrl?: string;
-  instagramUrl?: string;
-  twitterUrl?: string;
-  whatsappUrl?: string;
-  linkedinUrl?: string;
-  tiktokUrl?: string;
-  geminiGenApiKey?: string;
-};
+import { Switch } from "./ui/switch";
 
 // ✅ مخطط البيانات
 const companySchema = z.object({
@@ -107,7 +86,11 @@ const companySchema = z.object({
     .optional()
     .or(z.literal("")),
   geminiGenApiKey: z.string().optional(),
+  useQueueSystem: z.boolean().default(false),
 });
+
+type CompanyFormValues = z.infer<typeof companySchema>;
+
 
 const EditCompanyInfo = ({
   company,
@@ -117,7 +100,7 @@ const EditCompanyInfo = ({
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
 
-  const form = useForm<CompanyFormValues>({
+  const form = useForm({
     resolver: zodResolver(companySchema),
     defaultValues: {
       name: company.name ?? "",
@@ -139,10 +122,11 @@ const EditCompanyInfo = ({
       linkedinUrl: company.linkedinUrl ?? "",
       tiktokUrl: company.tiktokUrl ?? "",
       geminiGenApiKey: company.geminiGenApiKey ?? "",
+      useQueueSystem: company.useQueueSystem ?? false,
     },
   });
 
-  const onSubmit = async (values: CompanyFormValues) => {
+  const onSubmit = async (values: z.infer<typeof companySchema>) => {
     setLoading(true);
     try {
       const res = await fetch("/api/company", {
@@ -586,6 +570,41 @@ const EditCompanyInfo = ({
                       </div>
                     </FormControl>
                     <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </div>
+          </div>
+
+          {/* Section 6: Advanced Settings */}
+          <div className="space-y-6">
+            <SectionHeader
+              icon={Settings2}
+              title="إعدادات النظام المتقدمة"
+              desc="التحكم في أنظمة التسجيل والقبول الجديدة."
+            />
+            <div className="bg-primary/5 p-6 rounded-[32px] border border-primary/10">
+              <FormField
+                control={form.control}
+                name="useQueueSystem"
+                render={({ field }) => (
+                  <FormItem className="flex flex-row items-center justify-between rounded-2xl p-4 gap-4">
+                    <div className="space-y-1">
+                      <FormLabel className="text-lg font-bold text-slate-800">
+                        تفعيل نظام "تقديم الطلبات" والتشعيب اليدوي
+                      </FormLabel>
+                      <p className="text-sm text-slate-500 max-w-md leading-relaxed">
+                        عند التفعيل، لن يتمكن الطلاب من اختيار الشعبة مباشرة. سيسجل الطالب "طلباً" للدورة، ويقوم المنسق بتوزيعه يدوياً لاحقاً.
+                      </p>
+                    </div>
+                    <FormControl>
+                      <Switch
+                        checked={field.value}
+                        onCheckedChange={field.onChange}
+                        disabled={!isEditing}
+                        className="scale-125 data-[state=checked]:bg-primary"
+                      />
+                    </FormControl>
                   </FormItem>
                 )}
               />

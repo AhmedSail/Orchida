@@ -41,6 +41,8 @@ import {
   Lock,
   ExternalLink,
   EyeOff,
+  Sparkles,
+  Zap,
 } from "lucide-react";
 
 type Section = {
@@ -63,6 +65,7 @@ type Section = {
   interestedCount: number;
   registeredCount: number;
   isHidden: boolean;
+  isV2: boolean;
 };
 
 type Courses = {
@@ -234,6 +237,33 @@ const SectionTable = ({
     }
   };
 
+  const toggleV2 = async (id: string, currentV2: boolean) => {
+    try {
+      const res = await fetch(`/api/courses/courseSections/${id}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ isV2: !currentV2 }),
+      });
+
+      if (res.ok) {
+        setSections((prev) =>
+          prev.map((s) => (s.id === id ? { ...s, isV2: !currentV2 } : s)),
+        );
+        Swal.fire({
+          title: !currentV2 ? "تم التفعيل!" : "تم الإيقاف!",
+          text: !currentV2
+            ? "تم تفعيل النظام الجديد لهذه الشعبة."
+            : "تم العودة للنظام القديم لهذه الشعبة.",
+          icon: "success",
+          timer: 1500,
+          showConfirmButton: false,
+        });
+      }
+    } catch (error) {
+      Swal.fire("خطأ!", "فشل تحديث النظام.", "error");
+    }
+  };
+
   return (
     <div className="space-y-6 mt-10" dir="rtl">
       <div className="flex items-center gap-3">
@@ -275,6 +305,12 @@ const SectionTable = ({
               </TableHead>
               <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
                 الحالة
+              </TableHead>
+              <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
+                النظام المطور
+              </TableHead>
+              <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
+                بناء المنهج
               </TableHead>
               <TableHead className="px-6 py-4 font-bold text-slate-500 text-center">
                 الإجراءات
@@ -384,6 +420,42 @@ const SectionTable = ({
                           <status.icon className="size-3.5" />
                           {status.label}
                         </Badge>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        <button
+                          onClick={() => toggleV2(section.id, section.isV2)}
+                          className={`
+                            relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none
+                            ${section.isV2 ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-800"}
+                          `}
+                        >
+                          <span
+                            className={`
+                              inline-block h-4 w-4 transform rounded-full bg-white transition-transform
+                              ${section.isV2 ? "-translate-x-1" : "-translate-x-6"}
+                            `}
+                          />
+                        </button>
+                      </TableCell>
+                      <TableCell className="px-6 py-4 text-center">
+                        {section.isV2 ? (
+                          <Link
+                            href={`/${role}/${userId}/courses/sections/${section.id}/curriculum`}
+                          >
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="rounded-xl border-emerald-200 text-emerald-600 hover:bg-emerald-50 font-bold gap-2"
+                            >
+                              <Sparkles className="size-4" />
+                              تعديل المنهج
+                            </Button>
+                          </Link>
+                        ) : (
+                          <span className="text-slate-300 text-xs font-bold">
+                            غير مفعل
+                          </span>
+                        )}
                       </TableCell>
                       <TableCell className="px-6 py-4 text-center">
                         <SectionActions
@@ -511,6 +583,46 @@ const SectionTable = ({
                           </span>
                         </div>
                       </div>
+                    </div>
+                  </div>
+
+                  <div className="pt-3 border-t border-slate-100 dark:border-zinc-900 flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="size-8 rounded-lg bg-emerald-50 dark:bg-emerald-500/10 flex items-center justify-center text-emerald-600">
+                        <Zap className="size-4" />
+                      </div>
+                      <span className="text-xs font-bold text-slate-600 dark:text-zinc-400">
+                        النظام المطور
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => toggleV2(section.id, section.isV2)}
+                        className={`
+                          relative inline-flex h-5 w-9 items-center rounded-full transition-colors focus:outline-none
+                          ${section.isV2 ? "bg-emerald-500" : "bg-slate-200 dark:bg-zinc-800"}
+                        `}
+                      >
+                        <span
+                          className={`
+                            inline-block h-3 w-3 transform rounded-full bg-white transition-transform
+                            ${section.isV2 ? "-translate-x-1" : "-translate-x-5"}
+                          `}
+                        />
+                      </button>
+                      {section.isV2 && (
+                        <Link
+                          href={`/${role}/${userId}/courses/sections/${section.id}/curriculum`}
+                        >
+                          <Button
+                            size="sm"
+                            className="h-8 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-[10px] gap-1"
+                          >
+                            <Sparkles className="size-3" />
+                            المنهج
+                          </Button>
+                        </Link>
+                      )}
                     </div>
                   </div>
                 </motion.div>

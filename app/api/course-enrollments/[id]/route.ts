@@ -91,6 +91,15 @@ export async function PUT(
     swiftCode,
     bankName,
     sectionId,
+    attendanceType,
+    isBlocked,
+    studentName,
+    studentEmail,
+    studentPhone,
+    studentAge,
+    studentMajor,
+    studentCountry,
+    notes,
   } = body;
 
   const updateData: any = {};
@@ -100,6 +109,15 @@ export async function PUT(
   if (IBAN !== undefined) updateData.IBAN = IBAN;
   if (swiftCode !== undefined) updateData.swiftCode = swiftCode;
   if (bankName !== undefined) updateData.bankName = bankName;
+  if (attendanceType !== undefined) updateData.attendanceType = attendanceType;
+  if (isBlocked !== undefined) updateData.isBlocked = isBlocked;
+  if (studentName !== undefined) updateData.studentName = studentName;
+  if (studentEmail !== undefined) updateData.studentEmail = studentEmail;
+  if (studentPhone !== undefined) updateData.studentPhone = studentPhone;
+  if (studentAge !== undefined) updateData.studentAge = studentAge;
+  if (studentMajor !== undefined) updateData.studentMajor = studentMajor;
+  if (studentCountry !== undefined) updateData.studentCountry = studentCountry;
+  if (notes !== undefined) updateData.notes = notes;
   if (sectionId !== undefined) {
     // التحقق من وجود الشعبة الجديدة
     const section = await db.query.courseSections.findFirst({

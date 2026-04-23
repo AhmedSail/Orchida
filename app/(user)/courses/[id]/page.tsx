@@ -55,6 +55,12 @@ const page = async ({ params }: { params: { id: string } }) => {
     .limit(1);
 
   const coursesSelected = coursesSelectedResult[0];
+  
+  const company = await db.query.companies.findFirst({
+    where: (companies, { eq }) => eq(companies.id, "orchid-company"),
+  });
+
+  const useQueueSystem = company?.useQueueSystem ?? false;
 
   // جلب آخر شعبة مرتبطة بالكورس مع اسم المدرب
   const lastSectionRaw = await db
@@ -64,6 +70,7 @@ const page = async ({ params }: { params: { id: string } }) => {
       instructorId: instructors.id,
       instructorName: instructors.name,
       status: courseSections.status,
+      isFree: courseSections.isFree,
     })
     .from(courseSections)
     .leftJoin(instructors, eq(courseSections.instructorId, instructors.id))
@@ -93,6 +100,7 @@ const page = async ({ params }: { params: { id: string } }) => {
           name: lastSectionRaw[0].instructorName ?? "غير محدد",
         },
         status: lastSectionRaw[0].status,
+        isFree: lastSectionRaw[0].isFree,
       }
     : undefined;
 
@@ -151,6 +159,7 @@ const page = async ({ params }: { params: { id: string } }) => {
         coursesSelected={coursesSelected}
         lastInstructor={lastInstructor}
         lastSection={lastSection}
+        useQueueSystem={useQueueSystem}
       />
     </div>
   );

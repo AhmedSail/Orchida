@@ -35,6 +35,8 @@ type MyCourse = {
   price: string | null;
   currency: string;
   paymentStatus: string | null;
+  isV2?: boolean | null;
+  courseId?: string | null;
 };
 
 const MyCourses = ({
@@ -252,6 +254,21 @@ const MyCourses = ({
                               دفع الرسوم
                             </div>
                           )}
+                        </Button>
+                      )}
+
+                      {/* زر الدخول للدورة الماركة بـ V2 */}
+                      {course.isV2 && course.status === "confirmed" && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="rounded-full border-emerald-500 text-emerald-600 hover:bg-emerald-50 font-black shadow-sm"
+                          onClick={() => router.push(`/academy/course/${course.courseId}`)}
+                        >
+                          <div className="flex items-center gap-2">
+                            <CheckCircle2 className="size-4" />
+                            ابدأ التعلم
+                          </div>
                         </Button>
                       )}
 

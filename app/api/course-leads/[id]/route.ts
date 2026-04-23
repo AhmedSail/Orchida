@@ -81,6 +81,7 @@ export async function POST(
       studentAge: lead.studentAge,
       studentMajor: lead.studentMajor,
       studentCountry: lead.studentCountry,
+      attendanceType: lead.attendanceType, // ✅ الحفاظ على نوع الحضور
       confirmationStatus: "confirmed",
       paymentStatus: "pending",
       notes: lead.notes,

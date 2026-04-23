@@ -21,31 +21,30 @@ import {
   SelectItem,
   SelectValue,
 } from "@/components/ui/select";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Switch } from "@/components/ui/switch";
 import Swal from "sweetalert2";
 
 import { useRouter } from "next/navigation";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
 import { Instructor } from "@/app/instructor/[instructorId]/complete-profile/page";
-import { CourseWithSections } from "@/app/coordinator/[coordinatorId]/courses/page";
 
 const formSchema = z
   .object({
     courseId: z.string().min(1, "مطلوب"),
-    sectionNumber: z.number().min(1, "مطلوب"),
-    startDate: z.string().min(1, "مطلوب"), // لازم يكون موجود
+    sectionNumber: z.number().min(0, "مطلوب"), // ✅ السماح بالرقم 0 للأونلاين
+    startDate: z.string().min(1, "مطلوب"),
     endDate: z.string().min(1, "مطلوب"),
     maxCapacity: z.number().min(1),
     location: z.string().optional(),
     courseType: z.enum(["in_center", "online", "hybrid", "external"]),
     notes: z.string().optional(),
-    instructorId: z.string().min(1, "مطلوب"), // ✅ إضافة حقل المدرب
+    instructorId: z.string().min(1, "مطلوب"),
     isHidden: z.boolean(),
+    isFree: z.boolean(),
   })
   .refine(
     (data) => {
-      // تحقق أن تاريخ البداية بعد اليوم
       const today = new Date();
       const start = new Date(data.startDate);
       return start > today;
@@ -57,7 +56,6 @@ const formSchema = z
   )
   .refine(
     (data) => {
-      // تحقق أن تاريخ النهاية بعد البداية
       const start = new Date(data.startDate);
       const end = new Date(data.endDate);
       return end > start;
@@ -70,13 +68,15 @@ const formSchema = z
 
 export default function NewSectionForm({
   course,
-  nextSectionNumber,
+  nextWajahi,
+  nextHybrid,
   instructor,
   role,
   userId,
 }: {
   course: Courses;
-  nextSectionNumber: number;
+  nextWajahi: number;
+  nextHybrid: number;
   instructor: Instructor[];
   role: string;
   userId: string;
@@ -88,21 +88,37 @@ export default function NewSectionForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       courseId: course.id,
-      sectionNumber: nextSectionNumber,
+      sectionNumber: nextWajahi, // القيمة الافتراضية للوجاهي
       startDate: "",
       endDate: "",
       maxCapacity: 40,
       location: "",
       courseType: "in_center",
       notes: "",
-      instructorId: "", // ✅ إضافة حقل المدرب
+      instructorId: "",
       isHidden: false,
+      isFree: false,
     },
   });
 
+  // ✅ مراقبة تغيير نوع الدورة لتحديث رقم الشعبة تلقائياً
+  const watchedCourseType = form.watch("courseType");
+
+  useEffect(() => {
+    if (watchedCourseType === "online") {
+      form.setValue("sectionNumber", 0);
+      form.setValue("location", "أونلاين (تسجيلات)");
+    } else if (watchedCourseType === "in_center") {
+      form.setValue("sectionNumber", nextWajahi);
+      form.setValue("location", "قاعة المركز");
+    } else if (watchedCourseType === "hybrid") {
+      form.setValue("sectionNumber", nextHybrid);
+      form.setValue("location", "مدمج (قاعة + زوم)");
+    }
+  }, [watchedCourseType, nextWajahi, nextHybrid, form]);
+
   async function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
-
     try {
       const res = await fetch("/api/courses/courseSections", {
         method: "POST",
@@ -137,117 +153,140 @@ export default function NewSectionForm({
         text: "تأكد من الشبكة أو السيرفر",
       });
     }
-
     setIsSubmitting(false);
   }
 
   return (
     <div className="mt-10">
-      <h2 className="text-2xl font-bold mb-4 text-primary">إضافة شعبة جديدة</h2>
+      <h2 className="text-2xl font-bold mb-4 text-primary">
+        إضافة شعبة جديدة للكورس: {course.title}
+      </h2>
       <Form {...form}>
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-          {/* رقم الدورة */}
-          <FormField
-            control={form.control}
-            name="courseId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>اسم الدورة</FormLabel>
-                <FormControl>
-                  <Input
-                    placeholder="اسم الدورة"
-                    {...field}
-                    value={course.title}
-                    disabled
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {/* نوع الدورة أولاً لأنه يؤثر على الرقم */}
+            <FormField
+              control={form.control}
+              name="courseType"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>طريقة التقديم</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      dir="rtl"
+                    >
+                      <SelectTrigger dir="rtl" className="w-full">
+                        <SelectValue placeholder="اختر الطريقة" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="in_center">حضوري (وجاهي)</SelectItem>
+                        <SelectItem value="online">أونلاين (كامل)</SelectItem>
+                        <SelectItem value="hybrid">مدمج (متابعة)</SelectItem>
+                        <SelectItem value="external">خارجي</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                </FormItem>
+              )}
+            />
 
-          {/* رقم الشعبة */}
-          <FormField
-            control={form.control}
-            name="sectionNumber"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>رقم الشعبة</FormLabel>
-                <FormControl>
-                  <Input
-                    type="number"
-                    placeholder="1"
-                    {...field}
-                    value={nextSectionNumber}
-                    disabled
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+            {/* رقم الشعبة */}
+            <FormField
+              control={form.control}
+              name="sectionNumber"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>رقم الشعبة</FormLabel>
+                  <FormControl>
+                    <Input
+                      type="number"
+                      placeholder="1"
+                      {...field}
+                      onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
 
-          <FormField
-            control={form.control}
-            name="instructorId"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>المدرب</FormLabel>
-                <FormControl>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    dir="rtl"
-                  >
-                    <SelectTrigger dir="rtl" className="w-full">
-                      <SelectValue placeholder="اختر المدرب" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {instructor.map((inst) => (
-                        <SelectItem key={inst.id} value={inst.id}>
-                          {inst.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="instructorId"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>المدرب</FormLabel>
+                  <FormControl>
+                    <Select
+                      onValueChange={field.onChange}
+                      defaultValue={field.value}
+                      dir="rtl"
+                    >
+                      <SelectTrigger dir="rtl" className="w-full">
+                        <SelectValue placeholder="اختر المدرب" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {instructor.map((inst) => (
+                          <SelectItem key={inst.id} value={inst.id}>
+                            {inst.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* تاريخ البداية */}
-          {/* تاريخ البداية */}
-          <FormField
-            control={form.control}
-            name="startDate"
-            render={({ field }) => (
-              <FormItem dir="rtl">
-                <FormLabel dir="rtl">تاريخ البداية</FormLabel>
-                <FormControl dir="rtl">
-                  <Input type="date" {...field} dir="rtl" />
-                </FormControl>
-                <FormMessage /> {/* 👈 لازم تحطها هنا */}
-              </FormItem>
-            )}
-          />
+            <FormField
+              control={form.control}
+              name="location"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>المكان / التفاصيل</FormLabel>
+                  <FormControl>
+                    <Input placeholder="قاعة التدريب / أونلاين" {...field} />
+                  </FormControl>
+                </FormItem>
+              )}
+            />
+          </div>
 
-          {/* تاريخ النهاية */}
-          <FormField
-            control={form.control}
-            name="endDate"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>تاريخ النهاية</FormLabel>
-                <FormControl>
-                  <Input type="date" {...field} />
-                </FormControl>
-                <FormMessage /> {/* 👈 وهنا كمان */}
-              </FormItem>
-            )}
-          />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <FormField
+              control={form.control}
+              name="startDate"
+              render={({ field }) => (
+                <FormItem dir="rtl">
+                  <FormLabel dir="rtl">تاريخ البداية</FormLabel>
+                  <FormControl dir="rtl">
+                    <Input type="date" {...field} dir="rtl" />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
 
-          {/* السعة */}
+            <FormField
+              control={form.control}
+              name="endDate"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>تاريخ النهاية</FormLabel>
+                  <FormControl>
+                    <Input type="date" {...field} />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
           <FormField
             control={form.control}
             name="maxCapacity"
@@ -266,49 +305,6 @@ export default function NewSectionForm({
             )}
           />
 
-          {/* المكان */}
-          <FormField
-            control={form.control}
-            name="location"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>المكان</FormLabel>
-                <FormControl>
-                  <Input placeholder="قاعة التدريب / أونلاين" {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* طريقة التقديم */}
-          <FormField
-            control={form.control}
-            name="courseType"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>طريقة التقديم</FormLabel>
-                <FormControl>
-                  <Select
-                    onValueChange={field.onChange}
-                    defaultValue={field.value}
-                    dir="rtl"
-                  >
-                    <SelectTrigger dir="rtl" className="w-full">
-                      <SelectValue placeholder="اختر الطريقة" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="in_center">حضوري</SelectItem>
-                      <SelectItem value="online">أونلاين</SelectItem>
-                      <SelectItem value="hybrid">مدمج</SelectItem>
-                      <SelectItem value="external">خارجي</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          {/* ملاحظات */}
           <FormField
             control={form.control}
             name="notes"
@@ -317,28 +313,6 @@ export default function NewSectionForm({
                 <FormLabel>ملاحظات</FormLabel>
                 <FormControl>
                   <Textarea placeholder="أي ملاحظات إضافية..." {...field} />
-                </FormControl>
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="isHidden"
-            render={({ field }) => (
-              <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4 shadow-sm">
-                <div className="space-y-0.5">
-                  <FormLabel>إخفاء الشعبة</FormLabel>
-                  <div className="text-sm text-slate-500">
-                    عند تفعيل هذا الخيار، ستختفي الشعبة من الصفحة الرئيسية وصفحة
-                    الدورات.
-                  </div>
-                </div>
-                <FormControl>
-                  <Switch
-                    checked={field.value}
-                    onCheckedChange={field.onChange}
-                  />
                 </FormControl>
               </FormItem>
             )}

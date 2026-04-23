@@ -38,6 +38,7 @@ const page = async () => {
       instructorEmail: instructors.email,
       instructorSpecialty: instructors.specialty,
       isHidden: courseSections.isHidden,
+      isV2: courseSections.isV2,
 
       // ✅ جلب عدد المهتمين (Leads)
       interestedCount: sql<number>`(
@@ -89,6 +90,7 @@ const page = async () => {
         registeredCount: row.registeredCount ?? 0,
         currentEnrollment: row.registeredCount ?? 0,
         isHidden: row.isHidden ?? false,
+        isV2: row.isV2 ?? false,
       });
     }
 

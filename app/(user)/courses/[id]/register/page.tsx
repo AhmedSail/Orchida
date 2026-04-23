@@ -44,13 +44,29 @@ const page = async ({ params }: { params: { id: string } }) => {
   const courseId = await params;
   const session = await auth.api.getSession({ headers: await headers() });
 
-  // جلب الكورس نفسه
   const coursesSelected = await db
     .select()
     .from(courses)
     .where(eq(courses.id, courseId.id))
     .limit(1);
-  const allUsers = await db.select().from(users);
+
+  // جلب بيانات المستخدم كاملة من قاعدة البيانات
+  let fullUser = null;
+  if (session?.user?.id) {
+    const userResult = await db
+      .select()
+      .from(users)
+      .where(eq(users.id, session.user.id))
+      .limit(1);
+    fullUser = userResult[0];
+  }
+
+
+  const company = await db.query.companies.findFirst({
+    where: (companies, { eq }) => eq(companies.id, "orchid-company"),
+  });
+
+  const useQueueSystem = company?.useQueueSystem ?? false;
 
   // جلب آخر شعبة مرتبطة بالكورس مع اسم المدرب
   const lastSectionRaw = await db
@@ -59,6 +75,7 @@ const page = async ({ params }: { params: { id: string } }) => {
       sectionNumber: courseSections.sectionNumber,
       instructorId: instructors.id,
       instructorName: instructors.name,
+      isFree: courseSections.isFree,
     })
     .from(courseSections)
     .leftJoin(instructors, eq(courseSections.instructorId, instructors.id))
@@ -89,9 +106,9 @@ const page = async ({ params }: { params: { id: string } }) => {
     <div>
       <RegisterUser
         lastSectionRaw={lastSectionRaw[0]}
-        user={session?.user as any}
+        user={fullUser as any}
         coursesSelected={coursesSelected[0]}
-        allUsers={allUsers as any}
+        useQueueSystem={useQueueSystem}
       />
     </div>
   );

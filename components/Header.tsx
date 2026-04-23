@@ -30,6 +30,7 @@ import {
   FileText,
   LayoutDashboard,
   LogOut,
+  Sparkles,
   User2,
 } from "lucide-react";
 import { Link } from "next-view-transitions";
@@ -65,6 +66,11 @@ const navListMenuItems = [
       "في هذه الصفحة تجد جميع الدورات المسجل فيها حاليا والمسجل بها مسبقا ",
     icon: UserGroupIcon,
   },
+  {
+    title: "الدورات المجانية",
+    description: "تصفح مجموعتنا من الدورات التدريبية المجانية والمتاحة للجميع",
+    icon: Sparkles,
+  },
 ];
 
 function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
@@ -82,6 +88,8 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
         }
       } else if (title === "دوراتنا") {
         href = "/courses";
+      } else if (title === "الدورات المجانية") {
+        href = "/courses?free=true";
       }
 
       const handleClick = async (e: React.MouseEvent) => {
@@ -144,8 +152,8 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
             الدورات
             <ChevronDownIcon
               strokeWidth={2.5}
-              className={`hidden h-3 w-3 transition-transform lg:block ${
-                isMenuOpen ? "rotate-180" : ""
+              className={`h-3 w-3 transition-transform ${
+                isMenuOpen || isMobileMenuOpen ? "rotate-180" : ""
               }`}
             />
           </ListItem>
@@ -426,6 +434,12 @@ export function Header({
                       fgColor={isScrolled ? "#675795" : "#fff"}
                     />
                   )}
+                  <ChevronDownIcon
+                    strokeWidth={2.5}
+                    className={`h-3 w-3 transition-transform ${
+                      isMenuOpen ? "rotate-180" : ""
+                    }`}
+                  />
                 </ListItem>
               </MenuHandler>
               {/* @ts-ignore */}

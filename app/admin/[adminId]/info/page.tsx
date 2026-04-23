@@ -25,6 +25,7 @@ type CompanyFormValues = {
   linkedinUrl?: string;
   tiktokUrl?: string;
   geminiGenApiKey?: string;
+  useQueueSystem: boolean;
 };
 
 const page = async () => {
@@ -56,6 +57,7 @@ const page = async () => {
     linkedinUrl: c?.linkedinUrl ?? "",
     tiktokUrl: c?.tiktokUrl ?? "",
     geminiGenApiKey: c?.geminiGenApiKey ?? "",
+    useQueueSystem: c?.useQueueSystem ?? false,
   };
 
   return (

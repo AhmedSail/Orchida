@@ -33,6 +33,8 @@ interface CoursePageProps {
     endDate: Date | null;
     courseTitle: string | null;
     courseStatus: string;
+    isV2?: boolean | null;
+    courseId?: string | null;
   }[];
   userId: string;
 }
@@ -267,17 +269,24 @@ const CoursePage = ({ instructorSections, userId }: CoursePageProps) => {
               return (
                 <motion.div key={section.sectionId} variants={item}>
                   <Link
-                    href={`/instructor/${userId}/courses/${section.sectionId}/content`}
+                    href={section.isV2 ? `/instructor/v2/course/${section.sectionId}` : `/instructor/${userId}/courses/${section.sectionId}/content`}
                     className="group flex flex-col relative h-full bg-white dark:bg-zinc-950 rounded-[44px] border-2 border-slate-100 dark:border-zinc-900 p-8 transition-all duration-500 hover:shadow-[0_40px_100px_-20px_rgba(0,0,0,0.1)] hover:border-primary/40 hover:-translate-y-2 overflow-hidden"
                   >
                     {/* Status UI */}
                     <div className="flex justify-between items-center mb-8">
-                      <Badge
-                        className={`${status.color} ${status.glow} border-2 shadow-lg px-5 py-2 rounded-full flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest`}
-                      >
-                        <StatusIcon className="size-3.5" />
-                        {status.label}
-                      </Badge>
+                      <div className="flex gap-2">
+                        <Badge
+                          className={`${status.color} ${status.glow} border-2 shadow-lg px-5 py-2 rounded-full flex items-center gap-2.5 font-black text-[10px] uppercase tracking-widest`}
+                        >
+                          <StatusIcon className="size-3.5" />
+                          {status.label}
+                        </Badge>
+                        {section.isV2 && (
+                          <Badge className="bg-zinc-900 text-white px-3 py-2 rounded-full font-black text-[10px] uppercase tracking-widest shadow-lg">
+                            V2 MAPPING
+                          </Badge>
+                        )}
+                      </div>
                       <div className="size-12 rounded-[20px] bg-slate-50 dark:bg-zinc-900 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all duration-500 shadow-inner group-hover:rotate-[-5deg]">
                         <ChevronLeft className="size-6 transition-transform group-hover:-translate-x-1" />
                       </div>

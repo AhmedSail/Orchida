@@ -17,6 +17,10 @@ export async function PUT(
         name: body.name,
         phone: body.phone,
         image: body.image,
+        whatsapp: body.whatsapp,
+        age: body.age ? parseInt(body.age) : null,
+        major: body.major,
+        location: body.location,
       })
       .where(eq(users.id, params.id));
 

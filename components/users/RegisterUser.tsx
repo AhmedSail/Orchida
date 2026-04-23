@@ -32,7 +32,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Courses } from "@/app/admin/[adminId]/courses/page";
-import { User } from "../user/edit-profile";
+
 import { useRouter, usePathname } from "next/navigation";
 import {
   Select,
@@ -48,6 +48,7 @@ type Section = {
   sectionNumber: number;
   instructorId: string | null;
   instructorName: string | null;
+  isFree: boolean;
 };
 
 type SessionUser = {
@@ -58,6 +59,11 @@ type SessionUser = {
   emailVerified: boolean;
   name: string;
   image?: string | null;
+  phone?: string | null;
+  whatsapp?: string | null;
+  age?: number | null;
+  major?: string | null;
+  location?: string | null;
   role: string;
 };
 
@@ -67,10 +73,11 @@ const MySwal = withReactContent(Swal);
 const schema = z.object({
   studentName: z.string().min(2, "الاسم مطلوب وبحد أدنى حرفين"),
   studentEmail: z.string().email("يرجى إدخال بريد إلكتروني صالح"),
-  studentPhone: z.string().regex(/^(0?5[69]\d{7})$/, "رقم الهاتف غير صالح"),
+  studentPhone: z.string().regex(/^(0?5\d{8})$/, "رقم الهاتف يجب أن يتكون من 9 أو 10 أرقام ويبدأ بـ 05"),
+  whatsapp: z.string().optional().or(z.literal("")),
   studentAge: z.number({ message: "يرجى إدخل عمر صالح" }).int().positive(),
-  studentMajor: z.string().min(2, "يرجى إدخال التخصص الجامعي"),
-  studentCountry: z.string().min(2, "يرجى إدخال الدولة"),
+  studentMajor: z.string().min(2, "يرجى إدخال التخصص الدراسي"),
+  studentCountry: z.string().min(2, "يرجى إدخال الدولة والمدينة"),
   attendanceType: z.enum(["in_person", "online"], {
     message: "يرجى اختيار نوع الحضور",
   }),
@@ -78,17 +85,16 @@ const schema = z.object({
 });
 
 type FormValues = z.infer<typeof schema>;
-
 const RegisterUser = ({
   lastSectionRaw,
   user,
   coursesSelected,
-  allUsers,
+  useQueueSystem = false,
 }: {
   lastSectionRaw: Section;
   user?: SessionUser;
   coursesSelected: Courses;
-  allUsers: User[];
+  useQueueSystem?: boolean;
 }) => {
   const [submitting, setSubmitting] = useState(false);
   const router = useRouter();
@@ -101,10 +107,11 @@ const RegisterUser = ({
     defaultValues: {
       studentName: user?.name ?? "",
       studentEmail: user?.email ?? "",
-      studentPhone: "",
-      studentAge: 18,
-      studentMajor: "",
-      studentCountry: "",
+      studentPhone: user?.phone ?? "",
+      whatsapp: user?.whatsapp ?? "",
+      studentAge: user?.age ?? 18,
+      studentMajor: user?.major ?? "",
+      studentCountry: user?.location ?? "",
       attendanceType: "in_person",
       notes: "",
     },
@@ -124,13 +131,34 @@ const RegisterUser = ({
         courseId: coursesSelected.id,
         sectionId: lastSectionRaw.sectionId,
         ...values,
-        studentPhone: `${countryCode}${phoneValue}`,
+        attendanceType: lastSectionRaw.isFree
+          ? "online"
+          : values.attendanceType,
+        studentPhone: phoneValue,
+        whatsapp: values.whatsapp
+          ? (values.whatsapp.startsWith("0") ? values.whatsapp.substring(1) : values.whatsapp)
+          : "",
       };
 
-      const res = await fetch("/api/course-leads", {
+      const apiEndpoint = lastSectionRaw.isFree
+        ? "/api/course-enrollments"
+        : useQueueSystem
+          ? "/api/course-applications"
+          : "/api/course-leads";
+
+      const res = await fetch(apiEndpoint, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
+        body: JSON.stringify(
+          lastSectionRaw.isFree
+            ? {
+                ...payload,
+                studentId: user?.id ?? null,
+                confirmationStatus: "confirmed",
+                paymentStatus: "paid",
+              }
+            : payload,
+        ),
       });
 
       if (!res.ok) {
@@ -178,20 +206,39 @@ const RegisterUser = ({
       }
 
       const responseData = await res.json();
+      const studentId = 
+        responseData.application?.userId || 
+        responseData.lead?.studentId || 
+        responseData.enrollment?.studentId || 
+        user?.id;
 
       await MySwal.fire({
-        title: "تم استلام طلبك بنجاح! 🎉",
+        title: lastSectionRaw.isFree
+          ? "تم الاشتراك بنجاح! 🎓"
+          : useQueueSystem
+            ? "تم تقديم طلبك بنجاح! 📋"
+            : "تم استلام طلبك بنجاح! 🎉",
         html: `
           <div class="text-right space-y-4" dir="rtl">
-            <p class="text-lg">شكراً لتسجيل اهتمامك بدورة <span class="font-bold text-primary">${coursesSelected.title}</span>.</p>
+            <p class="text-lg">${
+              lastSectionRaw.isFree
+                ? `مبروك! تم تفعيل اشتراكك في دورة <span class="font-bold text-primary">${coursesSelected.title}</span> بنجاح.`
+                : useQueueSystem
+                  ? `شكراً لتقديم طلبك للالتحاق بدورة <span class="font-bold text-primary">${coursesSelected.title}</span>.`
+                  : `شكراً لتسجيل اهتمامك بدورة <span class="font-bold text-primary">${coursesSelected.title}</span>.`
+            }</p>
             <div class="bg-zinc-100 p-4 rounded-2xl border border-zinc-200">
               <p class="text-sm italic text-zinc-700">${responseData.message}</p>
             </div>
-            <p class="text-zinc-500 italic">سيتواصل معك فريقنا المختص عبر الواتساب قريباً لتأكيد حجزك.</p>
+            ${!lastSectionRaw.isFree ? `<p class="text-zinc-500 italic">${useQueueSystem ? "سيقوم المنسق بمراجعة طلبك وتحديد الشعبة المناسبة لك قريباً." : "سيتواصل معك فريقنا المختص عبر الواتساب قريباً لتأكيد حجزك."}</p>` : ""}
           </div>
         `,
         icon: "success",
-        confirmButtonText: "رائع، بانتظاركم",
+        confirmButtonText: lastSectionRaw.isFree
+          ? "ابدأ التعلم الآن"
+          : useQueueSystem
+            ? "حسناً، بانتظار المراجعة"
+            : "رائع، بانتظاركم",
         confirmButtonColor: "#10b981",
         background: "#fff",
         color: "#18181b",
@@ -200,7 +247,19 @@ const RegisterUser = ({
         },
       });
 
-      router.push("/courses");
+      if (user) {
+        // إذا كان مسجل دخول، وديه ع الداشبورد تبعته
+        router.push(`/dashboardUser/${user.id}/home`);
+      } else if (studentId) {
+        // إذا كان ضيف، وديه ع صفحة تسجيل الدخول مع بياناته
+        const email = values.studentEmail;
+        const pass = phoneValue; // رقم الجوال (بدون الصفر) هو الباسورد المخزن
+        const callback = encodeURIComponent(`/dashboardUser/${studentId}/home`);
+        router.push(`/sign-in?email=${encodeURIComponent(email)}&pass=${encodeURIComponent(pass)}&callbackURL=${callback}`);
+      } else {
+        router.push("/courses");
+      }
+      
       form.reset();
     } catch (err: any) {
       await MySwal.fire({
@@ -287,32 +346,50 @@ const RegisterUser = ({
                   </span>
                 </h1>
                 <p className="text-white/80 leading-relaxed font-medium">
-                  نحن متحمسون جداً لانضمامك! تعبئة هذا النموذج هي الخطوة الأولى
-                  لتطوير مهاراتك والوصول لأهدافك.
+                  {useQueueSystem
+                    ? "أنت بصدد تقديم طلب التحاق بهذه الدورة. سيقوم فريقنا بمراجعة طلبك وتوزيعك على الشعبة المتاحة فور تأكيد بياناتك."
+                    : "نحن متحمسون جداً لانضمامك! تعبئة هذا النموذج هي الخطوة الأولى لتطوير مهاراتك والوصول لأهدافك."}
                 </p>
 
                 <div className="pt-6 space-y-4">
-                  <div className="flex items-center gap-4 bg-white/10 p-4 rounded-3xl backdrop-blur-sm">
-                    <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                      <Calendar className="w-5 h-5" />
-                    </div>
-                    <div>
-                      <p className="text-xs text-white/60">رقم الشعبة</p>
-                      <p className="font-bold">
-                        الشعبة رقم {lastSectionRaw.sectionNumber}
-                      </p>
-                    </div>
-                  </div>
+                  {!useQueueSystem && (
+                    <>
+                      <div className="flex items-center gap-4 bg-white/10 p-4 rounded-3xl backdrop-blur-sm">
+                        <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                          <Calendar className="w-5 h-5" />
+                        </div>
+                        <div>
+                          <p className="text-xs text-white/60">رقم الشعبة</p>
+                          <p className="font-bold">
+                            الشعبة رقم {lastSectionRaw.sectionNumber}
+                          </p>
+                        </div>
+                      </div>
 
-                  {lastSectionRaw.instructorName && (
+                      {lastSectionRaw.instructorName && (
+                        <div className="flex items-center gap-4 bg-white/10 p-4 rounded-3xl backdrop-blur-sm">
+                          <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
+                            <UserIcon className="w-5 h-5" />
+                          </div>
+                          <div>
+                            <p className="text-xs text-white/60">المدرب</p>
+                            <p className="font-bold">
+                              {lastSectionRaw.instructorName}
+                            </p>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                  {useQueueSystem && (
                     <div className="flex items-center gap-4 bg-white/10 p-4 rounded-3xl backdrop-blur-sm">
                       <div className="w-10 h-10 bg-white/20 rounded-xl flex items-center justify-center">
-                        <UserIcon className="w-5 h-5" />
+                        <Sparkles className="w-5 h-5 text-yellow-300" />
                       </div>
                       <div>
-                        <p className="text-xs text-white/60">المدرب</p>
-                        <p className="font-bold">
-                          {lastSectionRaw.instructorName}
+                        <p className="text-xs text-white/60">حالة الطلب</p>
+                        <p className="font-bold text-yellow-300 animate-pulse">
+                          قيد التقديم المبدئي
                         </p>
                       </div>
                     </div>
@@ -327,7 +404,19 @@ const RegisterUser = ({
                 ماذا سيحدث بعد التسجيل؟
               </h3>
               <ul className="space-y-3 text-sm text-zinc-600 dark:text-zinc-400">
-                {user ? (
+                {lastSectionRaw.isFree ? (
+                  <>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> سيتم منحك وصولاً فورياً لمحتوى الدورة.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> ستظهر الدورة في لوحة التحكم الخاصة بك.
+                    </li>
+                    <li className="flex items-start gap-2 italic">
+                      <span>•</span> يمكنك البدء بمشاهدة الدروس فوراً.
+                    </li>
+                  </>
+                ) : user ? (
                   <>
                     <li className="flex items-start gap-2 italic">
                       <span>•</span> سيتم تسجيل اهتمامك بالدورة باستخدام حسابك
@@ -432,7 +521,7 @@ const RegisterUser = ({
                   </div>
 
                   {/* Section 2: Contact & Age */}
-                  <div className="space-y-6">
+                  <div className=" space-y-6">
                     <div className="flex items-center gap-2 pb-2 border-b border-zinc-100 dark:border-zinc-800">
                       <div className="w-8 h-8 bg-purple-100 dark:bg-purple-900/30 rounded-lg flex items-center justify-center">
                         <Phone className="w-4 h-4 text-purple-600 dark:text-purple-400" />
@@ -442,14 +531,38 @@ const RegisterUser = ({
                       </h3>
                     </div>
 
-                    <div className=" gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-1 gap-6">
                       <FormField
                         control={form.control}
                         name="studentPhone"
                         render={({ field }) => (
                           <FormItem className="group">
                             <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
-                              رقم الواتساب
+                              رقم الهاتف
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <Input
+                                  placeholder="05XXXXXXXX"
+                                  className={inputStyles}
+                                  {...field}
+                                  dir="ltr"
+                                />
+                                <Phone className={iconStyles} />
+                              </div>
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+
+                      <FormField
+                        control={form.control}
+                        name="whatsapp"
+                        render={({ field }) => (
+                          <FormItem className="group">
+                            <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
+                              رقم الواتساب (اختياري)
                             </FormLabel>
                             <FormControl>
                               <div className="relative flex items-center gap-2">
@@ -576,93 +689,95 @@ const RegisterUser = ({
                       />
                     </div>
 
-                    <FormField
-                      control={form.control}
-                      name="attendanceType"
-                      render={({ field }) => (
-                        <FormItem className="group">
-                          <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
-                            نوع الحضور
-                          </FormLabel>
-                          <FormControl>
-                            <div className="grid grid-cols-2 gap-4">
-                              <label
-                                className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                                  field.value === "in_person"
-                                    ? "border-primary bg-primary/5"
-                                    : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  value="in_person"
-                                  checked={field.value === "in_person"}
-                                  onChange={() => field.onChange("in_person")}
-                                  className="sr-only"
-                                />
-                                <div className="flex flex-col items-center gap-2">
-                                  <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                      field.value === "in_person"
-                                        ? "bg-primary text-white"
-                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
-                                    }`}
-                                  >
-                                    <UserIcon className="w-5 h-5" />
-                                  </div>
-                                  <span className="font-bold text-sm">
-                                    وجاهي
-                                  </span>
-                                </div>
-                              </label>
-
-                              <label
-                                className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
-                                  field.value === "online"
-                                    ? "border-primary bg-primary/5"
-                                    : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
-                                }`}
-                              >
-                                <input
-                                  type="radio"
-                                  value="online"
-                                  checked={field.value === "online"}
-                                  onChange={() => field.onChange("online")}
-                                  className="sr-only"
-                                />
-                                <div className="flex flex-col items-center gap-2">
-                                  <div
-                                    className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                                      field.value === "online"
-                                        ? "bg-primary text-white"
-                                        : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
-                                    }`}
-                                  >
-                                    <svg
-                                      className="w-5 h-5"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
+                    {!lastSectionRaw.isFree && (
+                      <FormField
+                        control={form.control}
+                        name="attendanceType"
+                        render={({ field }) => (
+                          <FormItem className="group">
+                            <FormLabel className="text-zinc-600 dark:text-zinc-400 font-bold mr-1">
+                              نوع الحضور
+                            </FormLabel>
+                            <FormControl>
+                              <div className="grid grid-cols-2 gap-4">
+                                <label
+                                  className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    field.value === "in_person"
+                                      ? "border-primary bg-primary/5"
+                                      : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    value="in_person"
+                                    checked={field.value === "in_person"}
+                                    onChange={() => field.onChange("in_person")}
+                                    className="sr-only"
+                                  />
+                                  <div className="flex flex-col items-center gap-2">
+                                    <div
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                        field.value === "in_person"
+                                          ? "bg-primary text-white"
+                                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
+                                      }`}
                                     >
-                                      <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
-                                        strokeWidth={2}
-                                        d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
-                                      />
-                                    </svg>
+                                      <UserIcon className="w-5 h-5" />
+                                    </div>
+                                    <span className="font-bold text-sm">
+                                      وجاهي
+                                    </span>
                                   </div>
-                                  <span className="font-bold text-sm">
-                                    أونلاين
-                                  </span>
-                                </div>
-                              </label>
-                            </div>
-                          </FormControl>
-                          <FormMessage className="text-xs" />
-                        </FormItem>
-                      )}
-                    />
+                                </label>
+
+                                <label
+                                  className={`relative flex items-center justify-center gap-3 p-4 rounded-2xl border-2 cursor-pointer transition-all ${
+                                    field.value === "online"
+                                      ? "border-primary bg-primary/5"
+                                      : "border-zinc-200 dark:border-zinc-800 hover:border-primary/50"
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    value="online"
+                                    checked={field.value === "online"}
+                                    onChange={() => field.onChange("online")}
+                                    className="sr-only"
+                                  />
+                                  <div className="flex flex-col items-center gap-2">
+                                    <div
+                                      className={`w-10 h-10 rounded-full flex items-center justify-center ${
+                                        field.value === "online"
+                                          ? "bg-primary text-white"
+                                          : "bg-zinc-100 dark:bg-zinc-800 text-zinc-400"
+                                      }`}
+                                    >
+                                      <svg
+                                        className="w-5 h-5"
+                                        fill="none"
+                                        viewBox="0 0 24 24"
+                                        stroke="currentColor"
+                                      >
+                                        <path
+                                          strokeLinecap="round"
+                                          strokeLinejoin="round"
+                                          strokeWidth={2}
+                                          d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"
+                                        />
+                                      </svg>
+                                    </div>
+                                    <span className="font-bold text-sm">
+                                      أونلاين
+                                    </span>
+                                  </div>
+                                </label>
+                              </div>
+                            </FormControl>
+                            <FormMessage className="text-xs" />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                   </div>
 
                   {/* Section 4: Notes */}
@@ -724,7 +839,13 @@ const RegisterUser = ({
                             exit={{ opacity: 0 }}
                             className="flex items-center gap-3"
                           >
-                            <span>سجّل اهتمامك الآن</span>
+                            <span>
+                              {lastSectionRaw.isFree
+                                ? "سجّل وابدأ الآن مجاناً"
+                                : useQueueSystem
+                                  ? "إرسال طلب التحاق"
+                                  : "سجّل اهتمامك الآن"}
+                            </span>
                             <Sparkles className="w-6 h-6 text-yellow-300 group-hover:rotate-12 transition-transform" />
                           </motion.div>
                         )}

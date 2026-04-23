@@ -41,6 +41,7 @@ export async function PUT(req: Request) {
         linkedinUrl: body.linkedinUrl,
         tiktokUrl: body.tiktokUrl,
         geminiGenApiKey: body.geminiGenApiKey,
+        useQueueSystem: body.useQueueSystem,
 
         updatedAt: new Date(), // ✅ تحديث وقت آخر تعديل
       })

@@ -51,10 +51,15 @@ import {
   UserCheck,
   UserPlus,
   Users,
+  User,
+  Lock,
+  Edit,
   MessageSquare,
   Sparkles,
   Send,
   Loader2,
+  Settings2,
+  Plus,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -79,13 +84,23 @@ type Student = {
   type: "registered" | "interested";
   status?: string | null; // for leads
   notes?: string | null;
+  studentAge?: number | null;
   studentMajor?: string | null;
   studentCountry?: string | null;
   attendanceType?: "in_person" | "online" | null;
   isSuggested?: boolean;
   previousStatus?: string | null;
   originalSectionNumber?: number | null;
+  isBlocked?: boolean;
 };
+
+interface LeadStatus {
+  id: string;
+  value: string;
+  label: string;
+  color: string;
+  orderIndex: number;
+}
 
 const StudentsTable = ({
   students,
@@ -100,13 +115,16 @@ const StudentsTable = ({
 }) => {
   const [studentList, setStudentList] = useState<Student[]>(students);
   const [activeTab, setActiveTab] = useState<
-    "all" | "registered" | "interested"
+    "all" | "registered" | "interested" | "suggested"
   >("all");
 
   // فلترة وفرز
   const [filterPayment, setFilterPayment] = useState<
     "all" | "paid" | "pending" | "failed"
   >("all");
+
+  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [filterLeadStatus, setFilterLeadStatus] = useState<string>("all");
   const [filterAttendanceType, setFilterAttendanceType] = useState<
     "all" | "in_person" | "online"
@@ -133,6 +151,8 @@ const StudentsTable = ({
   const [templates, setTemplates] = useState<
     { id: string; title: string; content: string }[]
   >([]);
+  const [leadStatuses, setLeadStatuses] = useState<LeadStatus[]>([]);
+  const [isStatusManagerOpen, setIsStatusManagerOpen] = useState(false);
 
   // Move Student States
   const [showMoveDialog, setShowMoveDialog] = useState(false);
@@ -175,6 +195,19 @@ const StudentsTable = ({
       }
     };
     fetchTemplates();
+
+    const fetchStatuses = async () => {
+      try {
+        const res = await fetch("/api/lead-statuses");
+        if (res.ok) {
+          const data = await res.json();
+          setLeadStatuses(data);
+        }
+      } catch (e) {
+        console.error("Failed to fetch statuses", e);
+      }
+    };
+    fetchStatuses();
   }, []);
 
   const toggleSelectAll = () => {
@@ -286,6 +319,7 @@ const StudentsTable = ({
           studentPhone: student.studentPhone,
           sectionId: currentSectionId,
           courseId: courseId,
+          attendanceType: student.attendanceType,
           status: updates.status || student.status,
           notes: updates.notes || student.notes,
         };
@@ -400,7 +434,11 @@ const StudentsTable = ({
     let data = [...studentList];
 
     // تبويب
-    if (activeTab !== "all") {
+    if (activeTab === "suggested") {
+      data = data.filter((s) => s.type === "interested" && s.isSuggested);
+    } else if (activeTab === "interested") {
+      data = data.filter((s) => s.type === "interested" && !s.isSuggested);
+    } else if (activeTab !== "all") {
       data = data.filter((s) => s.type === activeTab);
     }
 
@@ -464,86 +502,36 @@ const StudentsTable = ({
 
   const getStatusBadge = (status: string | null | undefined, type: string) => {
     if (type === "interested") {
-      switch (status) {
-        case "new":
-          return (
-            <Badge className="bg-blue-100 text-blue-700 border-blue-200">
-              جديد
-            </Badge>
-          );
-        case "contacted":
-          return (
-            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-              تم التواصل
-            </Badge>
-          );
-        case "interested":
-          return (
-            <Badge className="bg-amber-100 text-amber-700 border-amber-200">
-              مهتم
-            </Badge>
-          );
-        case "no_response":
-          return (
-            <Badge className="bg-red-100 text-red-700 border-red-200">
-              لم يرد
-            </Badge>
-          );
-        case "high_price":
-          return (
-            <Badge className="bg-zinc-100 text-zinc-700 border-zinc-200">
-              السعر مرتفع
-            </Badge>
-          );
-        case "wants_online":
-          return (
-            <Badge className="bg-cyan-100 text-cyan-700 border-cyan-200">
-              يريد أونلاين
-            </Badge>
-          );
-        case "future_course":
-          return (
-            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
-              الدورة القادمة
-            </Badge>
-          );
-        case "cancel_reg":
-          return (
-            <Badge className="bg-rose-100 text-rose-700 border-rose-200">
-              إلغاء التسجيل
-            </Badge>
-          );
-        case "far_location":
-          return (
-            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
-              المكان بعيد
-            </Badge>
-          );
-        case "busy_morning":
-          return (
-            <Badge className="bg-orange-100 text-orange-700 border-orange-200">
-              مشغول فترة صباحية
-            </Badge>
-          );
-        case "busy_evening":
-          return (
-            <Badge className="bg-indigo-100 text-indigo-700 border-indigo-200">
-              مشغول فترة مسائية
-            </Badge>
-          );
-        case "focal_course":
-          return (
-            <Badge className="bg-purple-100 text-purple-700 border-purple-200">
-              دورة بؤرية
-            </Badge>
-          );
-        default:
-          return (
-            <Badge className="bg-gray-100 text-gray-700 border-gray-200">
-              {status || "غير محدد"}
-            </Badge>
-          );
+      const statusObj = leadStatuses.find((ls) => ls.value === status);
+      if (statusObj) {
+        const colorClasses: Record<string, string> = {
+          blue: "bg-blue-100 text-blue-700 border-blue-200",
+          purple: "bg-purple-100 text-purple-700 border-purple-200",
+          amber: "bg-amber-100 text-amber-700 border-amber-200",
+          red: "bg-red-100 text-red-700 border-red-200",
+          zinc: "bg-zinc-100 text-zinc-700 border-zinc-200",
+          cyan: "bg-cyan-100 text-cyan-700 border-cyan-200",
+          indigo: "bg-indigo-100 text-indigo-700 border-indigo-200",
+          orange: "bg-orange-100 text-orange-700 border-orange-200",
+          rose: "bg-rose-100 text-rose-700 border-rose-200",
+          emerald: "bg-emerald-100 text-emerald-700 border-emerald-200",
+        };
+        return (
+          <Badge
+            className={
+              colorClasses[statusObj.color] ||
+              "bg-gray-100 text-gray-700 border-gray-200"
+            }
+          >
+            {statusObj.label}
+          </Badge>
+        );
       }
+      return (
+        <Badge className="bg-gray-100 text-gray-700 border-gray-200">
+          {status || "غير محدد"}
+        </Badge>
+      );
     }
 
     switch (status) {
@@ -599,7 +587,22 @@ const StudentsTable = ({
           <div>
             <p className="text-gray-500 text-sm">مهتمين</p>
             <p className="text-2xl font-bold">
-              {studentList.filter((s) => s.type === "interested").length}
+              {
+                studentList.filter(
+                  (s) => s.type === "interested" && !s.isSuggested,
+                ).length
+              }
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-4 rounded-2xl shadow-sm border border-purple-100 flex items-center gap-4">
+          <div className="bg-purple-50 p-3 rounded-xl text-purple-600">
+            <Sparkles className="w-6 h-6" />
+          </div>
+          <div>
+            <p className="text-gray-500 text-sm">مقترحين</p>
+            <p className="text-2xl font-bold">
+              {studentList.filter((s) => s.isSuggested).length}
             </p>
           </div>
         </div>
@@ -701,6 +704,18 @@ const StudentsTable = ({
             >
               المهتمين
             </button>
+            <button
+              onClick={() => setActiveTab("suggested")}
+              className={cn(
+                "px-6 py-2 rounded-lg text-sm font-medium transition-all flex items-center gap-1",
+                activeTab === "suggested"
+                  ? "bg-purple-600 shadow-sm text-white"
+                  : "text-purple-600 hover:text-purple-700",
+              )}
+            >
+              <Sparkles className="w-3 h-3" />
+              المقترحين
+            </button>
           </div>
 
           <div className="flex gap-2">
@@ -753,19 +768,23 @@ const StudentsTable = ({
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="all">كل حالات المهتمين</SelectItem>
-              <SelectItem value="new">جديد</SelectItem>
-              <SelectItem value="contacted">تم التواصل</SelectItem>
-              <SelectItem value="no_response">لم يرد</SelectItem>
-              <SelectItem value="high_price">السعر مرتفع</SelectItem>
-              <SelectItem value="wants_online">يريد أونلاين</SelectItem>
-              <SelectItem value="future_course">الدورة القادمة</SelectItem>
-              <SelectItem value="far_location">المكان بعيد</SelectItem>
-              <SelectItem value="cancel_reg">يريد إلغاء التسجيل</SelectItem>
-              <SelectItem value="busy_morning">مشغول فترة صباحية</SelectItem>
-              <SelectItem value="busy_evening">مشغول فترة مسائية</SelectItem>
-              <SelectItem value="interested">مهتم</SelectItem>
+              {leadStatuses.map((ls) => (
+                <SelectItem key={ls.id} value={ls.value}>
+                  {ls.label}
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="text-xs text-gray-400 hover:text-blue-600 gap-1 h-9 rounded-lg"
+            onClick={() => setIsStatusManagerOpen(true)}
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+            إدارة الحالات
+          </Button>
 
           <Select
             value={filterAttendanceType}
@@ -945,7 +964,7 @@ const StudentsTable = ({
                       s.type,
                     )}
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="flex flex-col gap-1">
                     {s.attendanceType === "in_person" ? (
                       <Badge className="bg-blue-100 text-blue-700 border-blue-200">
                         وجاهي
@@ -956,6 +975,11 @@ const StudentsTable = ({
                       </Badge>
                     ) : (
                       <span className="text-gray-400 text-sm">-</span>
+                    )}
+                    {s.isBlocked && (
+                      <Badge className="bg-red-100 text-red-700 border-red-200 mt-1">
+                        <Lock className="w-3 h-3 ml-1" /> محتوى مغلق
+                      </Badge>
                     )}
                   </TableCell>
 
@@ -1088,115 +1112,18 @@ const StudentsTable = ({
                                   تحديث حالة الطلب
                                 </DropdownMenuSubTrigger>
                                 <DropdownMenuSubContent>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "new",
-                                      })
-                                    }
-                                  >
-                                    جديد
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "contacted",
-                                      })
-                                    }
-                                  >
-                                    تم التواصل
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "no_response",
-                                      })
-                                    }
-                                  >
-                                    لم يرد
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "high_price",
-                                      })
-                                    }
-                                  >
-                                    السعر مرتفع
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "wants_online",
-                                      })
-                                    }
-                                  >
-                                    يريد أونلاين
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "future_course",
-                                      })
-                                    }
-                                  >
-                                    الدورة القادمة
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "far_location",
-                                      })
-                                    }
-                                  >
-                                    المكان بعيد
-                                  </DropdownMenuItem>
-
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "busy_morning",
-                                      })
-                                    }
-                                  >
-                                    مشغول فترة صباحية
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "busy_evening",
-                                      })
-                                    }
-                                  >
-                                    مشغول فترة مسائية
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "cancel_reg",
-                                      })
-                                    }
-                                  >
-                                    يريد إلغاء التسجيل
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "focal_course",
-                                      })
-                                    }
-                                  >
-                                    دورة بؤرية
-                                  </DropdownMenuItem>
-                                  <DropdownMenuItem
-                                    onClick={() =>
-                                      handleUpdateEnrollment(s.id, {
-                                        status: "interested",
-                                      })
-                                    }
-                                  >
-                                    مهتم
-                                  </DropdownMenuItem>
+                                  {leadStatuses.map((ls) => (
+                                    <DropdownMenuItem
+                                      key={ls.id}
+                                      onClick={() =>
+                                        handleUpdateEnrollment(s.id, {
+                                          status: ls.value,
+                                        })
+                                      }
+                                    >
+                                      {ls.label}
+                                    </DropdownMenuItem>
+                                  ))}
                                 </DropdownMenuSubContent>
                               </DropdownMenuSub>
                             </>
@@ -1238,8 +1165,63 @@ const StudentsTable = ({
                                   </DropdownMenuItem>
                                 </DropdownMenuSubContent>
                               </DropdownMenuSub>
+
+                              {/* تحويل نوع الحضور */}
+                              <DropdownMenuItem
+                                className="gap-2 text-indigo-600 font-bold"
+                                onClick={() =>
+                                  handleUpdateEnrollment(s.id, {
+                                    attendanceType:
+                                      s.attendanceType === "online"
+                                        ? "in_person"
+                                        : "online",
+                                  })
+                                }
+                              >
+                                <Users className="w-4 h-4" />
+                                تحويل لـ{" "}
+                                {s.attendanceType === "online"
+                                  ? "وجاهي"
+                                  : "أونلاين"}
+                              </DropdownMenuItem>
+
+                              {/* حظر/إغلاق المحتوى */}
+                              <DropdownMenuItem
+                                className={`gap-2 font-bold ${
+                                  s.isBlocked
+                                    ? "text-emerald-600"
+                                    : "text-red-600"
+                                }`}
+                                onClick={() =>
+                                  handleUpdateEnrollment(s.id, {
+                                    isBlocked: !s.isBlocked,
+                                  })
+                                }
+                              >
+                                <Lock
+                                  className={`w-4 h-4 ${
+                                    s.isBlocked
+                                      ? "text-emerald-600"
+                                      : "text-red-600"
+                                  }`}
+                                />
+                                {s.isBlocked
+                                  ? "فتح محتويات الشعبة"
+                                  : "إغلاق محتويات الشعبة"}
+                              </DropdownMenuItem>
                             </>
                           )}
+
+                          {/* تعديل بيانات الطالب */}
+                          <DropdownMenuItem
+                            className="gap-2 text-amber-600 font-bold"
+                            onClick={() => {
+                              setEditingStudent(s);
+                              setIsEditDialogOpen(true);
+                            }}
+                          >
+                            <Edit className="w-4 h-4" /> تعديل بيانات الطالب
+                          </DropdownMenuItem>
 
                           <DropdownMenuItem
                             className="gap-2 text-blue-600"
@@ -1363,31 +1345,16 @@ const StudentsTable = ({
                             تحديث حالة الطلب
                           </DropdownMenuSubTrigger>
                           <DropdownMenuSubContent>
-                            {[
-                              { val: "new", label: "جديد" },
-                              { val: "contacted", label: "تم التواصل" },
-                              { val: "interested", label: "مهتم بالاشتراك" },
-                              { val: "no_response", label: "لم يرد" },
-                              { val: "high_price", label: "السعر مرتفع" },
-                              { val: "wants_online", label: "يريد أونلاين" },
-                              { val: "future_course", label: "الدورة القادمة" },
-                              { val: "far_location", label: "المكان بعيد" },
-                              {
-                                val: "cancel_reg",
-                                label: "يريد إلغاء التسجيل",
-                              },
-                              { val: "busy_morning", label: "مشغول صباحاً" },
-                              { val: "busy_evening", label: "مشغول مساءً" },
-                            ].map((item) => (
+                            {leadStatuses.map((ls) => (
                               <DropdownMenuItem
-                                key={item.val}
+                                key={ls.id}
                                 onClick={() =>
                                   handleUpdateEnrollment(s.id, {
-                                    status: item.val,
+                                    status: ls.value,
                                   })
                                 }
                               >
-                                {item.label}
+                                {ls.label}
                               </DropdownMenuItem>
                             ))}
                           </DropdownMenuSubContent>
@@ -1584,7 +1551,353 @@ const StudentsTable = ({
           }}
         />
       )}
+
+      {/* نافذة تعديل بيانات الطالب */}
+      {isEditDialogOpen && editingStudent && (
+        <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+          <DialogContent
+            className="max-w-2xl rounded-[32px] p-0 overflow-hidden border-none shadow-2xl"
+            dir="rtl"
+          >
+            <div className="bg-zinc-900 p-8 text-white relative overflow-hidden">
+              <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+              <h2 className="text-2xl font-black relative z-10 flex items-center gap-3">
+                <Edit className="w-7 h-7 text-amber-400" />
+                تعديل بيانات الطالب
+              </h2>
+              <p className="text-white/40 text-xs font-bold mt-2 uppercase tracking-widest">
+                {editingStudent.studentName}
+              </p>
+            </div>
+
+            <div className="p-8 bg-white max-h-[70vh] overflow-y-auto">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    اسم الطالب
+                  </Label>
+                  <Input
+                    value={editingStudent.studentName}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentName: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    البريد الإلكتروني
+                  </Label>
+                  <Input
+                    value={editingStudent.studentEmail || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentEmail: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    رقم الهاتف
+                  </Label>
+                  <Input
+                    value={editingStudent.studentPhone || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentPhone: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                    dir="ltr"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    التخصص الدراسي
+                  </Label>
+                  <Input
+                    value={editingStudent.studentMajor || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentMajor: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    الدولة
+                  </Label>
+                  <Input
+                    value={editingStudent.studentCountry || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentCountry: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    العمر
+                  </Label>
+                  <Input
+                    type="number"
+                    value={editingStudent.studentAge || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        studentAge: parseInt(e.target.value) || undefined,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold"
+                  />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                  <Label className="text-xs font-black text-zinc-400">
+                    ملاحظات
+                  </Label>
+                  <Textarea
+                    value={editingStudent.notes || ""}
+                    onChange={(e) =>
+                      setEditingStudent({
+                        ...editingStudent,
+                        notes: e.target.value,
+                      })
+                    }
+                    className="rounded-xl border-zinc-200 font-bold min-h-[100px]"
+                  />
+                </div>
+              </div>
+
+              <div className="flex justify-end gap-3 mt-8 pt-6 border-t border-zinc-100">
+                <Button
+                  variant="ghost"
+                  onClick={() => setIsEditDialogOpen(false)}
+                  className="rounded-xl font-bold px-6"
+                >
+                  إلغاء
+                </Button>
+                <Button
+                  onClick={() => {
+                    handleUpdateEnrollment(editingStudent.id, {
+                      studentName: editingStudent.studentName,
+                      studentEmail: editingStudent.studentEmail,
+                      studentPhone: editingStudent.studentPhone,
+                      studentAge: editingStudent.studentAge,
+                      studentMajor: editingStudent.studentMajor,
+                      studentCountry: editingStudent.studentCountry,
+                      notes: editingStudent.notes,
+                    });
+                    setIsEditDialogOpen(false);
+                  }}
+                  className="bg-zinc-900 text-white px-8 rounded-xl font-black shadow-lg hover:bg-zinc-800 hover:scale-105 transition-all"
+                >
+                  حفظ التعديلات
+                </Button>
+              </div>
+            </div>
+          </DialogContent>
+        </Dialog>
+      )}
+
+      {/* نافذة إدارة حالات المهتمين */}
+      <LeadStatusManager
+        open={isStatusManagerOpen}
+        onOpenChange={setIsStatusManagerOpen}
+        statuses={leadStatuses}
+        onUpdate={(newStatuses) => setLeadStatuses(newStatuses)}
+      />
     </div>
+  );
+};
+
+// مكون إدارة الحالات
+const LeadStatusManager = ({
+  open,
+  onOpenChange,
+  statuses,
+  onUpdate,
+}: {
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
+  statuses: LeadStatus[];
+  onUpdate: (statuses: LeadStatus[]) => void;
+}) => {
+  const [isAdding, setIsAdding] = useState(false);
+  const [newLabel, setNewLabel] = useState("");
+  const [newColor, setNewColor] = useState("blue");
+
+  const colors = [
+    { value: "blue", label: "أزرق" },
+    { value: "purple", label: "بنفسجي" },
+    { value: "amber", label: "كهرماني" },
+    { value: "red", label: "أحمر" },
+    { value: "zinc", label: "رمادي" },
+    { value: "cyan", label: "سماوي" },
+    { value: "indigo", label: "نيلي" },
+    { value: "orange", label: "برتقالي" },
+    { value: "rose", label: "وردي" },
+    { value: "emerald", label: "زمردي" },
+  ];
+
+  const handleAdd = async () => {
+    if (!newLabel.trim()) return;
+    try {
+      const value = newLabel.trim().toLowerCase().replace(/\s+/g, "_");
+      const res = await fetch("/api/lead-statuses", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ label: newLabel, value, color: newColor }),
+      });
+      if (res.ok) {
+        const added = await res.json();
+        onUpdate([...statuses, added]);
+        setNewLabel("");
+        setIsAdding(false);
+        Swal.fire("تم!", "تم إضافة الحالة بنجاح", "success");
+      } else {
+        const err = await res.json();
+        Swal.fire("خطأ", err.message || "فشل الإضافة", "error");
+      }
+    } catch (e) {
+      Swal.fire("خطأ", "حدث خطأ أثناء الاتصال", "error");
+    }
+  };
+
+  const handleDelete = async (id: string) => {
+    const result = await Swal.fire({
+      title: "هل أنت متأكد؟",
+      text: "سيتم حذف هذه الحالة نهائياً!",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonText: "نعم، احذف",
+      cancelButtonText: "إلغاء",
+      confirmButtonColor: "#ef4444",
+    });
+    if (!result.isConfirmed) return;
+
+    try {
+      const res = await fetch(`/api/lead-statuses/${id}`, { method: "DELETE" });
+      if (res.ok) {
+        onUpdate(statuses.filter((s) => s.id !== id));
+        Swal.fire("تم!", "تم حذف الحالة", "success");
+      }
+    } catch (e) {
+      Swal.fire("خطأ", "فشل الحذف", "error");
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md rounded-3xl" dir="rtl">
+        <DialogHeader>
+          <DialogTitle className="text-xl font-bold flex items-center gap-2">
+            <Settings2 className="w-6 h-6 text-blue-600" />
+            إدارة حالات المهتمين
+          </DialogTitle>
+        </DialogHeader>
+
+        <div className="space-y-4 py-4">
+          <div className="max-h-[300px] overflow-y-auto space-y-2 pr-1">
+            {statuses.map((ls) => (
+              <div
+                key={ls.id}
+                className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl border border-gray-100"
+              >
+                <div className="flex items-center gap-3">
+                  <div
+                    className={`w-3 h-3 rounded-full bg-${ls.color}-500 shadow-sm shadow-${ls.color}-200`}
+                  />
+                  <span className="font-bold text-gray-700">{ls.label}</span>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-8 w-8 text-red-500 hover:text-red-600 hover:bg-red-50 rounded-full"
+                  onClick={() => handleDelete(ls.id)}
+                >
+                  <Trash2 className="w-4 h-4" />
+                </Button>
+              </div>
+            ))}
+          </div>
+
+          {!isAdding ? (
+            <Button
+              className="w-full rounded-2xl gap-2 h-12 bg-blue-600 hover:bg-blue-700 text-white font-bold"
+              onClick={() => setIsAdding(true)}
+            >
+              <Plus className="w-5 h-5" />
+              إضافة حالة جديدة
+            </Button>
+          ) : (
+            <div className="p-4 bg-blue-50 rounded-2xl space-y-3 border border-blue-100 animate-in fade-in zoom-in duration-200">
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-blue-600 mr-1">
+                  اسم الحالة
+                </Label>
+                <Input
+                  placeholder="مثال: مهتم جداً"
+                  value={newLabel}
+                  onChange={(e) => setNewLabel(e.target.value)}
+                  className="rounded-xl border-blue-200 focus:ring-blue-500 h-10 font-bold"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs font-bold text-blue-600 mr-1">
+                  اللون
+                </Label>
+                <Select value={newColor} onValueChange={setNewColor}>
+                  <SelectTrigger className="rounded-xl border-blue-200 h-10 font-bold">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {colors.map((c) => (
+                      <SelectItem key={c.value} value={c.value}>
+                        <div className="flex items-center gap-2">
+                          <div
+                            className={`w-3 h-3 rounded-full bg-${c.value}-500`}
+                          />
+                          {c.label}
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="flex gap-2 pt-2">
+                <Button
+                  className="flex-1 rounded-xl font-bold bg-blue-600 h-10"
+                  onClick={handleAdd}
+                >
+                  حفظ
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="flex-1 rounded-xl font-bold h-10"
+                  onClick={() => setIsAdding(false)}
+                >
+                  إلغاء
+                </Button>
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
 

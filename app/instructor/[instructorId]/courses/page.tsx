@@ -32,6 +32,8 @@ const page = async ({
       endDate: courseSections.endDate,
       courseTitle: courses.title,
       courseStatus: courseSections.status,
+      isV2: courseSections.isV2,
+      courseId: courses.id,
     })
     .from(courseSections)
     .leftJoin(courses, eq(courseSections.courseId, courses.id))

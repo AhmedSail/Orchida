@@ -87,6 +87,7 @@ const Page = async ({ params }: { params: { userId: string } }) => {
     return (
       <HomeUser
         userName={session.user.name}
+        userId={session.user.id}
         enrollments={enrollments}
         meetings={upcomingMeetings}
       />

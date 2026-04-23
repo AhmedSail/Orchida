@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 
-import { eq, sql } from "drizzle-orm";
+import { eq } from "drizzle-orm";
 import { db } from "@/src/db";
-import { courseSections, courseLeads } from "@/src/db/schema";
+import { courseSections } from "@/src/db/schema";
 
 // ========== GET شعبة واحدة ==========
 export async function GET(
@@ -35,51 +35,27 @@ export async function PUT(
   try {
     const values = await req.json();
 
-    // 1. جلب الحالة الحالية للشعبة قبل التحديث
-    const currentSection = await db.query.courseSections.findFirst({
-      where: eq(courseSections.id, params.id),
-    });
+    const updateData: any = {};
+    if (values.instructorId !== undefined) updateData.instructorId = values.instructorId;
+    if (values.startDate !== undefined) updateData.startDate = values.startDate ? new Date(values.startDate) : null;
+    if (values.endDate !== undefined) updateData.endDate = values.endDate ? new Date(values.endDate) : null;
+    if (values.maxCapacity !== undefined) updateData.maxCapacity = values.maxCapacity;
+    if (values.location !== undefined) updateData.location = values.location;
+    if (values.courseType !== undefined) updateData.courseType = values.courseType;
+    if (values.status !== undefined) updateData.status = values.status;
+    if (values.notes !== undefined) updateData.notes = values.notes;
+    if (values.isHidden !== undefined) updateData.isHidden = values.isHidden;
+    if (values.isFree !== undefined) updateData.isFree = values.isFree;
+    if (values.isV2 !== undefined) updateData.isV2 = values.isV2;
 
-    const oldStatus = currentSection?.status;
-    const newStatus = values.status;
-
-    // 2. تحديث الشعبة
     const updated = await db
       .update(courseSections)
-      .set({
-        instructorId: values.instructorId,
-        startDate: values.startDate ? new Date(values.startDate) : null,
-        endDate: values.endDate ? new Date(values.endDate) : null,
-        maxCapacity: values.maxCapacity,
-        location: values.location,
-        courseType: values.courseType,
-        status: newStatus,
-        notes: values.notes,
-        isHidden: values.isHidden,
-      })
+      .set(updateData)
       .where(eq(courseSections.id, params.id))
       .returning();
 
     if (!updated.length) {
       return NextResponse.json({ error: "فشل تحديث الشعبة" }, { status: 400 });
-    }
-
-    // 3. التحقق مما إذا كانت الحالة تغيرت إلى "بدأت" أو "مغلقة" أو "مكتملة"
-    const isTerminatingStatus = (status: string) =>
-      ["in_progress", "closed", "completed"].includes(status);
-
-    if (
-      isTerminatingStatus(newStatus) &&
-      !isTerminatingStatus(oldStatus || "")
-    ) {
-      // زيادة عداد عدم الاستجابة لكل المهتمين بهذه الشعبة الذين لم يتم تحويلهم (ما زالوا في فئة المهتمين)
-      await db
-        .update(courseLeads)
-        .set({
-          nonResponseCount: sql`${courseLeads.nonResponseCount} + 1`,
-          isActive: false, // تعطيل الطلب لهذه الشعبة لأنه انتهى وقت التسجيل فيها
-        })
-        .where(eq(courseLeads.sectionId, params.id));
     }
 
     return NextResponse.json(updated[0]);

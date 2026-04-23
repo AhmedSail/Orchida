@@ -11,7 +11,11 @@ import { redirect } from "next/navigation";
 // ========== GET كل الشعب ==========
 export async function GET() {
   try {
-    const sections = await db.select().from(courseSections);
+    const sections = await db.query.courseSections.findMany({
+      with: {
+        instructor: true,
+      },
+    });
     return NextResponse.json(sections);
   } catch (error) {
     return NextResponse.json({ error: "فشل في جلب الشعب" }, { status: 500 });
