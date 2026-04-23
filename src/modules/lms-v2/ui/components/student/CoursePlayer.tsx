@@ -64,7 +64,9 @@ export default function CoursePlayer({
   studentInfo?: { name: string; id: string };
   userId?: string;
 }) {
-  const [activeTab, setActiveTab] = useState<"curriculum" | "meetings">("curriculum");
+  const [activeTab, setActiveTab] = useState<"curriculum" | "meetings">(
+    "curriculum",
+  );
   const [activeLessonId, setActiveLessonId] = useState<string | null>(
     lessons[0]?.id || null,
   );
@@ -76,7 +78,10 @@ export default function CoursePlayer({
   const activeLesson = lessons.find((l) => l.id === activeLessonId);
 
   // منطق التحقق من إتاحة الدرس (Locked vs Unlocked)
-  const isLessonLocked = (lesson: any, currentCompletedIds: string[] = completedIds) => {
+  const isLessonLocked = (
+    lesson: any,
+    currentCompletedIds: string[] = completedIds,
+  ) => {
     // 🛡️ في وضع المعاينة (Preview): نفتح فقط الدرس الأول ونقفل الباقي
     if (isPreview) {
       return lesson.order !== 1;
@@ -88,9 +93,10 @@ export default function CoursePlayer({
     // 1. الشعبة رقم 0 (أونلاين فردي - فتح تلقائي عند الإكمال)
     if (sectionNumber === 0) {
       // التأكد من إكمال الدرس السابق
-      const prevLesson = lessons.find(l => l.order === lesson.order - 1);
-      const isPrevCompleted = prevLesson && currentCompletedIds.includes(prevLesson.id);
-      
+      const prevLesson = lessons.find((l) => l.order === lesson.order - 1);
+      const isPrevCompleted =
+        prevLesson && currentCompletedIds.includes(prevLesson.id);
+
       if (isPrevCompleted) return false;
 
       // أو إذا قام المنسق بتفعيله يدوياً (كخيار إضافي)
@@ -98,8 +104,8 @@ export default function CoursePlayer({
         (a) => a.lessonId === lesson.id,
       );
       return !availability?.isEnabled;
-    } 
-    
+    }
+
     // 2. الشعب الأخرى (وجاهي أو مدمج - فتح يدوي من المدرب فقط)
     // المدرب يجب أن يفتح كل لقاء يدوياً عبر "إدارة الإتاحة".
     const availability = sectionAvailability.find(
@@ -121,7 +127,7 @@ export default function CoursePlayer({
       const nextLesson = lessons.find(
         (l) => l.order === (activeLesson?.order || 0) + 1,
       );
-      
+
       // نمرر القائمة الجديدة لضمان الفحص الصحيح في نفس اللحظة
       if (nextLesson && !isLessonLocked(nextLesson, newCompletedIds)) {
         setActiveLessonId(nextLesson.id);
@@ -187,8 +193,8 @@ export default function CoursePlayer({
             <button
               onClick={() => setActiveTab("curriculum")}
               className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all ${
-                activeTab === "curriculum" 
-                  ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                activeTab === "curriculum"
+                  ? "bg-primary text-white shadow-lg shadow-primary/20"
                   : "bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
               }`}
             >
@@ -199,8 +205,8 @@ export default function CoursePlayer({
               <button
                 onClick={() => setActiveTab("meetings")}
                 className={`flex-1 py-2 rounded-xl text-xs font-black flex items-center justify-center gap-2 transition-all ${
-                  activeTab === "meetings" 
-                    ? "bg-primary text-white shadow-lg shadow-primary/20" 
+                  activeTab === "meetings"
+                    ? "bg-primary text-white shadow-lg shadow-primary/20"
                     : "bg-zinc-50 text-zinc-500 hover:bg-zinc-100"
                 }`}
               >
@@ -211,94 +217,94 @@ export default function CoursePlayer({
           </div>
 
           <div className="overflow-y-auto h-[calc(100%-80px)] p-4 space-y-2">
-            {activeTab === "curriculum" ? (
-              lessons
-              .sort((a, b) => a.order - b.order)
-              .map((lesson) => {
-                const isLocked = isLessonLocked(lesson);
-                const isCompleted = completedIds.includes(lesson.id);
-                const isActive = activeLessonId === lesson.id;
+            {activeTab === "curriculum"
+              ? lessons
+                  .sort((a, b) => a.order - b.order)
+                  .map((lesson) => {
+                    const isLocked = isLessonLocked(lesson);
+                    const isCompleted = completedIds.includes(lesson.id);
+                    const isActive = activeLessonId === lesson.id;
 
-                return (
-                  <button
-                    key={lesson.id}
-                    disabled={isLocked}
-                    onClick={() => {
-                      setActiveLessonId(lesson.id);
-                      if (window.innerWidth < 1024) setIsSidebarOpen(false);
-                    }}
-                    className={`w-full flex items-start gap-4 p-4 rounded-2xl transition-all text-right group ${
-                      isActive
-                        ? "bg-primary/5 border border-primary/20"
-                        : "hover:bg-zinc-50 border border-transparent"
-                    } ${isLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
-                  >
-                    <div
-                      className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
-                        isCompleted
-                          ? "bg-emerald-500 text-white"
-                          : isActive
-                            ? "bg-primary text-white"
-                            : "bg-zinc-100 text-zinc-400"
-                      }`}
-                    >
-                      {isLocked ? (
-                        <Lock className="w-4 h-4" />
-                      ) : isCompleted ? (
-                        <CheckCircle2 className="w-5 h-5" />
-                      ) : (
-                        <span>{lesson.order}</span>
-                      )}
-                    </div>
-                    <div className="flex-1 overflow-hidden">
-                      <p
-                        className={`text-sm font-black transition-colors ${isActive ? "text-primary" : "text-zinc-700"}`}
+                    return (
+                      <button
+                        key={lesson.id}
+                        disabled={isLocked}
+                        onClick={() => {
+                          setActiveLessonId(lesson.id);
+                          if (window.innerWidth < 1024) setIsSidebarOpen(false);
+                        }}
+                        className={`w-full flex items-start gap-4 p-4 rounded-2xl transition-all text-right group ${
+                          isActive
+                            ? "bg-primary/5 border border-primary/20"
+                            : "hover:bg-zinc-50 border border-transparent"
+                        } ${isLocked ? "opacity-50 cursor-not-allowed" : "cursor-pointer"}`}
                       >
-                        {lesson.mainTitle}
-                      </p>
-                      {lesson.subTitle && (
-                        <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
-                          {lesson.subTitle}
-                        </p>
-                      )}
+                        <div
+                          className={`shrink-0 w-8 h-8 rounded-xl flex items-center justify-center transition-all ${
+                            isCompleted
+                              ? "bg-emerald-500 text-white"
+                              : isActive
+                                ? "bg-primary text-white"
+                                : "bg-zinc-100 text-zinc-400"
+                          }`}
+                        >
+                          {isLocked ? (
+                            <Lock className="w-4 h-4" />
+                          ) : isCompleted ? (
+                            <CheckCircle2 className="w-5 h-5" />
+                          ) : (
+                            <span>{lesson.order}</span>
+                          )}
+                        </div>
+                        <div className="flex-1 overflow-hidden">
+                          <p
+                            className={`text-sm font-black transition-colors ${isActive ? "text-primary" : "text-zinc-700"}`}
+                          >
+                            {lesson.mainTitle}
+                          </p>
+                          {lesson.subTitle && (
+                            <p className="text-[10px] font-bold text-zinc-400 mt-0.5">
+                              {lesson.subTitle}
+                            </p>
+                          )}
+                        </div>
+                      </button>
+                    );
+                  })
+              : meetings?.map((meeting, index) => (
+                  <div
+                    key={meeting.id}
+                    className="w-full flex flex-col gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 text-right"
+                  >
+                    <div className="flex items-center justify-between">
+                      <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-1 rounded-md">
+                        لقاء مباشر #{meeting.meetingNumber}
+                      </span>
+                      <span className="text-[10px] font-bold text-zinc-400">
+                        {new Date(meeting.date).toLocaleDateString("ar-SA")}
+                      </span>
                     </div>
-                  </button>
-                );
-              })
-            ) : (
-              meetings?.map((meeting, index) => (
-                <div
-                  key={meeting.id}
-                  className="w-full flex flex-col gap-3 p-4 rounded-2xl bg-zinc-50 border border-zinc-100 text-right"
-                >
-                  <div className="flex items-center justify-between">
-                    <span className="bg-primary/10 text-primary text-[10px] font-black px-2 py-1 rounded-md">
-                      لقاء مباشر #{meeting.meetingNumber}
-                    </span>
-                    <span className="text-[10px] font-bold text-zinc-400">
-                      {new Date(meeting.date).toLocaleDateString("ar-SA")}
-                    </span>
+                    <h4 className="font-black text-zinc-800 text-sm">
+                      {meeting.location?.includes("http")
+                        ? "رابط اللقاء المباشر (Zoom/Meet)"
+                        : meeting.location || "لقاء وجاهي"}
+                    </h4>
+                    <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
+                      <Clock className="w-3 h-3" />
+                      {meeting.startTime} - {meeting.endTime}
+                    </div>
+                    {meeting.location?.includes("http") && (
+                      <a
+                        href={meeting.location}
+                        target="_blank"
+                        className="mt-2 w-full py-2 bg-zinc-900 text-white rounded-xl text-center text-xs font-black hover:bg-black transition-all flex items-center justify-center gap-2"
+                      >
+                        <Video className="w-4 h-4" />
+                        انضم الآن
+                      </a>
+                    )}
                   </div>
-                  <h4 className="font-black text-zinc-800 text-sm">
-                    {meeting.location?.includes("http") ? "رابط اللقاء المباشر (Zoom/Meet)" : meeting.location || "لقاء وجاهي"}
-                  </h4>
-                  <div className="flex items-center gap-2 text-[10px] font-bold text-zinc-500">
-                    <Clock className="w-3 h-3" />
-                    {meeting.startTime} - {meeting.endTime}
-                  </div>
-                  {meeting.location?.includes("http") && (
-                    <a
-                      href={meeting.location}
-                      target="_blank"
-                      className="mt-2 w-full py-2 bg-zinc-900 text-white rounded-xl text-center text-xs font-black hover:bg-black transition-all flex items-center justify-center gap-2"
-                    >
-                      <Video className="w-4 h-4" />
-                      انضم الآن
-                    </a>
-                  )}
-                </div>
-              ))
-            )}
+                ))}
           </div>
         </aside>
 
@@ -345,17 +351,17 @@ export default function CoursePlayer({
                       className="animate-in fade-in slide-in-from-bottom-4 duration-500"
                     >
                       {field.fieldType === "heading" && (
-                        <h2 className="text-3xl font-black text-zinc-900 border-r-4 border-primary pr-4">
+                        <h2 className="text-3xl font-black text-primary border-r-4 border-primary pr-4 py-1">
                           {field.content}
                         </h2>
                       )}
                       {field.fieldType === "subheading" && (
-                        <h3 className="text-xl font-bold text-zinc-800 bg-zinc-100/50 px-4 py-2 rounded-lg inline-block">
+                        <h3 className="text-lg font-bold text-sky-700 bg-sky-50 border border-sky-100 px-4 py-2 rounded-xl inline-block">
                           {field.content}
                         </h3>
                       )}
                       {field.fieldType === "text" && (
-                        <div className="prose prose-zinc max-w-none text-zinc-700 leading-relaxed text-lg whitespace-pre-wrap">
+                        <div className="text-zinc-700 leading-relaxed text-base whitespace-pre-wrap bg-zinc-50/80 border border-zinc-100 rounded-2xl px-5 py-4 font-medium">
                           {field.content}
                         </div>
                       )}
@@ -369,14 +375,23 @@ export default function CoursePlayer({
                                 : (() => {
                                     const url = field.content;
                                     // youtu.be/VIDEO_ID
-                                    const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
-                                    if (shortMatch) return `https://www.youtube-nocookie.com/embed/${shortMatch[1]}`;
+                                    const shortMatch = url.match(
+                                      /youtu\.be\/([a-zA-Z0-9_-]{11})/,
+                                    );
+                                    if (shortMatch)
+                                      return `https://www.youtube-nocookie.com/embed/${shortMatch[1]}`;
                                     // youtube.com/watch?v=VIDEO_ID
-                                    const watchMatch = url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
-                                    if (watchMatch) return `https://www.youtube-nocookie.com/embed/${watchMatch[1]}`;
+                                    const watchMatch = url.match(
+                                      /[?&]v=([a-zA-Z0-9_-]{11})/,
+                                    );
+                                    if (watchMatch)
+                                      return `https://www.youtube-nocookie.com/embed/${watchMatch[1]}`;
                                     // youtube.com/shorts/VIDEO_ID
-                                    const shortsMatch = url.match(/shorts\/([a-zA-Z0-9_-]{11})/);
-                                    if (shortsMatch) return `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}`;
+                                    const shortsMatch = url.match(
+                                      /shorts\/([a-zA-Z0-9_-]{11})/,
+                                    );
+                                    if (shortsMatch)
+                                      return `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}`;
                                     // already an embed link or other
                                     return url;
                                   })()
@@ -537,7 +552,8 @@ export default function CoursePlayer({
                 ) : (
                   <div className="bg-primary/10 text-primary px-8 py-4 rounded-2xl font-bold flex items-center gap-3 border border-primary/20">
                     <Info className="w-5 h-5" />
-                    أنت الآن في وضع المعاينة، سيتم فتح باقي المحتوى عند تأكيد تسجيلك.
+                    أنت الآن في وضع المعاينة، سيتم فتح باقي المحتوى عند تأكيد
+                    تسجيلك.
                   </div>
                 )}
               </div>
