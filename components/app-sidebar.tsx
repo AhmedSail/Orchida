@@ -84,9 +84,14 @@ export function AppSidebar({ user }: { user: User }) {
       url: `/admin/${user.id}/employment`,
     },
     {
-      title: "إدارة المهتمين (Leads)",
+      title: "المهتمين (Leads)",
       icon: Users,
       url: `/admin/${user.id}/leads`,
+    },
+    {
+      title: "طابور الالتحاق (Queue)",
+      icon: Layers,
+      url: `/admin/${user.id}/applications`,
     },
     {
       title: "قوالب الرسائل (SMS)",

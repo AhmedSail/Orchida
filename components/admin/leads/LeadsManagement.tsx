@@ -77,6 +77,8 @@ const LeadsManagement = () => {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterCourseId, setFilterCourseId] = useState("all");
   const [filterAttendance, setFilterAttendance] = useState("all");
+  const [allSections, setAllSections] = useState<any[]>([]);
+  const [convertingId, setConvertingId] = useState<string | null>(null);
 
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 10;
@@ -202,9 +204,18 @@ const LeadsManagement = () => {
   const fetchLeads = async () => {
     try {
       setLoading(true);
-      const res = await fetch("/api/course-leads");
-      const data = await res.json();
+      const [leadsRes, sectionsRes] = await Promise.all([
+        fetch("/api/course-leads"),
+        fetch("/api/courses/courseSections"),
+      ]);
+      
+      const data = await leadsRes.json();
       setLeads(data);
+
+      if (sectionsRes.ok) {
+        const sectionsData = await sectionsRes.json();
+        setAllSections(sectionsData);
+      }
 
       const courseId = searchParams.get("courseId");
       if (courseId) {
@@ -250,20 +261,36 @@ const LeadsManagement = () => {
   };
 
   const convertToEnrollment = async (lead: Lead) => {
-    const result = await MySwal.fire({
-      title: "تأكيد التحويل",
-      text: `هل أنت متأكد من تحويل الطالب ${lead.studentName} إلى التسجيل النهائي؟`,
-      icon: "question",
+    // العثور على الشعب المتاحة لهذا الكورس
+    const courseSections = allSections.filter(s => s.courseId === lead.courseId && s.status !== 'cancelled' && s.status !== 'closed');
+
+    if (courseSections.length === 0) {
+      MySwal.fire("تنبيه", "لا يوجد شعب متاحة حالياً لهذا الكورس. يرجى إنشاء شعبة أولاً.", "warning");
+      return;
+    }
+
+    const { value: sectionId } = await MySwal.fire({
+      title: "اختيار الشعبة",
+      text: `يرجى اختيار الشعبة التي تود تسجيل الطالب ${lead.studentName} فيها:`,
+      input: "select",
+      inputOptions: Object.fromEntries(courseSections.map(s => [s.id, `شعبة رقم ${s.sectionNumber} - ${s.instructor?.name || 'بدون مدرب'}`])),
+      inputPlaceholder: "اختر الشعبة...",
       showCancelButton: true,
-      confirmButtonText: "نعم، قم بالتحويل",
+      confirmButtonText: "تحويل الطالب",
       cancelButtonText: "إلغاء",
       confirmButtonColor: "#10b981",
+      inputValidator: (value) => {
+        if (!value) return "يجب اختيار شعبة لإتمام التحويل!";
+      }
     });
 
-    if (result.isConfirmed) {
+    if (sectionId) {
       try {
+        setConvertingId(lead.id);
         const res = await fetch(`/api/course-leads/${lead.id}`, {
           method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ targetSectionId: sectionId }),
         });
         if (res.ok) {
           fetchLeads();
@@ -316,8 +343,8 @@ const LeadsManagement = () => {
     switch (status) {
       case "new":
         return (
-          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 rounded-full">
-            <Clock className="w-3 h-3 ml-1" /> جديد
+          <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100 border-none px-3 py-1 rounded-full text-xs">
+            <Clock className="w-3 h-3 ml-1" /> طلب جديد
           </Badge>
         );
       case "contacted":
@@ -328,8 +355,8 @@ const LeadsManagement = () => {
         );
       case "interested":
         return (
-          <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-none px-3 py-1 rounded-full">
-            <CheckCircle2 className="w-3 h-3 ml-1" /> مهتم
+          <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100 border-none px-3 py-1 rounded-full text-xs">
+            <CheckCircle2 className="w-3 h-3 ml-1" /> بانتظار التشعيب
           </Badge>
         );
       case "registered":
@@ -361,7 +388,7 @@ const LeadsManagement = () => {
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-black text-zinc-900 dark:text-white">
-            إدارة المهتمين (Leads)
+            إدارة طلبات الالتحاق
           </h1>
           <p className="text-zinc-500 dark:text-zinc-400 mt-1">
             تابع طلبات التسجيل السريع وقم بتحويلها إلى تسجيلات نهائية

@@ -14,7 +14,11 @@ export const metadata: Metadata = {
 };
 
 const page = async () => {
-  // ✅ جلب الكورسات مع آخر شعبة فقط لكل كورس حسب تاريخ الإنشاء
+  // ✅ جلب إعدادات الشركة لمعرفة إذا كان نظام الطابور مفعلاً
+  const companyData = await db.query.companies.findFirst();
+  const useQueueSystem = companyData?.useQueueSystem ?? false;
+
+  // ✅ جلب الكورسات مع آخر شعبة (اختياري) لكل كورس
   const rows = await db
     .select({
       id: courses.id,
@@ -25,6 +29,8 @@ const page = async () => {
       price: courses.price,
       currency: courses.currency,
       duration: courses.duration,
+      isActive: courses.isActive,
+      sectionIsFree: courseSections.isFree,
       createdAt: courses.createdAt,
       updatedAt: courses.updatedAt,
       approvedAt: courses.approvedAt,
@@ -37,53 +43,45 @@ const page = async () => {
     })
     .from(courses)
     .leftJoin(courseSections, eq(courses.id, courseSections.courseId))
-    .where(eq(courseSections.isHidden, false))
-    .groupBy(
-      courses.id,
-      courses.title,
-      courses.description,
-      courses.imageUrl,
-      courses.hours,
-      courses.price,
-      courses.currency,
-      courses.duration,
-      courses.createdAt,
-      courses.updatedAt,
-      courses.approvedAt,
-      courseSections.id,
-      courseSections.sectionNumber,
-      courseSections.startDate,
-      courseSections.endDate,
-      courseSections.status,
-      courseSections.createdAt,
-    )
+    .where(eq(courses.isActive, true)) // فقط الكورسات النشطة
     .orderBy(desc(courseSections.createdAt));
 
-  // ✅ تحويل النتيجة إلى UserCourse[]
-  const allCourses: UserCourse[] = rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    imageUrl: row.imageUrl,
-    hours: row.hours,
-    price: row.price,
-    currency: row.currency,
-    duration: row.duration,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    approvedAt: row.approvedAt,
-    section: row.sectionId
-      ? {
-          id: row.sectionId,
-          number: row.sectionNumber ?? 0,
-          startDate: row.startDate
-            ? row.startDate.toISOString().split("T")[0]
-            : "",
-          endDate: row.endDate ? row.endDate.toISOString().split("T")[0] : "",
-          status: row.status,
-        }
-      : null,
-  }));
+  // ✅ تحويل النتيجة إلى UserCourse[] مع ضمان تفرد الكورس
+  const courseMap = new Map<string, UserCourse>();
+  
+  rows.forEach((row) => {
+    if (!courseMap.has(row.id)) {
+      courseMap.set(row.id, {
+        id: row.id,
+        title: row.title,
+        description: row.description,
+        imageUrl: row.imageUrl,
+        hours: row.hours,
+        price: row.price,
+        currency: row.currency,
+        duration: row.duration,
+        isActive: row.isActive,
+        isFree: row.sectionIsFree ?? false,
+        createdAt: row.createdAt,
+        updatedAt: row.updatedAt,
+        approvedAt: row.approvedAt,
+        section: row.sectionId
+          ? {
+              id: row.sectionId,
+              number: row.sectionNumber ?? 0,
+              startDate: row.startDate
+                ? row.startDate.toISOString().split("T")[0]
+                : "",
+              endDate: row.endDate ? row.endDate.toISOString().split("T")[0] : "",
+              status: row.status,
+              isFree: row.sectionIsFree ?? false,
+            }
+          : null,
+      });
+    }
+  });
+
+  const allCourses = Array.from(courseMap.values());
 
   // ✅ جلب أعمال الطلاب
   const studentStories = await db
@@ -104,11 +102,8 @@ const page = async () => {
     .where(eq(studentWorks.status, "approved"))
     .limit(20);
 
-  // ✅ فلترة الكورسات لتكون فريدة
-  const uniqueCourses = allCourses.filter(
-    (course, index, self) =>
-      index === self.findIndex((c) => c.id === course.id),
-  );
+  // ✅ فلترة الكورسات لتكون فريدة (للاستخدام في التبويبات)
+  const uniqueCourses = allCourses;
 
   return (
     <div>
@@ -116,6 +111,7 @@ const page = async () => {
         allCourses={allCourses}
         studentStories={studentStories}
         uniqueCourses={uniqueCourses}
+        useQueueSystem={useQueueSystem}
       />
     </div>
   );

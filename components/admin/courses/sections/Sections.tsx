@@ -44,6 +44,7 @@ type Section = {
   interestedCount: number;
   registeredCount: number;
   isHidden: boolean;
+  isV2: boolean;
 };
 
 type Courses = {

@@ -22,7 +22,7 @@ import {
   MoreVertical,
   CheckCircle2,
   XCircle,
-  Users2,
+  Layout,
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
@@ -43,6 +43,9 @@ interface Props {
   role: string;
   userId: string;
 }
+
+import { toggleCourseV2Action } from "@/app/actions/lms-v2";
+import { toast } from "sonner";
 
 const OurCourses = ({ courses, role, userId }: Props) => {
   const [loading, setLoading] = useState(false);
@@ -76,7 +79,7 @@ const OurCourses = ({ courses, role, userId }: Props) => {
   const indexOfFirstCourse = indexOfLastCourse - coursesPerPage;
   const currentCourses = filteredCourses.slice(
     indexOfFirstCourse,
-    indexOfLastCourse
+    indexOfLastCourse,
   );
 
   const totalPages = Math.ceil(filteredCourses.length / coursesPerPage);
@@ -193,10 +196,13 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                 التفاصيل
               </TableHead>
               <TableHead className="px-6 py-5 font-bold text-zinc-600 text-center">
-                المهتمين
+                طلبات الالتحاق
               </TableHead>
               <TableHead className="px-6 py-5 font-bold text-zinc-600 text-center">
                 الحالة
+              </TableHead>
+              <TableHead className="px-6 py-5 font-bold text-zinc-600 text-center">
+                LMS V2
               </TableHead>
               <TableHead className="px-6 py-5 font-bold text-zinc-600 text-center">
                 إجراءات
@@ -233,9 +239,16 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                           )}
                         </div>
                         <div className="flex flex-col">
-                          <span className="font-bold text-zinc-900 dark:text-white group-hover:text-primary transition-colors">
-                            {course.title}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-bold text-zinc-900 dark:text-white group-hover:text-primary transition-colors">
+                              {course.title}
+                            </span>
+                            {course.isV2 && (
+                              <Badge className="bg-zinc-900 text-white text-[9px] px-1.5 py-0 rounded-md font-black">
+                                V2
+                              </Badge>
+                            )}
+                          </div>
                           <span className="text-xs text-zinc-500 mt-1">
                             {course.sections.length} شعب سابقة
                           </span>
@@ -254,21 +267,21 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                           {course.currency === "ILS"
                             ? "₪"
                             : course.currency === "USD"
-                            ? "$"
-                            : "JOD"}
+                              ? "$"
+                              : "JOD"}
                         </div>
                       </div>
                     </TableCell>
                     <TableCell className="px-6 py-5 text-center">
                       <Link
-                        href={`/admin/${userId}/leads?courseId=${course.id}`}
+                        href={`/admin/${userId}/applications?courseId=${course.id}`}
                       >
-                        <div className="inline-flex flex-col items-center p-2 rounded-2xl bg-amber-50 dark:bg-amber-950/20 border border-amber-100 dark:border-amber-900/30 hover:scale-105 transition-transform cursor-pointer">
-                          <span className="text-lg font-black text-amber-600 block leading-none">
-                            {course.leadsCount || 0}
+                        <div className="inline-flex flex-col items-center p-2 w-24 rounded-2xl bg-blue-50 dark:bg-blue-950/20 border border-blue-100 dark:border-blue-900/30 hover:scale-105 transition-transform cursor-pointer mx-auto">
+                          <span className="text-lg font-black text-blue-600 block leading-none">
+                            {course.applicationsCount || 0}
                           </span>
-                          <span className="text-[10px] text-amber-500 font-bold uppercase mt-1">
-                            مهتم
+                          <span className="text-[10px] text-blue-500 font-bold uppercase mt-1">
+                            طلب التحاق
                           </span>
                         </div>
                       </Link>
@@ -284,6 +297,37 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                         </Badge>
                       )}
                     </TableCell>
+                    <TableCell className="px-6 py-5 text-center">
+                      <Button
+                        size="sm"
+                        variant={course.isV2 ? "default" : "outline"}
+                        className={`rounded-xl h-9 px-4 font-black text-[10px] transition-all active:scale-95 ${
+                          course.isV2
+                            ? "bg-zinc-900 text-white shadow-lg shadow-zinc-900/20"
+                            : "border-2 border-zinc-200 text-zinc-400"
+                        }`}
+                        onClick={async () => {
+                          const res = await toggleCourseV2Action(
+                            course.id,
+                            !course.isV2,
+                          );
+                          if (res.success) {
+                            setAllCourses((prev) =>
+                              prev.map((c) =>
+                                c.id === course.id
+                                  ? { ...c, isV2: !c.isV2 }
+                                  : c,
+                              ),
+                            );
+                            toast.success(
+                              course.isV2 ? "تم تعطيل V2" : "تم تفعيل V2 بنجاح",
+                            );
+                          }
+                        }}
+                      >
+                        {course.isV2 ? "تعطيل V2" : "تفعيل V2"}
+                      </Button>
+                    </TableCell>
                     <TableCell className="px-6 py-5">
                       <div className="flex items-center justify-center gap-2">
                         <Button
@@ -294,6 +338,18 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
+                        <Link
+                          href={`/admin/${userId}/courses/curriculum/${course.id}`}
+                        >
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl gap-2 font-bold px-4 border-primary text-primary hover:bg-primary hover:text-white transition-all"
+                          >
+                            <Layout className="w-4 h-4" />
+                            المنهج الثابت
+                          </Button>
+                        </Link>
                         <Link
                           href={`/${role}/${userId}/courses/newSection/${course.id}`}
                         >
@@ -376,8 +432,8 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                 <Badge className="bg-white/90 backdrop-blur-md text-zinc-900 border-none shadow-sm rounded-xl py-1 px-3">
                   {course.hours} ساعة
                 </Badge>
-                <Badge className="bg-amber-100/90 backdrop-blur-md text-amber-700 border-none shadow-sm rounded-xl py-1 px-3">
-                  {course.leadsCount || 0} مهتم
+                <Badge className="bg-blue-100/90 backdrop-blur-md text-blue-700 border-none shadow-sm rounded-xl py-1 px-3">
+                  {course.applicationsCount || 0} طلب
                 </Badge>
               </div>
             </div>
@@ -392,8 +448,8 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                   {course.currency === "ILS"
                     ? "₪"
                     : course.currency === "USD"
-                    ? "$"
-                    : "JOD"}
+                      ? "$"
+                      : "JOD"}
                 </div>
               </div>
 
@@ -429,8 +485,19 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                   التفاصيل
                 </Button>
                 <Link
-                  href={`/${role}/${userId}/courses/newSection/${course.id}`}
+                  href={`/admin/${userId}/courses/curriculum/${course.id}`}
                   className="w-full"
+                >
+                  <Button
+                    variant="outline"
+                    className="w-full rounded-2xl h-11 font-bold border-primary text-primary"
+                  >
+                    المنهج الثابت
+                  </Button>
+                </Link>
+                <Link
+                  href={`/${role}/${userId}/courses/newSection/${course.id}`}
+                  className="w-full col-span-2"
                 >
                   <Button
                     disabled={!canOpenNewSection(course)}

@@ -1,5 +1,5 @@
 import { db } from "@/src";
-import { trendingProducts, courses, courseEnrollments, courseLeads, courseSections } from "@/src/db/schema";
+import { trendingProducts, courses, courseEnrollments, courseApplications, courseSections, users } from "@/src/db/schema";
 import { NextResponse } from "next/server";
 import { eq, desc, or, like, inArray } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
@@ -47,7 +47,6 @@ export async function POST(req: Request) {
     const product = newProduct[0];
 
     // ✅ إرسال إشعارات بالبريد الإلكتروني للمهتمين بدورات التجارة
-    // نستخدم وظيفة غير منتظرة (background) لعدم تأخير استجابة الـ API
     (async () => {
       try {
         // 1. العثور على الكورسات المتعلقة بالتجارة
@@ -75,17 +74,18 @@ export async function POST(req: Request) {
           .innerJoin(courseSections, eq(courseEnrollments.sectionId, courseSections.id))
           .where(inArray(courseSections.courseId, courseIds));
 
-        // 3. جلب إيميلات المهتمين (Leads) بهذه الكورسات
-        const interestedLeads = await db
-          .select({ email: courseLeads.studentEmail })
-          .from(courseLeads)
-          .where(inArray(courseLeads.courseId, courseIds));
+        // 3. جلب إيميلات المهتمين (Applications) بهذه الكورسات - النظام الجديد
+        const interestedApps = await db
+          .select({ email: users.email })
+          .from(courseApplications)
+          .innerJoin(users, eq(courseApplications.userId, users.id))
+          .where(inArray(courseApplications.courseId, courseIds));
 
         // 4. دمج وتصفية الإيميلات المتكررة
         const allEmails = Array.from(
           new Set([
             ...enrolledStudents.map((s) => s.email),
-            ...interestedLeads.filter(l => l.email).map((l) => l.email!)
+            ...interestedApps.filter(a => a.email).map((a) => a.email!)
           ])
         );
 
@@ -107,7 +107,6 @@ export async function POST(req: Request) {
           </div>
         `;
 
-        // إرسال الإيميلات (يفضل استخدام نظام Batch إذا كان العدد كبير جداً، ولكن هنا سنرسلهم تباعاً أو عبر Brevo)
         for (const email of allEmails) {
           await sendEmail({
             to: email,

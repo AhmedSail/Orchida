@@ -7,6 +7,7 @@ import { eq, and } from "drizzle-orm";
 
 export async function GET() {
   try {
+    // 1. جلب جميع المهتمين
     const leads = await db.query.courseLeads.findMany({
       with: {
         course: true,
@@ -15,7 +16,29 @@ export async function GET() {
       orderBy: (leads, { desc }) => [desc(leads.createdAt)],
     });
 
-    return NextResponse.json(leads);
+    // 2. جلب جميع التسجيلات الفعلية لنفس الكورسات
+    const enrollments = await db.query.courseEnrollments.findMany({
+      with: {
+        section: {
+          columns: {
+            courseId: true,
+          },
+        },
+      },
+    });
+
+    // 3. فلترة المهتمين: استبعاد من سجلوا بالفعل في نفس الكورس
+    const filteredLeads = leads.filter((lead) => {
+      const isEnrolledInSameCourse = enrollments.some(
+        (enroll) =>
+          enroll.section?.courseId === lead.courseId &&
+          (enroll.studentEmail === lead.studentEmail ||
+            enroll.studentPhone === lead.studentPhone),
+      );
+      return !isEnrolledInSameCourse;
+    });
+
+    return NextResponse.json(filteredLeads);
   } catch (error: any) {
     console.error("Error fetching course leads:", error);
     return NextResponse.json(
@@ -118,6 +141,15 @@ export async function POST(req: Request) {
         userId: userId,
         password: hashedPassword,
       });
+    } else {
+      // تحديث بيانات المستخدم الحالي (رقم الهاتف والواتساب)
+      await db.update(users).set({
+        phone: body.studentPhone || undefined,
+        whatsapp: body.whatsapp || undefined,
+        age: body.studentAge || undefined,
+        major: body.studentMajor || undefined,
+        location: body.studentCountry || undefined,
+      }).where(eq(users.id, userId));
     }
 
     // 4. تصفير الـ nonResponseCount لأي طلبات سابقة بنفس الإيميل أو الهاتف

@@ -14,6 +14,9 @@ export default async function proxy(req: NextRequest) {
   // جلب الجلسة (Session) باستخدام BetterAuth
   const session = await auth.api.getSession({ headers: req.headers });
   const role = session?.user?.role;
+  const userId = session?.user?.id;
+
+  console.log(`[Proxy] Path: ${pathname}, Role: ${role}, ID: ${userId}, Session: ${!!session}`);
 
   // تعريف المسارات المحمية لكل دور
   const rolePaths: Record<string, string> = {

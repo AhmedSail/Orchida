@@ -4,7 +4,7 @@ import {
   courses,
   courseSections,
   courseEnrollments,
-  courseLeads,
+  courseApplications,
 } from "@/src/db/schema";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
@@ -43,9 +43,7 @@ export default async function AdminHomePage() {
     .from(courses)
     .where(eq(courses.isActive, true));
 
-  // 2. Active Sections (in_progress or closed) - as per user request
-  // "0 Active Sections, it should be the sections that are open and sections in progress. I don't want [open?] I want in_progress, closed"
-  // Re-reading user request: "tkon eli in_progress , cloesed"
+  // 2. Active Sections (in_progress or closed)
   const activeSectionsCount = await db
     .select({ count: sql<number>`count(*)` })
     .from(courseSections)
@@ -104,23 +102,25 @@ export default async function AdminHomePage() {
     .orderBy(desc(courseEnrollments.registeredAt))
     .limit(5);
 
+  // 6. Latest Applications (Replacing Old Leads with New Applications)
   const latestLeads = await db
     .select({
-      id: courseLeads.id,
-      studentName: courseLeads.studentName,
-      studentEmail: courseLeads.studentEmail,
-      status: courseLeads.status,
-      createdAt: courseLeads.createdAt,
+      id: courseApplications.id,
+      studentName: users.name,
+      studentEmail: users.email,
+      status: courseApplications.statusValue,
+      createdAt: courseApplications.createdAt,
       courseTitle: courses.title,
     })
-    .from(courseLeads)
-    .innerJoin(courses, eq(courseLeads.courseId, courses.id))
-    .orderBy(desc(courseLeads.createdAt))
+    .from(courseApplications)
+    .innerJoin(users, eq(courseApplications.userId, users.id))
+    .innerJoin(courses, eq(courseApplications.courseId, courses.id))
+    .orderBy(desc(courseApplications.createdAt))
     .limit(5);
 
   const stats: CoordinatorStats = {
     activeCourses: Number(activeCoursesCount[0]?.count || 0),
-    openSections: Number(activeSectionsCount[0]?.count || 0), // Mapped to openSections prop
+    openSections: Number(activeSectionsCount[0]?.count || 0),
     totalEnrollments: Number(totalEnrollmentsCount[0]?.count || 0),
     todayEnrollments: Number(newEnrollmentsToday[0]?.count || 0),
   };
@@ -129,7 +129,7 @@ export default async function AdminHomePage() {
     <HomePage
       stats={stats}
       latestEnrollments={latestEnrollments}
-      latestLeads={latestLeads}
+      latestLeads={latestLeads as any}
       userId={session.user.id}
     />
   );

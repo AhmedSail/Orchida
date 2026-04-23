@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { Button } from "@/components/ui/button";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import Image from "next/image";
 // import { Link } from "next-view-transitions"; // Not used currently
 import {
@@ -15,6 +15,7 @@ import {
   FileText,
   ChevronLeft,
   Calendar,
+  Sparkles,
 } from "lucide-react";
 
 export type UserCourse = {
@@ -26,6 +27,7 @@ export type UserCourse = {
   price: string | null;
   currency: string | null;
   duration: string | null;
+  isFree: boolean;
   createdAt: Date;
   updatedAt: Date;
   approvedAt: Date | null;
@@ -43,7 +45,9 @@ export type UserCourse = {
       | "closed"
       | "cancelled"
       | null;
+    isFree: boolean;
   } | null;
+  isActive?: boolean;
 };
 
 type SectionStatus =
@@ -113,6 +117,7 @@ const AllCourses = ({
   allCourses,
   studentStories,
   uniqueCourses,
+  useQueueSystem = false,
 }: {
   allCourses: UserCourse[];
   studentStories: {
@@ -126,19 +131,29 @@ const AllCourses = ({
     sectionNumber: number | null;
   }[];
   uniqueCourses: UserCourse[];
+  useQueueSystem?: boolean;
 }) => {
   const [selectedCourse, setSelectedCourse] = useState<string | null>(
-    allCourses[0]?.id || null
+    allCourses[0]?.id || null,
   );
   const filteredStories = studentStories.filter(
-    (story) => story.courseId === selectedCourse
+    (story) => story.courseId === selectedCourse,
   );
 
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const isFreeFilter = searchParams.get("free") === "true";
+
   const [loadingCourseId, setLoadingCourseId] = useState<string | null>(null);
 
-  // Sorting logic
-  const sortedCourses = [...allCourses].sort((a, b) => {
+  // Sorting and Filtering logic
+  let displayCourses = [...allCourses];
+  
+  if (isFreeFilter) {
+    displayCourses = displayCourses.filter(c => c.section?.isFree || c.isFree);
+  }
+
+  const sortedCourses = displayCourses.sort((a, b) => {
     if (a.section?.status === "open" && b.section?.status !== "open") return -1;
     if (a.section?.status !== "open" && b.section?.status === "open") return 1;
     return 0;
@@ -166,11 +181,14 @@ const AllCourses = ({
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20">
           {sortedCourses.map((course) => {
             const statusConfig = getStatusConfig(
-              course.section?.status || null
+              course.section?.status || null,
             );
-            const isRegistrationOpen = ["open", "in_progress"].includes(
-              course.section?.status ?? ""
-            );
+            
+            // إذا كان نظام الطابور مفعلاً، التسجيل مفتوح إذا كان الكورس نشطاً
+            // إذا كان النظام التقليدي، التسجيل مفتوح إذا كانت الشعبة مفتوحة أو قيد التنفيذ
+            const isRegistrationOpen = useQueueSystem 
+              ? (course.isActive !== false) // افتراضاً مفتوح إلا لو تم إيقافه يدوياً
+              : ["open", "in_progress"].includes(course.section?.status ?? "");
 
             return (
               <motion.div
@@ -198,17 +216,32 @@ const AllCourses = ({
                     </div>
                   )}
                   {/* Price Badge */}
-                  <div className="absolute top-4 left-4 bg-white/90 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm flex items-center gap-1 text-primary">
-                    <BadgeDollarSign size={16} />
-                    {course.price
-                      ? `${course.price} ${
-                          course.currency === "ILS"
-                            ? "₪"
-                            : course.currency === "USD"
-                            ? "$"
-                            : " JOD"
-                        }`
-                      : "مجاني"}
+                  <div
+                    className={`absolute top-4 left-4 backdrop-blur-sm px-3 py-1 rounded-full text-sm font-bold shadow-sm flex items-center gap-1 ${
+                      course.section?.isFree
+                        ? "bg-emerald-500/90 text-white"
+                        : "bg-white/90 text-primary"
+                    }`}
+                  >
+                    {course.section?.isFree ? (
+                      <>
+                        <Sparkles size={16} />
+                        <span>مجاني</span>
+                      </>
+                    ) : (
+                      <>
+                        <BadgeDollarSign size={16} />
+                        {course.price
+                          ? `${course.price} ${
+                              course.currency === "ILS"
+                                ? "₪"
+                                : course.currency === "USD"
+                                  ? "$"
+                                  : " JOD"
+                            }`
+                          : "مجاني"}
+                      </>
+                    )}
                   </div>
                 </div>
 
@@ -230,37 +263,19 @@ const AllCourses = ({
                       <Clock size={16} className="text-primary" />
                       <span>{course.hours ? `${course.hours} ساعة` : "-"}</span>
                     </div>
-                    {course.section ? (
-                      <div className="flex items-center gap-2">
-                        <span
-                          className={`w-2 h-2 rounded-full ${statusConfig.badgeColor}`}
-                        />
-                        <span>{statusConfig.label}</span>
-                      </div>
-                    ) : (
-                      <span className="text-orange-500 font-medium text-xs">
-                        لا يوجد شعب
-                      </span>
-                    )}
-                  </div>
-
-                  {/* Status Box */}
-                  <div
-                    className={`text-xs p-3 rounded-lg mb-4 text-center ${
-                      course.section
-                        ? statusConfig.color
-                        : "bg-orange-50 text-orange-600 border border-orange-200"
-                    }`}
-                  >
-                    {course.section ? (
-                      <>
-                        <span className="font-bold ml-1">
-                          الشعبة {course.section.number}:
+                    {!useQueueSystem && (
+                      course.section ? (
+                        <div className="flex items-center gap-2">
+                          <span
+                            className={`w-2 h-2 rounded-full ${statusConfig.badgeColor}`}
+                          />
+                          <span>{statusConfig.label}</span>
+                        </div>
+                      ) : (
+                        <span className="text-orange-500 font-medium text-xs">
+                          لا يوجد شعب
                         </span>
-                        {statusConfig.label}
-                      </>
-                    ) : (
-                      "سيتم فتح شعبة قريباً"
+                      )
                     )}
                   </div>
 
@@ -392,8 +407,8 @@ const AllCourses = ({
                             {story.type === "image"
                               ? "صورة"
                               : story.type === "video"
-                              ? "فيديو"
-                              : "مقال"}
+                                ? "فيديو"
+                                : "مقال"}
                           </div>
                         </div>
 

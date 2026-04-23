@@ -1,6 +1,12 @@
 import React from "react";
 import { db } from "@/src";
-import { courses, courseSections, users, courseLeads } from "@/src/db/schema";
+import {
+  courses,
+  courseSections,
+  users,
+  courseLeads,
+  courseApplications,
+} from "@/src/db/schema";
 
 import { inArray, InferSelectModel } from "drizzle-orm";
 
@@ -18,6 +24,7 @@ export const metadata: Metadata = {
 export type Courses = InferSelectModel<typeof courses>;
 const page = async () => {
   const allCourses = await db.select().from(courses);
+
   // 2. استخراج معرفات (IDs) جميع الدورات
   const courseIds = allCourses.map((course) => course.id);
 
@@ -27,33 +34,33 @@ const page = async () => {
     .from(courseSections)
     .where(inArray(courseSections.courseId, courseIds));
 
-  // 4. جلب عدد المهتمين لكل دورة
-  const leadsCounts = await db
+  // 4. جلب عدد طلبات الالتحاق (Applications) لكل دورة
+  const applicationsCounts = await db
     .select({
-      courseId: courseLeads.courseId,
-      count: sql<number>`CAST(count(${courseLeads.id}) AS INTEGER)`,
+      courseId: courseApplications.courseId,
+      count: sql<number>`CAST(count(${courseApplications.id}) AS INTEGER)`,
     })
-    .from(courseLeads)
-    .where(inArray(courseLeads.courseId, courseIds))
-    .groupBy(courseLeads.courseId);
+    .from(courseApplications)
+    .where(inArray(courseApplications.courseId, courseIds))
+    .groupBy(courseApplications.courseId);
 
-  const leadsMap = new Map(leadsCounts.map((l) => [l.courseId, l.count]));
+  const appsMap = new Map(applicationsCounts.map((a) => [a.courseId, a.count]));
 
-  // 5. دمج الدورات مع الشعب الخاصة بها وعدد المهتمين
-  const coursesWithSections: CourseWithSections[] = allCourses.map((course) => {
+  // 5. دمج الدورات مع الشعب الخاصة بها
+  const coursesWithSections = allCourses.map((course) => {
     // فلترة الشعب الخاصة بالدورة الحالية
-    const courseSections = allSections
+    const courseSectionsData = allSections
       .filter((section) => section.courseId === course.id)
       // ترتيب الشعب من الأحدث للأقدم
       .sort(
         (a, b) =>
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
       );
 
     return {
       ...course,
-      sections: courseSections,
-      leadsCount: leadsMap.get(course.id) || 0,
+      sections: courseSectionsData,
+      applicationsCount: appsMap.get(course.id) || 0,
     };
   });
   const session = await auth.api.getSession({ headers: await headers() });

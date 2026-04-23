@@ -131,6 +131,10 @@ export const users = pgTable("users", {
   emailVerified: boolean("emailVerified").default(false).notNull(),
   image: text("image"),
   phone: varchar("phone", { length: 20 }),
+  whatsapp: varchar("whatsapp", { length: 20 }), // رقم الواتساب
+  age: integer("age"), // العمر
+  major: varchar("major", { length: 255 }), // التخصص الدراسي
+  location: varchar("location", { length: 255 }), // الدولة والمدينة
   loginMethod: varchar("loginMethod", { length: 64 }),
   role: userRoleEnum("role").default("user").notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -150,6 +154,7 @@ export const courses = pgTable("courses", {
   currency: varchar("currency", { length: 20 }).default("ILS").notNull(), // ILS, USD, JOD
 
   isActive: boolean("isActive").default(true).notNull(), // نشط أو لا
+  isV2: boolean("isV2").default(false).notNull(), // نظام الدورات الجديد (LMS V2)
 
   topics: text("topics"),
   objectives: text("objectives"), // أهداف الدورة
@@ -195,6 +200,8 @@ export const courseSections = pgTable("courseSections", {
   approvedBy: text("approvedBy").references(() => users.id),
   approvedAt: timestamp("approvedAt"),
   isHidden: boolean("isHidden").default(false).notNull(), // ✅ حقل جديد لإخفاء الشعبة
+  isFree: boolean("isFree").default(false).notNull(), // ✅ شعبة مجانية
+  isV2: boolean("isV2").default(false).notNull(), // ✅ تفعيل النظام الجديد للشعبة
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -257,6 +264,7 @@ export const courseEnrollments = pgTable("courseEnrollments", {
   IBAN: varchar("IBAN", { length: 500 }),
   swiftCode: varchar("swiftCode", { length: 100 }),
   bankName: varchar("bankName", { length: 255 }),
+  isBlocked: boolean("isBlocked").default(false).notNull(), // ✅ حقل حظر المحتوى
   notes: text("notes"),
   registeredAt: timestamp("registeredAt").defaultNow().notNull(),
   confirmedAt: timestamp("confirmedAt"),
@@ -453,6 +461,7 @@ export const companies = pgTable("companies", {
   tiktokUrl: text("tiktokUrl").default("#"), // رابط تيك توك
   geminiGenApiKey: text("geminiGenApiKey"), // API Key الخاص بخدمة GeminiGen
 
+  useQueueSystem: boolean("useQueueSystem").default(false).notNull(), // ✅ تفعيل نظام الانتظار والتشعيب اليدوي
   createdAt: timestamp("createdAt").defaultNow().notNull(), // وقت الإنشاء
   updatedAt: timestamp("updatedAt").defaultNow().notNull(), // آخر تحديث
 });
@@ -1345,3 +1354,170 @@ export const aiPromptsLibrary = pgTable("aiPromptsLibrary", {
   category: varchar("category", { length: 50 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
+
+// ==========================================
+// 24. Learning Management System (LMS) V2
+// ==========================================
+
+// 1. هيكلية الدروس (Curriculum Lessons)
+// هذا الجدول يخزن العناوين وترتيب الدروس داخل الدورة
+export const curriculumLessons = pgTable("curriculumLessons", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  courseId: text("courseId")
+    .references(() => courses.id, { onDelete: "cascade" }), // الدروس أصبحت مرتبطة بالكورس مباشرة
+  sectionId: text("sectionId")
+    .references(() => courseSections.id, { onDelete: "cascade" }), // بقاء الحقل اختيارياً للتوافق أو التخصيص
+  mainTitle: varchar("mainTitle", { length: 255 }).notNull(), // العنوان الأساسي (إجباري)
+  subTitle: varchar("subTitle", { length: 255 }), // العنوان الفرعي (اختياري)
+  order: integer("order").notNull().default(1), // ترتيب الدرس في الدورة
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// 2. باني المحتوى الديناميكي (Curriculum Fields)
+// هذا الجدول يسمح للمدرب بإضافة "حقول" متنوعة داخل الدرس الواحد (نص، فيديو، صورة، إلخ)
+export const curriculumFields = pgTable("curriculumFields", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  lessonId: uuid("lessonId")
+    .notNull()
+    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+  fieldType: varchar("fieldType", { length: 50 }).notNull(), // text, video, image, file, link
+  content: text("content").notNull(), // النص أو رابط الميديا
+  order: integer("order").notNull().default(1), // ترتيب الحقل داخل الدرس
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+// 3. صلاحيات المدربين على الدورات (Instructor Course Access)
+// لضمان أن المدرب يرى فقط الدورات المسندة إليه
+export const instructorCourseAccess = pgTable("instructorCourseAccess", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  instructorId: text("instructorId")
+    .notNull()
+    .references(() => instructors.id, { onDelete: "cascade" }),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+}, (table) => ({
+  unq: unique().on(table.instructorId, table.courseId),
+}));
+
+// 4. تتبع تقدم الطالب (Student Lesson Progress)
+// يستخدم في نظام الأونلاين لفتح الدروس تتابعيًا
+export const lessonProgress = pgTable("lessonProgress", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  studentId: text("studentId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  lessonId: uuid("lessonId")
+    .notNull()
+    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+  status: varchar("status", { length: 20 }).default("completed"), // completed
+  completedAt: timestamp("completedAt").defaultNow().notNull(),
+}, (table) => ({
+  unq: unique().on(table.studentId, table.lessonId),
+}));
+
+// 5. تفعيل الدروس في الشعب الوجاهية (Section Lesson Availability)
+// يستخدم في النظام الوجاهي ليقوم المدرب بتفعيل درس محدد لطلاب شعبة معينة
+export const sectionLessonAvailability = pgTable("sectionLessonAvailability", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sectionId: text("sectionId")
+    .notNull()
+    .references(() => courseSections.id, { onDelete: "cascade" }),
+  lessonId: uuid("lessonId")
+    .notNull()
+    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+  isEnabled: boolean("isEnabled").default(false).notNull(),
+  enabledAt: timestamp("enabledAt"),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  unq: unique().on(table.sectionId, table.lessonId),
+}));
+
+// العلاقات (Relations)
+export const curriculumLessonsRelations = relations(curriculumLessons, ({ one, many }) => ({
+  course: one(courses, { fields: [curriculumLessons.courseId], references: [courses.id] }),
+  section: one(courseSections, { fields: [curriculumLessons.sectionId], references: [courseSections.id] }),
+  fields: many(curriculumFields),
+  availability: many(sectionLessonAvailability),
+  progress: many(lessonProgress),
+}));
+
+export const curriculumFieldsRelations = relations(curriculumFields, ({ one }) => ({
+  lesson: one(curriculumLessons, { fields: [curriculumFields.lessonId], references: [curriculumLessons.id] }),
+}));
+
+export const instructorCourseAccessRelations = relations(instructorCourseAccess, ({ one }) => ({
+  instructor: one(instructors, { fields: [instructorCourseAccess.instructorId], references: [instructors.id] }),
+  course: one(courses, { fields: [instructorCourseAccess.courseId], references: [courses.id] }),
+}));
+
+export const lessonProgressRelations = relations(lessonProgress, ({ one }) => ({
+  student: one(users, { fields: [lessonProgress.studentId], references: [users.id] }),
+  lesson: one(curriculumLessons, { fields: [lessonProgress.lessonId], references: [curriculumLessons.id] }),
+}));
+
+export const sectionLessonAvailabilityRelations = relations(sectionLessonAvailability, ({ one }) => ({
+  section: one(courseSections, { fields: [sectionLessonAvailability.sectionId], references: [courseSections.id] }),
+  lesson: one(curriculumLessons, { fields: [sectionLessonAvailability.lessonId], references: [curriculumLessons.id] }),
+}));
+
+// ==========================================
+// 25. Lead Statuses (حالات المهتمين)
+// جدول لإدارة حالات المهتمين ديناميكياً
+// ==========================================
+export const leadStatuses = pgTable("leadStatuses", {
+  id: text("id").primaryKey(),
+  value: varchar("value", { length: 100 }).notNull().unique(), // المفتاح البرمجي مثل "new", "contacted"
+  label: varchar("label", { length: 255 }).notNull(),          // الاسم العربي للعرض
+  color: varchar("color", { length: 100 }).notNull().default("gray"), // اللون: blue, red, green, etc.
+  orderIndex: integer("orderIndex").default(0).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
+// ==========================================
+// 26. Course Applications (نظام الطابور الجديد)
+// ==========================================
+export const courseApplications = pgTable("courseApplications", {
+  id: text("id").primaryKey(),
+  userId: text("userId")
+    .notNull()
+    .references(() => users.id, { onDelete: "cascade" }),
+  courseId: text("courseId")
+    .notNull()
+    .references(() => courses.id, { onDelete: "cascade" }),
+  
+  // الحالة مرتبطة بجدول leadStatuses
+  statusValue: varchar("statusValue", { length: 100 })
+    .notNull()
+    .references(() => leadStatuses.value, { onDelete: "restrict" })
+    .default("new"),
+  
+  attendanceType: attendanceTypeEnum("attendanceType").default("in_person"),
+  studentNotes: text("studentNotes"),
+  adminNotes: text("adminNotes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+}, (table) => ({
+  courseIdIdx: index("course_app_course_id_idx").on(table.courseId),
+  userIdIdx: index("course_app_user_id_idx").on(table.userId),
+  createdAtIdx: index("course_app_created_at_idx").on(table.createdAt),
+}));
+
+export const courseApplicationsRelations = relations(courseApplications, ({ one }) => ({
+  user: one(users, {
+    fields: [courseApplications.userId],
+    references: [users.id],
+  }),
+  course: one(courses, {
+    fields: [courseApplications.courseId],
+    references: [courses.id],
+  }),
+  status: one(leadStatuses, {
+    fields: [courseApplications.statusValue],
+    references: [leadStatuses.value],
+  }),
+}));

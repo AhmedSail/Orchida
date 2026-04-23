@@ -1,16 +1,98 @@
 import { NextResponse } from "next/server";
 import { db } from "@/src/db";
-import { courseEnrollments } from "@/src/db/schema";
+import { courseEnrollments, courseApplications, courseSections } from "@/src/db/schema";
 import { eq, and } from "drizzle-orm";
 import { v4 as uuidv4 } from "uuid";
+
+export async function GET(req: Request) {
+  const enrollments = await db.query.courseEnrollments.findMany({
+    with: {
+      section: {
+        with: { course: true },
+      },
+    },
+  });
+  return NextResponse.json(enrollments);
+}
 
 export async function POST(req: Request) {
   try {
     const body = await req.json();
 
-    // بناء بيانات التسجيل
+    // ====== حالة القبول من الأدمن: applicationId + sectionNumber ======
+    if (body.applicationId && body.sectionNumber) {
+      // 1. جلب بيانات الطلب
+      const app = await db.query.courseApplications.findFirst({
+        where: eq(courseApplications.id, body.applicationId),
+        with: { user: true },
+      });
+
+      if (!app) {
+        return NextResponse.json({ message: "الطلب غير موجود" }, { status: 404 });
+      }
+
+      // 2. إيجاد الشعبة
+      const section = await db.query.courseSections.findFirst({
+        where: and(
+          eq(courseSections.courseId, app.courseId),
+          eq(courseSections.sectionNumber, body.sectionNumber)
+        ),
+      });
+
+      if (!section) {
+        return NextResponse.json({ message: "الشعبة غير موجودة" }, { status: 404 });
+      }
+
+      // 3. التحقق من وجود تسجيل مسبق
+      const userEmail = app.user.email ?? "";
+      const existing = await db
+        .select()
+        .from(courseEnrollments)
+        .where(
+          and(
+            eq(courseEnrollments.sectionId, section.id),
+            eq(courseEnrollments.studentEmail, userEmail)
+          )
+        )
+        .limit(1);
+
+      if (existing.length > 0) {
+        return NextResponse.json({ message: "الطالب مسجل بالفعل في هذه الشعبة" }, { status: 409 });
+      }
+
+      // 4. إنشاء التسجيل
+      const enrollment = {
+        id: uuidv4(),
+        sectionId: section.id,
+        studentId: app.userId,
+        studentName: app.user.name ?? "",
+        studentEmail: app.user.email ?? "",
+        studentPhone: app.user.phone ?? null,
+        studentAge: null,
+        studentMajor: null,
+        studentCountry: null,
+        paymentReceiptUrl: null,
+        confirmationStatus: "confirmed" as const,
+        paymentStatus: "pending" as const,
+        isCancelled: false,
+        isInIntroductorySession: false,
+        isReceiptUploaded: false,
+      };
+
+      await db.insert(courseEnrollments).values(enrollment);
+
+      // 5. *** حذف الطلب من قائمة الانتظار (courseApplications) ***
+      await db.delete(courseApplications).where(eq(courseApplications.id, body.applicationId));
+
+      return NextResponse.json(
+        { message: "تم قبول الطالب وتسجيله بنجاح", enrollment },
+        { status: 201 }
+      );
+    }
+
+    // ====== حالة التسجيل المباشر: sectionId + student info ======
     const enrollment = {
-      id: uuidv4(), // توليد ID فريد
+      id: uuidv4(),
       sectionId: body.sectionId,
       studentId: body.studentId ?? null,
       studentName: body.studentName,
@@ -27,7 +109,6 @@ export async function POST(req: Request) {
       isReceiptUploaded: false,
     };
 
-    // Check for existing enrollment in this section for this student email
     const existingEnrollment = await db
       .select()
       .from(courseEnrollments)
@@ -46,7 +127,6 @@ export async function POST(req: Request) {
       );
     }
 
-    // إدخال البيانات في قاعدة البيانات
     await db.insert(courseEnrollments).values(enrollment);
 
     return NextResponse.json(

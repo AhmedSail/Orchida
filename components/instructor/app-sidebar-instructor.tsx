@@ -11,6 +11,7 @@ import {
   GraduationCap,
   FolderOpen,
   Link as LinkIcon,
+  Zap
 } from "lucide-react";
 
 import {
@@ -56,6 +57,11 @@ export function AppSidebarInstructor({
       title: "المقررات الدراسية",
       icon: BookOpen,
       url: `/instructor/${instructorId}/courses`,
+    },
+    {
+      title: "إدارة الكورسات (V2)",
+      icon: Zap,
+      url: `/instructor/v2`,
     },
     {
       title: "الجدول الزمني",
