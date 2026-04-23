@@ -634,3 +634,41 @@ export async function getAdminV2StatsAction() {
     return { success: false, error: "Internal Server Error" };
   }
 }
+
+/**
+ * Update lesson title/subtitle
+ */
+export async function updateLessonAction(
+  lessonId: string,
+  data: { mainTitle?: string; subTitle?: string }
+) {
+  try {
+    await db
+      .update(curriculumLessons)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(curriculumLessons.id, lessonId));
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateLessonAction:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
+
+/**
+ * Update a lesson field content/type
+ */
+export async function updateLessonFieldAction(
+  fieldId: string,
+  data: { content?: string; fieldType?: string }
+) {
+  try {
+    await db
+      .update(curriculumFields)
+      .set(data)
+      .where(eq(curriculumFields.id, fieldId));
+    return { success: true };
+  } catch (error) {
+    console.error("Error in updateLessonFieldAction:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
