@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { Link } from "next-view-transitions";
 import { motion, AnimatePresence } from "framer-motion";
@@ -15,6 +15,7 @@ import {
 } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface Work {
   id: string;
@@ -46,6 +47,10 @@ export default function PortfolioGallery({
   initialWorks: any[]; 
   services: Service[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
@@ -53,6 +58,30 @@ export default function PortfolioGallery({
   // Pagination State
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 9;
+
+  // Sync state from URL on initial load
+  useEffect(() => {
+    const categoryInUrl = searchParams.get("category");
+    if (categoryInUrl) {
+      const service = services.find(s => s.name === categoryInUrl);
+      if (service) setSelectedType(service.id);
+    }
+  }, []);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (selectedType) {
+      const service = services.find(s => s.id === selectedType);
+      if (service) params.set("category", service.name);
+    } else {
+      params.delete("category");
+    }
+
+    const queryString = params.toString();
+    router.push(`${pathname}${queryString ? `?${queryString}` : ""}`, { scroll: false });
+  }, [selectedType]);
 
   const filteredWorks = useMemo(() => {
     // Reset page when filters change
