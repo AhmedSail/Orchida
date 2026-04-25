@@ -23,7 +23,23 @@ import {
   CheckCircle2,
   XCircle,
   Layout,
+  Trophy,
+  Users,
+  GraduationCap,
+  PlusSquare,
+  FolderOpen,
 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuSub,
+  DropdownMenuSubContent,
+  DropdownMenuSubTrigger,
+} from "@/components/ui/dropdown-menu";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import { Link } from "next-view-transitions";
@@ -350,6 +366,54 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                             المنهج الثابت
                           </Button>
                         </Link>
+
+                        {/* ✅ أعمال الطلاب */}
+                        <DropdownMenu dir="rtl">
+                          <DropdownMenuTrigger asChild>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="rounded-xl gap-2 font-bold px-4 border-amber-500 text-amber-600 hover:bg-amber-500 hover:text-white transition-all"
+                            >
+                              <Trophy className="w-4 h-4" />
+                              أعمال الطلاب
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent className="w-56 rounded-2xl p-2" align="end">
+                            <DropdownMenuLabel className="text-xs font-black text-gray-400 uppercase tracking-widest px-3 py-2">
+                              اختر الشعبة
+                            </DropdownMenuLabel>
+                            <DropdownMenuSeparator />
+                            {course.sections.length === 0 ? (
+                              <div className="px-3 py-4 text-center text-xs text-gray-400 font-medium">
+                                لا توجد شعب لهذه الدورة حالياً
+                              </div>
+                            ) : (
+                              course.sections.map((section) => (
+                                <DropdownMenuSub key={section.id}>
+                                  <DropdownMenuSubTrigger className="rounded-xl cursor-pointer">
+                                    <Users className="ml-2 h-4 w-4" />
+                                    <span>شعبة رقم {section.sectionNumber}</span>
+                                  </DropdownMenuSubTrigger>
+                                  <DropdownMenuSubContent className="rounded-2xl p-2 ml-2">
+                                    <Link href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`}>
+                                      <DropdownMenuItem className="rounded-xl cursor-pointer gap-2">
+                                        <FolderOpen className="h-4 w-4 text-blue-500" />
+                                        <span>عرض الأعمال</span>
+                                      </DropdownMenuItem>
+                                    </Link>
+                                    <Link href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`}>
+                                      <DropdownMenuItem className="rounded-xl cursor-pointer gap-2">
+                                        <PlusSquare className="h-4 w-4 text-emerald-500" />
+                                        <span>رفع عمل طالب</span>
+                                      </DropdownMenuItem>
+                                    </Link>
+                                  </DropdownMenuSubContent>
+                                </DropdownMenuSub>
+                              ))
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
                         <Link
                           href={`/${role}/${userId}/courses/newSection/${course.id}`}
                         >
@@ -495,6 +559,43 @@ const OurCourses = ({ courses, role, userId }: Props) => {
                     المنهج الثابت
                   </Button>
                 </Link>
+
+                {/* ✅ أعمال الطلاب (Mobile) */}
+                <DropdownMenu dir="rtl">
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className="w-full rounded-2xl h-11 font-bold border-amber-500 text-amber-600"
+                    >
+                      أعمال الطلاب
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent className="w-[calc(100vw-3rem)] mx-auto rounded-3xl p-3" align="center">
+                    <DropdownMenuLabel className="text-center font-black py-2">اختر الشعبة</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {course.sections.length === 0 ? (
+                      <div className="p-4 text-center text-gray-400">لا توجد شعب</div>
+                    ) : (
+                      course.sections.map((section) => (
+                        <div key={section.id} className="p-2 border-b last:border-0 border-gray-50">
+                          <p className="text-xs font-black text-gray-400 mb-2">شعبة رقم {section.sectionNumber}</p>
+                          <div className="grid grid-cols-2 gap-2">
+                            <Link href={`/${role}/${userId}/courses/sections/${section.id}/allStudentsWork`} className="w-full">
+                              <Button variant="secondary" size="sm" className="w-full rounded-xl text-[10px] h-8 gap-1">
+                                <FolderOpen className="w-3 h-3" /> عرض
+                              </Button>
+                            </Link>
+                            <Link href={`/${role}/${userId}/courses/sections/${section.id}/newStudentWork`} className="w-full">
+                              <Button size="sm" className="w-full rounded-xl text-[10px] h-8 bg-emerald-500 hover:bg-emerald-600 text-white gap-1">
+                                <PlusSquare className="w-3 h-3" /> رفع عمل
+                              </Button>
+                            </Link>
+                          </div>
+                        </div>
+                      ))
+                    )}
+                  </DropdownMenuContent>
+                </DropdownMenu>
                 <Link
                   href={`/${role}/${userId}/courses/newSection/${course.id}`}
                   className="w-full col-span-2"

@@ -254,7 +254,7 @@ export default function CoursePlayer({
                           ) : isCompleted ? (
                             <CheckCircle2 className="w-5 h-5" />
                           ) : (
-                            <span>{lesson.order}</span>
+                            <span>{lesson.order - 1}</span>
                           )}
                         </div>
                         <div className="flex-1 overflow-hidden">
@@ -322,20 +322,17 @@ export default function CoursePlayer({
           {activeLesson ? (
             <div className="max-w-4xl mx-auto space-y-12">
               {/* Lesson Title Section */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-3">
-                  <span className="bg-zinc-900 text-white text-[10px] font-black px-3 py-1 rounded-lg">
-                    الدرس {activeLesson.order}
-                  </span>
+              <div className="space-y-8">
+                <div className="flex flex-col items-center gap-4">
                   {completedIds.includes(activeLesson.id) && (
                     <span className="bg-emerald-100 text-emerald-600 text-[10px] font-black px-3 py-1 rounded-lg flex items-center gap-1">
                       <CheckCircle2 className="w-3 h-3" /> تم الإكمال
                     </span>
                   )}
+                  <h1 className="text-3xl text-center md:text-5xl font-black text-zinc-900 leading-tight">
+                    الدرس {activeLesson.order - 1} : {activeLesson.mainTitle}
+                  </h1>
                 </div>
-                <h1 className="text-3xl text-center md:text-5xl font-black text-zinc-900 leading-tight">
-                  {activeLesson.mainTitle}
-                </h1>
                 {activeLesson.subTitle && (
                   <p className="text-center text-xl text-zinc-500 font-medium">
                     {activeLesson.subTitle}

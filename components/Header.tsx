@@ -67,8 +67,13 @@ const navListMenuItems = [
     icon: UserGroupIcon,
   },
   {
-    title: "الدورات المجانية",
-    description: "تصفح مجموعتنا من الدورات التدريبية المجانية والمتاحة للجميع",
+    title: "الدروس المجانية",
+    description: "تصفح مجموعتنا من الدروس المجانية والمتاحة للجميع",
+    icon: Sparkles,
+  },
+  {
+    title: "أعمال الطلاب",
+    description: "شاهد إبداعات طلابنا وقصص نجاحهم في مختلف الدورات",
     icon: Sparkles,
   },
 ];
@@ -90,6 +95,8 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
         href = "/courses";
       } else if (title === "الدورات المجانية") {
         href = "/courses?free=true";
+      } else if (title === "أعمال الطلاب") {
+        href = "/student-works";
       }
 
       const handleClick = async (e: React.MouseEvent) => {
@@ -160,7 +167,7 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
         </Typography>
       </MenuHandler>
       {/* @ts-ignore */}
-      <MenuList className="hidden lg:grid grid-cols-2 gap-y-2">
+      <MenuList className="hidden lg:grid grid-cols-1 gap-y-2 w-max">
         {renderItems}
       </MenuList>
 
@@ -182,6 +189,7 @@ function NavList({
   const navListItemsData = [
     { id: 1, title: "الرئيسية", href: "/" },
     { id: 2, title: "اخر المستجدات", href: "/latest" },
+    { id: 11, title: "معرض أعمالنا", href: "/portfolio" },
     { id: 3, title: "المسابقات", href: "/competitions" },
     { id: 7, title: "المنتجات الرائجة", href: "/trending" },
     { id: 4, title: "الخدمات الرقمية", href: "/services" },
