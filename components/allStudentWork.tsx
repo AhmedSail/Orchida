@@ -51,13 +51,15 @@ import {
 
 interface StudentWork {
   id: string;
-  studentId: string;
+  studentId: string | null;
   studentName: string | null;
+  userName?: string | null; // From joined users table
   title: string;
   type: "story" | "image" | "video";
   status: "approved" | "pending";
   description?: string | null;
   mediaUrl?: string | null;
+  youtubeUrl?: string | null;
 }
 
 export default function AllStudentWork({
@@ -292,7 +294,7 @@ export default function AllStudentWork({
                           <User size={18} />
                         </div>
                         <span className="font-bold text-gray-900">
-                          {work.studentName || "طالب مجهول"}
+                          {work.studentName || work.userName || "طالب مجهول"}
                         </span>
                       </div>
                     </TableCell>
@@ -368,22 +370,31 @@ export default function AllStudentWork({
           <div className="flex flex-col md:flex-row h-full">
             {/* Media Area */}
             <div className="flex-1 bg-gray-900 min-h-[400px] flex items-center justify-center relative">
-              {selectedWork?.type === "image" && selectedWork.mediaUrl && (
+              {selectedWork?.youtubeUrl ? (
+                 <iframe
+                    src={selectedWork.youtubeUrl.includes('watch?v=') 
+                      ? selectedWork.youtubeUrl.replace('watch?v=', 'embed/') 
+                      : selectedWork.youtubeUrl.includes('youtu.be/')
+                        ? selectedWork.youtubeUrl.replace('youtu.be/', 'youtube.com/embed/')
+                        : selectedWork.youtubeUrl}
+                    className="w-full h-full border-none aspect-video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+              ) : selectedWork?.type === "image" && selectedWork.mediaUrl ? (
                 <img
                   src={selectedWork.mediaUrl}
                   alt={selectedWork.title}
                   className="w-full h-full object-contain"
                 />
-              )}
-              {selectedWork?.type === "video" && selectedWork.mediaUrl && (
+              ) : selectedWork?.type === "video" && selectedWork.mediaUrl ? (
                 <video
                   src={selectedWork.mediaUrl}
                   controls
                   className="w-full h-full"
                   autoPlay
                 />
-              )}
-              {selectedWork?.type === "story" && (
+              ) : selectedWork?.type === "story" && (
                 <BookOpen size={120} className="text-white/20" />
               )}
 
@@ -409,7 +420,7 @@ export default function AllStudentWork({
                     <User size={12} />
                   </div>
                   <span className="text-sm font-bold text-gray-500">
-                    {selectedWork?.studentName}
+                    {selectedWork?.studentName || selectedWork?.userName || "طالب أوركيدة"}
                   </span>
                 </div>
 

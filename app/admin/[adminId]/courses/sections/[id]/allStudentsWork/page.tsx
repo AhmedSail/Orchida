@@ -43,7 +43,7 @@ const page = async ({ params }: { params: { id: string } }) => {
       return <div>Section not found</div>;
   }
 
-  // ✅ جلب الأعمال مع اسم الطالب
+  // ✅ جلب الأعمال مع اسم الطالب (سواء مسجل أو يدوي)
   const works = await db
     .select({
       id: studentWorks.id,
@@ -52,11 +52,13 @@ const page = async ({ params }: { params: { id: string } }) => {
       status: studentWorks.status,
       description: studentWorks.description,
       mediaUrl: studentWorks.mediaUrl,
+      youtubeUrl: studentWorks.youtubeUrl,
       studentId: studentWorks.studentId,
-      studentName: users.name, // 👈 هنا نجيب الاسم
+      studentName: studentWorks.studentName, // الاسم اليدوي
+      userName: users.name, // اسم المستخدم المسجل
     })
     .from(studentWorks)
-    .innerJoin(users, eq(studentWorks.studentId, users.id)) // ✅ join مع جدول users
+    .leftJoin(users, eq(studentWorks.studentId, users.id))
     .where(eq(studentWorks.sectionId, sectionData[0].id));
 
   return (
