@@ -74,10 +74,24 @@ export default function ServicePage({
       <motion.h1
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className=" text-2xl md:text-4xl font-extrabold text-primary sm:text-5xl mb-10 text-center"
+        className=" text-2xl md:text-4xl font-extrabold text-primary sm:text-5xl mb-6 text-center"
       >
         خــــــــدمـــــــاتنا الـــــــــــــرقــــــمية
       </motion.h1>
+
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="flex justify-center mb-12"
+      >
+        <Link href="/portfolio">
+          <Button size="lg" className="rounded-full px-8 py-6 text-lg font-black bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/10 gap-3">
+             <Palette className="size-6" />
+             تصفح معرض أعمالنا الإبداعية
+          </Button>
+        </Link>
+      </motion.div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {activeServices.map((service) => {

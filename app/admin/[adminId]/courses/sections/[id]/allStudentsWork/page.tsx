@@ -1,7 +1,7 @@
 import AllStudentWork from "@/components/allStudentWork";
 import { auth } from "@/lib/auth";
 import { db } from "@/src/db";
-import { courseSections, studentWorks, users } from "@/src/db/schema";
+import { courseSections, studentWorks, users, courses } from "@/src/db/schema";
 import { eq } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
@@ -28,11 +28,20 @@ const page = async ({ params }: { params: { id: string } }) => {
   const role = userRecord[0]?.role;
 
   const param = await params;
-  const section = await db
-    .select()
+  const sectionData = await db
+    .select({
+      id: courseSections.id,
+      sectionNumber: courseSections.sectionNumber,
+      courseTitle: courses.title,
+    })
     .from(courseSections)
+    .innerJoin(courses, eq(courseSections.courseId, courses.id))
     .where(eq(courseSections.id, param.id))
     .limit(1);
+
+  if (sectionData.length === 0) {
+      return <div>Section not found</div>;
+  }
 
   // ✅ جلب الأعمال مع اسم الطالب
   const works = await db
@@ -48,11 +57,11 @@ const page = async ({ params }: { params: { id: string } }) => {
     })
     .from(studentWorks)
     .innerJoin(users, eq(studentWorks.studentId, users.id)) // ✅ join مع جدول users
-    .where(eq(studentWorks.sectionId, section[0].id));
+    .where(eq(studentWorks.sectionId, sectionData[0].id));
 
   return (
     <div>
-      <AllStudentWork works={works} section={section[0]} />
+      <AllStudentWork works={works} section={sectionData[0]} />
     </div>
   );
 };
