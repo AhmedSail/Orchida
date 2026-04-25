@@ -82,10 +82,12 @@ const page = async () => {
         description: studentWorks.description,
         type: studentWorks.type,
         mediaUrl: studentWorks.mediaUrl,
-        studentName: users.name,
+        studentName: studentWorks.studentName,
+        userName: users.name,
+        youtubeUrl: studentWorks.youtubeUrl,
       })
       .from(studentWorks)
-      .innerJoin(users, eq(studentWorks.studentId, users.id))
+      .leftJoin(users, eq(studentWorks.studentId, users.id))
       .where(eq(studentWorks.status, "approved"))
       .limit(6),
     db.select().from(jobs),

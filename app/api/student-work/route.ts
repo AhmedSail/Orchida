@@ -20,17 +20,19 @@ export async function POST(req: Request) {
 
     const newWork = {
       id: crypto.randomUUID(),
-      studentId: formData.get("studentId") as string,
+      studentId: (formData.get("studentId") as string) || null,
+      studentName: formData.get("studentName") as string | null,
       courseId: formData.get("courseId") as string,
       sectionId: formData.get("sectionId") as string,
       type: formData.get("type") as "story" | "image" | "video",
       title: formData.get("title") as string,
       description: formData.get("description") as string,
       mediaUrl: formData.get("mediaUrl") as string | null,
-      status: "approved" as "approved" | "pending", // أو approved/rejected حسب اللوجيك
+      youtubeUrl: formData.get("youtubeUrl") as string | null,
+      status: "approved" as "approved" | "pending",
       createdAt: new Date(),
       updatedAt: new Date(),
-      createdBy: session.user.id as string, // 👈 لازم يكون موجود في جدول users
+      createdBy: session.user.id as string,
     };
 
     await db.insert(studentWorks).values(newWork);

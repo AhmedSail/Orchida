@@ -30,6 +30,7 @@ export default async function Page() {
       toolsUsed: works.toolsUsed,
       serviceId: works.serviceId,
       serviceName: digitalServices.name,
+      youtubeUrl: works.youtubeUrl,
       createdAt: works.createdAt,
     })
     .from(works)

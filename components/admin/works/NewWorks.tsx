@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -27,20 +27,20 @@ import {
   PlusCircle, 
   Info, 
   Image as ImageIcon, 
-  Link as LinkIcon, 
-  DollarSign, 
-  Clock, 
   Briefcase,
   Layers,
-  ArrowLeft
+  ArrowLeft,
+  Youtube,
+  Upload
 } from "lucide-react";
 import Swal from "sweetalert2";
 import { useRouter } from "next/navigation";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 import type { Services } from "../service/servicesPage";
 import { MultiUploader } from "@/components/MultiUploader";
 import { SingleUploader } from "@/components/SingleUploader";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 
 // ✅ Schema
 const workSchema = z.object({
@@ -48,11 +48,9 @@ const workSchema = z.object({
   description: z.string().optional(),
   serviceId: z.string().min(1, "الخدمة مطلوبة"),
   category: z.string().min(2, "الفئة مطلوبة"),
-  projectUrl: z.string().url("رابط غير صالح").or(z.literal("")).optional(),
-  priceRange: z.string().optional(),
-  duration: z.string().optional(),
-  imageUrl: z.string().url().min(1, "الصورة الرئيسية مطلوبة"),
+  imageUrl: z.string().min(1, "الصورة الرئيسية مطلوبة"),
   mediaUrls: z.array(z.string().url()).optional(),
+  youtubeUrl: z.string().url("رابط غير صالح").or(z.literal("")).optional(),
 });
 
 type WorkFormValues = z.infer<typeof workSchema>;
@@ -67,6 +65,8 @@ const NewWorks = ({
   role: string;
 }) => {
   const [loading, setLoading] = useState(false);
+  const [mainMediaMode, setMainMediaMode] = useState<"upload" | "youtube">("upload");
+  const [galleryMediaMode, setGalleryMediaMode] = useState<"upload" | "youtube">("upload");
   const router = useRouter();
 
   const form = useForm<WorkFormValues>({
@@ -75,13 +75,17 @@ const NewWorks = ({
       title: "",
       description: "",
       category: "",
-      projectUrl: "",
-      priceRange: "",
-      duration: "",
       imageUrl: "",
       mediaUrls: [],
+      youtubeUrl: "",
     },
   });
+
+  const extractYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
+  };
 
   const buildMediaFileObject = (url: string) => {
     const filename = url.split("/").pop() || "";
@@ -123,24 +127,30 @@ const NewWorks = ({
   const onSubmit = async (values: WorkFormValues) => {
     setLoading(true);
     try {
-      if (!values.imageUrl || values.imageUrl.length === 0) {
-        Swal.fire({
-          icon: "error",
-          title: "خطأ في الإدخال",
-          text: "يجب إضافة صورة رئيسية قبل حفظ العمل.",
-        });
-        setLoading(false);
-        return;
+      let finalImageUrl = values.imageUrl;
+      let finalYoutubeUrl = values.youtubeUrl;
+      let mainType = "image";
+
+      if (mainMediaMode === "youtube") {
+        const ytId = extractYoutubeId(values.imageUrl);
+        if (!ytId) {
+          throw new Error("رابط يوتيوب غير صالح في الصورة الرئيسية");
+        }
+        finalYoutubeUrl = values.imageUrl;
+        // Use high res thumbnail as the grid image
+        finalImageUrl = `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`;
+        mainType = "video";
+      } else {
+        const ext = finalImageUrl.split(".").pop()?.toLowerCase();
+        if (["mp4", "mov", "avi"].includes(ext || "")) {
+          mainType = "video";
+        }
       }
 
-      const mainUrl = values.imageUrl;
-      const ext = mainUrl.split(".").pop()?.toLowerCase();
-
-      let mainType = "file";
-      if (["jpg", "jpeg", "png", "gif"].includes(ext || "")) {
-        mainType = "image";
-      } else if (["mp4", "mov", "avi"].includes(ext || "")) {
-        mainType = "video";
+      // Handle Gallery mode
+      const finalMediaUrls = galleryMediaMode === "youtube" ? [] : values.mediaUrls;
+      if (galleryMediaMode === "youtube" && values.youtubeUrl && !finalYoutubeUrl) {
+         finalYoutubeUrl = values.youtubeUrl;
       }
 
       const res = await fetch("/api/works", {
@@ -148,9 +158,11 @@ const NewWorks = ({
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...values,
-          imageUrl: getRawUrl(mainUrl),
+          imageUrl: getRawUrl(finalImageUrl),
+          youtubeUrl: finalYoutubeUrl,
           type: mainType,
-          mediaFiles: values.mediaUrls?.map((url) =>
+          mediaUrls: finalMediaUrls,
+          mediaFiles: finalMediaUrls?.map((url) =>
             buildMediaFileObject(getRawUrl(url))
           ),
           uploaderId: userId,
@@ -278,30 +290,93 @@ const NewWorks = ({
 
               {/* 📂 Additional Media Section */}
               <section className="bg-white rounded-[2.5rem] p-8 md:p-10 shadow-xl shadow-gray-200/50 border border-gray-50">
-                <h2 className="text-xl font-black text-gray-900 mb-8 flex items-center gap-3">
-                  <Layers className="text-primary size-5" />
-                  الوسائط الإضافية
-                </h2>
+                <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-8">
+                  <h2 className="text-xl font-black text-gray-900 flex items-center gap-3">
+                    <Layers className="text-primary size-5" />
+                    معرض الوسائط الإضافي
+                  </h2>
+
+                  <Tabs 
+                    defaultValue="upload" 
+                    onValueChange={(val) => setGalleryMediaMode(val as "upload" | "youtube")}
+                    className="w-full md:w-auto"
+                  >
+                    <TabsList className="bg-gray-100 p-1 rounded-xl h-12">
+                      <TabsTrigger value="upload" className="rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:text-primary font-bold">
+                        <Upload size={14} />
+                        رفع ملفات
+                      </TabsTrigger>
+                      <TabsTrigger value="youtube" className="rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:text-red-600 font-bold">
+                        <Youtube size={14} />
+                        رابط يوتيوب
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
                 
-                <FormField
-                  control={form.control}
-                  name="mediaUrls"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">
-                        قم برفع صور أو فيديوهات إضافية لتوثيق العمل
-                      </FormLabel>
-                      <FormControl>
-                        <MultiUploader
-                          bucket="publicFiles"
-                          onChange={(files) => field.onChange(files)}
-                          initialUrls={field.value}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <AnimatePresence mode="wait">
+                  {galleryMediaMode === "upload" ? (
+                    <motion.div
+                      key="upload"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                    >
+                      <FormField
+                        control={form.control}
+                        name="mediaUrls"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black text-gray-400 uppercase tracking-widest mb-4 block">
+                              قم برفع صور أو فيديوهات إضافية لتوثيق العمل
+                            </FormLabel>
+                            <FormControl>
+                              <MultiUploader
+                                bucket="publicFiles"
+                                onChange={(files) => field.onChange(files)}
+                                initialUrls={field.value}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="youtube"
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -10 }}
+                      className="space-y-6"
+                    >
+                      <FormField
+                        control={form.control}
+                        name="youtubeUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="text-xs font-black text-gray-400 uppercase tracking-widest mb-2 block">
+                              رابط فيديو يوتيوب إضافي
+                            </FormLabel>
+                            <FormControl>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-red-500">
+                                  <Youtube size={20} />
+                                </div>
+                                <Input 
+                                  placeholder="https://www.youtube.com/watch?v=..." 
+                                  className="h-14 pr-12 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-red-500/20 text-lg font-bold"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
                   )}
-                />
+                </AnimatePresence>
               </section>
             </div>
 
@@ -309,28 +384,93 @@ const NewWorks = ({
             <div className="lg:col-span-1 space-y-8">
               {/* Main Media (The Poster/Hero) */}
               <section className="bg-white rounded-[2.5rem] p-8 shadow-xl shadow-gray-200/50 border border-gray-50">
-                <h2 className="text-lg font-black text-gray-900 mb-6 flex items-center gap-3">
-                  <ImageIcon className="text-primary size-5" />
-                  الصورة الرئيسية
-                </h2>
+                <div className="flex flex-col gap-4 mb-6">
+                  <h2 className="text-lg font-black text-gray-900 flex items-center gap-3">
+                    <ImageIcon className="text-primary size-5" />
+                    الوسيط الرئيسي (الظاهر في المعرض)
+                  </h2>
+                  
+                  <Tabs 
+                    defaultValue="upload" 
+                    onValueChange={(val) => setMainMediaMode(val as "upload" | "youtube")}
+                    className="w-full"
+                  >
+                    <TabsList className="bg-gray-100 p-1 rounded-xl h-10 w-full">
+                      <TabsTrigger value="upload" className="flex-1 rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:text-primary font-bold text-xs">
+                        <Upload size={12} />
+                        رفع
+                      </TabsTrigger>
+                      <TabsTrigger value="youtube" className="flex-1 rounded-lg gap-2 data-[state=active]:bg-white data-[state=active]:text-red-600 font-bold text-xs">
+                        <Youtube size={12} />
+                        يوتيوب
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
                 
-                <FormField
-                  control={form.control}
-                  name="imageUrl"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormControl>
-                        <SingleUploader
-                          bucket="publicFiles"
-                          onChange={(url) => field.onChange(url)}
-                          initialUrl={field.value ?? ""}
-                          required={true}
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
+                <AnimatePresence mode="wait">
+                  {mainMediaMode === "upload" ? (
+                    <motion.div
+                      key="upload-main"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                    >
+                      <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <SingleUploader
+                                bucket="publicFiles"
+                                onChange={(url) => field.onChange(url)}
+                                initialUrl={field.value ?? ""}
+                                required={true}
+                              />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="youtube-main"
+                      initial={{ opacity: 0, scale: 0.95 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      exit={{ opacity: 0, scale: 0.95 }}
+                    >
+                      <FormField
+                        control={form.control}
+                        name="imageUrl"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormControl>
+                              <div className="relative">
+                                <div className="absolute inset-y-0 right-4 flex items-center pointer-events-none text-red-500">
+                                  <Youtube size={18} />
+                                </div>
+                                <Input 
+                                  placeholder="رابط يوتيوب للغلاف..." 
+                                  className="h-12 pr-12 rounded-xl bg-gray-50 border-none focus:ring-2 focus:ring-red-500/20 text-sm font-bold"
+                                  {...field} 
+                                />
+                              </div>
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="mt-4 p-4 bg-blue-50 rounded-xl border border-blue-100">
+                        <p className="text-[10px] text-blue-700 font-bold leading-relaxed">
+                          <Info size={12} className="inline mr-1" />
+                          عند وضع رابط يوتيوب، سيتم جلب صورة الغلاف تلقائياً لعرضها في المعرض.
+                        </p>
+                      </div>
+                    </motion.div>
                   )}
-                />
+                </AnimatePresence>
               </section>
 
               {/* Details & Metadata */}
@@ -375,72 +515,6 @@ const NewWorks = ({
                       </FormItem>
                     )}
                   />
-
-                  {/* Project URL */}
-                  <FormField
-                    control={form.control}
-                    name="projectUrl"
-                    render={({ field }) => (
-                      <FormItem>
-                        <FormLabel className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                          <LinkIcon size={12} className="text-primary" />
-                          رابط المشروع المعاين
-                        </FormLabel>
-                        <FormControl>
-                          <Input 
-                            type="url" 
-                            placeholder="https://..." 
-                            className="h-12 rounded-xl bg-white/5 border-white/10 text-white focus:ring-primary/40"
-                            {...field} 
-                          />
-                        </FormControl>
-                        <FormMessage />
-                      </FormItem>
-                    )}
-                  />
-
-                  {/* Price & Duration Grid */}
-                  <div className="grid grid-cols-1 gap-6">
-                    <FormField
-                      control={form.control}
-                      name="priceRange"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                            <DollarSign size={12} className="text-primary" />
-                            نطاق السعر (اختياري)
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="مثال: 500$ - 1000$" 
-                              className="h-12 rounded-xl bg-white/5 border-white/10 text-white focus:ring-primary/40"
-                              {...field} 
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-
-                    <FormField
-                      control={form.control}
-                      name="duration"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
-                            <Clock size={12} className="text-primary" />
-                            مدة التنفيذ
-                          </FormLabel>
-                          <FormControl>
-                            <Input 
-                              placeholder="مثال: أسبوعين" 
-                              className="h-12 rounded-xl bg-white/5 border-white/10 text-white focus:ring-primary/40"
-                              {...field} 
-                            />
-                          </FormControl>
-                        </FormItem>
-                      )}
-                    />
-                  </div>
                 </div>
 
                 <div className="mt-12 pt-8 border-t border-white/10">
