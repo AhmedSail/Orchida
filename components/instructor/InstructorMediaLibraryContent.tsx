@@ -13,7 +13,7 @@ import {
 } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import Swal from "sweetalert2";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface MediaFile {
   key: string;
@@ -43,6 +43,11 @@ export default function InstructorMediaLibraryContent({
   const [searchQuery, setSearchQuery] = useState("");
 
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [uploadInfo, setUploadInfo] = useState<{
+    name: string;
+    total: number;
+    loaded: number;
+  } | null>(null);
 
   const fetchFiles = async () => {
     setLoading(true);
@@ -100,6 +105,11 @@ export default function InstructorMediaLibraryContent({
                 (event.loaded / event.total) * 100,
               );
               setUploadProgress(percentComplete);
+              setUploadInfo({
+                name: file.name,
+                total: event.total,
+                loaded: event.loaded,
+              });
             }
           };
 
@@ -168,6 +178,7 @@ export default function InstructorMediaLibraryContent({
     } finally {
       setUploading(false);
       setUploadProgress(0);
+      setUploadInfo(null);
     }
   };
 
@@ -248,9 +259,11 @@ export default function InstructorMediaLibraryContent({
               {uploading ? (
                 <div className="flex flex-col items-center justify-center gap-3 w-full px-6 h-full">
                   <div className="w-full h-2 bg-slate-200 dark:bg-zinc-800 rounded-full overflow-hidden relative">
-                    <div
-                      className="h-full bg-primary transition-all duration-300 ease-out shadow-[0_0_10px_rgba(59,130,246,0.5)]"
-                      style={{ width: `${uploadProgress}%` }}
+                    <motion.div
+                      className="absolute top-0 right-0 h-full bg-primary shadow-[0_0_10px_rgba(59,130,246,0.5)]"
+                      initial={{ width: 0 }}
+                      animate={{ width: `${uploadProgress}%` }}
+                      transition={{ type: "spring", bounce: 0, duration: 0.5 }}
                     />
                   </div>
                   <div className="flex justify-between w-full px-1">
@@ -367,6 +380,59 @@ export default function InstructorMediaLibraryContent({
           </div>
         )}
       </div>
+
+      {/* Floating Progress Indicator */}
+      <AnimatePresence>
+        {uploading && uploadInfo && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: 50, scale: 0.9 }}
+            className="fixed bottom-8 left-8 z-100 w-80 bg-white dark:bg-zinc-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-zinc-800 p-5 overflow-hidden"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="size-12 rounded-2xl bg-primary/10 flex items-center justify-center">
+                <UploadCloud className="size-6 text-primary animate-bounce" />
+              </div>
+              <div className="flex-1 overflow-hidden">
+                <h4 className="font-black text-slate-800 dark:text-white truncate text-sm">
+                  {uploadInfo.name}
+                </h4>
+                <p className="text-[10px] text-slate-500 font-bold">
+                  {(uploadInfo.loaded / 1024 / 1024).toFixed(2)} MB /{" "}
+                  {(uploadInfo.total / 1024 / 1024).toFixed(2)} MB
+                </p>
+              </div>
+              <div className="text-primary font-black text-xs">
+                {uploadProgress}%
+              </div>
+            </div>
+
+            <div className="relative h-2 w-full bg-slate-100 dark:bg-zinc-800 rounded-full overflow-hidden">
+              <motion.div
+                className="absolute top-0 right-0 h-full bg-primary"
+                initial={{ width: 0 }}
+                animate={{ width: `${uploadProgress}%` }}
+                transition={{ type: "spring", bounce: 0, duration: 0.5 }}
+              />
+            </div>
+
+            <div className="mt-3 flex justify-between items-center">
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-wider">
+                {uploadProgress === 100 ? "جاري المعالجة..." : "جاري الرفع..."}
+              </span>
+              <div className="flex gap-1">
+                <div className="size-1 bg-primary rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <div className="size-1 bg-primary rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <div className="size-1 bg-primary rounded-full animate-bounce" />
+              </div>
+            </div>
+
+            {/* Decorative background blur */}
+            <div className="absolute -top-10 -right-10 size-24 bg-primary/5 blur-3xl rounded-full" />
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

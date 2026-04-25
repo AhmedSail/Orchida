@@ -115,7 +115,8 @@ export default function AddContentDialog({
       formData.append("title", data.title);
       if (data.description) formData.append("description", data.description);
       formData.append("contentType", data.contentType);
-      if (data.scheduledAt) formData.append("scheduledAt", data.scheduledAt);
+      if (data.contentType !== "video" && data.scheduledAt)
+        formData.append("scheduledAt", data.scheduledAt);
 
       if (data.contentType === "text") {
         if (data.textContent) {
@@ -282,6 +283,7 @@ export default function AddContentDialog({
                   )}
                 />
 
+                {contentType !== "video" && (
                 <FormField
                   control={form.control}
                   name="scheduledAt"
@@ -301,6 +303,7 @@ export default function AddContentDialog({
                     </FormItem>
                   )}
                 />
+                )}
 
                 {contentType === "text" ? (
                   <FormField

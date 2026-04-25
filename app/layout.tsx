@@ -106,7 +106,6 @@ export default function RootLayout({
         className={`${tajawal.variable} antialiased`}
         suppressHydrationWarning
       >
-        <PwaRegister />
         <ViewTransitions>{children}</ViewTransitions>
       </body>
     </html>

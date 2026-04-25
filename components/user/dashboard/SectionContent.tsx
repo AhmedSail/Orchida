@@ -157,6 +157,7 @@ const SectionContent = ({
                                     .filter((c) => c.chapterId === chapter.id)
                                     .map((content, cIdx) => {
                                       const isLocked =
+                                        content.contentType !== "video" &&
                                         content.scheduledAt &&
                                         new Date(content.scheduledAt) >
                                           currentTime;

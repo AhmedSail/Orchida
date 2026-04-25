@@ -147,7 +147,7 @@ export default function EditContentDialog({
       description: data.description || "",
       contentType: data.contentType,
       textContent: data.textContent,
-      scheduledAt: data.scheduledAt,
+      scheduledAt: data.contentType === "video" ? "" : data.scheduledAt,
       imageUrls:
         data.contentType === "image" ? JSON.stringify(fileUrls) : undefined,
     });
@@ -252,25 +252,27 @@ export default function EditContentDialog({
                 )}
               />
 
-              <FormField
-                control={form.control}
-                name="scheduledAt"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel className="font-bold text-slate-700">
-                      وقت الظهور (اختياري)
-                    </FormLabel>
-                    <FormControl>
-                      <Input
-                        {...field}
-                        type="datetime-local"
-                        className="rounded-2xl h-12 border-slate-200 focus:ring-primary shadow-sm"
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              {contentType !== "video" && (
+                <FormField
+                  control={form.control}
+                  name="scheduledAt"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel className="font-bold text-slate-700">
+                        وقت الظهور (اختياري)
+                      </FormLabel>
+                      <FormControl>
+                        <Input
+                          {...field}
+                          type="datetime-local"
+                          className="rounded-2xl h-12 border-slate-200 focus:ring-primary shadow-sm"
+                        />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              )}
 
               {contentType === "text" ? (
                 <FormField
