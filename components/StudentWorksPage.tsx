@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
@@ -15,6 +15,7 @@ import {
   FaChevronLeft
 } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
+import { useRouter, useSearchParams, usePathname } from "next/navigation";
 
 interface StudentWork {
   id: string;
@@ -43,10 +44,48 @@ export default function StudentWorksPage({
   initialWorks: StudentWork[];
   allCourses: Course[];
 }) {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const pathname = usePathname();
+
   const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
+
+  // Sync state from URL on initial load
+  useEffect(() => {
+    const courseInUrl = searchParams.get("course");
+    if (courseInUrl) {
+      const course = allCourses.find(c => c.title === courseInUrl);
+      if (course) setSelectedCourse(course.id);
+    }
+
+    const typeInUrl = searchParams.get("type");
+    if (typeInUrl) setSelectedType(typeInUrl);
+  }, []);
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    
+    if (selectedCourse) {
+      const course = allCourses.find(c => c.id === selectedCourse);
+      if (course) params.set("course", course.title);
+    } else {
+      params.delete("course");
+    }
+
+    if (selectedType && selectedType !== "all") {
+      params.set("type", selectedType);
+    } else {
+      params.delete("type");
+    }
+
+    // Preserve scroll position by using { scroll: false }
+    const queryString = params.toString();
+    router.push(`${pathname}${queryString ? `?${queryString}` : ""}`, { scroll: false });
+  }, [selectedCourse, selectedType]);
 
   const filteredWorks = useMemo(() => {
     return initialWorks.filter((work) => {
