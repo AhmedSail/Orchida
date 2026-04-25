@@ -37,6 +37,7 @@ export async function POST(req: Request) {
         imageUrl: body.imageUrl,
         type: body.type, // ✅ نخزن النوع القادم من الفرونت
         serviceId: body.serviceId,
+        youtubeUrl: body.youtubeUrl,
         uploaderId: body.uploaderId,
       })
       .returning();

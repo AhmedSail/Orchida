@@ -302,10 +302,11 @@ export const studentWorks = pgTable("studentWorks", {
     .notNull()
     .references(() => users.id),
 
-  // الطالب صاحب القصة أو العمل
+  // الطالب صاحب القصة أو العمل (اختياري لو تم إدخال الاسم يدوياً)
   studentId: text("studentId")
-    .notNull()
     .references(() => users.id),
+
+  studentName: varchar("studentName", { length: 255 }),
 
   // ربط بالكورس والشعبة
   courseId: text("courseId")
@@ -327,6 +328,7 @@ export const studentWorks = pgTable("studentWorks", {
 
   // حالة العمل: pending أو approved
   status: workStatusEnum("status").default("approved").notNull(),
+  youtubeUrl: varchar("youtubeUrl", { length: 500 }),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -499,6 +501,7 @@ export const works = pgTable("works", {
   uploaderId: text("uploaderId").notNull(),
   uploadDate: timestamp("uploadDate").defaultNow().notNull(),
   deletedAt: timestamp("deletedAt"),
+  youtubeUrl: varchar("youtubeUrl", { length: 500 }),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
 });

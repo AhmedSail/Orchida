@@ -30,6 +30,7 @@ interface Work {
   toolsUsed: string | null;
   serviceId: string;
   serviceName: string | null;
+  youtubeUrl: string | null;
   createdAt: Date | string;
 }
 
@@ -45,7 +46,7 @@ export default function PortfolioGallery({
   initialWorks: any[]; 
   services: Service[];
 }) {
-  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
+  const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
   
@@ -58,14 +59,14 @@ export default function PortfolioGallery({
     setCurrentPage(1);
     
     return initialWorks.filter((work) => {
-      const matchesType = selectedTypes.length === 0 || selectedTypes.includes(work.serviceId);
+      const matchesType = !selectedType || work.serviceId === selectedType;
       const matchesSearch = 
         work.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         (work.description && work.description.toLowerCase().includes(searchQuery.toLowerCase()));
       
       return matchesType && matchesSearch;
     });
-  }, [initialWorks, selectedTypes, searchQuery]);
+  }, [initialWorks, selectedType, searchQuery]);
 
   // Paginated Items
   const totalPages = Math.ceil(filteredWorks.length / itemsPerPage);
@@ -76,9 +77,7 @@ export default function PortfolioGallery({
   }, [filteredWorks, currentPage]);
 
   const handleTypeClick = (typeId: string) => {
-    setSelectedTypes((prev) =>
-      prev.includes(typeId) ? prev.filter((t) => t !== typeId) : [...prev, typeId]
-    );
+    setSelectedType((prev) => (prev === typeId ? null : typeId));
   };
 
   return (
@@ -145,9 +144,9 @@ export default function PortfolioGallery({
                   <FaFilter className="text-primary text-sm" />
                   التصنيفات
                 </h2>
-                {selectedTypes.length > 0 && (
+                {selectedType && (
                   <button
-                    onClick={() => setSelectedTypes([])}
+                    onClick={() => setSelectedType(null)}
                     className="text-xs font-bold text-red-500 hover:text-red-600 transition-colors uppercase tracking-tighter"
                   >
                     إعادة ضبط
@@ -157,7 +156,7 @@ export default function PortfolioGallery({
 
               <div className="flex lg:flex-col flex-wrap gap-2.5">
                 {services.map((service) => {
-                  const isActive = selectedTypes.includes(service.id);
+                  const isActive = selectedType === service.id;
                   return (
                     <motion.button
                       key={service.id}
@@ -178,7 +177,7 @@ export default function PortfolioGallery({
             </div>
 
             {/* إحصائيات سريعة */}
-            <div className="bg-gradient-to-br from-primary to-blue-700 rounded-3xl p-8 text-white hidden lg:block shadow-xl shadow-primary/20">
+            <div className="bg-linear-to-br from-primary to-blue-700 rounded-3xl p-8 text-white hidden lg:block shadow-xl shadow-primary/20">
               <h3 className="font-bold mb-2">إجمالي المشاريع</h3>
               <p className="text-4xl font-black">{filteredWorks.length}</p>
               <div className="w-12 h-1.5 bg-white/20 rounded-full mt-4" />
@@ -208,7 +207,7 @@ export default function PortfolioGallery({
                   </p>
                   <button
                     onClick={() => {
-                      setSelectedTypes([]);
+                      setSelectedType(null);
                       setSearchQuery("");
                     }}
                     className="mt-8 text-primary font-bold border-b-2 border-primary/20 hover:border-primary transition-all"
@@ -234,7 +233,7 @@ export default function PortfolioGallery({
                       {/* Image Container */}
                       <div className="relative aspect-4/5 overflow-hidden bg-gray-100">
                         {work.imageUrl ? (
-                          work.type === "video" ? (
+                          (work.type === "video" && !work.imageUrl.includes("img.youtube.com")) ? (
                             <video
                               src={work.imageUrl}
                               className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
@@ -368,7 +367,7 @@ export default function PortfolioGallery({
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-[100] flex items-center justify-center p-4 lg:p-12 bg-black/95 backdrop-blur-xl"
+            className="fixed inset-0 z-100 flex items-center justify-center p-4 lg:p-12 bg-black/95 backdrop-blur-xl"
           >
             <motion.div
               initial={{ scale: 0.9, y: 50, opacity: 0 }}
@@ -379,19 +378,29 @@ export default function PortfolioGallery({
               {/* Close Button */}
               <button
                 onClick={() => setSelectedWork(null)}
-                className="absolute top-8 left-8 z-[110] size-12 rounded-full bg-black/10 hover:bg-black/20 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-2xl border border-white/20"
+                className="absolute top-8 left-8 z-110 size-12 rounded-full bg-black/10 hover:bg-black/20 text-white flex items-center justify-center backdrop-blur-md transition-all shadow-2xl border border-white/20"
               >
                 <FaTimes size={20} />
               </button>
 
               {/* Media Section */}
               <div className="flex-1 bg-black flex items-center justify-center relative overflow-hidden group">
-                {selectedWork.type === 'image' && selectedWork.imageUrl && (
+                {selectedWork.youtubeUrl ? (
+                  <iframe
+                    src={selectedWork.youtubeUrl.includes('watch?v=') 
+                      ? selectedWork.youtubeUrl.replace('watch?v=', 'embed/') 
+                      : selectedWork.youtubeUrl.includes('youtu.be/')
+                        ? selectedWork.youtubeUrl.replace('youtu.be/', 'youtube.com/embed/')
+                        : selectedWork.youtubeUrl}
+                    className="w-full aspect-video rounded-3xl"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
+                ) : selectedWork.type === 'image' && selectedWork.imageUrl ? (
                   <img src={selectedWork.imageUrl} alt={selectedWork.title} className="w-full h-full object-contain" />
-                )}
-                {selectedWork.type === 'video' && selectedWork.imageUrl && (
+                ) : selectedWork.type === 'video' && selectedWork.imageUrl ? (
                   <video src={selectedWork.imageUrl} controls className="w-full max-h-full" autoPlay />
-                )}
+                ) : null}
               </div>
 
               {/* Sidebar Info Section */}
@@ -419,14 +428,7 @@ export default function PortfolioGallery({
                        </p>
                     </div>
 
-                    {/* Metadata Grid */}
-                    <div className="grid grid-cols-2 gap-6 py-6 border-y border-gray-50">
-                       {selectedWork.duration && (
-                         <div>
-                            <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">مدة التنفيذ</p>
-                            <p className="font-bold text-sm text-gray-900">{selectedWork.duration}</p>
-                         </div>
-                       )}
+                    <div className="py-6 border-y border-gray-50">
                        {selectedWork.toolsUsed && (
                          <div>
                             <p className="text-[9px] font-black text-gray-400 uppercase tracking-widest mb-1">الأدوات المستخدمة</p>
@@ -436,14 +438,6 @@ export default function PortfolioGallery({
                     </div>
 
                     <div className="flex flex-col gap-3">
-                       {selectedWork.projectUrl && (
-                         <Button asChild size="lg" className="h-14 rounded-2xl font-black gap-2 shadow-lg shadow-primary/10">
-                            <a href={selectedWork.projectUrl} target="_blank" rel="noopener noreferrer">
-                               زيارة رابط المشروع
-                               <FaExternalLinkAlt className="text-[10px]" />
-                            </a>
-                         </Button>
-                       )}
                        <Button size="lg" variant="outline" className="h-14 rounded-2xl font-black border-2">
                           اطلب مشروعاً مماثلاً
                        </Button>

@@ -3,7 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
 import React from "react";
 import { motion } from "framer-motion";
-import { FaMedal } from "react-icons/fa"; // ✅ أيقونة ميدالية
+import { FaMedal, FaPlayCircle } from "react-icons/fa"; // ✅ أيقونة ميدالية
 
 const StudentWorksHome = ({
   studentStories,
@@ -14,7 +14,9 @@ const StudentWorksHome = ({
     description: string | null;
     type: "story" | "image" | "video";
     mediaUrl: string | null;
+    youtubeUrl: string | null;
     studentName: string | null;
+    userName: string | null;
   }[];
 }) => {
   const cardVariants = {
@@ -80,8 +82,8 @@ const StudentWorksHome = ({
                     <h1 className="text-primary">العنوان:</h1>
                     <h3 className="font-bold text-lg">{story.title}</h3>
                   </div>
-                  <p className="text-sm text-gray-600 mb-2">
-                    👤 {story.studentName}
+                  <p className="text-sm text-gray-600 mb-2 font-bold">
+                    👤 {story.studentName || story.userName || "طالب أوركيدة"}
                   </p>
 
                   {story.type === "image" && story.mediaUrl && (
@@ -105,21 +107,38 @@ const StudentWorksHome = ({
                     </>
                   )}
 
-                  {story.type === "video" && story.mediaUrl && (
-                    <>
-                      <div className="w-full h-64 flex items-center justify-center">
-                        <video
-                          src={story.mediaUrl}
-                          controls
-                          className="rounded object-cover w-full h-full"
+                  {story.type === "video" && (
+                    <div className="w-full h-64 flex items-center justify-center overflow-hidden rounded-xl bg-black relative group/vid">
+                      {story.youtubeUrl ? (
+                         <Image
+                          src={`https://img.youtube.com/vi/${(() => {
+                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                            const match = story.youtubeUrl.match(regExp);
+                            return (match && match[2].length === 11) ? match[2] : story.youtubeUrl.split('/').pop();
+                          })()}/hqdefault.jpg`}
+                          alt={story.title}
+                          fill
+                          className="object-cover transition-transform duration-700 group-hover/vid:scale-110"
+                          unoptimized
                         />
-                      </div>
-                      {story.description && (
-                        <p className="mt-2 text-gray-700">
-                          {story.description}
-                        </p>
+                      ) : (
+                        <video
+                          src={story.mediaUrl ?? ""}
+                          controls
+                          className="w-full h-full object-cover"
+                        />
                       )}
-                    </>
+                      {(story.youtubeUrl || story.type === "video") && (
+                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
+                          <FaPlayCircle className="text-white/70 text-5xl" />
+                        </div>
+                      )}
+                    </div>
+                  )}
+                  {story.description && story.type !== "story" && (
+                    <p className="mt-4 text-gray-700 line-clamp-3">
+                      {story.description}
+                    </p>
                   )}
 
                   {story.type === "story" && (

@@ -25,6 +25,8 @@ interface StudentWork {
   status: string;
   createdAt: Date | string;
   studentName: string | null;
+  userName: string | null;
+  youtubeUrl: string | null;
   courseId: string | null;
   courseTitle: string | null;
 }
@@ -41,14 +43,14 @@ export default function StudentWorksPage({
   initialWorks: StudentWork[];
   allCourses: Course[];
 }) {
-  const [selectedCourses, setSelectedCourses] = useState<string[]>([]);
+  const [selectedCourse, setSelectedCourse] = useState<string | null>(null);
   const [selectedType, setSelectedType] = useState<string>("all");
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedWork, setSelectedWork] = useState<StudentWork | null>(null);
 
   const filteredWorks = useMemo(() => {
     return initialWorks.filter((work) => {
-      const matchesCourse = selectedCourses.length === 0 || (work.courseId && selectedCourses.includes(work.courseId));
+      const matchesCourse = !selectedCourse || work.courseId === selectedCourse;
       const matchesType = selectedType === "all" || work.type === selectedType;
       const matchesSearch = 
         work.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -57,14 +59,10 @@ export default function StudentWorksPage({
       
       return matchesCourse && matchesType && matchesSearch;
     });
-  }, [initialWorks, selectedCourses, selectedType, searchQuery]);
+  }, [initialWorks, selectedCourse, selectedType, searchQuery]);
 
   const toggleCourse = (courseId: string) => {
-    setSelectedCourses(prev => 
-      prev.includes(courseId) 
-        ? prev.filter(id => id !== courseId) 
-        : [...prev, courseId]
-    );
+    setSelectedCourse(prev => prev === courseId ? null : courseId);
   };
 
   const getWorkIcon = (type: string) => {
@@ -162,7 +160,7 @@ export default function StudentWorksPage({
 
               <div className="space-y-2 max-h-[60vh] overflow-y-auto pr-2 custom-scrollbar">
                 {allCourses.map((course) => {
-                  const isActive = selectedCourses.includes(course.id);
+                  const isActive = selectedCourse === course.id;
                   return (
                     <button
                       key={course.id}
@@ -179,9 +177,9 @@ export default function StudentWorksPage({
                 })}
               </div>
 
-              {selectedCourses.length > 0 && (
+              {selectedCourse && (
                 <button
-                  onClick={() => setSelectedCourses([])}
+                  onClick={() => setSelectedCourse(null)}
                   className="w-full mt-6 py-3 text-sm font-bold text-red-500 bg-red-50 rounded-xl hover:bg-red-100 transition-colors"
                 >
                   إعادة ضبط الفلاتر
@@ -215,7 +213,24 @@ export default function StudentWorksPage({
                     >
                       {/* Media Container */}
                       <div className="relative aspect-video overflow-hidden bg-gray-100">
-                        {work.type === "image" && work.mediaUrl ? (
+                        {work.youtubeUrl ? (
+                           <div className="w-full h-full relative">
+                            <Image
+                              src={`https://img.youtube.com/vi/${(() => {
+                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                const match = work.youtubeUrl.match(regExp);
+                                return (match && match[2].length === 11) ? match[2] : work.youtubeUrl.split('/').pop();
+                              })()}/hqdefault.jpg`}
+                              alt={work.title}
+                              fill
+                              className="object-cover transition-transform duration-700 group-hover:scale-110"
+                              unoptimized
+                            />
+                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
+                              <FaPlayCircle className="text-white/70 text-5xl group-hover:scale-110 group-hover:text-white transition-all" />
+                            </div>
+                          </div>
+                        ) : work.type === "image" && work.mediaUrl ? (
                           <Image
                             src={work.mediaUrl}
                             alt={work.title}
@@ -260,7 +275,7 @@ export default function StudentWorksPage({
                           </div>
                           <div>
                             <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1">صاحب العمل</p>
-                            <h4 className="font-bold text-gray-900 leading-none">{work.studentName || "طالب أوركيدة"}</h4>
+                            <h4 className="font-bold text-gray-900 leading-none">{work.studentName || work.userName || "طالب أوركيدة"}</h4>
                           </div>
                         </div>
 
@@ -323,13 +338,35 @@ export default function StudentWorksPage({
               </button>
 
               <div className="flex-1 bg-gray-100 flex items-center justify-center min-h-[300px]">
-                {selectedWork.type === "image" && selectedWork.mediaUrl && (
+                {selectedWork.youtubeUrl ? (
+                   <iframe
+                   src={selectedWork.youtubeUrl.includes('watch?v=') 
+                     ? selectedWork.youtubeUrl.replace('watch?v=', 'embed/') 
+                     : selectedWork.youtubeUrl.includes('youtu.be/')
+                       ? selectedWork.youtubeUrl.replace('youtu.be/', 'youtube.com/embed/')
+                       : selectedWork.youtubeUrl}
+                   className="w-full h-full border-none aspect-video"
+                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                   allowFullScreen
+                 ></iframe>
+                ) : selectedWork.type === "image" && selectedWork.mediaUrl ? (
                   <img src={selectedWork.mediaUrl} alt={selectedWork.title} className="w-full h-full object-contain" />
-                )}
-                {selectedWork.type === "video" && selectedWork.mediaUrl && (
-                  <video src={selectedWork.mediaUrl} controls className="w-full max-h-full" autoPlay />
-                )}
-                {selectedWork.type === "story" && (
+                ) : selectedWork.type === "video" && selectedWork.mediaUrl ? (
+                  (selectedWork.mediaUrl.includes("youtube.com") || selectedWork.mediaUrl.includes("youtu.be")) ? (
+                    <iframe
+                      src={selectedWork.mediaUrl.includes('watch?v=') 
+                        ? selectedWork.mediaUrl.replace('watch?v=', 'embed/') 
+                        : selectedWork.mediaUrl.includes('youtu.be/')
+                          ? selectedWork.mediaUrl.replace('youtu.be/', 'youtube.com/embed/')
+                          : selectedWork.mediaUrl}
+                      className="w-full h-full border-none aspect-video"
+                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                      allowFullScreen
+                    ></iframe>
+                  ) : (
+                    <video src={selectedWork.mediaUrl} controls className="w-full max-h-full" autoPlay />
+                  )
+                ) : selectedWork.type === "story" && (
                   <div className="p-12 text-center text-primary/20">
                     <FaBookOpen className="text-[120px]" />
                   </div>

@@ -24,7 +24,9 @@ export default async function Page() {
       mediaUrl: studentWorks.mediaUrl,
       status: studentWorks.status,
       createdAt: studentWorks.createdAt,
-      studentName: users.name,
+      studentName: studentWorks.studentName,
+      userName: users.name,
+      youtubeUrl: studentWorks.youtubeUrl,
       courseId: courses.id,
       courseTitle: courses.title,
     })
