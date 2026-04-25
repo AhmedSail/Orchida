@@ -70,7 +70,9 @@ const HomeView = ({
     description: string | null;
     type: "story" | "image" | "video";
     mediaUrl: string | null;
+    youtubeUrl: string | null;
     studentName: string | null;
+    userName: string | null;
   }[];
   jobs: Job[];
   trendingProducts: TrendingProduct[];
