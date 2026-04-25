@@ -23,6 +23,7 @@ import {
 import { completeLessonAction } from "@/app/actions/lms-v2";
 import { toast } from "sonner";
 import Link from "next/link";
+import Image from "next/image";
 
 interface Field {
   id: string;
@@ -415,10 +416,13 @@ export default function CoursePlayer({
                       )}
                       {field.fieldType === "image" && (
                         <div className="rounded-[32px] overflow-hidden bg-white shadow-xl border-4 border-white ring-1 ring-zinc-100">
-                          <img
+                          <Image
                             src={field.content}
                             className="w-full h-auto object-cover"
                             alt="Lesson content"
+                            width={500}
+                            height={500}
+                            priority
                           />
                         </div>
                       )}

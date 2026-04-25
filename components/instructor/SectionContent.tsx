@@ -564,17 +564,18 @@ const SectionContent = ({
                                           >
                                             {content.contentType}
                                           </Badge>
-                                          {content.scheduledAt && (
-                                            <Badge
-                                              variant="secondary"
-                                              className="text-[10px] px-2 py-0.5 rounded-lg font-black text-blue-600 bg-blue-50 border-blue-100"
-                                            >
-                                              <Clock className="size-3 mr-1" />
-                                              {new Date(
-                                                content.scheduledAt,
-                                              ).toLocaleString("ar-EG")}
-                                            </Badge>
-                                          )}
+                                          {content.contentType !== "video" &&
+                                            content.scheduledAt && (
+                                              <Badge
+                                                variant="secondary"
+                                                className="text-[10px] px-2 py-0.5 rounded-lg font-black text-blue-600 bg-blue-50 border-blue-100"
+                                              >
+                                                <Clock className="size-3 mr-1" />
+                                                {new Date(
+                                                  content.scheduledAt,
+                                                ).toLocaleString("ar-EG")}
+                                              </Badge>
+                                            )}
                                         </div>
                                       </div>
                                     </div>
