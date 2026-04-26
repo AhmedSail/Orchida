@@ -323,70 +323,14 @@ export function AppSidebar({ user }: { user: User }) {
                         جدول اللقاءات
                       </Link>
 
-                      {/* الشعب المنسدلة داخل الدورات */}
-                      <button
-                        onClick={() => toggleMenu("sections")}
-                        className="flex items-center justify-between text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all w-full text-right"
+                      {/* إدارة الشعب */}
+                      <Link
+                        href={`/admin/${user.id}/courses/sections`}
+                        className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all flex items-center gap-2"
                       >
-                        <div className="flex items-center gap-2">
-                          <LayoutGrid className="size-4" />
-                          <span>إدارة الشعب</span>
-                        </div>
-                        <ChevronDown
-                          className={cn(
-                            "size-3 transition-transform",
-                            openMenus.sections && "rotate-180",
-                          )}
-                        />
-                      </button>
-
-                      <AnimatePresence>
-                        {openMenus.sections && (
-                          <motion.div
-                            initial={{ height: 0, opacity: 0 }}
-                            animate={{ height: "auto", opacity: 1 }}
-                            exit={{ height: 0, opacity: 0 }}
-                            className="mr-4 mt-1 border-r border-slate-200"
-                          >
-                            <div className="flex flex-col gap-1 py-1 pr-3">
-                              {[
-                                {
-                                  label: "شعب نشطة",
-                                  url: `/admin/${user.id}/courses/sections/openSection`,
-                                },
-                                {
-                                  label: "في انتظار الموافقة",
-                                  url: `/admin/${user.id}/courses/sections/pending_approval_section`,
-                                },
-                                {
-                                  label: "شعب مغلقة",
-                                  url: `/admin/${user.id}/courses/sections/closedSection`,
-                                },
-                                {
-                                  label: "قيد التنفيذ",
-                                  url: `/admin/${user.id}/courses/sections/in_progress_section`,
-                                },
-                                {
-                                  label: "شعب مكتملة",
-                                  url: `/admin/${user.id}/courses/sections/completedSection`,
-                                },
-                                {
-                                  label: "شعب ملغاة",
-                                  url: `/admin/${user.id}/courses/sections/cancelledSection`,
-                                },
-                              ].map((sec) => (
-                                <Link
-                                  key={sec.label}
-                                  href={sec.url}
-                                  className="text-[13px] py-1.5 px-3 rounded-md text-slate-500 hover:text-primary transition-all whitespace-nowrap"
-                                >
-                                  - {sec.label}
-                                </Link>
-                              ))}
-                            </div>
-                          </motion.div>
-                        )}
-                      </AnimatePresence>
+                        <LayoutGrid className="size-4" />
+                        <span>إدارة الشعب</span>
+                      </Link>
 
                       <Link
                         href={`/admin/${user.id}/courses/interactive-links`}
