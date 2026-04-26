@@ -40,6 +40,21 @@ const config: NextConfig = {
         hostname: "localhost",
         pathname: "**",
       },
+      {
+        protocol: "https",
+        hostname: "img.youtube.com",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.ytimg.com",
+        pathname: "**",
+      },
+      {
+        protocol: "https",
+        hostname: "*.youtube.com",
+        pathname: "**",
+      },
     ],
     // هنا مكانها الصحيح
     qualities: [100, 75, 80],
