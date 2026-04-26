@@ -38,6 +38,7 @@ interface Work {
 interface Service {
   id: string;
   name: string;
+  slug: string | null;
 }
 
 export default function PortfolioGallery({ 
@@ -63,7 +64,7 @@ export default function PortfolioGallery({
   useEffect(() => {
     const categoryInUrl = searchParams.get("category");
     if (categoryInUrl) {
-      const service = services.find(s => s.name === categoryInUrl);
+      const service = services.find(s => s.slug === categoryInUrl || s.name === categoryInUrl);
       if (service) setSelectedType(service.id);
     }
   }, []);
@@ -74,7 +75,7 @@ export default function PortfolioGallery({
     
     if (selectedType) {
       const service = services.find(s => s.id === selectedType);
-      if (service) params.set("category", service.name);
+      if (service) params.set("category", service.slug || service.name);
     } else {
       params.delete("category");
     }

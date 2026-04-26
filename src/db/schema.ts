@@ -146,6 +146,7 @@ export const users = pgTable("users", {
 export const courses = pgTable("courses", {
   id: text("id").primaryKey(),
   title: varchar("title", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }), // الرابط بالإنجليزية
   description: text("description"),
   imageUrl: varchar("imageUrl", { length: 500 }),
   duration: text("duration"), // مدة الدورة (بالأيام أو الأسابيع)
@@ -471,6 +472,7 @@ export const companies = pgTable("companies", {
 export const digitalServices = pgTable("digitalServices", {
   id: text("id").primaryKey(),
   name: varchar("name", { length: 255 }).notNull(),
+  slug: varchar("slug", { length: 255 }), // الرابط بالإنجليزية
   description: text("description"),
   icon: varchar("icon", { length: 255 }),
   smallImage: varchar("smallImage", { length: 255 }), // Added small image for service page

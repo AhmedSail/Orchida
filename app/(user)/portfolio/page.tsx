@@ -43,6 +43,7 @@ export default async function Page() {
     .select({
       id: digitalServices.id,
       name: digitalServices.name,
+      slug: digitalServices.slug,
     })
     .from(digitalServices)
     .where(eq(digitalServices.isActive, true));

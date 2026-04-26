@@ -21,6 +21,7 @@ export async function POST(req: Request) {
     await db.insert(courses).values({
       id: crypto.randomUUID(),
       title: body.title,
+      slug: body.slug,
       description: body.description,
       imageUrl: body.imageUrl,
       duration: body.duration,

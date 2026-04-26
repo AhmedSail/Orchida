@@ -25,6 +25,7 @@ import { UploaderProvider } from "@/src/components/upload/uploader-provider";
 
 const schema = z.object({
   name: z.string().min(2, "اسم الخدمة مطلوب"),
+  slug: z.string().min(2, "الرابط (Slug) مطلوب").regex(/^[a-z0-9-]+$/, "يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة وأرقام وشرطات فقط"),
   description: z.string().min(5, "الوصف مطلوب"),
   smallImage: z.string().min(1, "يجب رفع صورة صغيرة للخدمة"),
   largeImage: z.string().min(1, "يجب رفع صورة كبيرة للخدمة"),
@@ -41,6 +42,7 @@ export default function AddServiceForm({ userId }: { userId: string }) {
     resolver: zodResolver(schema),
     defaultValues: {
       name: "",
+      slug: "",
       description: "",
       smallImage: "",
       largeImage: "",
@@ -95,6 +97,20 @@ export default function AddServiceForm({ userId }: { userId: string }) {
                 <FormLabel>اسم الخدمة</FormLabel>
                 <FormControl>
                   <Input placeholder="مثال: تصميم" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* الرابط (Slug) */}
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>الرابط (Slug) - بالإنجليزية</FormLabel>
+                <FormControl>
+                  <Input placeholder="مثال: design-service" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

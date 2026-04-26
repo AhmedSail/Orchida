@@ -31,6 +31,7 @@ import { deleteFromR2, uploadToR2 } from "@/lib/r2-client";
 
 const formSchema = z.object({
   title: z.string().min(3, "العنوان مطلوب"),
+  slug: z.string().min(3, "الرابط (Slug) مطلوب").regex(/^[a-z0-9-]+$/, "يجب أن يحتوي الرابط على أحرف إنجليزية صغيرة وأرقام وشرطات فقط"),
   description: z.string().optional(),
   imageFile: z.instanceof(File).optional(),
   duration: z.string().min(1, "المدة مطلوبة"),
@@ -60,6 +61,7 @@ export default function EditCourseForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
       title: initialData?.title ?? "",
+      slug: (initialData as any)?.slug ?? "",
       description: initialData?.description ?? "",
       imageFile: undefined,
       duration: initialData?.duration ?? "",
@@ -148,6 +150,20 @@ export default function EditCourseForm({
                 <FormLabel>عنوان الدورة</FormLabel>
                 <FormControl>
                   <Input placeholder="مثال: دورة Next.js" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+          {/* الرابط (Slug) */}
+          <FormField
+            control={form.control}
+            name="slug"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>الرابط (Slug) - بالإنجليزية</FormLabel>
+                <FormControl>
+                  <Input placeholder="مثال: ecommerce-course" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>

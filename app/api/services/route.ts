@@ -13,6 +13,7 @@ export async function POST(req: Request) {
   const newService = {
     id: nanoid(),
     name: body.name,
+    slug: body.slug,
     description: body.description || "",
     icon: body.icon || body.smallImage || "",
     smallImage: body.smallImage || "",

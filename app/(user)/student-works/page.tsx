@@ -29,6 +29,7 @@ export default async function Page() {
       youtubeUrl: studentWorks.youtubeUrl,
       courseId: courses.id,
       courseTitle: courses.title,
+      courseSlug: courses.slug,
     })
     .from(studentWorks)
     .leftJoin(users, eq(studentWorks.studentId, users.id))
@@ -41,6 +42,7 @@ export default async function Page() {
     .select({
       id: courses.id,
       title: courses.title,
+      slug: courses.slug,
     })
     .from(courses)
     .where(eq(courses.isActive, true));

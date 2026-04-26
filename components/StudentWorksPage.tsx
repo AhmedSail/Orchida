@@ -30,11 +30,13 @@ interface StudentWork {
   youtubeUrl: string | null;
   courseId: string | null;
   courseTitle: string | null;
+  courseSlug: string | null;
 }
 
 interface Course {
   id: string;
   title: string;
+  slug: string | null;
 }
 
 export default function StudentWorksPage({ 
@@ -57,7 +59,7 @@ export default function StudentWorksPage({
   useEffect(() => {
     const courseInUrl = searchParams.get("course");
     if (courseInUrl) {
-      const course = allCourses.find(c => c.title === courseInUrl);
+      const course = allCourses.find(c => c.slug === courseInUrl || c.title === courseInUrl);
       if (course) setSelectedCourse(course.id);
     }
 
@@ -71,7 +73,7 @@ export default function StudentWorksPage({
     
     if (selectedCourse) {
       const course = allCourses.find(c => c.id === selectedCourse);
-      if (course) params.set("course", course.title);
+      if (course) params.set("course", course.slug || course.title);
     } else {
       params.delete("course");
     }
