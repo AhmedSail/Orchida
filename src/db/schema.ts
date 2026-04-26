@@ -1440,6 +1440,21 @@ export const sectionLessonAvailability = pgTable("sectionLessonAvailability", {
   unq: unique().on(table.sectionId, table.lessonId),
 }));
 
+// 6. إخفاء الدروس العامة عن شعب معينة (Section Hidden Lessons)
+// يستخدم لإخفاء درس عام نهائياً من منهج شعبة محددة
+export const sectionHiddenLessons = pgTable("sectionHiddenLessons", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  sectionId: text("sectionId")
+    .notNull()
+    .references(() => courseSections.id, { onDelete: "cascade" }),
+  lessonId: uuid("lessonId")
+    .notNull()
+    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+  hiddenAt: timestamp("hiddenAt").defaultNow().notNull(),
+}, (table) => ({
+  unq: unique().on(table.sectionId, table.lessonId),
+}));
+
 // العلاقات (Relations)
 export const curriculumLessonsRelations = relations(curriculumLessons, ({ one, many }) => ({
   course: one(courses, { fields: [curriculumLessons.courseId], references: [courses.id] }),

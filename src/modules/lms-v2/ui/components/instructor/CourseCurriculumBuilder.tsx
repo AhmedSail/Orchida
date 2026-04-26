@@ -41,6 +41,9 @@ import {
   getBunnyVideoGuidAction,
   getLessonCompletionStudentsAction,
   toggleLessonAvailabilityAction,
+  getLessonAvailabilityMapAction,
+  getLessonHiddenMapAction,
+  toggleLessonHiddenAction,
   updateLessonFieldAction,
   updateLessonAction,
 } from "@/app/actions/lms-v2";
@@ -1183,14 +1186,32 @@ function LessonAvailabilityModal({
   const [availabilityMap, setAvailabilityMap] = useState<
     Record<string, boolean>
   >({});
+  const [hiddenMap, setHiddenMap] = useState<Record<string, boolean>>({});
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // هنا يمكن جلب الحالة الحالية لكل شعبة من الداتابيز
-    setIsLoading(false);
+    const fetchStates = async () => {
+      setIsLoading(true);
+      const [availRes, hiddenRes] = await Promise.all([
+        getLessonAvailabilityMapAction(lessonId),
+        getLessonHiddenMapAction(lessonId),
+      ]);
+
+      if (availRes.success && availRes.data) {
+        setAvailabilityMap(availRes.data);
+      }
+      if (hiddenRes.success && hiddenRes.data) {
+        setHiddenMap(hiddenRes.data);
+      }
+      setIsLoading(false);
+    };
+    fetchStates();
   }, [lessonId]);
 
-  const handleToggle = async (sectionId: string, currentStatus: boolean) => {
+  const handleToggleAvailability = async (
+    sectionId: string,
+    currentStatus: boolean,
+  ) => {
     const newStatus = !currentStatus;
     setAvailabilityMap((prev) => ({ ...prev, [sectionId]: newStatus }));
 
@@ -1204,91 +1225,152 @@ function LessonAvailabilityModal({
       toast.error("فشل في تحديث الحالة");
       setAvailabilityMap((prev) => ({ ...prev, [sectionId]: currentStatus }));
     } else {
-      toast.success(newStatus ? "تم إتاحة الدرس لهذه الشعبة" : "تم حجب الدرس");
+      toast.success(newStatus ? "تم إتاحة الدرس لهذه الشعبة" : "تم قفل الدرس");
+    }
+  };
+
+  const handleToggleHidden = async (
+    sectionId: string,
+    isCurrentlyHidden: boolean,
+  ) => {
+    const newHiddenStatus = !isCurrentlyHidden;
+    setHiddenMap((prev) => ({ ...prev, [sectionId]: newHiddenStatus }));
+
+    const res = await toggleLessonHiddenAction({
+      sectionId,
+      lessonId,
+      isHidden: newHiddenStatus,
+    });
+
+    if (!res.success) {
+      toast.error("فشل في تحديث الإخفاء");
+      setHiddenMap((prev) => ({ ...prev, [sectionId]: isCurrentlyHidden }));
+    } else {
+      toast.success(
+        newHiddenStatus
+          ? "تم إخفاء الدرس نهائياً عن هذه الشعبة"
+          : "تم استرجاع الدرس لهذه الشعبة",
+      );
     }
   };
 
   return (
     <Dialog open={true} onOpenChange={onClose}>
       <DialogContent className="max-w-2xl rounded-[40px] p-0 overflow-hidden border-none shadow-2xl">
-        <div className="bg-amber-500 p-8 text-white relative">
-          <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+        <div className="bg-zinc-900 p-8 text-white relative">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-500/20 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
           <h2 className="text-2xl font-black relative z-10 flex items-center gap-3">
-            <ShieldCheck className="w-8 h-8" />
-            إدارة إتاحة الدرس
+            <ShieldCheck className="w-8 h-8 text-amber-500" />
+            إدارة ظهور وإتاحة الدرس
           </h2>
-          <p className="text-white/80 text-xs font-bold mt-2 uppercase tracking-widest">
-            تحكم في من يمكنه مشاهدة هذا المحتوى الآن
+          <p className="text-white/60 text-xs font-bold mt-2 uppercase tracking-widest">
+            تحكم في إخفاء الدرس أو قفله لشعب محددة
           </p>
         </div>
 
         <div className="p-8 bg-white">
           {/* Info Box */}
-          <div className="bg-blue-50 border border-blue-100 rounded-2xl p-4 mb-8 flex gap-4">
-            <Info className="w-5 h-5 text-blue-500 shrink-0" />
-            <div className="text-xs font-bold text-blue-700 leading-relaxed">
-              {courseType === "online" ? (
-                <p>
-                  هذا الكورس بنظام{" "}
-                  <span className="font-black underline">الأونلاين</span>. أول
-                  لقاء يفتح تلقائياً للطالب، وباقي اللقاءات تتطلب تفعيلك أو
-                  تفعيل المنسق لتظهر لهم.
-                </p>
-              ) : (
-                <p>
-                  هذا الكورس بنظام{" "}
-                  <span className="font-black underline">الوجاهي</span>. لا يظهر
-                  أي لقاء للطلاب إلا إذا قمت بتفعيله يدوياً من هنا لكل شعبة.
-                </p>
-              )}
+          <div className="bg-amber-50 border border-amber-100 rounded-2xl p-4 mb-8 flex gap-4">
+            <Info className="w-5 h-5 text-amber-500 shrink-0" />
+            <div className="text-xs font-bold text-amber-700 leading-relaxed">
+              <ul className="list-disc list-inside space-y-1">
+                <li>
+                  <span className="font-black text-amber-900">
+                    إخفاء الدرس (حذف من المنهج):{" "}
+                  </span>
+                  الدرس لن يظهر نهائياً للطلاب في هذه الشعبة، حتى عنوانه.
+                </li>
+                <li>
+                  <span className="font-black text-amber-900">
+                    حالة الإتاحة (قفل/فتح):{" "}
+                  </span>
+                  إذا كان الدرس غير مخفي، فسيظهر عنوانه للطلاب، ولكن لن يتمكنوا
+                  من الدخول لمحتواه إلا إذا كان{" "}
+                  <span className="font-black">متاحاً</span>.
+                </li>
+              </ul>
             </div>
           </div>
 
           <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2">
-            {sections.length === 0 ? (
+            {isLoading ? (
+              <div className="flex flex-col items-center justify-center py-10 gap-3">
+                <Loader2 className="w-8 h-8 animate-spin text-amber-500" />
+                <p className="text-zinc-400 font-bold text-sm">
+                  جاري جلب الإعدادات...
+                </p>
+              </div>
+            ) : sections.length === 0 ? (
               <div className="text-center py-10 text-zinc-400 font-bold">
                 لا توجد شعب مسجلة لهذا الكورس حالياً
               </div>
             ) : (
-              sections.map((section) => (
-                <div
-                  key={section.id}
-                  className="flex items-center justify-between p-5 rounded-[24px] bg-zinc-50 border border-zinc-100"
-                >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center text-zinc-400 border border-zinc-100 shadow-sm">
-                      <Users className="w-6 h-6" />
-                    </div>
-                    <div>
-                      <p className="font-black text-zinc-900">
-                        {section.name ||
-                          `شعبة #${section.sectionNumber || "?"}`}
-                      </p>
-                      <p className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">
-                        نوع الشعبة: {section.type || courseType}
-                      </p>
-                    </div>
-                  </div>
+              sections.map((section) => {
+                const isHidden = hiddenMap[section.id] || false;
+                const isAvailable = availabilityMap[section.id] || false;
 
-                  <button
-                    onClick={() =>
-                      handleToggle(
-                        section.id,
-                        availabilityMap[section.id] || false,
-                      )
-                    }
-                    className={`px-6 py-2.5 rounded-xl font-black text-xs transition-all ${
-                      availabilityMap[section.id]
-                        ? "bg-emerald-500 text-white shadow-lg shadow-emerald-500/20"
-                        : "bg-zinc-200 text-zinc-500 hover:bg-zinc-300"
+                return (
+                  <div
+                    key={section.id}
+                    className={`flex items-center justify-between p-5 rounded-[24px] border transition-all ${
+                      isHidden
+                        ? "bg-red-50/50 border-red-100 opacity-75"
+                        : "bg-zinc-50 border-zinc-100"
                     }`}
                   >
-                    {availabilityMap[section.id]
-                      ? "متاح للطلاب"
-                      : "مخفي حالياً"}
-                  </button>
-                </div>
-              ))
+                    <div className="flex items-center gap-4">
+                      <div
+                        className={`w-12 h-12 bg-white rounded-2xl flex items-center justify-center border shadow-sm ${
+                          isHidden
+                            ? "text-red-400 border-red-100"
+                            : "text-zinc-400 border-zinc-100"
+                        }`}
+                      >
+                        <Users className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <p
+                          className={`font-black ${isHidden ? "text-red-900" : "text-zinc-900"}`}
+                        >
+                          {section.name ||
+                            `شعبة #${section.sectionNumber || "?"}`}
+                        </p>
+                        <p className="text-[10px] font-black text-zinc-400 uppercase tracking-tighter">
+                          نوع الشعبة: {section.type || courseType}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-2">
+                      <button
+                        onClick={() => handleToggleHidden(section.id, isHidden)}
+                        className={`px-4 py-2 rounded-xl font-black text-[10px] transition-all border ${
+                          isHidden
+                            ? "bg-red-500 text-white border-red-500 shadow-lg shadow-red-500/20"
+                            : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100"
+                        }`}
+                      >
+                        {isHidden ? "مخفي نهائياً" : "ظاهر في المنهج"}
+                      </button>
+
+                      {!isHidden && (
+                        <button
+                          onClick={() =>
+                            handleToggleAvailability(section.id, isAvailable)
+                          }
+                          className={`px-4 py-2 rounded-xl font-black text-[10px] transition-all border ${
+                            isAvailable
+                              ? "bg-emerald-500 text-white border-emerald-500 shadow-lg shadow-emerald-500/20"
+                              : "bg-white text-zinc-500 border-zinc-200 hover:bg-zinc-100"
+                          }`}
+                        >
+                          {isAvailable ? "متاح (مفتوح)" : "مقفول للطلاب"}
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                );
+              })
             )}
           </div>
 

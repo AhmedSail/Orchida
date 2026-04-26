@@ -43,6 +43,8 @@ import {
   EyeOff,
   Sparkles,
   Zap,
+  ChevronRight,
+  ChevronLeft,
 } from "lucide-react";
 
 type Section = {
@@ -122,19 +124,29 @@ const statusStyles: Record<
 };
 
 const SectionTable = ({
-  course,
+  sectionsList,
   role,
   userId,
 }: {
-  course: Courses;
+  sectionsList: (Section & { courseTitle?: string })[];
   role: string;
   userId: string;
 }) => {
-  const [sections, setSections] = useState<Section[]>(course.sections);
+  const [sections, setSections] =
+    useState<(Section & { courseTitle?: string })[]>(sectionsList);
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 5;
 
   useEffect(() => {
-    setSections(course.sections);
-  }, [course]);
+    setSections(sectionsList);
+    setCurrentPage(1);
+  }, [sectionsList]);
+
+  const totalPages = Math.ceil(sections.length / pageSize);
+  const currentSections = sections.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   const handleDelete = async (id: string) => {
     const result = await Swal.fire({
@@ -275,7 +287,7 @@ const SectionTable = ({
             الشعب الدراسية
           </h3>
           <p className="text-sm text-slate-500 font-medium">
-            إدارة المجموعات والمواعيد الخاصة بـ {course.title}
+            إدارة المجموعات والمواعيد لجميع الشعب
           </p>
         </div>
       </div>
@@ -319,8 +331,8 @@ const SectionTable = ({
           </TableHeader>
           <TableBody>
             <AnimatePresence mode="popLayout">
-              {sections.length > 0 ? (
-                sections.map((section, index) => {
+              {currentSections.length > 0 ? (
+                currentSections.map((section, index) => {
                   const status = statusStyles[section.status];
                   const occupancyRate =
                     (section.currentEnrollment / section.maxCapacity) * 100;
@@ -334,7 +346,7 @@ const SectionTable = ({
                       className="group border-b border-slate-50 dark:border-zinc-900 hover:bg-slate-50/50 dark:hover:bg-zinc-900/20 transition-colors"
                     >
                       <TableCell className="px-6 py-4">
-                        <div className="relative">
+                        <div className="relative inline-block">
                           <div className="size-10 rounded-xl bg-slate-100 dark:bg-zinc-800 flex items-center justify-center font-black text-slate-600 dark:text-slate-400">
                             #{section.number}
                           </div>
@@ -344,6 +356,14 @@ const SectionTable = ({
                             </div>
                           )}
                         </div>
+                        {section.courseTitle && (
+                          <div
+                            className="mt-2 text-xs font-bold text-primary max-w-[120px] truncate"
+                            title={section.courseTitle}
+                          >
+                            {section.courseTitle}
+                          </div>
+                        )}
                       </TableCell>
                       <TableCell className="px-6 py-4">
                         <div className="flex items-center gap-3">
@@ -489,8 +509,8 @@ const SectionTable = ({
       {/* Mobile Card View */}
       <div className="md:hidden space-y-4">
         <AnimatePresence mode="popLayout">
-          {sections.length > 0 ? (
-            sections.map((section, index) => {
+          {currentSections.length > 0 ? (
+            currentSections.map((section, index) => {
               const status = statusStyles[section.status];
               const occupancyRate =
                 (section.currentEnrollment / section.maxCapacity) * 100;
@@ -516,6 +536,11 @@ const SectionTable = ({
                         )}
                       </div>
                       <div className="flex flex-col">
+                        {section.courseTitle && (
+                          <span className="text-xs font-bold text-primary mb-1">
+                            {section.courseTitle}
+                          </span>
+                        )}
                         <Badge
                           variant="outline"
                           className={`rounded-full px-2 py-0.5 mb-1 gap-1 font-bold border ${status.className} w-fit text-[10px]`}
@@ -640,6 +665,37 @@ const SectionTable = ({
           )}
         </AnimatePresence>
       </div>
+
+      {/* Pagination Controls */}
+      {totalPages > 1 && (
+        <div className="flex items-center justify-between mt-8 bg-white dark:bg-zinc-950 p-4 rounded-2xl border border-slate-200 dark:border-zinc-800">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            className="flex items-center gap-2 font-bold"
+          >
+            <ChevronRight className="w-4 h-4" />
+            السابق
+          </Button>
+
+          <div className="text-sm font-bold text-slate-500">
+            صفحة {currentPage} من {totalPages}
+          </div>
+
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            className="flex items-center gap-2 font-bold"
+          >
+            التالي
+            <ChevronLeft className="w-4 h-4" />
+          </Button>
+        </div>
+      )}
     </div>
   );
 };

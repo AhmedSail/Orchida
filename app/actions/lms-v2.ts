@@ -7,13 +7,14 @@ import {
   instructorCourseAccess,
   courses,
   sectionLessonAvailability,
+  sectionHiddenLessons,
   lessonProgress,
   instructors,
   users,
   courseEnrollments,
   courseSections,
 } from "@/src/db/schema";
-import { eq, and, asc, desc, sql, count, or } from "drizzle-orm";
+import { eq, and, asc, desc, sql, count, or, inArray } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
@@ -134,6 +135,8 @@ export async function getCourseCurriculumAction(
     if (!hasAccess) return { success: false, error };
 
     let whereClause;
+    let hiddenLessonIds: string[] = [];
+
     if (type === "course") {
       // جلب المنهج العام (الثابت) فقط
       whereClause = and(
@@ -146,6 +149,13 @@ export async function getCourseCurriculumAction(
         where: eq(courseSections.id, id),
       });
       if (!section) return { success: false, error: "Section not found" };
+
+      // نجلب معرفات الدروس المخفية نهائيا عن هذه الشعبة
+      const hiddenRecords = await db
+        .select({ lessonId: sectionHiddenLessons.lessonId })
+        .from(sectionHiddenLessons)
+        .where(eq(sectionHiddenLessons.sectionId, id));
+      hiddenLessonIds = hiddenRecords.map(h => h.lessonId);
 
       whereClause = or(
         and(
@@ -167,10 +177,12 @@ export async function getCourseCurriculumAction(
       },
     });
 
-    const data = lessons.map((l) => ({
-      ...l,
-      completionsCount: l.progress.length,
-    }));
+    const data = lessons
+      .filter((l) => !hiddenLessonIds.includes(l.id))
+      .map((l) => ({
+        ...l,
+        completionsCount: l.progress.length,
+      }));
 
     return { success: true, data };
   } catch (error) {
@@ -581,6 +593,96 @@ export async function toggleLessonAvailabilityAction(data: {
     return { success: true };
   } catch (error) {
     console.error("Error in toggleLessonAvailabilityAction:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
+
+/**
+ * جلب حالة إتاحة الدرس لكل الشعب (خريطة)
+ */
+export async function getLessonAvailabilityMapAction(lessonId: string) {
+  try {
+    const availabilities = await db
+      .select()
+      .from(sectionLessonAvailability)
+      .where(eq(sectionLessonAvailability.lessonId, lessonId));
+
+    const map: Record<string, boolean> = {};
+    availabilities.forEach((a) => {
+      map[a.sectionId] = a.isEnabled;
+    });
+
+    return { success: true, data: map };
+  } catch (error) {
+    console.error("Error in getLessonAvailabilityMapAction:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
+
+/**
+ * 18.b إخفاء أو إظهار الدرس نهائياً عن مجموعة (Section) معينة
+ */
+export async function toggleLessonHiddenAction(data: {
+  sectionId: string;
+  lessonId: string;
+  isHidden: boolean;
+}) {
+  try {
+    const session = await auth.api.getSession({
+      headers: await headers(),
+    });
+
+    if (!session) return { success: false, error: "Unauthorized" };
+
+    if (data.isHidden) {
+      await db
+        .insert(sectionHiddenLessons)
+        .values({
+          sectionId: data.sectionId,
+          lessonId: data.lessonId,
+        })
+        .onConflictDoNothing();
+    } else {
+      await db
+        .delete(sectionHiddenLessons)
+        .where(
+          and(
+            eq(sectionHiddenLessons.sectionId, data.sectionId),
+            eq(sectionHiddenLessons.lessonId, data.lessonId),
+          ),
+        );
+    }
+
+    revalidatePath(
+      `/dashboardUser/[userId]/courses/${data.sectionId}/content`,
+      "page",
+    );
+    revalidatePath(`/admin/lms-v2`);
+    return { success: true };
+  } catch (error) {
+    console.error("Error in toggleLessonHiddenAction:", error);
+    return { success: false, error: "Internal Server Error" };
+  }
+}
+
+/**
+ * جلب خريطة الإخفاء للدرس
+ */
+export async function getLessonHiddenMapAction(lessonId: string) {
+  try {
+    const hiddenRecords = await db
+      .select()
+      .from(sectionHiddenLessons)
+      .where(eq(sectionHiddenLessons.lessonId, lessonId));
+
+    const map: Record<string, boolean> = {};
+    hiddenRecords.forEach((h) => {
+      map[h.sectionId] = true;
+    });
+
+    return { success: true, data: map };
+  } catch (error) {
+    console.error("Error in getLessonHiddenMapAction:", error);
     return { success: false, error: "Internal Server Error" };
   }
 }

@@ -16,8 +16,9 @@ import {
   curriculumFields,
   lessonProgress,
   sectionLessonAvailability,
+  sectionHiddenLessons,
 } from "@/src/db/schema";
-import { and, eq, InferSelectModel, or, asc, sql } from "drizzle-orm";
+import { and, eq, InferSelectModel, or, asc, sql, notInArray } from "drizzle-orm";
 import { headers } from "next/headers";
 import { redirect } from "next/navigation";
 import React from "react";
@@ -100,7 +101,15 @@ const Page = async ({
   // منطق الإصدار الثاني (LMS V2)
   // ==========================================
   if (currentSection.isV2) {
-    const lessons = await db.query.curriculumLessons.findMany({
+    // 1. نجلب معرفات الدروس المخفية نهائياً عن هذه الشعبة
+    const hiddenRecords = await db
+      .select({ lessonId: sectionHiddenLessons.lessonId })
+      .from(sectionHiddenLessons)
+      .where(eq(sectionHiddenLessons.sectionId, sectionId));
+    const hiddenLessonIds = hiddenRecords.map(h => h.lessonId);
+
+    // 2. نجلب كل الدروس
+    let lessons = await db.query.curriculumLessons.findMany({
       where: or(
         // الدروس العامة (الثابتة للدورة - sectionId فارغ)
         and(
@@ -117,6 +126,11 @@ const Page = async ({
         },
       },
     });
+
+    // 3. فلترة الدروس المخفية نهائياً
+    if (hiddenLessonIds.length > 0) {
+      lessons = lessons.filter(l => !hiddenLessonIds.includes(l.id));
+    }
 
     const progress = await db
       .select()
