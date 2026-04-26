@@ -36,6 +36,7 @@ export async function PUT(
       .update(courses)
       .set({
         title: body.title,
+        slug: body.slug,
         description: body.description,
         imageUrl: body.imageUrl,
         duration: body.duration,

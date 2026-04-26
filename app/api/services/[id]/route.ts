@@ -28,6 +28,7 @@ export async function PUT(
     .update(digitalServices)
     .set({
       name: body.name,
+      slug: body.slug,
       description: body.description,
       icon: body.icon || body.smallImage, // Prefer body.icon if sent (legacy), otherwise smallImage
       smallImage: body.smallImage,
