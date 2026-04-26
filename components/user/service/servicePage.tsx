@@ -70,99 +70,143 @@ export default function ServicePage({
   const activeServices = services.filter((s) => s.isActive);
 
   return (
-    <div className="container mx-auto py-12 px-4 min-h-screen" dir="rtl">
-      <motion.h1
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className=" text-2xl md:text-4xl font-extrabold text-primary sm:text-5xl mb-6 text-center"
-      >
-        خــــــــدمـــــــاتنا الـــــــــــــرقــــــمية
-      </motion.h1>
+    <div className="min-h-screen relative overflow-hidden" dir="rtl">
+      {/* Background Decorations */}
+      <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] rounded-full  blur-3xl" />
+      <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] rounded-full blur-3xl" />
 
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="flex justify-center mb-12"
-      >
-        <Link href="/portfolio">
-          <Button size="lg" className="rounded-full px-8 py-6 text-lg font-black bg-white text-primary border-2 border-primary hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/10 gap-3">
-             <Palette className="size-6" />
-             تصفح معرض أعمالنا الإبداعية
-          </Button>
-        </Link>
-      </motion.div>
+      <div className="container mx-auto py-20 px-4 relative z-10">
+        <div className="text-center max-w-3xl mx-auto mb-16">
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-primary/10 text-primary font-medium text-sm mb-6"
+          >
+            <BrainCircuit className="w-4 h-4" />
+            <span>حلول ذكية لنجاحك</span>
+          </motion.div>
+          <motion.h1
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.1 }}
+            className="text-4xl md:text-6xl font-extrabold text-slate-900 mb-6 tracking-tight"
+          >
+            <span className="text-transparent bg-clip-text bg-gradient-to-l from-primary to-blue-600">
+              خدماتنا الرقمية
+            </span>{" "}
+            المتكاملة
+          </motion.h1>
+          <motion.p
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ delay: 0.2 }}
+            className="text-lg text-slate-600 leading-relaxed mb-8"
+          >
+            نقدم لك مجموعة من الخدمات الرقمية الاحترافية المصممة خصيصاً لمساعدتك
+            على بناء وجودك الرقمي بقوة، من التصميم الإبداعي إلى التسويق
+            الاستراتيجي والبرمجة.
+          </motion.p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {activeServices.map((service) => {
-          return (
-            <motion.div
-              key={service.id}
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.3 }}
-              className="border rounded-2xl shadow-sm hover:shadow-xl transition-all duration-300 p-6 flex flex-col justify-between group bg-white hover:-translate-y-1"
-            >
-              <div>
-                {/* Image/Icon Area */}
-                <div className="w-full aspect-video bg-gray-50 rounded-xl mb-6 flex items-center justify-center overflow-hidden border border-gray-100 group-hover:bg-primary/5 transition-colors duration-300">
-                  {service.icon ? (
-                    service.icon.startsWith("http") ? (
-                      <div className="relative w-full h-full">
-                        <Image
-                          src={service.icon}
-                          alt={service.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                          unoptimized
-                        />
-                      </div>
-                    ) : ICON_MAP[service.icon] ? (
-                      React.createElement(ICON_MAP[service.icon], {
-                        className:
-                          "w-16 h-16 text-primary/80 group-hover:text-primary transition-colors duration-300",
-                      })
-                    ) : (
-                      <span className="text-4xl font-bold text-gray-300">
-                        ?
-                      </span>
-                    )
-                  ) : (
-                    <span className="text-4xl font-bold text-gray-300">?</span>
-                  )}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.3 }}
+            className="flex justify-center"
+          >
+            <Link href="/portfolio">
+              <Button
+                size="lg"
+                className="rounded-full px-8 py-6 text-lg font-bold bg-white text-primary border border-primary/20 hover:bg-primary hover:text-white transition-all shadow-xl shadow-primary/10 gap-3 group"
+              >
+                <Palette className="size-5 group-hover:scale-110 transition-transform" />
+                تصفح معرض أعمالنا الشامل
+              </Button>
+            </Link>
+          </motion.div>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+          {activeServices.map((service, index) => {
+            return (
+              <motion.div
+                key={service.id}
+                initial={{ opacity: 0, y: 30 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                className="group relative"
+              >
+                {/* Glow effect behind card */}
+                <div className="absolute -inset-0.5 bg-gradient-to-r from-primary/20 to-blue-500/20 rounded-[2rem] blur opacity-0 group-hover:opacity-100 transition duration-500" />
+
+                <div className="relative h-full flex flex-col bg-white rounded-[2rem] p-8 shadow-sm border border-slate-100 overflow-hidden hover:shadow-2xl hover:shadow-primary/5 transition-all duration-500 z-10">
+                  {/* Decorative background circle */}
+                  <div className="absolute -top-24 -right-24 w-48 h-48 bg-primary/5 rounded-full blur-2xl group-hover:bg-primary/10 transition-colors duration-500" />
+
+                  <div className="relative">
+                    {/* Image/Icon Area */}
+                    <div className="w-full aspect-video bg-slate-50 rounded-2xl mb-6 flex items-center justify-center overflow-hidden border border-slate-100 transition-all duration-500 shadow-sm group-hover:shadow-md relative">
+                      {service.icon ? (
+                        service.icon.startsWith("http") ? (
+                          <Image
+                            src={service.icon}
+                            alt={service.name}
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                            unoptimized
+                          />
+                        ) : ICON_MAP[service.icon] ? (
+                          React.createElement(ICON_MAP[service.icon], {
+                            className:
+                              "w-16 h-16 text-primary group-hover:text-primary/80 transition-colors duration-500",
+                          })
+                        ) : (
+                          <span className="text-4xl font-bold text-slate-300">
+                            ?
+                          </span>
+                        )
+                      ) : (
+                        <span className="text-4xl font-bold text-slate-300">
+                          ?
+                        </span>
+                      )}
+                    </div>
+
+                    <h3 className="text-2xl font-bold text-slate-900 mb-4 group-hover:text-primary transition-colors">
+                      {service.name}
+                    </h3>
+                    <p className="text-slate-600 leading-relaxed mb-8 line-clamp-3">
+                      {service.description || "لا يوجد وصف لهذه الخدمة حالياً."}
+                    </p>
+                  </div>
+
+                  <div className="mt-auto space-y-3 relative z-20">
+                    {/* Navigation to Filtered Portfolio Page */}
+                    <Button
+                      asChild
+                      variant="outline"
+                      className="w-full rounded-xl border-slate-200 hover:border-primary hover:bg-primary/5 text-slate-700 hover:text-primary font-bold h-12 transition-all group-hover:border-primary/30"
+                    >
+                      <Link
+                        href={`/portfolio?category=${(service as any).slug || service.name}`}
+                      >
+                        <Palette className="w-4 h-4 ml-2" />
+                        تصفح أعمالنا
+                      </Link>
+                    </Button>
+
+                    <Button
+                      asChild
+                      className="w-full rounded-xl font-bold h-12 shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:-translate-y-0.5 transition-all bg-primary hover:bg-primary/90 text-white"
+                    >
+                      <Link href="/serviceRequest">اطلب الخدمة الآن</Link>
+                    </Button>
+                  </div>
                 </div>
-
-                <h3 className="text-2xl font-bold text-gray-900 mb-3 group-hover:text-primary transition-colors">
-                  {service.name}
-                </h3>
-                <p className="text-gray-500 text-sm leading-relaxed line-clamp-3 mb-6">
-                  {service.description || "لا يوجد وصف لهذه الخدمة حالياً."}
-                </p>
-              </div>
-
-              <div className="mt-auto space-y-3">
-                {/* Navigation to Separate Works Page */}
-                <Button
-                  asChild
-                  variant="outline"
-                  className="w-full border-primary/20 hover:bg-primary/5 text-primary hover:text-primary font-semibold"
-                >
-                  <Link href={`/services/${service.id}/works`}>
-                    <BrainCircuit className="w-4 h-4 ml-2" />
-                    تصفح معرض الأعمال
-                  </Link>
-                </Button>
-
-                <Button
-                  asChild
-                  className="w-full font-bold shadow-lg shadow-primary/20 hover:shadow-primary/40 transition-shadow"
-                >
-                  <Link href="/serviceRequest">اطلب الخدمة الآن</Link>
-                </Button>
-              </div>
-            </motion.div>
-          );
-        })}
+              </motion.div>
+            );
+          })}
+        </div>
       </div>
     </div>
   );
