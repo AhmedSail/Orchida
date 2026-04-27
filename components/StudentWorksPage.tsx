@@ -243,7 +243,7 @@ export default function StudentWorksPage({
                   <p className="text-gray-500">حاول تغيير معايير التصفية أو البحث بكلمات أخرى.</p>
                 </motion.div>
               ) : (
-                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
                   {filteredWorks.map((work, index) => (
                     <motion.div
                       key={work.id}
@@ -253,7 +253,7 @@ export default function StudentWorksPage({
                       className="group bg-white rounded-[2.5rem] overflow-hidden border border-gray-100 shadow-sm hover:shadow-2xl transition-all duration-500 flex flex-col h-full"
                     >
                       {/* Media Container */}
-                      <div className="relative aspect-video overflow-hidden bg-gray-100">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
                         {work.youtubeUrl ? (
                            <div className="w-full h-full relative">
                             <Image

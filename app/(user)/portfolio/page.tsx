@@ -1,7 +1,7 @@
 import PortfolioGallery from "@/components/PortfolioGallery";
 import { db } from "@/src";
 import { works, digitalServices } from "@/src/db/schema";
-import { eq, and, isNull, desc } from "drizzle-orm";
+import { eq, and, isNull, desc, asc } from "drizzle-orm";
 import { Metadata } from "next";
 
 export const metadata: Metadata = {
@@ -32,11 +32,12 @@ export default async function Page() {
       serviceName: digitalServices.name,
       youtubeUrl: works.youtubeUrl,
       createdAt: works.createdAt,
+      order: works.order,
     })
     .from(works)
     .leftJoin(digitalServices, eq(works.serviceId, digitalServices.id))
     .where(and(eq(works.isActive, true), isNull(works.deletedAt)))
-    .orderBy(desc(works.createdAt));
+    .orderBy(asc(works.order), desc(works.createdAt));
 
   // جلب التصنيفات (الخدمات) للفلترة
   const services = await db

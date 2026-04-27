@@ -5,6 +5,7 @@ import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import Swal from "sweetalert2";
+import { toast } from "sonner";
 import {
   Select,
   SelectTrigger,
@@ -261,6 +262,39 @@ const WorksTable = ({
                         ? new Date(work.createdAt).toLocaleDateString("ar-EG")
                         : "—"}
                     </span>
+                  </div>
+                  {/* Order Input */}
+                  <div className="flex items-center gap-2 text-xs text-gray-600 col-span-2 pt-2 border-t border-gray-50">
+                    <span className="font-bold">أولوية الظهور:</span>
+                    <input
+                      type="number"
+                      defaultValue={work.order}
+                      onBlur={async (e) => {
+                        const newOrder = parseInt(e.target.value);
+                        if (newOrder === work.order) return;
+                        
+                        try {
+                          const res = await fetch(`/api/works/${work.id}`, {
+                            method: "PATCH",
+                            headers: { "Content-Type": "application/json" },
+                            body: JSON.stringify({
+                              ...work,
+                              order: newOrder,
+                            }),
+                          });
+
+                          if (res.ok) {
+                            toast.success("تم تحديث أولوية الظهور");
+                            router.refresh();
+                          } else {
+                            toast.error("فشل تحديث الأولوية");
+                          }
+                        } catch (error) {
+                          toast.error("خطأ في الاتصال");
+                        }
+                      }}
+                      className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-center font-bold focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                    />
                   </div>
                 </div>
 

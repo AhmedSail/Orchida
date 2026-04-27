@@ -34,7 +34,7 @@ export default async function FreeLessonsPublicPage() {
               <span>محتوى تعليمي مفتوح للجميع</span>
             </div>
             <h1 className="text-5xl md:text-6xl font-black text-slate-900 mb-4 tracking-tight">
-              <span className="text-transparent bg-clip-text bg-gradient-to-l from-primary to-blue-600">
+              <span className="text-transparent bg-clip-text bg-linear-to-l from-primary to-blue-600">
                 الدروس
               </span>{" "}
               المجانية

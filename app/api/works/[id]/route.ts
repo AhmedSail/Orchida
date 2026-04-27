@@ -95,6 +95,7 @@ export async function PATCH(
         imageUrl: body.imageUrl, // الرابط الجديد
         type: body.type,
         serviceId: body.serviceId,
+        order: body.order,
       })
       .where(eq(works.id, id))
       .returning();

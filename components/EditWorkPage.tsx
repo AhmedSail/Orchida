@@ -20,6 +20,8 @@ const workSchema = z.object({
   priceRange: z.string().optional(),
   duration: z.string().optional(),
   isActive: z.boolean(), // خليها boolean مباشرة
+  order: z.number().default(0),
+  serviceId: z.string().min(1, "الخدمة مطلوبة"),
 });
 
 type WorkFormData = z.infer<typeof workSchema>;
@@ -42,7 +44,7 @@ function EditWorkPage({
     control,
     formState: { errors },
   } = useForm<WorkFormData>({
-    resolver: zodResolver(workSchema),
+    resolver: zodResolver(workSchema) as any,
     defaultValues: {
       title: work.title,
       description: work.description || "",
@@ -50,6 +52,8 @@ function EditWorkPage({
       priceRange: work.priceRange || "",
       duration: work.duration || "",
       isActive: work.isActive ?? true, // ✅ ضمان قيمة افتراضية
+      order: work.order ?? 0,
+      serviceId: work.serviceId || "",
     },
   });
 
@@ -120,6 +124,18 @@ function EditWorkPage({
           المدة (اختياري)
         </Label>
         <Input id="duration" {...register("duration")} />
+      </div>
+
+      {/* Order */}
+      <div>
+        <Label htmlFor="order" className="text-right mb-2">
+          أولوية الظهور (0 هو الأعلى)
+        </Label>
+        <Input
+          id="order"
+          type="number"
+          {...register("order", { valueAsNumber: true })}
+        />
       </div>
 
       <div className="flex items-center gap-4">

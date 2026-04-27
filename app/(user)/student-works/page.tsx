@@ -1,6 +1,6 @@
 import { db } from "@/src";
 import { studentWorks, courses, users } from "@/src/db/schema";
-import { eq, desc, and } from "drizzle-orm";
+import { eq, desc, and, asc } from "drizzle-orm";
 import { Metadata } from "next";
 import StudentWorksPage from "@/components/StudentWorksPage";
 
@@ -30,12 +30,13 @@ export default async function Page() {
       courseId: courses.id,
       courseTitle: courses.title,
       courseSlug: courses.slug,
+      order: studentWorks.order,
     })
     .from(studentWorks)
     .leftJoin(users, eq(studentWorks.studentId, users.id))
     .leftJoin(courses, eq(studentWorks.courseId, courses.id))
     .where(eq(studentWorks.status, "approved"))
-    .orderBy(desc(studentWorks.createdAt));
+    .orderBy(asc(studentWorks.order), desc(studentWorks.createdAt));
 
   // جلب الكورسات التي لها أعمال طلاب معتمدة فقط لاستخدامها في الفلتر
   const allCourses = await db
