@@ -1618,8 +1618,18 @@ export const courseApplicationsRelations = relations(
 // ==========================================
 // 27. Free Lessons (الدروس المجانية)
 // ==========================================
+export const freeLessonCategories = pgTable("freeLessonCategories", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  title: varchar("title", { length: 255 }).notNull(),
+  imageUrl: varchar("imageUrl", { length: 1024 }),
+  order: integer("order").default(1).notNull(),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+});
+
 export const freeLessons = pgTable("freeLessons", {
   id: uuid("id").defaultRandom().primaryKey(),
+  categoryId: uuid("categoryId").references(() => freeLessonCategories.id, { onDelete: "set null" }), // ربط بالتصنيف
   mainTitle: varchar("mainTitle", { length: 255 }).notNull(), // العنوان الأساسي
   subTitle: varchar("subTitle", { length: 255 }), // العنوان الفرعي
   description: text("description"),
@@ -1640,8 +1650,16 @@ export const freeLessonFields = pgTable("freeLessonFields", {
   createdAt: timestamp("createdAt").defaultNow().notNull(),
 });
 
-export const freeLessonsRelations = relations(freeLessons, ({ many }) => ({
+export const freeLessonsRelations = relations(freeLessons, ({ one, many }) => ({
+  category: one(freeLessonCategories, {
+    fields: [freeLessons.categoryId],
+    references: [freeLessonCategories.id],
+  }),
   fields: many(freeLessonFields),
+}));
+
+export const freeLessonCategoriesRelations = relations(freeLessonCategories, ({ many }) => ({
+  lessons: many(freeLessons),
 }));
 
 export const freeLessonFieldsRelations = relations(
