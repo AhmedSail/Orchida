@@ -127,10 +127,33 @@ const Page = async ({
       },
     });
 
-    // 3. فلترة الدروس المخفية نهائياً
+    // 3. فلترة الدروس المخفية نهائياً وتوقيع روابط Bunny
+    const { signBunnyVideo } = await import("@/lib/bunny-sign");
+
     if (hiddenLessonIds.length > 0) {
-      lessons = lessons.filter(l => !hiddenLessonIds.includes(l.id));
+      lessons = lessons.filter((l) => !hiddenLessonIds.includes(l.id));
     }
+
+    // ✅ توقيع روابط الفيديوهات لحمايتها من التحميل
+    lessons = lessons.map((lesson) => ({
+      ...lesson,
+      fields: lesson.fields.map((field) => {
+        if (field.fieldType === "video" && field.content.includes("mediadelivery.net")) {
+          try {
+            // استخراج الـ ID من الرابط: https://iframe.mediadelivery.net/embed/LIB_ID/VIDEO_ID
+            const parts = field.content.split("/");
+            const videoId = parts[parts.length - 1].split("?")[0];
+            return {
+              ...field,
+              content: signBunnyVideo(videoId),
+            };
+          } catch (e) {
+            console.error("Error signing Bunny video:", e);
+          }
+        }
+        return field;
+      }),
+    }));
 
     const progress = await db
       .select()
