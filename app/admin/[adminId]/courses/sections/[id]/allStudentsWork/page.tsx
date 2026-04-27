@@ -55,6 +55,7 @@ const page = async ({ params }: { params: { id: string } }) => {
       youtubeUrl: studentWorks.youtubeUrl,
       studentId: studentWorks.studentId,
       studentName: studentWorks.studentName, // الاسم اليدوي
+      order: studentWorks.order,
       userName: users.name, // اسم المستخدم المسجل
     })
     .from(studentWorks)
