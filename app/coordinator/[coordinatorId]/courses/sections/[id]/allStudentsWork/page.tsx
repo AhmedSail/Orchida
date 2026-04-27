@@ -40,7 +40,7 @@ const page = async ({ params }: { params: { id: string } }) => {
     .limit(1);
 
   if (sectionData.length === 0) {
-      return <div>Section not found</div>;
+    return <div>Section not found</div>;
   }
 
   // ✅ جلب الأعمال مع اسم الطالب
@@ -53,6 +53,7 @@ const page = async ({ params }: { params: { id: string } }) => {
       description: studentWorks.description,
       mediaUrl: studentWorks.mediaUrl,
       studentId: studentWorks.studentId,
+      order: studentWorks.order,
       studentName: users.name, // 👈 هنا نجيب الاسم
     })
     .from(studentWorks)

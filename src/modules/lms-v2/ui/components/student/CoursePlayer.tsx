@@ -367,7 +367,7 @@ export default function CoursePlayer({
                           <iframe
                             src={
                               field.content.includes("mediadelivery.net")
-                                ? `${field.content}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`
+                                ? `${field.content}${field.content.includes("?") ? "&" : "?"}autoplay=false&loop=false&muted=false&preload=true&responsive=true`
                                 : (() => {
                                     const url = field.content;
                                     // youtu.be/VIDEO_ID

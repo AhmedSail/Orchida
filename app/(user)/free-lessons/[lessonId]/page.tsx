@@ -7,7 +7,30 @@ import Image from "next/image";
 export default async function FreeLessonDetailPage({ params }: { params: Promise<{ lessonId: string }> }) {
   const { lessonId } = await params;
   const res = await getFreeLessonsAction();
-  const lesson = (res.success && res.data ? res.data : []).find((l: any) => l.id === lessonId);
+  let lesson = (res.success && res.data ? res.data : []).find((l: any) => l.id === lessonId);
+
+  // ✅ توقيع روابط الفيديوهات لحمايتها من التحميل
+  if (lesson && lesson.fields) {
+    const { signBunnyVideo } = await import("@/lib/bunny-sign");
+    lesson = {
+      ...lesson,
+      fields: lesson.fields.map((field: any) => {
+        if (field.fieldType === "video" && field.content.includes("mediadelivery.net")) {
+          try {
+            const parts = field.content.split("/");
+            const videoId = parts[parts.length - 1].split("?")[0];
+            return {
+              ...field,
+              content: signBunnyVideo(videoId),
+            };
+          } catch (e) {
+            console.error("Error signing Bunny video:", e);
+          }
+        }
+        return field;
+      }),
+    };
+  }
 
   if (!lesson || !lesson.isActive) {
     return (
@@ -84,7 +107,7 @@ export default async function FreeLessonDetailPage({ params }: { params: Promise
                      <iframe
                         src={
                           field.content.includes("mediadelivery.net")
-                            ? `${field.content}?autoplay=false&loop=false&muted=false&preload=true&responsive=true`
+                            ? `${field.content}${field.content.includes("?") ? "&" : "?"}autoplay=false&loop=false&muted=false&preload=true&responsive=true`
                             : (() => {
                                 const url = field.content;
                                 const shortMatch = url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
