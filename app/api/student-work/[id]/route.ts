@@ -10,7 +10,7 @@ export async function PUT(
   const param = await context.params;
   try {
     const body = await req.json();
-    const { title, description, status } = body;
+    const { title, description, status, order } = body;
 
     await db
       .update(studentWorks)
@@ -18,6 +18,7 @@ export async function PUT(
         title,
         description,
         status,
+        order: order !== undefined ? Number(order) : undefined,
         updatedAt: new Date(),
       })
       .where(eq(studentWorks.id, param.id));

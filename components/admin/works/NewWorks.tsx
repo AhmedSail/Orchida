@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useEffect } from "react";
-import { useForm } from "react-hook-form";
+import { useForm, SubmitHandler } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -51,6 +51,7 @@ const workSchema = z.object({
   imageUrl: z.string().min(1, "الصورة الرئيسية مطلوبة"),
   mediaUrls: z.array(z.string().url()).optional(),
   youtubeUrl: z.string().url("رابط غير صالح").or(z.literal("")).optional(),
+  order: z.number().default(0),
 });
 
 type WorkFormValues = z.infer<typeof workSchema>;
@@ -70,7 +71,7 @@ const NewWorks = ({
   const router = useRouter();
 
   const form = useForm<WorkFormValues>({
-    resolver: zodResolver(workSchema),
+    resolver: zodResolver(workSchema) as any,
     defaultValues: {
       title: "",
       description: "",
@@ -78,6 +79,8 @@ const NewWorks = ({
       imageUrl: "",
       mediaUrls: [],
       youtubeUrl: "",
+      order: 0,
+      serviceId: "",
     },
   });
 
@@ -124,7 +127,7 @@ const NewWorks = ({
     return url.trim().replace(/\s/g, "");
   };
 
-  const onSubmit = async (values: WorkFormValues) => {
+  const onSubmit: SubmitHandler<WorkFormValues> = async (values) => {
     setLoading(true);
     try {
       let finalImageUrl = values.imageUrl;
@@ -510,6 +513,29 @@ const NewWorks = ({
                               ))}
                             </SelectContent>
                           </Select>
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+
+                  {/* Priority Order */}
+                  <FormField
+                    control={form.control}
+                    name="order"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-2 flex items-center gap-2">
+                          أولوية الظهور (0 هو الأعلى)
+                        </FormLabel>
+                        <FormControl>
+                          <Input 
+                            type="number"
+                            placeholder="0" 
+                            className="h-12 rounded-xl bg-white/5 border-white/10 text-white focus:ring-primary/40"
+                            {...field} 
+                            onChange={(e) => field.onChange(e.target.valueAsNumber)}
+                          />
                         </FormControl>
                         <FormMessage />
                       </FormItem>

@@ -261,7 +261,7 @@ export default function PortfolioGallery({
                       className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
                     >
                       {/* Image Container */}
-                      <div className="relative aspect-4/5 overflow-hidden bg-gray-100">
+                      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
                         {work.imageUrl ? (
                           (work.type === "video" && !work.imageUrl.includes("img.youtube.com")) ? (
                             <video

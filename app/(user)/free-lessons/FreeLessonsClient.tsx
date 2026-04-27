@@ -1,14 +1,28 @@
 "use client";
 
 import React, { useState } from "react";
-import { Play, BookOpen, Clock, ChevronRight, ChevronLeft, Tag } from "lucide-react";
+import {
+  Play,
+  BookOpen,
+  Clock,
+  ChevronRight,
+  ChevronLeft,
+  Tag,
+} from "lucide-react";
 import Link from "next/link";
+import Image from "next/image";
 
 type Category = { id: string; title: string; imageUrl?: string | null };
 type Lesson = {
-  id: string; mainTitle: string; subTitle?: string | null;
-  description?: string | null; order: number; isActive: boolean;
-  categoryId?: string | null; category?: Category | null; fields?: any[];
+  id: string;
+  mainTitle: string;
+  subTitle?: string | null;
+  description?: string | null;
+  order: number;
+  isActive: boolean;
+  categoryId?: string | null;
+  category?: Category | null;
+  fields?: any[];
 };
 
 const FALLBACK_GRADIENTS = [
@@ -39,7 +53,7 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
   };
 
   const filtered = activeCategory
-    ? lessons.filter(l => l.categoryId === activeCategory)
+    ? lessons.filter((l) => l.categoryId === activeCategory)
     : lessons;
 
   const totalPages = Math.ceil(filtered.length / PER_PAGE);
@@ -48,7 +62,6 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
   return (
     <div className="flex-1 max-w-7xl mx-auto w-full px-6 pb-20">
       <div className="flex gap-8 items-start">
-
         {/* Sidebar: Categories */}
         {categories.length > 0 && (
           <aside className="w-52 shrink-0 sticky top-28">
@@ -68,13 +81,17 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                   }`}
                 >
                   <span>الكل</span>
-                  <span className={`text-[10px] px-2 py-0.5 rounded-full font-black ${activeCategory === null ? "bg-white/25 text-white" : "bg-zinc-100 text-zinc-500"}`}>
+                  <span
+                    className={`text-[10px] px-2 py-0.5 rounded-full font-black ${activeCategory === null ? "bg-white/25 text-white" : "bg-zinc-100 text-zinc-500"}`}
+                  >
                     {lessons.length}
                   </span>
                 </button>
 
-                {categories.map(cat => {
-                  const count = lessons.filter(l => l.categoryId === cat.id).length;
+                {categories.map((cat) => {
+                  const count = lessons.filter(
+                    (l) => l.categoryId === cat.id,
+                  ).length;
                   const isActive = activeCategory === cat.id;
                   return (
                     <button
@@ -87,7 +104,9 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                       }`}
                     >
                       <span className="truncate text-right">{cat.title}</span>
-                      <span className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-black ${isActive ? "bg-white/25 text-white" : "bg-zinc-100 text-zinc-500"}`}>
+                      <span
+                        className={`shrink-0 text-[10px] px-2 py-0.5 rounded-full font-black ${isActive ? "bg-white/25 text-white" : "bg-zinc-100 text-zinc-500"}`}
+                      >
                         {count}
                       </span>
                     </button>
@@ -103,14 +122,17 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
           {filtered.length === 0 ? (
             <div className="text-center py-20 bg-white rounded-[40px] border border-zinc-100 shadow-sm">
               <BookOpen className="w-16 h-16 text-zinc-200 mx-auto mb-4" />
-              <p className="text-xl font-black text-zinc-400">لا توجد دروس في هذا التصنيف</p>
+              <p className="text-xl font-black text-zinc-400">
+                لا توجد دروس في هذا التصنيف
+              </p>
             </div>
           ) : (
             <>
               <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6 mb-10">
                 {paginated.map((lesson, index) => {
                   const catImg = lesson.category?.imageUrl;
-                  const gradient = FALLBACK_GRADIENTS[index % FALLBACK_GRADIENTS.length];
+                  const gradient =
+                    FALLBACK_GRADIENTS[index % FALLBACK_GRADIENTS.length];
 
                   return (
                     <Link
@@ -119,15 +141,19 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                       className="group bg-white rounded-[32px] border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 overflow-hidden flex flex-col h-full"
                     >
                       {/* Thumbnail */}
-                      <div className="aspect-video relative overflow-hidden">
+                      <div className="aspect-[3/4] relative overflow-hidden">
                         {catImg ? (
-                          <img
+                          <Image
                             src={catImg}
                             alt={lesson.category?.title || ""}
-                            className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
+                            fill
+                            className="object-cover group-hover:scale-110 transition-transform duration-700"
+                            unoptimized
                           />
                         ) : (
-                          <div className={`w-full h-full bg-gradient-to-br ${gradient} relative`}>
+                          <div
+                            className={`w-full h-full bg-linear-to-br ${gradient} relative`}
+                          >
                             <div
                               className="absolute inset-0 opacity-20"
                               style={{
@@ -137,7 +163,7 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                             />
                           </div>
                         )}
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                        <div className="absolute inset-0 bg-linear-to-t from-black/70 via-black/20 to-transparent" />
 
                         {lesson.category && (
                           <div className="absolute top-3 right-3 bg-black/40 backdrop-blur-sm text-white text-[10px] font-black px-2.5 py-1 rounded-full z-20">
@@ -152,18 +178,22 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                         </div>
 
                         <div className="absolute bottom-4 right-4 z-20 text-white">
-                          <p className="text-[10px] font-black uppercase tracking-widest text-white/70 mb-1">الدرس رقم {lesson.order}</p>
-                          <h3 className="text-lg font-black leading-tight drop-shadow-md">{lesson.mainTitle}</h3>
+                          <h3 className="text-lg font-black leading-tight drop-shadow-md">
+                            {lesson.mainTitle}
+                          </h3>
                         </div>
                       </div>
 
                       {/* Body */}
                       <div className="p-6 flex-1 flex flex-col">
                         {lesson.subTitle && (
-                          <p className="text-sm font-bold text-zinc-400 mb-3 italic line-clamp-1">{lesson.subTitle}</p>
+                          <p className="text-sm font-bold text-zinc-400 mb-3 italic line-clamp-1">
+                            {lesson.subTitle}
+                          </p>
                         )}
                         <p className="text-zinc-600 font-medium line-clamp-2 mb-5 text-sm">
-                          {lesson.description || "استكشف محتوى هذا الدرس المجاني وتعلم مهارات جديدة اليوم."}
+                          {lesson.description ||
+                            "استكشف محتوى هذا الدرس المجاني وتعلم مهارات جديدة اليوم."}
                         </p>
                         <div className="mt-auto flex items-center justify-between pt-5 border-t border-zinc-50">
                           <span className="flex items-center gap-1.5 text-[10px] font-black text-zinc-400 uppercase tracking-widest">
@@ -185,29 +215,31 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
               {totalPages > 1 && (
                 <div className="flex items-center justify-center gap-2 mt-4">
                   <button
-                    onClick={() => setPage(p => Math.max(1, p - 1))}
+                    onClick={() => setPage((p) => Math.max(1, p - 1))}
                     disabled={page === 1}
                     className="w-10 h-10 rounded-xl bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
                   >
                     <ChevronRight className="w-4 h-4" />
                   </button>
 
-                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(p => (
-                    <button
-                      key={p}
-                      onClick={() => setPage(p)}
-                      className={`w-10 h-10 rounded-xl font-black text-sm transition-all shadow-sm ${
-                        p === page
-                          ? "bg-primary text-white shadow-primary/25"
-                          : "bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
-                      }`}
-                    >
-                      {p}
-                    </button>
-                  ))}
+                  {Array.from({ length: totalPages }, (_, i) => i + 1).map(
+                    (p) => (
+                      <button
+                        key={p}
+                        onClick={() => setPage(p)}
+                        className={`w-10 h-10 rounded-xl font-black text-sm transition-all shadow-sm ${
+                          p === page
+                            ? "bg-primary text-white shadow-primary/25"
+                            : "bg-white border border-zinc-200 text-zinc-500 hover:bg-zinc-50"
+                        }`}
+                      >
+                        {p}
+                      </button>
+                    ),
+                  )}
 
                   <button
-                    onClick={() => setPage(p => Math.min(totalPages, p + 1))}
+                    onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
                     disabled={page === totalPages}
                     className="w-10 h-10 rounded-xl bg-white border border-zinc-200 flex items-center justify-center text-zinc-500 hover:bg-zinc-50 disabled:opacity-30 transition-all shadow-sm"
                   >
@@ -217,7 +249,8 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
               )}
 
               <p className="text-center text-xs text-zinc-400 font-bold mt-4">
-                عرض {Math.min(page * PER_PAGE, filtered.length)} من أصل {filtered.length} درس
+                عرض {Math.min(page * PER_PAGE, filtered.length)} من أصل{" "}
+                {filtered.length} درس
               </p>
             </>
           )}

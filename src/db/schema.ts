@@ -328,6 +328,7 @@ export const studentWorks = pgTable("studentWorks", {
 
   // حالة العمل: pending أو approved
   status: workStatusEnum("status").default("approved").notNull(),
+  order: integer("order").default(0).notNull(),
   youtubeUrl: varchar("youtubeUrl", { length: 500 }),
 
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -491,6 +492,7 @@ export const works = pgTable("works", {
   duration: varchar("duration", { length: 100 }),
   toolsUsed: text("toolsUsed"),
   isActive: boolean("isActive").default(true).notNull(),
+  order: integer("order").default(0).notNull(),
 
   imageUrl: varchar("imageUrl", { length: 500 }),
   type: varchar("type", { length: 50 }).notNull(),

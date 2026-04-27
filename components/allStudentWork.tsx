@@ -60,6 +60,7 @@ interface StudentWork {
   description?: string | null;
   mediaUrl?: string | null;
   youtubeUrl?: string | null;
+  order: number;
 }
 
 export default function AllStudentWork({
@@ -80,6 +81,7 @@ export default function AllStudentWork({
   const [editStatus, setEditStatus] = useState<"approved" | "pending">(
     "pending",
   );
+  const [editOrder, setEditOrder] = useState(0);
 
   const filteredWorks = localWorks.filter(
     (w) =>
@@ -98,6 +100,7 @@ export default function AllStudentWork({
     setEditTitle(work.title);
     setEditDescription(work.description ?? "");
     setEditStatus(work.status);
+    setEditOrder(work.order);
     setOpenEditDialog(true);
   };
 
@@ -110,6 +113,7 @@ export default function AllStudentWork({
         title: editTitle,
         description: editDescription,
         status: editStatus,
+        order: editOrder,
       }),
     });
 
@@ -122,6 +126,7 @@ export default function AllStudentWork({
                 title: editTitle,
                 description: editDescription,
                 status: editStatus,
+                order: editOrder,
               }
             : w,
         ),
@@ -264,6 +269,9 @@ export default function AllStudentWork({
                 الحالة
               </TableHead>
               <TableHead className="text-center px-8 py-6 font-black text-gray-400 text-xs uppercase tracking-widest">
+                أولوية الظهور
+              </TableHead>
+              <TableHead className="text-center px-8 py-6 font-black text-gray-400 text-xs uppercase tracking-widest">
                 الإجراءات
               </TableHead>
             </TableRow>
@@ -327,6 +335,40 @@ export default function AllStudentWork({
                           <Clock className="size-3" /> قيد المراجعة
                         </Badge>
                       )}
+                    </TableCell>
+                    <TableCell className="px-8 py-6 text-center">
+                      <input
+                        type="number"
+                        defaultValue={work.order}
+                        onBlur={async (e) => {
+                          const newOrder = parseInt(e.target.value);
+                          if (newOrder === work.order) return;
+                          
+                          try {
+                            const res = await fetch(`/api/student-work/${work.id}`, {
+                              method: "PUT",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ order: newOrder }),
+                            });
+                            
+                            if (res.ok) {
+                              setLocalWorks(prev => prev.map(w => 
+                                w.id === work.id ? { ...w, order: newOrder } : w
+                              ));
+                              Swal.fire({
+                                icon: "success",
+                                title: "تم التحديث ✅",
+                                text: "تم تحديث أولوية الظهور",
+                                timer: 1000,
+                                showConfirmButton: false,
+                              });
+                            }
+                          } catch (err) {
+                            console.error(err);
+                          }
+                        }}
+                        className="w-16 px-2 py-1 bg-gray-50 border border-gray-200 rounded-lg text-center font-bold focus:ring-2 focus:ring-primary/20 focus:outline-none transition-all"
+                      />
                     </TableCell>
                     <TableCell className="px-8 py-6">
                       <div className="flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-all transform translate-x-4 group-hover:translate-x-0">
@@ -502,6 +544,18 @@ export default function AllStudentWork({
                   </SelectItem>
                 </SelectContent>
               </Select>
+            </div>
+
+            <div className="space-y-2">
+              <label className="text-xs font-black text-gray-400 uppercase tracking-widest mr-2">
+                أولوية الظهور (الترتيب)
+              </label>
+              <Input
+                type="number"
+                className="h-12 rounded-2xl bg-gray-50 border-none focus:ring-2 focus:ring-primary/20 font-bold"
+                value={editOrder}
+                onChange={(e) => setEditOrder(parseInt(e.target.value) || 0)}
+              />
             </div>
           </div>
 

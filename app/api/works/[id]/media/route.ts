@@ -14,6 +14,7 @@ const patchWorkSchema = z.object({
   priceRange: z.string().optional().nullable(),
   duration: z.string().optional().nullable(),
   isActive: z.boolean().optional(),
+  order: z.number().optional(),
 });
 export async function GET(
   request: NextRequest,
