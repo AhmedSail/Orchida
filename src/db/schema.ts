@@ -304,8 +304,7 @@ export const studentWorks = pgTable("studentWorks", {
     .references(() => users.id),
 
   // الطالب صاحب القصة أو العمل (اختياري لو تم إدخال الاسم يدوياً)
-  studentId: text("studentId")
-    .references(() => users.id),
+  studentId: text("studentId").references(() => users.id),
 
   studentName: varchar("studentName", { length: 255 }),
 
@@ -642,23 +641,27 @@ export const notifications = pgTable("notifications", {
 });
 
 // 12. session
-export const session = pgTable("session", {
-  id: text("id").primaryKey(),
-  expiresAt: timestamp("expires_at").notNull(),
-  token: text("token").notNull().unique(),
-  createdAt: timestamp("created_at").defaultNow().notNull(),
-  updatedAt: timestamp("updated_at")
-    .defaultNow()
-    .$onUpdate(() => new Date())
-    .notNull(),
-  ipAddress: text("ip_address"),
-  userAgent: text("user_agent"),
-  userId: text("user_id")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-}, (table) => ({
-  userIdIdx: index("session_user_id_idx").on(table.userId),
-}));
+export const session = pgTable(
+  "session",
+  {
+    id: text("id").primaryKey(),
+    expiresAt: timestamp("expires_at").notNull(),
+    token: text("token").notNull().unique(),
+    createdAt: timestamp("created_at").defaultNow().notNull(),
+    updatedAt: timestamp("updated_at")
+      .defaultNow()
+      .$onUpdate(() => new Date())
+      .notNull(),
+    ipAddress: text("ip_address"),
+    userAgent: text("user_agent"),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+  },
+  (table) => ({
+    userIdIdx: index("session_user_id_idx").on(table.userId),
+  }),
+);
 
 // 13. account
 export const account = pgTable("account", {
@@ -1276,30 +1279,34 @@ export const creditTransactionsRelations = relations(
 // ==========================================
 // 20. AI Generation History
 // ==========================================
-export const aiGenerations = pgTable("aiGenerations", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  taskUuid: varchar("taskUuid", { length: 128 }), // UUID من GeminiGen API
-  type: varchar("type", { length: 10 }).notNull(), // "video" | "image"
-  provider: varchar("provider", { length: 50 }), // "Veo", "Grok", etc.
-  model: varchar("model", { length: 100 }),
-  prompt: text("prompt"),
-  status: varchar("status", { length: 20 }).default("pending"), // "pending" | "completed" | "failed"
-  resultUrl: text("resultUrl"), // رابط الفيديو أو الصورة الناتجة
-  resultsJson: text("resultsJson"), // ✅ حقل جديد لتخزين مصفوفة الروابط بصيغة JSON
-  thumbnailUrl: text("thumbnailUrl"),
-  resolution: varchar("resolution", { length: 20 }),
-  duration: integer("duration"), // بالثواني (للفيديوهات)
-  creditCost: integer("creditCost").default(0),
-  isRefunded: boolean("isRefunded").default(false),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-}, (table) => ({
-  userIdIdx: index("ai_gen_user_id_idx").on(table.userId),
-  createdAtIdx: index("ai_gen_created_at_idx").on(table.createdAt),
-}));
+export const aiGenerations = pgTable(
+  "aiGenerations",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    taskUuid: varchar("taskUuid", { length: 128 }), // UUID من GeminiGen API
+    type: varchar("type", { length: 10 }).notNull(), // "video" | "image"
+    provider: varchar("provider", { length: 50 }), // "Veo", "Grok", etc.
+    model: varchar("model", { length: 100 }),
+    prompt: text("prompt"),
+    status: varchar("status", { length: 20 }).default("pending"), // "pending" | "completed" | "failed"
+    resultUrl: text("resultUrl"), // رابط الفيديو أو الصورة الناتجة
+    resultsJson: text("resultsJson"), // ✅ حقل جديد لتخزين مصفوفة الروابط بصيغة JSON
+    thumbnailUrl: text("thumbnailUrl"),
+    resolution: varchar("resolution", { length: 20 }),
+    duration: integer("duration"), // بالثواني (للفيديوهات)
+    creditCost: integer("creditCost").default(0),
+    isRefunded: boolean("isRefunded").default(false),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("ai_gen_user_id_idx").on(table.userId),
+    createdAtIdx: index("ai_gen_created_at_idx").on(table.createdAt),
+  }),
+);
 
 export const aiGenerationsRelations = relations(aiGenerations, ({ one }) => ({
   user: one(users, {
@@ -1324,7 +1331,9 @@ export const aiServicePricing = pgTable("aiServicePricing", {
 // 22. Chat Settings & Usage
 // ==========================================
 export const chatSettings = pgTable("chatSettings", {
-  id: text("id").primaryKey().$default(() => "global"),
+  id: text("id")
+    .primaryKey()
+    .$default(() => "global"),
   freeMessages: integer("freeMessages").default(5).notNull(),
   creditsPerMessage: integer("creditsPerMessage").default(2).notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
@@ -1368,10 +1377,12 @@ export const aiPromptsLibrary = pgTable("aiPromptsLibrary", {
 // هذا الجدول يخزن العناوين وترتيب الدروس داخل الدورة
 export const curriculumLessons = pgTable("curriculumLessons", {
   id: uuid("id").defaultRandom().primaryKey(),
-  courseId: text("courseId")
-    .references(() => courses.id, { onDelete: "cascade" }), // الدروس أصبحت مرتبطة بالكورس مباشرة
-  sectionId: text("sectionId")
-    .references(() => courseSections.id, { onDelete: "cascade" }), // بقاء الحقل اختيارياً للتوافق أو التخصيص
+  courseId: text("courseId").references(() => courses.id, {
+    onDelete: "cascade",
+  }), // الدروس أصبحت مرتبطة بالكورس مباشرة
+  sectionId: text("sectionId").references(() => courseSections.id, {
+    onDelete: "cascade",
+  }), // بقاء الحقل اختيارياً للتوافق أو التخصيص
   mainTitle: varchar("mainTitle", { length: 255 }).notNull(), // العنوان الأساسي (إجباري)
   subTitle: varchar("subTitle", { length: 255 }), // العنوان الفرعي (اختياري)
   order: integer("order").notNull().default(1), // ترتيب الدرس في الدورة
@@ -1394,94 +1405,149 @@ export const curriculumFields = pgTable("curriculumFields", {
 
 // 3. صلاحيات المدربين على الدورات (Instructor Course Access)
 // لضمان أن المدرب يرى فقط الدورات المسندة إليه
-export const instructorCourseAccess = pgTable("instructorCourseAccess", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  instructorId: text("instructorId")
-    .notNull()
-    .references(() => instructors.id, { onDelete: "cascade" }),
-  courseId: text("courseId")
-    .notNull()
-    .references(() => courses.id, { onDelete: "cascade" }),
-  createdAt: timestamp("createdAt").defaultNow().notNull(),
-}, (table) => ({
-  unq: unique().on(table.instructorId, table.courseId),
-}));
+export const instructorCourseAccess = pgTable(
+  "instructorCourseAccess",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    instructorId: text("instructorId")
+      .notNull()
+      .references(() => instructors.id, { onDelete: "cascade" }),
+    courseId: text("courseId")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    unq: unique().on(table.instructorId, table.courseId),
+  }),
+);
 
 // 4. تتبع تقدم الطالب (Student Lesson Progress)
 // يستخدم في نظام الأونلاين لفتح الدروس تتابعيًا
-export const lessonProgress = pgTable("lessonProgress", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  studentId: text("studentId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  lessonId: uuid("lessonId")
-    .notNull()
-    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
-  status: varchar("status", { length: 20 }).default("completed"), // completed
-  completedAt: timestamp("completedAt").defaultNow().notNull(),
-}, (table) => ({
-  unq: unique().on(table.studentId, table.lessonId),
-}));
+export const lessonProgress = pgTable(
+  "lessonProgress",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    studentId: text("studentId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    lessonId: uuid("lessonId")
+      .notNull()
+      .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+    status: varchar("status", { length: 20 }).default("completed"), // completed
+    completedAt: timestamp("completedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    unq: unique().on(table.studentId, table.lessonId),
+  }),
+);
 
 // 5. تفعيل الدروس في الشعب الوجاهية (Section Lesson Availability)
 // يستخدم في النظام الوجاهي ليقوم المدرب بتفعيل درس محدد لطلاب شعبة معينة
-export const sectionLessonAvailability = pgTable("sectionLessonAvailability", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sectionId: text("sectionId")
-    .notNull()
-    .references(() => courseSections.id, { onDelete: "cascade" }),
-  lessonId: uuid("lessonId")
-    .notNull()
-    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
-  isEnabled: boolean("isEnabled").default(false).notNull(),
-  enabledAt: timestamp("enabledAt"),
-  updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-}, (table) => ({
-  unq: unique().on(table.sectionId, table.lessonId),
-}));
+export const sectionLessonAvailability = pgTable(
+  "sectionLessonAvailability",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sectionId: text("sectionId")
+      .notNull()
+      .references(() => courseSections.id, { onDelete: "cascade" }),
+    lessonId: uuid("lessonId")
+      .notNull()
+      .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+    isEnabled: boolean("isEnabled").default(false).notNull(),
+    enabledAt: timestamp("enabledAt"),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    unq: unique().on(table.sectionId, table.lessonId),
+  }),
+);
 
 // 6. إخفاء الدروس العامة عن شعب معينة (Section Hidden Lessons)
 // يستخدم لإخفاء درس عام نهائياً من منهج شعبة محددة
-export const sectionHiddenLessons = pgTable("sectionHiddenLessons", {
-  id: uuid("id").defaultRandom().primaryKey(),
-  sectionId: text("sectionId")
-    .notNull()
-    .references(() => courseSections.id, { onDelete: "cascade" }),
-  lessonId: uuid("lessonId")
-    .notNull()
-    .references(() => curriculumLessons.id, { onDelete: "cascade" }),
-  hiddenAt: timestamp("hiddenAt").defaultNow().notNull(),
-}, (table) => ({
-  unq: unique().on(table.sectionId, table.lessonId),
-}));
+export const sectionHiddenLessons = pgTable(
+  "sectionHiddenLessons",
+  {
+    id: uuid("id").defaultRandom().primaryKey(),
+    sectionId: text("sectionId")
+      .notNull()
+      .references(() => courseSections.id, { onDelete: "cascade" }),
+    lessonId: uuid("lessonId")
+      .notNull()
+      .references(() => curriculumLessons.id, { onDelete: "cascade" }),
+    hiddenAt: timestamp("hiddenAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    unq: unique().on(table.sectionId, table.lessonId),
+  }),
+);
 
 // العلاقات (Relations)
-export const curriculumLessonsRelations = relations(curriculumLessons, ({ one, many }) => ({
-  course: one(courses, { fields: [curriculumLessons.courseId], references: [courses.id] }),
-  section: one(courseSections, { fields: [curriculumLessons.sectionId], references: [courseSections.id] }),
-  fields: many(curriculumFields),
-  availability: many(sectionLessonAvailability),
-  progress: many(lessonProgress),
-}));
+export const curriculumLessonsRelations = relations(
+  curriculumLessons,
+  ({ one, many }) => ({
+    course: one(courses, {
+      fields: [curriculumLessons.courseId],
+      references: [courses.id],
+    }),
+    section: one(courseSections, {
+      fields: [curriculumLessons.sectionId],
+      references: [courseSections.id],
+    }),
+    fields: many(curriculumFields),
+    availability: many(sectionLessonAvailability),
+    progress: many(lessonProgress),
+  }),
+);
 
-export const curriculumFieldsRelations = relations(curriculumFields, ({ one }) => ({
-  lesson: one(curriculumLessons, { fields: [curriculumFields.lessonId], references: [curriculumLessons.id] }),
-}));
+export const curriculumFieldsRelations = relations(
+  curriculumFields,
+  ({ one }) => ({
+    lesson: one(curriculumLessons, {
+      fields: [curriculumFields.lessonId],
+      references: [curriculumLessons.id],
+    }),
+  }),
+);
 
-export const instructorCourseAccessRelations = relations(instructorCourseAccess, ({ one }) => ({
-  instructor: one(instructors, { fields: [instructorCourseAccess.instructorId], references: [instructors.id] }),
-  course: one(courses, { fields: [instructorCourseAccess.courseId], references: [courses.id] }),
-}));
+export const instructorCourseAccessRelations = relations(
+  instructorCourseAccess,
+  ({ one }) => ({
+    instructor: one(instructors, {
+      fields: [instructorCourseAccess.instructorId],
+      references: [instructors.id],
+    }),
+    course: one(courses, {
+      fields: [instructorCourseAccess.courseId],
+      references: [courses.id],
+    }),
+  }),
+);
 
 export const lessonProgressRelations = relations(lessonProgress, ({ one }) => ({
-  student: one(users, { fields: [lessonProgress.studentId], references: [users.id] }),
-  lesson: one(curriculumLessons, { fields: [lessonProgress.lessonId], references: [curriculumLessons.id] }),
+  student: one(users, {
+    fields: [lessonProgress.studentId],
+    references: [users.id],
+  }),
+  lesson: one(curriculumLessons, {
+    fields: [lessonProgress.lessonId],
+    references: [curriculumLessons.id],
+  }),
 }));
 
-export const sectionLessonAvailabilityRelations = relations(sectionLessonAvailability, ({ one }) => ({
-  section: one(courseSections, { fields: [sectionLessonAvailability.sectionId], references: [courseSections.id] }),
-  lesson: one(curriculumLessons, { fields: [sectionLessonAvailability.lessonId], references: [curriculumLessons.id] }),
-}));
+export const sectionLessonAvailabilityRelations = relations(
+  sectionLessonAvailability,
+  ({ one }) => ({
+    section: one(courseSections, {
+      fields: [sectionLessonAvailability.sectionId],
+      references: [courseSections.id],
+    }),
+    lesson: one(curriculumLessons, {
+      fields: [sectionLessonAvailability.lessonId],
+      references: [curriculumLessons.id],
+    }),
+  }),
+);
 
 // ==========================================
 // 25. Lead Statuses (حالات المهتمين)
@@ -1490,7 +1556,7 @@ export const sectionLessonAvailabilityRelations = relations(sectionLessonAvailab
 export const leadStatuses = pgTable("leadStatuses", {
   id: text("id").primaryKey(),
   value: varchar("value", { length: 100 }).notNull().unique(), // المفتاح البرمجي مثل "new", "contacted"
-  label: varchar("label", { length: 255 }).notNull(),          // الاسم العربي للعرض
+  label: varchar("label", { length: 255 }).notNull(), // الاسم العربي للعرض
   color: varchar("color", { length: 100 }).notNull().default("gray"), // اللون: blue, red, green, etc.
   orderIndex: integer("orderIndex").default(0).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
@@ -1500,44 +1566,90 @@ export const leadStatuses = pgTable("leadStatuses", {
 // ==========================================
 // 26. Course Applications (نظام الطابور الجديد)
 // ==========================================
-export const courseApplications = pgTable("courseApplications", {
-  id: text("id").primaryKey(),
-  userId: text("userId")
-    .notNull()
-    .references(() => users.id, { onDelete: "cascade" }),
-  courseId: text("courseId")
-    .notNull()
-    .references(() => courses.id, { onDelete: "cascade" }),
-  
-  // الحالة مرتبطة بجدول leadStatuses
-  statusValue: varchar("statusValue", { length: 100 })
-    .notNull()
-    .references(() => leadStatuses.value, { onDelete: "restrict" })
-    .default("new"),
-  
-  attendanceType: attendanceTypeEnum("attendanceType").default("in_person"),
-  studentNotes: text("studentNotes"),
-  adminNotes: text("adminNotes"),
-  
+export const courseApplications = pgTable(
+  "courseApplications",
+  {
+    id: text("id").primaryKey(),
+    userId: text("userId")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    courseId: text("courseId")
+      .notNull()
+      .references(() => courses.id, { onDelete: "cascade" }),
+
+    // الحالة مرتبطة بجدول leadStatuses
+    statusValue: varchar("statusValue", { length: 100 })
+      .notNull()
+      .references(() => leadStatuses.value, { onDelete: "restrict" })
+      .default("new"),
+
+    attendanceType: attendanceTypeEnum("attendanceType").default("in_person"),
+    studentNotes: text("studentNotes"),
+    adminNotes: text("adminNotes"),
+
+    createdAt: timestamp("createdAt").defaultNow().notNull(),
+    updatedAt: timestamp("updatedAt").defaultNow().notNull(),
+  },
+  (table) => ({
+    courseIdIdx: index("course_app_course_id_idx").on(table.courseId),
+    userIdIdx: index("course_app_user_id_idx").on(table.userId),
+    createdAtIdx: index("course_app_created_at_idx").on(table.createdAt),
+  }),
+);
+
+export const courseApplicationsRelations = relations(
+  courseApplications,
+  ({ one }) => ({
+    user: one(users, {
+      fields: [courseApplications.userId],
+      references: [users.id],
+    }),
+    course: one(courses, {
+      fields: [courseApplications.courseId],
+      references: [courses.id],
+    }),
+    status: one(leadStatuses, {
+      fields: [courseApplications.statusValue],
+      references: [leadStatuses.value],
+    }),
+  }),
+);
+
+// ==========================================
+// 27. Free Lessons (الدروس المجانية)
+// ==========================================
+export const freeLessons = pgTable("freeLessons", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  mainTitle: varchar("mainTitle", { length: 255 }).notNull(), // العنوان الأساسي
+  subTitle: varchar("subTitle", { length: 255 }), // العنوان الفرعي
+  description: text("description"),
+  order: integer("order").default(1).notNull(),
+  isActive: boolean("isActive").default(true).notNull(),
   createdAt: timestamp("createdAt").defaultNow().notNull(),
   updatedAt: timestamp("updatedAt").defaultNow().notNull(),
-}, (table) => ({
-  courseIdIdx: index("course_app_course_id_idx").on(table.courseId),
-  userIdIdx: index("course_app_user_id_idx").on(table.userId),
-  createdAtIdx: index("course_app_created_at_idx").on(table.createdAt),
+});
+
+export const freeLessonFields = pgTable("freeLessonFields", {
+  id: uuid("id").defaultRandom().primaryKey(),
+  lessonId: uuid("lessonId")
+    .notNull()
+    .references(() => freeLessons.id, { onDelete: "cascade" }),
+  fieldType: varchar("fieldType", { length: 50 }).notNull(), // text, video, image, file, link
+  content: text("content").notNull(),
+  order: integer("order").notNull().default(1),
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+});
+
+export const freeLessonsRelations = relations(freeLessons, ({ many }) => ({
+  fields: many(freeLessonFields),
 }));
 
-export const courseApplicationsRelations = relations(courseApplications, ({ one }) => ({
-  user: one(users, {
-    fields: [courseApplications.userId],
-    references: [users.id],
+export const freeLessonFieldsRelations = relations(
+  freeLessonFields,
+  ({ one }) => ({
+    lesson: one(freeLessons, {
+      fields: [freeLessonFields.lessonId],
+      references: [freeLessons.id],
+    }),
   }),
-  course: one(courses, {
-    fields: [courseApplications.courseId],
-    references: [courses.id],
-  }),
-  status: one(leadStatuses, {
-    fields: [courseApplications.statusValue],
-    references: [leadStatuses.value],
-  }),
-}));
+);

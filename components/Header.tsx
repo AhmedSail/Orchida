@@ -93,8 +93,8 @@ function NavListMenu({ closeMenu }: { closeMenu?: () => void }) {
         }
       } else if (title === "دوراتنا") {
         href = "/courses";
-      } else if (title === "الدورات المجانية") {
-        href = "/courses?free=true";
+      } else if (title === "الدروس المجانية") {
+        href = "/free-lessons";
       } else if (title === "أعمال الطلاب") {
         href = "/student-works";
       }
