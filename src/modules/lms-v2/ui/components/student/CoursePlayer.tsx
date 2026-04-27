@@ -251,8 +251,6 @@ export default function CoursePlayer({
                         >
                           {isLocked ? (
                             <Lock className="w-4 h-4" />
-                          ) : isCompleted ? (
-                            <CheckCircle2 className="w-5 h-5" />
                           ) : (
                             <span>{lesson.order - 1}</span>
                           )}
