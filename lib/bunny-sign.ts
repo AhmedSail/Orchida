@@ -1,13 +1,11 @@
 import crypto from "crypto";
 
 export function signBunnyVideo(videoId: string) {
-  const securityKey = process.env.BUNNY_TOKEN_KEY?.trim();
-  const libraryId =
-    process.env.BUNNY_LIBRARY_ID?.trim() ||
-    "a28938ec-e6a1-443f-ab56-4d846df5edeb";
+  const securityKey = process.env.BUNNY_TOKEN_KEY?.trim() || "a28938ec-e6a1-443f-ab56-4d846df5edeb";
+  const libraryId = process.env.BUNNY_LIBRARY_ID?.trim() || "641165";
 
   if (!securityKey) {
-    console.error("❌ Bunny Security Key is missing in .env");
+    console.error("❌ Bunny Security Key is missing");
     return `https://iframe.mediadelivery.net/embed/${libraryId}/${videoId}`;
   }
 
