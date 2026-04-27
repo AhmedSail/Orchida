@@ -323,6 +323,12 @@ export function AppSidebar({ user }: { user: User }) {
                         جدول اللقاءات
                       </Link>
 
+                      <Link
+                        href={`/admin/${user.id}/free-lessons`}
+                        className="text-sm py-2.5 px-3 rounded-lg text-slate-600 hover:text-primary hover:bg-primary/5 transition-all font-black text-primary"
+                      >
+                        الدروس المجانية✨
+                      </Link>
                       {/* إدارة الشعب */}
                       <Link
                         href={`/admin/${user.id}/courses/sections`}
