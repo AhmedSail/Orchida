@@ -68,33 +68,40 @@ export default function CoursePlayer({
   const [activeTab, setActiveTab] = useState<"curriculum" | "meetings">(
     "curriculum",
   );
-  const [activeLessonId, setActiveLessonId] = useState<string | null>(
-    lessons[0]?.id || null,
-  );
   const [completedIds, setCompletedIds] = useState<string[]>(
     initialProgress.map((p) => p.lessonId),
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(true);
 
-  const activeLesson = lessons.find((l) => l.id === activeLessonId);
+  // ترتيب الدروس لضمان الترقيم الصحيح
+  const sortedLessons = [...lessons].sort((a, b) => a.order - b.order);
+
+  const [activeLessonId, setActiveLessonId] = useState<string | null>(
+    sortedLessons[0]?.id || null,
+  );
+  const activeLesson = sortedLessons.find((l) => l.id === activeLessonId);
 
   // منطق التحقق من إتاحة الدرس (Locked vs Unlocked)
   const isLessonLocked = (
     lesson: any,
     currentCompletedIds: string[] = completedIds,
   ) => {
+    // إذا كان الدرس مكتمل بالفعل، فهو مفتوح دائماً
+    if (currentCompletedIds.includes(lesson.id)) return false;
+
     // 🛡️ في وضع المعاينة (Preview): نفتح فقط الدرس الأول ونقفل الباقي
     if (isPreview) {
-      return lesson.order !== 1;
+      return lesson.order !== sortedLessons[0]?.order;
     }
 
     // الدرس الأول دائماً مفتوح للجميع
-    if (lesson.order === 1) return false;
+    if (lesson.order === sortedLessons[0]?.order) return false;
 
     // 1. الشعبة رقم 0 (أونلاين فردي - فتح تلقائي عند الإكمال)
     if (sectionNumber === 0) {
-      // التأكد من إكمال الدرس السابق
-      const prevLesson = lessons.find((l) => l.order === lesson.order - 1);
+      // التأكد من إكمال الدرس السابق في الترتيب
+      const currentIndex = sortedLessons.findIndex((l) => l.id === lesson.id);
+      const prevLesson = sortedLessons[currentIndex - 1];
       const isPrevCompleted =
         prevLesson && currentCompletedIds.includes(prevLesson.id);
 
@@ -125,9 +132,8 @@ export default function CoursePlayer({
       toast.success("تم إكمال الدرس! تم فتح الدرس التالي لك.");
 
       // الانتقال التلقائي للدرس التالي
-      const nextLesson = lessons.find(
-        (l) => l.order === (activeLesson?.order || 0) + 1,
-      );
+      const currentIndex = sortedLessons.findIndex((l) => l.id === activeLessonId);
+      const nextLesson = sortedLessons[currentIndex + 1];
 
       // نمرر القائمة الجديدة لضمان الفحص الصحيح في نفس اللحظة
       if (nextLesson && !isLessonLocked(nextLesson, newCompletedIds)) {
@@ -163,7 +169,7 @@ export default function CoursePlayer({
               <div
                 className="h-full bg-primary transition-all duration-500"
                 style={{
-                  width: `${(completedIds.length / (lessons.length || 1)) * 100}%`,
+                  width: `${(completedIds.length / (sortedLessons.length || 1)) * 100}%`,
                 }}
               />
             </div>
@@ -219,9 +225,7 @@ export default function CoursePlayer({
 
           <div className="overflow-y-auto h-[calc(100%-80px)] p-4 space-y-2">
             {activeTab === "curriculum"
-              ? lessons
-                  .sort((a, b) => a.order - b.order)
-                  .map((lesson) => {
+              ? sortedLessons.map((lesson, index) => {
                     const isLocked = isLessonLocked(lesson);
                     const isCompleted = completedIds.includes(lesson.id);
                     const isActive = activeLessonId === lesson.id;
@@ -252,7 +256,7 @@ export default function CoursePlayer({
                           {isLocked ? (
                             <Lock className="w-4 h-4" />
                           ) : (
-                            <span>{lesson.order - 1}</span>
+                            <span>{index}</span>
                           )}
                         </div>
                         <div className="flex-1 overflow-hidden">
@@ -328,7 +332,7 @@ export default function CoursePlayer({
                     </span>
                   )}
                   <h1 className="text-3xl text-center md:text-5xl font-black text-zinc-900 leading-tight">
-                    الدرس {activeLesson.order - 1} : {activeLesson.mainTitle}
+                    الدرس {sortedLessons.findIndex(l => l.id === activeLesson?.id)} : {activeLesson.mainTitle}
                   </h1>
                 </div>
                 {activeLesson.subTitle && (
@@ -418,6 +422,7 @@ export default function CoursePlayer({
                             width={500}
                             height={500}
                             priority
+                            unoptimized
                           />
                         </div>
                       )}
@@ -502,9 +507,8 @@ export default function CoursePlayer({
                   <button
                     disabled={activeLesson.order === 1}
                     onClick={() => {
-                      const prev = lessons.find(
-                        (l) => l.order === activeLesson.order - 1,
-                      );
+                      const currentIndex = sortedLessons.findIndex(l => l.id === activeLesson.id);
+                      const prev = sortedLessons[currentIndex - 1];
                       if (prev) setActiveLessonId(prev.id);
                     }}
                     className="flex items-center gap-2 text-zinc-400 hover:text-zinc-800 font-bold text-sm disabled:opacity-30"
@@ -513,9 +517,8 @@ export default function CoursePlayer({
                   </button>
                   <button
                     onClick={() => {
-                      const next = lessons.find(
-                        (l) => l.order === activeLesson.order + 1,
-                      );
+                      const currentIndex = sortedLessons.findIndex(l => l.id === activeLesson.id);
+                      const next = sortedLessons[currentIndex + 1];
                       if (next && !isLessonLocked(next))
                         setActiveLessonId(next.id);
                       else if (next)
