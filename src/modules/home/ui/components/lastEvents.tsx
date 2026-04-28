@@ -240,6 +240,7 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                         className="object-cover transition-transform duration-[2s] ease-out"
                         priority
                         quality={100}
+                        unoptimized
                       />
                     ) : (
                       <div
