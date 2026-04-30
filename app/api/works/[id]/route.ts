@@ -1,4 +1,3 @@
-// src/app/api/work/[id]/route.ts
 import { NextResponse } from "next/server";
 import { db } from "@/src/db";
 import { mediaFiles, works } from "@/src/db/schema";
@@ -6,6 +5,9 @@ import {
   eq,
   and,
   isNull,
+  ne,
+  gte,
+  sql,
   InferSelectModel,
   InferInsertModel,
 } from "drizzle-orm";
@@ -81,6 +83,14 @@ export async function PATCH(
 
     // ✅ 4. حذف سجلات الوسائط القديمة من قاعدة البيانات
     await db.delete(mediaFiles).where(eq(mediaFiles.workId, id));
+
+    // ✅ إزاحة الأعمال الأخرى (غير العمل الحالي) التي لها نفس الترتيب أو أعلى بمقدار +1
+    if (typeof body.order === "number") {
+      await db
+        .update(works)
+        .set({ order: sql`${works.order} + 1` })
+        .where(and(gte(works.order, body.order), ne(works.id, id)));
+    }
 
     // ✅ 5. تحديث بيانات العمل الأساسية بالبيانات الجديدة
     const [updatedWork] = await db

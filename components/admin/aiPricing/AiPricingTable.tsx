@@ -248,7 +248,7 @@ export default function AiPricingTable({
           }`}
         >
           <MessageSquare className="w-4 h-4" />
-          إعدادات الشات (GPT-5)
+          إعدادات الشات (GPT-4o)
         </button>
       </div>
 

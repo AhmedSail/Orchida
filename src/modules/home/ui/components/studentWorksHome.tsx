@@ -111,21 +111,33 @@ const StudentWorksHome = ({
                   {story.type === "video" && (
                     <div className="w-full h-64 flex items-center justify-center overflow-hidden rounded-xl bg-black relative group/vid">
                       {story.youtubeUrl ? (
-                         <Image
-                          src={`https://img.youtube.com/vi/${(() => {
-                            const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${(() => {
+                            const regExp =
+                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                             const match = story.youtubeUrl.match(regExp);
-                            return (match && match[2].length === 11) ? match[2] : story.youtubeUrl.split('/').pop();
-                          })()}/hqdefault.jpg`}
-                          alt={story.title}
-                          fill
-                          className="object-cover transition-transform duration-700 group-hover/vid:scale-110"
-                          unoptimized
+                            return match && match[2].length === 11
+                              ? match[2]
+                              : story.youtubeUrl.split("/").pop();
+                          })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                            const regExp =
+                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                            const match = story.youtubeUrl.match(regExp);
+                            return match && match[2].length === 11
+                              ? match[2]
+                              : story.youtubeUrl.split("/").pop();
+                          })()}`}
+                          className="w-full h-full border-none"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
                         />
                       ) : (
                         <video
                           src={story.mediaUrl ?? ""}
                           controls
+                          autoPlay
+                          muted
+                          loop
                           className="w-full h-full object-cover"
                         />
                       )}

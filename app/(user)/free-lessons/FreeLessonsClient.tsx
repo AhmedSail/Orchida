@@ -141,7 +141,7 @@ export default function FreeLessonsClient({ lessons, categories }: Props) {
                       className="group bg-white rounded-[32px] border border-zinc-100 shadow-sm hover:shadow-2xl hover:shadow-primary/10 transition-all duration-500 overflow-hidden flex flex-col h-full"
                     >
                       {/* Thumbnail */}
-                      <div className="aspect-[3/4] relative overflow-hidden">
+                      <div className="aspect-square relative overflow-hidden">
                         {catImg ? (
                           <Image
                             src={catImg}

@@ -5,6 +5,7 @@ import { chatSettings, chatUsage, userCredits, creditTransactions } from "@/src/
 import { eq } from "drizzle-orm";
 import { auth } from "@/lib/auth";
 import { headers } from "next/headers";
+import { checkAndDeductCredits } from "./ai-common";
 
 // ── جلب إعدادات الشات ──────────────────────────────────────────────
 export async function getChatSettingsAction() {
@@ -140,7 +141,7 @@ export async function consumeChatMessageAction() {
     await db.insert(creditTransactions).values({
       userId,
       amount: -costPerMsg,
-      description: `Chat message (GPT-5)`,
+      description: `Chat message (GPT-4o)`,
     });
 
     // تحديث العداد
@@ -162,6 +163,33 @@ export async function consumeChatMessageAction() {
     };
   } catch (e: any) {
     console.error("consumeChatMessageAction error:", e);
+    return { success: false, error: e.message };
+  }
+}
+
+export async function refundChatMessageAction(reason: string) {
+  try {
+    const sessionData = await auth.api.getSession({ headers: await headers() });
+    if (!sessionData?.session?.userId) return { success: false, error: "Unauthorized" };
+
+    const userId = sessionData.session.userId;
+    const settings = await db.query.chatSettings.findFirst();
+    const costPerMsg = settings?.creditsPerMessage || 2;
+
+    await checkAndDeductCredits(userId, -costPerMsg, `Refund Chat: ${reason.substring(0, 50)}`);
+
+    // تقليل العداد
+    const usage = await db.query.chatUsage.findFirst({
+      where: eq(chatUsage.userId, userId),
+    });
+    if (usage && usage.messageCount > 0) {
+      await db.update(chatUsage)
+        .set({ messageCount: usage.messageCount - 1 })
+        .where(eq(chatUsage.userId, userId));
+    }
+
+    return { success: true };
+  } catch (e: any) {
     return { success: false, error: e.message };
   }
 }

@@ -19,8 +19,8 @@ export async function getGeminiGenApiKey() {
 
 // 1. دالة فحص وتحديث الرصيد الداخلي
 export async function checkAndDeductCredits(userId: string, cost: number, description: string) {
-  if (cost <= 0) {
-    // إذا كان التكلفة 0، لا داعي للخصم أو التحقق من الرصيد
+  if (cost === 0) {
+    // إذا كان التكلفة 0، لا داعي للقيام بأي عملية
     return;
   }
 

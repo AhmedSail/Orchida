@@ -31,7 +31,18 @@ import { ImageGenResults } from "./image-gen/ImageGenResults";
 import { ImageGenLightbox } from "./image-gen/ImageGenLightbox";
 import { useSearchParams } from "next/navigation";
 
-export default function ImageGenView() {
+interface ImageGenViewProps {
+  userBalance?: number | null;
+}
+
+export default function ImageGenView({ userBalance: propBalance }: ImageGenViewProps) {
+  const [userBalance, setUserBalance] = useState<number | null>(propBalance ?? null);
+
+  useEffect(() => {
+    if (propBalance !== undefined) {
+      setUserBalance(propBalance);
+    }
+  }, [propBalance]);
   const searchParams = useSearchParams();
   const [provider, setProvider] = useState("Imagen");
   const [prompt, setPrompt] = useState("");
@@ -53,11 +64,18 @@ export default function ImageGenView() {
 
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
 
-  const cost = (() => {
-    // Map UI provider to DB provider name
-    const dbProvider = provider === "Imagen" ? "VEO" : "GROK";
+  // خريطة تحويل أسماء الواجهة إلى أسماء قاعدة البيانات
+  const PROVIDER_DB_MAP: Record<string, string> = {
+    "Imagen": "Banana Pro",
+    "Grok": "Grok",
+    "Meta AI": "Meta AI",
+  };
 
-    // Standardize quality names for matching (e.g. 1K might be 720p in DB)
+  const cost = (() => {
+    // تحويل اسم المزود من الواجهة إلى الاسم المخزن في قاعدة البيانات
+    const dbProvider = PROVIDER_DB_MAP[provider] || provider;
+
+    // توحيد أسماء الجودة لتطابق ما في قاعدة البيانات
     const checkQuality = (q: string) => {
       if (q === "1K") return ["1K", "720p", "HD"];
       if (q === "2K") return ["2K", "1080p", "Full HD"];
@@ -87,7 +105,6 @@ export default function ImageGenView() {
 
   // Auth & Balance
   const { data: session } = authClient.useSession();
-  const [userBalance, setUserBalance] = useState<number | null>(null);
 
   // Helpers
   const fileToBase64 = (file: File): Promise<string> => {

@@ -27,7 +27,11 @@ import { useRouter } from "next/navigation";
 import FreeVideoView from "./FreeVideoView";
 import FreeImageView from "./FreeImageView";
 
-export default function FreeTrialView() {
+interface FreeTrialViewProps {
+  userBalance?: number | null;
+}
+
+export default function FreeTrialView({ userBalance }: FreeTrialViewProps) {
   const router = useRouter();
   const [activeTab, setActiveTab] = useState<"video" | "image">("video");
   const [isGenerating, setIsGenerating] = useState(false);

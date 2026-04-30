@@ -35,7 +35,7 @@ export async function sendChatMessageAction(messages: ChatMessage[]) {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "gpt-5",
+        model: "gpt-4o",
         messages: [systemMessage, ...messages],
         max_completion_tokens: 16000,
       }),
