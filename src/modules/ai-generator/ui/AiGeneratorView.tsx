@@ -192,19 +192,19 @@ export default function AiGeneratorView() {
           <AiLandingView />
         </div>
         <div className={appMode !== "chat" ? "hidden" : ""}>
-          <ChatModeView />
+          <ChatModeView userBalance={balance} />
         </div>
         <div className={appMode !== "video" ? "hidden" : ""}>
-          <VideoGenView />
+          <VideoGenView userBalance={balance} />
         </div>
         <div className={appMode !== "imagen" ? "hidden" : ""}>
-          <ImageGenView />
+          <ImageGenView userBalance={balance} />
         </div>
         <div className={appMode !== "history" ? "hidden" : ""}>
           <HistoryView isActive={appMode === "history"} />
         </div>
         <div className={appMode !== "free" ? "hidden" : ""}>
-          <FreeTrialView />
+          <FreeTrialView userBalance={balance} />
         </div>
       </div>
     </div>

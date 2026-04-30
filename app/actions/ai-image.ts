@@ -45,13 +45,21 @@ export async function generateImageAction(input: string | FormData) {
 
     // Fetch dynamic cost from DB
     const resQuality = resolution || "Standard";
-    
+
+    // خريطة تحويل أسماء المزودين من الواجهة إلى أسماء قاعدة البيانات
+    const PROVIDER_DB_MAP: Record<string, string> = {
+      "Imagen": "Banana Pro",
+      "Grok": "Grok",
+      "Meta AI": "Meta AI",
+    };
+    const dbProvider = PROVIDER_DB_MAP[provider] || provider || "Banana Pro";
+
     // إذا كانت التكلفة المرسلة هي 0، نعتمدها مباشرة (للتجربة المجانية)
     let cost = 0;
     if (data.cost === 0 || data.cost === "0") {
       cost = 0;
     } else {
-      const dynamicCost = await getAiPricingAction("image", model || "nano-banana-pro", resQuality);
+      const dynamicCost = await getAiPricingAction("image", dbProvider, resQuality);
       cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(data.cost) || 2);
     }
 
@@ -128,8 +136,11 @@ export async function generateImageAction(input: string | FormData) {
         signal: controller.signal
       });
     } catch (err: any) {
+      if (cost > 0) {
+        await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Network/Timeout (${model})`);
+      }
       if (err.name === 'AbortError') {
-        throw new Error("استغرقت العملية وقتاً طويلاً جداً من قبل المزود. يرجى المحاولة بعد قليل أو تقليل عدد الصور.");
+        throw new Error("استغرقت العملية وقتاً طويلاً جداً من قبل المزود. تم إعادة الرصيد.");
       }
       throw err;
     } finally {
@@ -138,8 +149,9 @@ export async function generateImageAction(input: string | FormData) {
 
     if (!response.ok) {
       const rawText = await response.text();
-      // استرجاع الرصيد في حالة خطأ الـ API
-      await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Image API Error (${model})`);
+      if (cost > 0) {
+        await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Image API Error (${model})`);
+      }
       throw new Error(rawText || "فشل توليد الصورة من الـ API. تم إعادة الرصيد.");
     }
 

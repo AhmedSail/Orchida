@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
   Video,
   Image as ImageIcon,
@@ -39,8 +39,11 @@ interface PricingRule {
   credits: number;
 }
 
+interface VideoGenViewProps {
+  userBalance?: number | null;
+}
 
-export default function VideoGenView() {
+export default function VideoGenView({ userBalance: propBalance }: VideoGenViewProps) {
   const searchParams = useSearchParams();
   const [provider, setProvider] = useState("Veo");
   const [veoModel] = useState("veo-3.1-fast"); // Locked to Veo 3.1 Fast as requested
@@ -62,7 +65,13 @@ export default function VideoGenView() {
   const { data: session } = authClient.useSession();
 
   // User Credits State
-  const [userBalance, setUserBalance] = useState<number | null>(null);
+  const [userBalance, setUserBalance] = useState<number | null>(propBalance ?? null);
+
+  useEffect(() => {
+    if (propBalance !== undefined) {
+      setUserBalance(propBalance);
+    }
+  }, [propBalance]);
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
 
   // Debug State
@@ -129,7 +138,7 @@ export default function VideoGenView() {
 
     // Clear persistence
     localStorage.removeItem("ai_video_state");
-    
+
     Swal.fire({
       toast: true,
       position: "top-end",
@@ -150,34 +159,26 @@ export default function VideoGenView() {
         : "480p";
 
     // Use uppercase for matching with DB if stored as VEO/GROK
-    const dbProvider = provider.toUpperCase();
+    const dbProvider = provider.toLowerCase().trim();
+    const dbQuality = resQuality.toLowerCase().trim();
 
-    // 1. Try to find exact match for provider, quality, and duration
-    const exactMatch = pricingRules.find(
+    // Find match: Priority to exact duration, then fallback to duration 0/null (global)
+    const match = pricingRules.find(
       (r) =>
         r.serviceType === "video" &&
-        r.provider.toUpperCase() === dbProvider &&
-        r.quality.toLowerCase() === resQuality.toLowerCase() &&
-        r.duration === seconds,
+        r.provider.toLowerCase().trim() === dbProvider &&
+        r.quality.toLowerCase().trim() === dbQuality &&
+        (r.duration === seconds || r.duration === 0 || r.duration === null),
     );
-    if (exactMatch) return exactMatch.credits;
 
-    // 2. Try to find match for provider and quality with duration 0 or null (any duration)
-    const qualityMatch = pricingRules.find(
-      (r) =>
-        r.serviceType === "video" &&
-        r.provider.toUpperCase() === dbProvider &&
-        r.quality.toLowerCase() === resQuality.toLowerCase() &&
-        (r.duration === 0 || r.duration === null),
-    );
-    if (qualityMatch) return qualityMatch.credits;
+    if (match) return match.credits;
 
     // 3. Fallback to hardcoded logic if no DB rule found
     switch (provider) {
       case "Grok":
-        return 3; 
+        return 3;
       case "Veo":
-        return resolution.includes("High") ? 3 : 3;
+        return 3;
       default:
         return 3;
     }
@@ -422,9 +423,15 @@ export default function VideoGenView() {
         resolution,
         aspectRatio: orientation,
         cost,
-        firstImage: firstImage ? { name: firstImage.name, size: firstImage.size } : "none",
-        lastImage: lastImage ? { name: lastImage.name, size: lastImage.size } : "none",
-        grokImage: grokImage ? { name: grokImage.name, size: grokImage.size } : "none",
+        firstImage: firstImage
+          ? { name: firstImage.name, size: firstImage.size }
+          : "none",
+        lastImage: lastImage
+          ? { name: lastImage.name, size: lastImage.size }
+          : "none",
+        grokImage: grokImage
+          ? { name: grokImage.name, size: grokImage.size }
+          : "none",
       });
 
       const res = await generateVideoAction(formData);
@@ -583,7 +590,7 @@ export default function VideoGenView() {
               <Video className="w-4 h-4" />
               إنشاء جديد
             </button>
-            <button 
+            <button
               onClick={handleClearAll}
               className="flex-1 flex items-center justify-center gap-2 bg-white text-zinc-500 hover:text-red-500 text-sm font-semibold py-2 rounded-md border border-zinc-200 hover:border-red-200 transition-all active:scale-95 group"
             >
@@ -603,6 +610,7 @@ export default function VideoGenView() {
                   setProvider("Veo");
                   setResolution("High 720p");
                   setOrientation("Landscape (16:9)");
+                  setDuration("6");
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Veo" ? "border-primary bg-primary/10 text-primary" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
               >
@@ -614,6 +622,7 @@ export default function VideoGenView() {
               <button
                 onClick={() => {
                   setProvider("Grok");
+                  setDuration("6");
                   // Optional defaults for Grok
                 }}
                 className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Grok" ? "border-primary bg-primary/10 text-primary" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
@@ -630,7 +639,7 @@ export default function VideoGenView() {
           {provider === "Veo" && (
             <div className="space-y-6 mb-8">
               {/* Fixed Model Display */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
                     الموديل (Version)
@@ -641,11 +650,18 @@ export default function VideoGenView() {
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    نوع الصورة المرجعية
+                    المدة (Duration)
                   </label>
-                  <div className="bg-zinc-100 p-0.5 rounded-lg border border-zinc-200 flex items-center justify-between px-3 h-[38px]">
-                    <span className="text-xs font-semibold text-primary">Frame Images</span>
-                    <Info className="w-3.5 h-3.5 text-zinc-400" />
+                  <div className="flex gap-2">
+                    {["6", "8"].map((sec) => (
+                      <button
+                        key={sec}
+                        onClick={() => setDuration(sec)}
+                        className={`flex-1 py-2 rounded-lg border text-xs font-bold transition ${duration === sec ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      >
+                        {sec} ثانية
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>
@@ -679,7 +695,8 @@ export default function VideoGenView() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setFirstImage(null);
-                            if (firstImageRef.current) firstImageRef.current.value = "";
+                            if (firstImageRef.current)
+                              firstImageRef.current.value = "";
                           }}
                           className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
                         >
@@ -719,7 +736,8 @@ export default function VideoGenView() {
                           onClick={(e) => {
                             e.stopPropagation();
                             setLastImage(null);
-                            if (lastImageRef.current) lastImageRef.current.value = "";
+                            if (lastImageRef.current)
+                              lastImageRef.current.value = "";
                           }}
                           className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
                         >
@@ -786,17 +804,19 @@ export default function VideoGenView() {
                       className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Landscape (16:9)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
                       <div className="w-16 h-8 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
-                         <Monitor className="w-5 h-5 opacity-40" />
+                        <Monitor className="w-5 h-5 opacity-40" />
                       </div>
-                      <span className="text-xs font-bold">16:9 (Landscape)</span>
+                      <span className="text-xs font-bold">
+                        16:9 (Landscape)
+                      </span>
                     </button>
-                    
+
                     <button
                       onClick={() => setOrientation("Portrait (9:16)")}
                       className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Portrait (9:16)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
                     >
                       <div className="w-8 h-12 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
-                         <Smartphone className="w-5 h-5 opacity-40" />
+                        <Smartphone className="w-5 h-5 opacity-40" />
                       </div>
                       <span className="text-xs font-bold">9:16 (Portrait)</span>
                     </button>
@@ -863,7 +883,7 @@ export default function VideoGenView() {
                   </label>
                   <div className="relative">
                     <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
-                       <Zap className="w-4 h-4" /> Grok 3 Video
+                      <Zap className="w-4 h-4" /> Grok 3 Video
                     </div>
                   </div>
                 </div>
@@ -892,12 +912,13 @@ export default function VideoGenView() {
                           <ImageIcon className="w-4 h-4 inline mr-1" />{" "}
                           {grokImage.name}
                         </span>
-                        <Trash2 
-                          className="w-4 h-4 text-red-500 hover:text-red-600 transition cursor-pointer" 
+                        <Trash2
+                          className="w-4 h-4 text-red-500 hover:text-red-600 transition cursor-pointer"
                           onClick={(e) => {
                             e.stopPropagation();
                             setGrokImage(null);
-                            if (grokImageRef.current) grokImageRef.current.value = "";
+                            if (grokImageRef.current)
+                              grokImageRef.current.value = "";
                           }}
                         />
                       </div>
@@ -1055,18 +1076,15 @@ export default function VideoGenView() {
                     Duration
                   </label>
                   <div className="flex gap-2">
-                    <button
-                      onClick={() => setDuration("6")}
-                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "6" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                       6 ثوانٍ
-                    </button>
-                    <button
-                      onClick={() => setDuration("10")}
-                      className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === "10" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                       10 ثوانٍ
-                    </button>
+                    {["6", "10"].map((sec) => (
+                      <button
+                        key={sec}
+                        onClick={() => setDuration(sec)}
+                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === sec ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      >
+                         {sec} ثوانٍ
+                      </button>
+                    ))}
                   </div>
                 </div>
               </div>

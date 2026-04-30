@@ -25,6 +25,7 @@ import {
   getChatSettingsAction,
   getChatUsageAction,
   consumeChatMessageAction,
+  refundChatMessageAction,
 } from "@/app/actions/ai-chat-settings";
 import { toast } from "sonner";
 
@@ -43,7 +44,11 @@ interface Message {
   attachments?: MessageAttachment[];
 }
 
-export default function ChatModeView() {
+interface ChatModeViewProps {
+  userBalance?: number | null;
+}
+
+export default function ChatModeView({ userBalance }: ChatModeViewProps) {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [attachments, setAttachments] = useState<File[]>([]);
@@ -187,9 +192,19 @@ export default function ChatModeView() {
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
+        // Refund if fail
+        if (!consumeRes.wasFree) {
+          await refundChatMessageAction(res.error || "AI Reply Failed");
+          window.dispatchEvent(new Event("balanceUpdated"));
+        }
         toast.error(res.error || "فشل الحصول على رد");
       }
-    } catch (e) {
+    } catch (e: any) {
+      // Refund if exception
+      if (!consumeRes.wasFree) {
+        await refundChatMessageAction(e.message || "Technical Error");
+        window.dispatchEvent(new Event("balanceUpdated"));
+      }
       toast.error("حدث خطأ تقني");
     } finally {
       setIsLoading(false);
@@ -224,7 +239,7 @@ export default function ChatModeView() {
             <h2 className="font-black text-zinc-900 text-sm">مساعد أوركيدة الذكي</h2>
             <div className="flex items-center gap-1.5">
               <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-zinc-400">GPT-5 • Online</span>
+              <span className="text-[10px] font-bold text-zinc-400">GPT-4o • Online</span>
             </div>
           </div>
         </div>
@@ -453,7 +468,7 @@ export default function ChatModeView() {
         </div>
         <div className="flex items-center justify-center gap-1.5 mt-2">
           <Zap className="w-3 h-3 text-zinc-300" />
-          <span className="text-[10px] text-zinc-400 font-medium">مدعوم بـ GPT-5 من OpenAI</span>
+          <span className="text-[10px] text-zinc-400 font-medium">مدعوم بـ GPT-4o من OpenAI</span>
         </div>
       </div>
     </div>

@@ -26,6 +26,7 @@ import {
 } from "@/app/actions/ai-common";
 import Swal from "sweetalert2";
 import { authClient } from "@/lib/auth-client";
+import Image from "next/image";
 
 type HistoryItem = {
   id: string;
@@ -43,107 +44,133 @@ type HistoryItem = {
 };
 
 // 1. مكون ميمو لتقليل الرندر غير الضروري
-const HistoryItemCard = React.memo(({ item, onSelect, onDelete }: { 
-  item: HistoryItem, 
-  onSelect: (item: HistoryItem) => void,
-  onDelete: (e: React.MouseEvent, id: string) => void 
-}) => {
-  const statusInfo = STATUS_MAP[item.status] ?? STATUS_MAP.pending;
-  const StatusIcon = statusInfo.icon;
-  const videoUrl = item.type === "video" ? item.resultUrl : null;
-  const thumb = item.thumbnailUrl;
-  const resUrl = item.resultUrl;
+const HistoryItemCard = React.memo(
+  ({
+    item,
+    onSelect,
+    onDelete,
+  }: {
+    item: HistoryItem;
+    onSelect: (item: HistoryItem) => void;
+    onDelete: (e: React.MouseEvent, id: string) => void;
+  }) => {
+    const statusInfo = STATUS_MAP[item.status] ?? STATUS_MAP.pending;
+    const StatusIcon = statusInfo.icon;
+    const videoUrl = item.type === "video" ? item.resultUrl : null;
 
-  return (
-    <div
-      onClick={() => item.status === "completed" ? onSelect(item) : null}
-      className={`bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col transition hover:shadow-md ${
-        item.status === "completed" ? "cursor-pointer" : ""
-      }`}
-    >
-      {/* Thumbnail */}
-      <div className="relative bg-zinc-900 aspect-video flex items-center justify-center overflow-hidden">
-        {thumb || resUrl ? (
-          <img
-            src={thumb || resUrl || ""}
-            alt={item.prompt}
-            loading="lazy"
-            className="w-full h-full object-cover"
-          />
-        ) : (
-          <div className="flex flex-col items-center text-zinc-600">
-            {item.type === "video" ? (
-              <Video className="w-10 h-10 opacity-30" />
-            ) : (
-              <ImageIcon className="w-10 h-10 opacity-30" />
+    // محاولة الحصول على صورة مصغرة
+    let displayImage = item.thumbnailUrl || item.resultUrl;
+
+    // إذا لم يوجد رابط مباشر، نحاول استخراجه من JSON (لحالة الصور المتعددة)
+    if (!displayImage && item.resultsJson) {
+      try {
+        const parsed = JSON.parse(item.resultsJson);
+        if (Array.isArray(parsed) && parsed.length > 0) {
+          displayImage = parsed[0];
+        }
+      } catch (e) {
+        console.error("Error parsing resultsJson", e);
+      }
+    }
+
+    return (
+      <div
+        onClick={() => (item.status === "completed" ? onSelect(item) : null)}
+        className={`bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col transition hover:shadow-md ${
+          item.status === "completed" ? "cursor-pointer" : ""
+        }`}
+      >
+        {/* Thumbnail */}
+        <div className="relative bg-zinc-900 aspect-video flex items-center justify-center overflow-hidden">
+          {displayImage ? (
+            <Image
+              src={displayImage}
+              alt={item.prompt}
+              width={400}
+              height={300}
+              unoptimized
+              loading="lazy"
+              className="w-full h-full object-cover"
+            />
+          ) : (
+            <div className="flex flex-col items-center text-zinc-600">
+              {item.type === "video" ? (
+                <Video className="w-10 h-10 opacity-30" />
+              ) : (
+                <ImageIcon className="w-10 h-10 opacity-30" />
+              )}
+            </div>
+          )}
+
+          {/* Play overlay */}
+          {item.status === "completed" && videoUrl && (
+            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition">
+              <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
+                <Play className="w-6 h-6 text-primary fill-primary mr-[-2px]" />
+              </div>
+            </div>
+          )}
+
+          {/* Status Badge */}
+          <div
+            className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusInfo.color}`}
+          >
+            <StatusIcon
+              className={`w-3 h-3 ${item.status === "pending" ? "animate-spin" : ""}`}
+            />
+            {statusInfo.label}
+          </div>
+
+          {/* Type & Count badge */}
+          <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
+            <div className="bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {item.type === "video" ? "فيديو" : "صورة"}
+            </div>
+            {item.type === "image" && item.resultsJson && (
+              <div className="bg-primary/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
+                {JSON.parse(item.resultsJson).length} صور
+              </div>
             )}
           </div>
-        )}
-
-        {/* Play overlay */}
-        {item.status === "completed" && videoUrl && (
-          <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition">
-            <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-              <Play className="w-6 h-6 text-primary fill-primary mr-[-2px]" />
-            </div>
-          </div>
-        )}
-
-        {/* Status Badge */}
-        <div className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusInfo.color}`}>
-          <StatusIcon className={`w-3 h-3 ${item.status === "pending" ? "animate-spin" : ""}`} />
-          {statusInfo.label}
         </div>
 
-        {/* Type & Count badge */}
-        <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-          <div className="bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-            {item.type === "video" ? "فيديو" : "صورة"}
-          </div>
-          {item.type === "image" && item.resultsJson && (
-            <div className="bg-primary/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
-              {JSON.parse(item.resultsJson).length} صور
-            </div>
-          )}
-        </div>
-      </div>
+        {/* Info */}
+        <div className="p-4 flex flex-col gap-2 flex-1">
+          <p className="text-sm font-semibold text-zinc-800 line-clamp-2 leading-relaxed h-[40px]">
+            {item.prompt || "—"}
+          </p>
 
-      {/* Info */}
-      <div className="p-4 flex flex-col gap-2 flex-1">
-        <p className="text-sm font-semibold text-zinc-800 line-clamp-2 leading-relaxed h-[40px]">
-          {item.prompt || "—"}
-        </p>
-
-        <div className="flex items-center gap-2 flex-wrap">
-          <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
-            {item.model}
-          </span>
-          {item.resolution && (
-            <span className="bg-zinc-100 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-              {item.resolution}
+          <div className="flex items-center gap-2 flex-wrap">
+            <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+              {item.model}
             </span>
-          )}
-        </div>
+            {item.resolution && (
+              <span className="bg-zinc-100 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
+                {item.resolution}
+              </span>
+            )}
+          </div>
 
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-zinc-100">
-          <span className="flex items-center gap-1 text-[11px] text-zinc-400">
-            <Clock className="w-3 h-3" />
-            {new Date(item.createdAt).toLocaleDateString('ar-EG')}
-          </span>
-          
-          <div className="flex items-center gap-3">
-            <button
-              onClick={(e) => onDelete(e, item.id)}
-              className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
-            >
-              <Trash2 className="w-3.5 h-3.5" />
-            </button>
+          <div className="flex items-center justify-between mt-auto pt-2 border-t border-zinc-100">
+            <span className="flex items-center gap-1 text-[11px] text-zinc-400">
+              <Clock className="w-3 h-3" />
+              {new Date(item.createdAt).toLocaleDateString("ar-EG")}
+            </span>
+
+            <div className="flex items-center gap-3">
+              <button
+                onClick={(e) => onDelete(e, item.id)}
+                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
-    </div>
-  );
-});
+    );
+  },
+);
 
 HistoryItemCard.displayName = "HistoryItemCard";
 
@@ -176,22 +203,30 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
   const [hasMore, setHasMore] = useState(true);
   const [filter, setFilter] = useState<"all" | "video" | "image">("all");
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
+  const [isMounted, setIsMounted] = useState(false);
 
   const { data: session } = authClient.useSession();
 
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   const loadHistory = useCallback(async (p: number, f: typeof filter) => {
-    if (!session) return;
+    if (!session) {
+      setIsLoading(false);
+      return;
+    }
     setIsLoading(true);
     setError(null);
     try {
-      const res = await fetchGenerationHistoryAction(p, 20, f);
+      const res = await fetchGenerationHistoryAction(p, 8, f);
       if (!res.success) {
         setError(res.error || "فشل تحميل السجل");
         return;
       }
       const list: HistoryItem[] = (res.data as any) ?? [];
       setItems(list);
-      setHasMore(list.length === 20);
+      setHasMore(list.length === 8);
     } catch (e: any) {
       setError(e.message);
     } finally {
@@ -200,10 +235,12 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
   }, []);
 
   useEffect(() => {
-    if (isActive) {
+    if (isActive && isMounted) {
       loadHistory(page, filter);
     }
-  }, [page, filter, loadHistory, isActive]);
+  }, [page, filter, loadHistory, isActive, isMounted]);
+
+  if (!isMounted) return null;
 
   const handleFilterChange = (f: typeof filter) => {
     setFilter(f);
@@ -368,11 +405,11 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
             {!isLoading && items.length > 0 && (
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
                 {items.map((item) => (
-                  <HistoryItemCard 
-                    key={item.id} 
-                    item={item} 
-                    onSelect={setSelectedItem} 
-                    onDelete={handleDelete} 
+                  <HistoryItemCard
+                    key={item.id}
+                    item={item}
+                    onSelect={setSelectedItem}
+                    onDelete={handleDelete}
                   />
                 ))}
               </div>
@@ -506,20 +543,26 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     return (
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
                         {multiImages.map((src: string, idx: number) => (
-                          <img
+                          <Image
                             key={idx}
                             src={src}
                             alt={`${selectedItem.prompt} ${idx + 1}`}
                             className="w-full h-auto object-cover rounded-lg border border-zinc-800"
+                            width={400}
+                            height={300}
+                            unoptimized
                           />
                         ))}
                       </div>
                     );
                   }
                   return getImageUrl(selectedItem) ? (
-                    <img
+                    <Image
                       src={getImageUrl(selectedItem)!}
                       alt={selectedItem.prompt}
+                      width={400}
+                      height={300}
+                      unoptimized
                       className="w-full h-full object-contain"
                     />
                   ) : (

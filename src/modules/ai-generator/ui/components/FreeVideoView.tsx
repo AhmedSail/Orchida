@@ -24,12 +24,12 @@ interface FreeVideoViewProps {
   setResultUrl: (url: string | null) => void;
 }
 
-export default function FreeVideoView({ 
-  pricingRules, 
-  onGenerateStart, 
-  onGenerateEnd, 
-  startPolling, 
-  setResultUrl 
+export default function FreeVideoView({
+  pricingRules,
+  onGenerateStart,
+  onGenerateEnd,
+  startPolling,
+  setResultUrl,
 }: FreeVideoViewProps) {
   const [prompt, setPrompt] = useState("");
   const [selectedProvider, setSelectedProvider] = useState("");
@@ -41,7 +41,9 @@ export default function FreeVideoView({
   const [isEnhancing, setIsEnhancing] = useState(false);
 
   useEffect(() => {
-    const freeProviders = pricingRules.filter((r: any) => r.serviceType === "video" && r.credits === 0);
+    const freeProviders = pricingRules.filter(
+      (r: any) => r.serviceType === "video" && r.credits === 0,
+    );
     if (freeProviders.length > 0 && !selectedProvider) {
       setSelectedProvider(freeProviders[0].provider);
     }
@@ -53,7 +55,7 @@ export default function FreeVideoView({
       (r: any) =>
         r.serviceType === "video" &&
         r.provider.toLowerCase() === selectedProvider.toLowerCase() &&
-        r.credits === 0
+        r.credits === 0,
     );
     if (firstFreeRes) setResolution(firstFreeRes.quality);
 
@@ -62,7 +64,7 @@ export default function FreeVideoView({
         r.serviceType === "video" &&
         r.provider.toLowerCase() === selectedProvider.toLowerCase() &&
         r.credits === 0 &&
-        r.duration > 0
+        r.duration > 0,
     );
     if (firstFreeDur) setDuration(firstFreeDur.duration.toString());
   }, [selectedProvider, pricingRules]);
@@ -89,7 +91,10 @@ export default function FreeVideoView({
     try {
       const fd = new FormData();
       fd.append("provider", selectedProvider);
-      fd.append("model", selectedProvider === "Veo" ? "veo-3.1-fast" : "grok-3");
+      fd.append(
+        "model",
+        selectedProvider === "Veo" ? "veo-3.1-fast" : "grok-3",
+      );
       fd.append("prompt", prompt);
       fd.append("duration", duration);
       fd.append("resolution", resolution);
@@ -105,7 +110,10 @@ export default function FreeVideoView({
       }
 
       const res = await generateVideoAction(fd);
-      if (res.success && (res.data?.uuid || res.data?.id || res.data?.data?.uuid)) {
+      if (
+        res.success &&
+        (res.data?.uuid || res.data?.id || res.data?.data?.uuid)
+      ) {
         startPolling(res.data.uuid || res.data.id || res.data?.data?.uuid);
       } else {
         toast.error(res.error || "فشل بدء التوليد");
@@ -117,16 +125,21 @@ export default function FreeVideoView({
     }
   };
 
-  const providers = Array.from(new Set(pricingRules
-    .filter((r: any) => r.serviceType === "video" && r.credits === 0)
-    .map((r: any) => r.provider)
-  ));
+  const providers = Array.from(
+    new Set(
+      pricingRules
+        .filter((r: any) => r.serviceType === "video" && r.credits === 0)
+        .map((r: any) => r.provider),
+    ),
+  );
 
   return (
     <div className="space-y-8 animate-in fade-in duration-500">
       {/* Provider Selection */}
       <div className="space-y-3">
-        <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">اختر المزود</label>
+        <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+          اختر المزود
+        </label>
         {providers.length > 0 ? (
           <div className="flex gap-3 flex-wrap">
             {providers.map((p: any) => (
@@ -149,9 +162,20 @@ export default function FreeVideoView({
       {/* Prompt Area */}
       <div className="space-y-3">
         <div className="flex justify-between items-center mr-1">
-          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">وصف المشهد</label>
-          <button onClick={handleEnhance} disabled={isEnhancing || !prompt} className="text-[10px] font-black text-primary bg-primary/5 px-3 py-1.5 rounded-xl flex items-center gap-2">
-            {isEnhancing ? <Loader2 className="w-3 h-3 animate-spin" /> : <Zap className="w-3 h-3" />} تحسين سحري
+          <label className="text-xs font-black text-zinc-400 uppercase tracking-widest">
+            وصف المشهد
+          </label>
+          <button
+            onClick={handleEnhance}
+            disabled={isEnhancing || !prompt}
+            className="text-[10px] font-black text-primary bg-primary/5 px-3 py-1.5 rounded-xl flex items-center gap-2"
+          >
+            {isEnhancing ? (
+              <Loader2 className="w-3 h-3 animate-spin" />
+            ) : (
+              <Zap className="w-3 h-3" />
+            )}{" "}
+            تحسين سحري
           </button>
         </div>
         <textarea
@@ -164,12 +188,26 @@ export default function FreeVideoView({
 
       {/* Aspect Ratio Buttons */}
       <div className="space-y-3">
-        <label className="text-[11px] font-black text-zinc-400 uppercase tracking-widest px-1">أبعاد الفيديو (Aspect Ratio)</label>
+        <label className="text-[11px] font-black text-zinc-400 uppercase tracking-widest px-1">
+          أبعاد الفيديو (Aspect Ratio)
+        </label>
         <div className="grid grid-cols-3 gap-3">
           {[
-            { label: "مربع (1:1)", value: "Square (1:1)", icon: <Square className="w-4 h-4" /> },
-            { label: "عمودي (9:16)", value: "Portrait (9:16)", icon: <Smartphone className="w-4 h-4" /> },
-            { label: "أفقي (16:9)", value: "Landscape (16:9)", icon: <Monitor className="w-4 h-4" /> },
+            {
+              label: "مربع (1:1)",
+              value: "Square (1:1)",
+              icon: <Square className="w-4 h-4" />,
+            },
+            {
+              label: "عمودي (9:16)",
+              value: "Portrait (9:16)",
+              icon: <Smartphone className="w-4 h-4" />,
+            },
+            {
+              label: "أفقي (16:9)",
+              value: "Landscape (16:9)",
+              icon: <Monitor className="w-4 h-4" />,
+            },
           ].map((item) => (
             <button
               key={item.value}
@@ -186,17 +224,37 @@ export default function FreeVideoView({
       {/* Config Grid (Resolution & Duration) */}
       <div className="grid grid-cols-2 gap-4">
         <div className="space-y-2">
-          <label className="text-[11px] font-black text-zinc-400 px-1">الدقة</label>
+          <label className="text-[11px] font-black text-zinc-400 px-1">
+            الدقة
+          </label>
           <div className="relative group">
-            <select 
-              value={resolution} 
-              onChange={(e) => setResolution(e.target.value)} 
+            <select
+              value={resolution}
+              onChange={(e) => setResolution(e.target.value)}
               className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none appearance-none cursor-pointer"
             >
-              {Array.from(new Set(pricingRules.filter((r: any) => r.serviceType === "video" && r.provider.toLowerCase() === selectedProvider.toLowerCase() && r.credits === 0).map((r: any) => r.quality))).map((q: any) => (
-                <option key={q} value={q}>{q} (مجاني)</option>
+              {Array.from(
+                new Set(
+                  pricingRules
+                    .filter(
+                      (r: any) =>
+                        r.serviceType === "video" &&
+                        r.provider.toLowerCase() ===
+                          selectedProvider.toLowerCase() &&
+                        r.credits === 0,
+                    )
+                    .map((r: any) => r.quality),
+                ),
+              ).map((q: any) => (
+                <option key={q} value={q}>
+                  {q} (مجاني)
+                </option>
               ))}
-              {pricingRules.filter((r: any) => r.provider.toLowerCase() === selectedProvider.toLowerCase() && r.credits === 0).length === 0 && <option>High 720p</option>}
+              {pricingRules.filter(
+                (r: any) =>
+                  r.provider.toLowerCase() === selectedProvider.toLowerCase() &&
+                  r.credits === 0,
+              ).length === 0 && <option>High 720p</option>}
             </select>
             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
               <Layers className="w-4 h-4" />
@@ -205,17 +263,40 @@ export default function FreeVideoView({
         </div>
 
         <div className="space-y-2">
-          <label className="text-[11px] font-black text-zinc-400 px-1">المدة</label>
+          <label className="text-[11px] font-black text-zinc-400 px-1">
+            المدة
+          </label>
           <div className="relative group">
-            <select 
-              value={duration} 
-              onChange={(e) => setDuration(e.target.value)} 
+            <select
+              value={duration}
+              onChange={(e) => setDuration(e.target.value)}
               className="w-full bg-zinc-50 border border-zinc-100 rounded-2xl px-4 py-3.5 text-xs font-bold outline-none appearance-none cursor-pointer"
             >
-              {Array.from(new Set(pricingRules.filter((r: any) => r.serviceType === "video" && r.provider.toLowerCase() === selectedProvider.toLowerCase() && r.credits === 0 && r.duration > 0).map((r: any) => r.duration))).map((d: any) => (
-                <option key={d} value={d}>{d} ثوانٍ (مجاني)</option>
+              {Array.from(
+                new Set(
+                  pricingRules
+                    .filter(
+                      (r: any) =>
+                        r.serviceType === "video" &&
+                        r.provider.toLowerCase() ===
+                          selectedProvider.toLowerCase() &&
+                        r.credits === 0 &&
+                        r.duration > 0,
+                    )
+                    .map((r: any) => r.duration),
+                ),
+              ).map((d: any) => (
+                <option key={d} value={d}>
+                  {d} ثوانٍ (مجاني)
+                </option>
               ))}
-              {pricingRules.filter((r: any) => r.serviceType === "video" && r.provider.toLowerCase() === selectedProvider.toLowerCase() && r.credits === 0 && r.duration > 0).length === 0 && <option value="6">6 ثوانٍ</option>}
+              {pricingRules.filter(
+                (r: any) =>
+                  r.serviceType === "video" &&
+                  r.provider.toLowerCase() === selectedProvider.toLowerCase() &&
+                  r.credits === 0 &&
+                  r.duration > 0,
+              ).length === 0 && <option value="6">6 ثوانٍ</option>}
             </select>
             <div className="absolute left-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-30">
               <Clock className="w-4 h-4" />
@@ -226,23 +307,59 @@ export default function FreeVideoView({
 
       {/* References */}
       <div className="space-y-3">
-        <label className="text-[10px] font-black text-zinc-400 px-1">{selectedProvider === "Veo" ? "صور البداية والنهاية (اختياري)" : "صورة مرجعية (اختياري)"}</label>
+        <label className="text-[10px] font-black text-zinc-400 px-1">
+          {selectedProvider === "Veo"
+            ? "صور البداية والنهاية (اختياري)"
+            : "صورة مرجعية (اختياري)"}
+        </label>
         <div className="grid grid-cols-2 gap-4">
           <label className="aspect-video bg-zinc-50 border-2 border-dashed border-zinc-100 rounded-3xl flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
-            {refImage1 ? <img src={URL.createObjectURL(refImage1)} className="w-full h-full object-cover" /> : <div className="text-center"><Plus className="text-zinc-300 w-6 h-6 mx-auto mb-1" /><span className="text-[10px] font-bold text-zinc-400">{selectedProvider === "Veo" ? "البداية" : "اختر صورة"}</span></div>}
-            <input type="file" className="hidden" onChange={(e) => setRefImage1(e.target.files?.[0] || null)} />
+            {refImage1 ? (
+              <img
+                src={URL.createObjectURL(refImage1)}
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <div className="text-center">
+                <Plus className="text-zinc-300 w-6 h-6 mx-auto mb-1" />
+                <span className="text-[10px] font-bold text-zinc-400">
+                  {selectedProvider === "Veo" ? "البداية" : "اختر صورة"}
+                </span>
+              </div>
+            )}
+            <input
+              type="file"
+              className="hidden"
+              onChange={(e) => setRefImage1(e.target.files?.[0] || null)}
+            />
           </label>
           {selectedProvider === "Veo" && (
             <label className="aspect-video bg-zinc-50 border-2 border-dashed border-zinc-100 rounded-3xl flex flex-col items-center justify-center cursor-pointer overflow-hidden relative group">
-              {refImage2 ? <img src={URL.createObjectURL(refImage2)} className="w-full h-full object-cover" /> : <div className="text-center"><Plus className="text-zinc-300 w-6 h-6 mx-auto mb-1" /><span className="text-[10px] font-bold text-zinc-400">النهاية</span></div>}
-              <input type="file" className="hidden" onChange={(e) => setRefImage2(e.target.files?.[0] || null)} />
+              {refImage2 ? (
+                <img
+                  src={URL.createObjectURL(refImage2)}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="text-center">
+                  <Plus className="text-zinc-300 w-6 h-6 mx-auto mb-1" />
+                  <span className="text-[10px] font-bold text-zinc-400">
+                    النهاية
+                  </span>
+                </div>
+              )}
+              <input
+                type="file"
+                className="hidden"
+                onChange={(e) => setRefImage2(e.target.files?.[0] || null)}
+              />
             </label>
           )}
         </div>
       </div>
 
-      <button 
-        onClick={handleGenerate} 
+      <button
+        onClick={handleGenerate}
         disabled={providers.length === 0}
         className="w-full py-6 bg-primary text-white rounded-3xl font-black text-lg shadow-2xl shadow-primary/20 hover:scale-[1.02] active:scale-95 transition-all flex items-center justify-center gap-4 disabled:opacity-50 disabled:grayscale disabled:cursor-not-allowed"
       >

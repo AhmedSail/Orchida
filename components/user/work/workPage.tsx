@@ -123,13 +123,38 @@ export default function WorkPage({
           />
         )}
         {work.type === "video" && work.imageUrl && (
-          <video
-            src={work.imageUrl}
-            autoPlay
-            muted
-            loop
-            className="absolute inset-0 w-full h-full object-cover blur-[2px] opacity-40"
-          />
+          work.imageUrl.includes("youtube.com") ||
+          work.imageUrl.includes("youtu.be") ? (
+            <div className="absolute inset-0 w-full h-full pointer-events-none">
+              <iframe
+                src={`https://www.youtube-nocookie.com/embed/${(() => {
+                  const regExp =
+                    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                  const match = work.imageUrl.match(regExp);
+                  return match && match[2].length === 11
+                    ? match[2]
+                    : work.imageUrl.split("/").pop();
+                })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                  const regExp =
+                    /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                  const match = work.imageUrl.match(regExp);
+                  return match && match[2].length === 11
+                    ? match[2]
+                    : work.imageUrl.split("/").pop();
+                })()}&controls=0&showinfo=0&rel=0&iv_load_policy=3&modestbranding=1`}
+                className="w-full h-full scale-150 blur-[2px] opacity-40"
+                allow="autoplay"
+              />
+            </div>
+          ) : (
+            <video
+              src={work.imageUrl}
+              autoPlay
+              muted
+              loop
+              className="absolute inset-0 w-full h-full object-cover blur-[2px] opacity-40"
+            />
+          )
         )}
 
         {/* Back Button Floating */}
@@ -178,11 +203,38 @@ export default function WorkPage({
                 {/* Left Column: Media Showcase */}
                 <div className="lg:col-span-7 bg-black flex items-center justify-center min-h-[400px] lg:min-h-[600px]">
                   {work.type === "video" ? (
-                    <video
-                      src={work.imageUrl || ""}
-                      controls
-                      className="w-full h-full max-h-[600px] object-contain"
-                    />
+                    work.imageUrl?.includes("youtube.com") ||
+                    work.imageUrl?.includes("youtu.be") ? (
+                      <iframe
+                        src={`https://www.youtube-nocookie.com/embed/${(() => {
+                          const regExp =
+                            /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                          const match = work.imageUrl.match(regExp);
+                          return match && match[2].length === 11
+                            ? match[2]
+                            : work.imageUrl.split("/").pop();
+                        })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                          const regExp =
+                            /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                          const match = work.imageUrl.match(regExp);
+                          return match && match[2].length === 11
+                            ? match[2]
+                            : work.imageUrl.split("/").pop();
+                        })()}`}
+                        className="w-full h-full max-h-[600px] border-none"
+                        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <video
+                        src={work.imageUrl || ""}
+                        controls
+                        autoPlay
+                        muted
+                        loop
+                        className="w-full h-full max-h-[600px] object-contain"
+                      />
+                    )
                   ) : (
                     <div className="relative w-full aspect-[4/5] group">
                       <Image
@@ -376,11 +428,38 @@ export default function WorkPage({
                       className="overflow-hidden bg-black rounded-4xl shadow-[0_32px_64px_-16px_rgba(0,0,0,0.5)] border-none group"
                     >
                       <div className="relative aspect-video">
-                        <video
-                          src={file.url}
-                          controls
-                          className="w-full h-full object-cover"
-                        />
+                        {file.url.includes("youtube.com") ||
+                        file.url.includes("youtu.be") ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${(() => {
+                              const regExp =
+                                /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                              const match = file.url.match(regExp);
+                              return match && match[2].length === 11
+                                ? match[2]
+                                : file.url.split("/").pop();
+                            })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                              const regExp =
+                                /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                              const match = file.url.match(regExp);
+                              return match && match[2].length === 11
+                                ? match[2]
+                                : file.url.split("/").pop();
+                            })()}`}
+                            className="w-full h-full border-none"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={file.url}
+                            controls
+                            autoPlay
+                            muted
+                            loop
+                            className="w-full h-full object-cover"
+                          />
+                        )}
                         {file.id === -1 && (
                           <div className="absolute top-4 right-4 bg-primary backdrop-blur-md text-white text-[10px] font-black uppercase tracking-widest px-3 py-1 rounded-full shadow-lg z-10">
                             الفيديو الرئيسي

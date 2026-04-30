@@ -1,6 +1,6 @@
 import { db } from "@/src/db";
 import { mediaFiles, works } from "@/src/db/schema";
-import { eq } from "drizzle-orm";
+import { eq, gte, sql } from "drizzle-orm";
 import { NextResponse } from "next/server";
 
 import { v4 as uuidv4 } from "uuid";
@@ -23,6 +23,13 @@ export async function POST(req: Request) {
       );
     }
 
+    // ✅ إزاحة الأعمال التي لها نفس الترتيب أو أعلى بمقدار +1
+    const newOrder = typeof body.order === "number" ? body.order : 0;
+    await db
+      .update(works)
+      .set({ order: sql`${works.order} + 1` })
+      .where(gte(works.order, newOrder));
+
     // إدخال العمل
     const [newWork] = await db
       .insert(works)
@@ -39,6 +46,7 @@ export async function POST(req: Request) {
         serviceId: body.serviceId,
         youtubeUrl: body.youtubeUrl,
         uploaderId: body.uploaderId,
+        order: newOrder,
       })
       .returning();
 

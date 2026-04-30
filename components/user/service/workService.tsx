@@ -132,12 +132,37 @@ const WorkService = ({
                     />
                   ) : (
                     <div className="relative w-full h-full">
-                      <video
-                        src={work.imageUrl ?? ""}
-                        className="w-full h-full object-cover"
-                        muted // Auto-play often requires muted
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors">
+                      {work.imageUrl?.includes("youtube.com") ||
+                      work.imageUrl?.includes("youtu.be") ? (
+                        <iframe
+                          src={`https://www.youtube-nocookie.com/embed/${(() => {
+                            const regExp =
+                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                            const match = work.imageUrl.match(regExp);
+                            return match && match[2].length === 11
+                              ? match[2]
+                              : work.imageUrl.split("/").pop();
+                          })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                            const regExp =
+                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                            const match = work.imageUrl.match(regExp);
+                            return match && match[2].length === 11
+                              ? match[2]
+                              : work.imageUrl.split("/").pop();
+                          })()}`}
+                          className="w-full h-full border-none"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        />
+                      ) : (
+                        <video
+                          src={work.imageUrl ?? ""}
+                          className="w-full h-full object-cover"
+                          autoPlay
+                          muted
+                          loop
+                        />
+                      )}
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/20 group-hover:bg-transparent transition-colors pointer-events-none">
                         <PlayCircle className="w-12 h-12 text-white/80" />
                       </div>
                     </div>

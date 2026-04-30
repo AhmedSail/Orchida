@@ -3,16 +3,16 @@
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
-import { 
-  FaSearch, 
-  FaFilter, 
-  FaTimes, 
-  FaPlayCircle, 
-  FaImage, 
+import {
+  FaSearch,
+  FaFilter,
+  FaTimes,
+  FaPlayCircle,
+  FaImage,
   FaBookOpen,
   FaUserGraduate,
   FaCalendarAlt,
-  FaChevronLeft
+  FaChevronLeft,
 } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
@@ -39,10 +39,10 @@ interface Course {
   slug: string | null;
 }
 
-export default function StudentWorksPage({ 
-  initialWorks, 
-  allCourses 
-}: { 
+export default function StudentWorksPage({
+  initialWorks,
+  allCourses,
+}: {
   initialWorks: StudentWork[];
   allCourses: Course[];
 }) {
@@ -59,7 +59,9 @@ export default function StudentWorksPage({
   useEffect(() => {
     const courseInUrl = searchParams.get("course");
     if (courseInUrl) {
-      const course = allCourses.find(c => c.slug === courseInUrl || c.title === courseInUrl);
+      const course = allCourses.find(
+        (c) => c.slug === courseInUrl || c.title === courseInUrl,
+      );
       if (course) setSelectedCourse(course.id);
     }
 
@@ -70,9 +72,9 @@ export default function StudentWorksPage({
   // Update URL when filters change
   useEffect(() => {
     const params = new URLSearchParams(searchParams.toString());
-    
+
     if (selectedCourse) {
-      const course = allCourses.find(c => c.id === selectedCourse);
+      const course = allCourses.find((c) => c.id === selectedCourse);
       if (course) params.set("course", course.slug || course.title);
     } else {
       params.delete("course");
@@ -86,41 +88,53 @@ export default function StudentWorksPage({
 
     // Preserve scroll position by using { scroll: false }
     const queryString = params.toString();
-    router.push(`${pathname}${queryString ? `?${queryString}` : ""}`, { scroll: false });
+    router.push(`${pathname}${queryString ? `?${queryString}` : ""}`, {
+      scroll: false,
+    });
   }, [selectedCourse, selectedType]);
 
   const filteredWorks = useMemo(() => {
     return initialWorks.filter((work) => {
       const matchesCourse = !selectedCourse || work.courseId === selectedCourse;
       const matchesType = selectedType === "all" || work.type === selectedType;
-      const matchesSearch = 
+      const matchesSearch =
         work.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        (work.description && work.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
-        (work.studentName && work.studentName.toLowerCase().includes(searchQuery.toLowerCase()));
-      
+        (work.description &&
+          work.description.toLowerCase().includes(searchQuery.toLowerCase())) ||
+        (work.studentName &&
+          work.studentName.toLowerCase().includes(searchQuery.toLowerCase()));
+
       return matchesCourse && matchesType && matchesSearch;
     });
   }, [initialWorks, selectedCourse, selectedType, searchQuery]);
 
   const toggleCourse = (courseId: string) => {
-    setSelectedCourse(prev => prev === courseId ? null : courseId);
+    setSelectedCourse((prev) => (prev === courseId ? null : courseId));
   };
 
   const getWorkIcon = (type: string) => {
     switch (type) {
-      case "video": return <FaPlayCircle className="text-blue-500" />;
-      case "image": return <FaImage className="text-emerald-500" />;
-      case "story": return <FaBookOpen className="text-amber-500" />;
-      default: return null;
+      case "video":
+        return <FaPlayCircle className="text-blue-500" />;
+      case "image":
+        return <FaImage className="text-emerald-500" />;
+      case "story":
+        return <FaBookOpen className="text-amber-500" />;
+      default:
+        return null;
     }
   };
 
   const getWorkLabel = (type: string) => {
     switch (type) {
-      case "video": return "فيديو";
-      case "image": return "صورة";
-      case "story": return "قصة نجاح";
-      default: return "";
+      case "video":
+        return "فيديو";
+      case "image":
+        return "صورة";
+      case "story":
+        return "قصة نجاح";
+      default:
+        return "";
     }
   };
 
@@ -150,7 +164,8 @@ export default function StudentWorksPage({
             transition={{ delay: 0.2 }}
             className="text-gray-500 max-w-2xl mx-auto text-lg font-medium"
           >
-            نفتخر بمشاركة إبداعات طلابنا الذين حولوا المعرفة إلى واقع ملموس وقصص نجاح ملهمة.
+            نفتخر بمشاركة إبداعات طلابنا الذين حولوا المعرفة إلى واقع ملموس وقصص
+            نجاح ملهمة.
           </motion.p>
         </div>
       </section>
@@ -239,8 +254,12 @@ export default function StudentWorksPage({
                   className="flex flex-col items-center justify-center min-h-[400px] bg-white rounded-4xl border-2 border-dashed border-gray-200 p-12 text-center"
                 >
                   <div className="text-5xl mb-6">🎨</div>
-                  <h3 className="text-2xl font-black text-gray-900 mb-2">لا توجد أعمال تطابق بحثك</h3>
-                  <p className="text-gray-500">حاول تغيير معايير التصفية أو البحث بكلمات أخرى.</p>
+                  <h3 className="text-2xl font-black text-gray-900 mb-2">
+                    لا توجد أعمال تطابق بحثك
+                  </h3>
+                  <p className="text-gray-500">
+                    حاول تغيير معايير التصفية أو البحث بكلمات أخرى.
+                  </p>
                 </motion.div>
               ) : (
                 <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-8">
@@ -255,21 +274,26 @@ export default function StudentWorksPage({
                       {/* Media Container */}
                       <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
                         {work.youtubeUrl ? (
-                           <div className="w-full h-full relative">
-                            <Image
-                              src={`https://img.youtube.com/vi/${(() => {
-                                const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                          <div className="w-full h-full relative">
+                            <iframe
+                              src={`https://www.youtube-nocookie.com/embed/${(() => {
+                                const regExp =
+                                  /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
                                 const match = work.youtubeUrl.match(regExp);
-                                return (match && match[2].length === 11) ? match[2] : work.youtubeUrl.split('/').pop();
-                              })()}/hqdefault.jpg`}
-                              alt={work.title}
-                              fill
-                              className="object-cover transition-transform duration-700 group-hover:scale-110"
-                              unoptimized
+                                return match && match[2].length === 11
+                                  ? match[2]
+                                  : work.youtubeUrl.split("/").pop();
+                              })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
+                                const regExp =
+                                  /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
+                                const match = work.youtubeUrl.match(regExp);
+                                return match && match[2].length === 11
+                                  ? match[2]
+                                  : work.youtubeUrl.split("/").pop();
+                              })()}`}
+                              className="w-full h-full border-none"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                             />
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                              <FaPlayCircle className="text-white/70 text-5xl group-hover:scale-110 group-hover:text-white transition-all" />
-                            </div>
                           </div>
                         ) : work.type === "image" && work.mediaUrl ? (
                           <Image
@@ -289,21 +313,20 @@ export default function StudentWorksPage({
                               playsInline
                               autoPlay
                             />
-                            <div className="absolute inset-0 bg-black/20 flex items-center justify-center">
-                              <FaPlayCircle className="text-white/70 text-5xl group-hover:scale-110 group-hover:text-white transition-all" />
-                            </div>
                           </div>
                         ) : (
                           <div className="w-full h-full flex items-center justify-center bg-primary/5">
                             <FaBookOpen className="text-primary/30 text-6xl" />
                           </div>
                         )}
-                        
+
                         {/* Type Badge */}
                         <div className="absolute top-6 right-6">
                           <div className="bg-white/90 backdrop-blur-md px-4 py-2 rounded-2xl shadow-xl flex items-center gap-2">
                             {getWorkIcon(work.type)}
-                            <span className="text-xs font-black text-gray-900">{getWorkLabel(work.type)}</span>
+                            <span className="text-xs font-black text-gray-900">
+                              {getWorkLabel(work.type)}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -315,8 +338,14 @@ export default function StudentWorksPage({
                             <FaUserGraduate className="text-sm" />
                           </div>
                           <div>
-                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1">صاحب العمل</p>
-                            <h4 className="font-bold text-gray-900 leading-none">{work.studentName || work.userName || "طالب أوركيدة"}</h4>
+                            <p className="text-xs font-black text-gray-400 uppercase tracking-widest leading-none mb-1">
+                              صاحب العمل
+                            </p>
+                            <h4 className="font-bold text-gray-900 leading-none">
+                              {work.studentName ||
+                                work.userName ||
+                                "طالب أوركيدة"}
+                            </h4>
                           </div>
                         </div>
 
@@ -332,17 +361,20 @@ export default function StudentWorksPage({
                           <div className="flex items-center gap-2 text-gray-400">
                             <FaCalendarAlt className="text-xs" />
                             <span className="text-[10px] font-bold">
-                                {new Date(work.createdAt).toLocaleDateString("ar-EG", { year: 'numeric', month: 'long' })}
+                              {new Date(work.createdAt).toLocaleDateString(
+                                "ar-EG",
+                                { year: "numeric", month: "long" },
+                              )}
                             </span>
                           </div>
-                          
-                          <button 
+
+                          <button
                             onClick={() => setSelectedWork(work)}
                             className="flex items-center gap-2 text-primary font-black text-sm group/btn"
                           >
                             عرض العمل
                             <div className="size-8 rounded-full bg-primary/10 flex items-center justify-center group-hover/btn:bg-primary group-hover/btn:text-white transition-all">
-                                <FaChevronLeft className="text-[10px]" />
+                              <FaChevronLeft className="text-[10px]" />
                             </div>
                           </button>
                         </div>
@@ -380,74 +412,114 @@ export default function StudentWorksPage({
 
               <div className="flex-1 bg-gray-100 flex items-center justify-center min-h-[300px]">
                 {selectedWork.youtubeUrl ? (
-                   <iframe
-                   src={selectedWork.youtubeUrl.includes('watch?v=') 
-                     ? selectedWork.youtubeUrl.replace('watch?v=', 'embed/') 
-                     : selectedWork.youtubeUrl.includes('youtu.be/')
-                       ? selectedWork.youtubeUrl.replace('youtu.be/', 'youtube.com/embed/')
-                       : selectedWork.youtubeUrl}
-                   className="w-full h-full border-none aspect-video"
-                   allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                   allowFullScreen
-                 ></iframe>
+                  <iframe
+                    src={`${
+                      selectedWork.youtubeUrl.includes("watch?v=")
+                        ? selectedWork.youtubeUrl.replace("watch?v=", "embed/")
+                        : selectedWork.youtubeUrl.includes("youtu.be/")
+                          ? selectedWork.youtubeUrl.replace(
+                              "youtu.be/",
+                              "youtube.com/embed/",
+                            )
+                          : selectedWork.youtubeUrl
+                    }${
+                      selectedWork.youtubeUrl.includes("?") ? "&" : "?"
+                    }autoplay=1&mute=1`}
+                    className="w-full h-full border-none aspect-video"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  ></iframe>
                 ) : selectedWork.type === "image" && selectedWork.mediaUrl ? (
-                  <img src={selectedWork.mediaUrl} alt={selectedWork.title} className="w-full h-full object-contain" />
+                  <img
+                    src={selectedWork.mediaUrl}
+                    alt={selectedWork.title}
+                    className="w-full h-full object-contain"
+                  />
                 ) : selectedWork.type === "video" && selectedWork.mediaUrl ? (
-                  (selectedWork.mediaUrl.includes("youtube.com") || selectedWork.mediaUrl.includes("youtu.be")) ? (
+                  selectedWork.mediaUrl.includes("youtube.com") ||
+                  selectedWork.mediaUrl.includes("youtu.be") ? (
                     <iframe
-                      src={selectedWork.mediaUrl.includes('watch?v=') 
-                        ? selectedWork.mediaUrl.replace('watch?v=', 'embed/') 
-                        : selectedWork.mediaUrl.includes('youtu.be/')
-                          ? selectedWork.mediaUrl.replace('youtu.be/', 'youtube.com/embed/')
-                          : selectedWork.mediaUrl}
+                      src={`${
+                        selectedWork.mediaUrl.includes("watch?v=")
+                          ? selectedWork.mediaUrl.replace("watch?v=", "embed/")
+                          : selectedWork.mediaUrl.includes("youtu.be/")
+                            ? selectedWork.mediaUrl.replace(
+                                "youtu.be/",
+                                "youtube.com/embed/",
+                              )
+                            : selectedWork.mediaUrl
+                      }${
+                        selectedWork.mediaUrl.includes("?") ? "&" : "?"
+                      }autoplay=1&mute=1`}
                       className="w-full h-full border-none aspect-video"
                       allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                       allowFullScreen
                     ></iframe>
                   ) : (
-                    <video src={selectedWork.mediaUrl} controls className="w-full max-h-full" autoPlay />
+                    <video
+                      src={selectedWork.mediaUrl}
+                      controls
+                      className="w-full max-h-full"
+                      autoPlay
+                      muted
+                    />
                   )
-                ) : selectedWork.type === "story" && (
-                  <div className="p-12 text-center text-primary/20">
-                    <FaBookOpen className="text-[120px]" />
-                  </div>
+                ) : (
+                  selectedWork.type === "story" && (
+                    <div className="p-12 text-center text-primary/20">
+                      <FaBookOpen className="text-[120px]" />
+                    </div>
+                  )
                 )}
               </div>
 
               <div className="w-full md:w-80 p-10 flex flex-col bg-white overflow-y-auto">
                 <Badge className="w-fit mb-6 bg-primary/10 text-primary hover:bg-primary/20 border-none px-4 py-2 rounded-xl font-black">
-                   {getWorkLabel(selectedWork.type)}
+                  {getWorkLabel(selectedWork.type)}
                 </Badge>
-                
-                <h2 className="text-3xl font-black text-gray-900 mb-4">{selectedWork.title}</h2>
-                
+
+                <h2 className="text-3xl font-black text-gray-900 mb-4">
+                  {selectedWork.title}
+                </h2>
+
                 <div className="flex items-center gap-3 mb-8 p-4 bg-gray-50 rounded-2xl">
-                    <div className="size-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
-                        <FaUserGraduate />
-                    </div>
-                    <div>
-                        <p className="text-[10px] font-black text-gray-400 leading-none mb-1">المبدع</p>
-                        <p className="font-bold text-gray-900">{selectedWork.studentName || "طالب أوركيدة"}</p>
-                    </div>
+                  <div className="size-10 rounded-full bg-white flex items-center justify-center text-primary shadow-sm">
+                    <FaUserGraduate />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black text-gray-400 leading-none mb-1">
+                      المبدع
+                    </p>
+                    <p className="font-bold text-gray-900">
+                      {selectedWork.studentName || "طالب أوركيدة"}
+                    </p>
+                  </div>
                 </div>
 
                 {selectedWork.courseTitle && (
-                    <div className="mb-8">
-                        <p className="text-xs font-black text-gray-400 mb-2">الدورة التدريبية</p>
-                        <p className="font-bold text-primary">{selectedWork.courseTitle}</p>
-                    </div>
+                  <div className="mb-8">
+                    <p className="text-xs font-black text-gray-400 mb-2">
+                      الدورة التدريبية
+                    </p>
+                    <p className="font-bold text-primary">
+                      {selectedWork.courseTitle}
+                    </p>
+                  </div>
                 )}
 
                 <div className="grow">
-                    <p className="text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
-                        {selectedWork.description}
-                    </p>
+                  <p className="text-gray-600 leading-relaxed font-medium whitespace-pre-wrap">
+                    {selectedWork.description}
+                  </p>
                 </div>
 
                 <div className="mt-10 pt-6 border-t border-gray-100">
-                    <p className="text-[10px] font-bold text-gray-400 text-center">
-                        تم النشر في {new Date(selectedWork.createdAt).toLocaleDateString("ar-EG")}
-                    </p>
+                  <p className="text-[10px] font-bold text-gray-400 text-center">
+                    تم النشر في{" "}
+                    {new Date(selectedWork.createdAt).toLocaleDateString(
+                      "ar-EG",
+                    )}
+                  </p>
                 </div>
               </div>
             </motion.div>

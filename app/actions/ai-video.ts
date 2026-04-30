@@ -136,6 +136,10 @@ export async function generateVideoAction(clientFormData: FormData) {
 
     if (!taskUuid) {
       console.error("[Error] Could not find task UUID/ID in response:", result);
+      if (cost > 0) {
+        await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: Invalid API Response (${provider})`);
+      }
+      throw new Error("فشل السيرفر في إصدار رقم للمهمة. تم إعادة الرصيد.");
     }
 
     await db.insert(aiGenerations).values({

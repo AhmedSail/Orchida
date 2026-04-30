@@ -145,13 +145,13 @@ export default function AiProView() {
 
         {/* Content Views */}
         <div className={modeParam !== "chat" ? "hidden" : ""}>
-          <ChatModeView />
+          <ChatModeView userBalance={balance} />
         </div>
         <div className={modeParam !== "video" ? "hidden" : ""}>
-          <VideoGenView />
+          <VideoGenView userBalance={balance} />
         </div>
         <div className={modeParam !== "imagen" ? "hidden" : ""}>
-          <ImageGenView />
+          <ImageGenView userBalance={balance} />
         </div>
         <div className={modeParam !== "history" ? "hidden" : ""}>
           <HistoryView isActive={modeParam === "history"} />

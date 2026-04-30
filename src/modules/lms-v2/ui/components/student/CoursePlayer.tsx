@@ -371,7 +371,7 @@ export default function CoursePlayer({
                           <iframe
                             src={
                               field.content.includes("mediadelivery.net")
-                                ? `${field.content}${field.content.includes("?") ? "&" : "?"}autoplay=false&loop=false&muted=false&preload=true&responsive=true`
+                                ? `${field.content}${field.content.includes("?") ? "&" : "?"}autoplay=0&loop=0&muted=0&preload=true&responsive=true`
                                 : (() => {
                                     const url = field.content;
                                     // youtu.be/VIDEO_ID
@@ -379,19 +379,19 @@ export default function CoursePlayer({
                                       /youtu\.be\/([a-zA-Z0-9_-]{11})/,
                                     );
                                     if (shortMatch)
-                                      return `https://www.youtube-nocookie.com/embed/${shortMatch[1]}`;
+                                      return `https://www.youtube-nocookie.com/embed/${shortMatch[1]}?autoplay=0`;
                                     // youtube.com/watch?v=VIDEO_ID
                                     const watchMatch = url.match(
                                       /[?&]v=([a-zA-Z0-9_-]{11})/,
                                     );
                                     if (watchMatch)
-                                      return `https://www.youtube-nocookie.com/embed/${watchMatch[1]}`;
+                                      return `https://www.youtube-nocookie.com/embed/${watchMatch[1]}?autoplay=0`;
                                     // youtube.com/shorts/VIDEO_ID
                                     const shortsMatch = url.match(
                                       /shorts\/([a-zA-Z0-9_-]{11})/,
                                     );
                                     if (shortsMatch)
-                                      return `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}`;
+                                      return `https://www.youtube-nocookie.com/embed/${shortsMatch[1]}?autoplay=0`;
                                     // already an embed link or other
                                     return url;
                                   })()
