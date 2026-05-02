@@ -43,6 +43,28 @@ type HistoryItem = {
   duration?: number;
 };
 
+// ─── STATUS_MAP يجب أن يكون قبل HistoryItemCard ───────────────────────────
+const STATUS_MAP: Record<
+  string,
+  { label: string; color: string; icon: React.ElementType }
+> = {
+  pending: {
+    label: "جارٍ العمل",
+    color: "text-blue-500 bg-blue-50 border-blue-200",
+    icon: Loader2,
+  },
+  completed: {
+    label: "مكتمل",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    icon: CheckCircle,
+  },
+  failed: {
+    label: "فشل",
+    color: "text-red-500 bg-red-50 border-red-200",
+    icon: XCircle,
+  },
+};
+
 // 1. مكون ميمو لتقليل الرندر غير الضروري
 const HistoryItemCard = React.memo(
   ({
@@ -126,11 +148,22 @@ const HistoryItemCard = React.memo(
             <div className="bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
               {item.type === "video" ? "فيديو" : "صورة"}
             </div>
-            {item.type === "image" && item.resultsJson && (
-              <div className="bg-primary/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
-                {JSON.parse(item.resultsJson).length} صور
-              </div>
-            )}
+            {item.type === "image" &&
+              item.resultsJson &&
+              (() => {
+                try {
+                  const arr = JSON.parse(item.resultsJson);
+                  if (Array.isArray(arr) && arr.length > 0) {
+                    return (
+                      <div className="bg-primary/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
+                        {arr.length} صور
+                      </div>
+                    );
+                  }
+                } catch {
+                  return null;
+                }
+              })()}
           </div>
         </div>
 
@@ -174,26 +207,7 @@ const HistoryItemCard = React.memo(
 
 HistoryItemCard.displayName = "HistoryItemCard";
 
-const STATUS_MAP: Record<
-  string,
-  { label: string; color: string; icon: React.ElementType }
-> = {
-  pending: {
-    label: "جارٍ العمل",
-    color: "text-blue-500 bg-blue-50 border-blue-200",
-    icon: Loader2,
-  },
-  completed: {
-    label: "مكتمل",
-    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
-    icon: CheckCircle,
-  },
-  failed: {
-    label: "فشل",
-    color: "text-red-500 bg-red-50 border-red-200",
-    icon: XCircle,
-  },
-};
+// STATUS_MAP moved above HistoryItemCard (see top of file)
 
 export default function HistoryView({ isActive }: { isActive?: boolean }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
@@ -211,28 +225,31 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
     setIsMounted(true);
   }, []);
 
-  const loadHistory = useCallback(async (p: number, f: typeof filter) => {
-    if (!session) {
-      setIsLoading(false);
-      return;
-    }
-    setIsLoading(true);
-    setError(null);
-    try {
-      const res = await fetchGenerationHistoryAction(p, 8, f);
-      if (!res.success) {
-        setError(res.error || "فشل تحميل السجل");
+  const loadHistory = useCallback(
+    async (p: number, f: typeof filter) => {
+      if (!session) {
+        setIsLoading(false);
         return;
       }
-      const list: HistoryItem[] = (res.data as any) ?? [];
-      setItems(list);
-      setHasMore(list.length === 8);
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setIsLoading(false);
-    }
-  }, []);
+      setIsLoading(true);
+      setError(null);
+      try {
+        const res = await fetchGenerationHistoryAction(p, 8, f);
+        if (!res.success) {
+          setError(res.error || "فشل تحميل السجل");
+          return;
+        }
+        const list: HistoryItem[] = (res.data as any) ?? [];
+        setItems(list);
+        setHasMore(list.length === 8);
+      } catch (e: any) {
+        setError(e.message);
+      } finally {
+        setIsLoading(false);
+      }
+    },
+    [session],
+  );
 
   useEffect(() => {
     if (isActive && isMounted) {
@@ -475,15 +492,60 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     <>
                       {hasMulti && (
                         <button
-                          onClick={() => {
-                            multiImages.forEach((url: string, i: number) => {
-                              const link = document.createElement("a");
-                              link.href = url;
-                              link.download = `image-${selectedItem.id}-${i + 1}.png`;
-                              document.body.appendChild(link);
-                              link.click();
-                              document.body.removeChild(link);
-                            });
+                          onClick={async () => {
+                            try {
+                              Swal.fire({
+                                title: "جاري التحميل...",
+                                html: "يرجى الانتظار بينما يتم تجهيز الصور",
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                  Swal.showLoading();
+                                },
+                              });
+
+                              for (let i = 0; i < multiImages.length; i++) {
+                                const url = multiImages[i];
+                                const baseFilename = `image-${selectedItem.id}-${i + 1}`;
+                                
+                                if (url.startsWith("data:")) {
+                                  const link = document.createElement("a");
+                                  link.href = url;
+                                  link.download = baseFilename + ".png";
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                } else {
+                                  try {
+                                    const res = await fetch(url);
+                                    if (!res.ok) throw new Error("Fetch failed");
+                                    const blob = await res.blob();
+                                    const contentType = res.headers.get("content-type") || "";
+                                    let ext = ".png";
+                                    if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = ".jpg";
+                                    else if (contentType.includes("webp")) ext = ".webp";
+                                    
+                                    const objectUrl = window.URL.createObjectURL(blob);
+                                    const link = document.createElement("a");
+                                    link.href = objectUrl;
+                                    link.download = baseFilename + ext;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                    window.URL.revokeObjectURL(objectUrl);
+                                  } catch (e) {
+                                    const link = document.createElement("a");
+                                    link.href = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(baseFilename + ".png")}`;
+                                    document.body.appendChild(link);
+                                    link.click();
+                                    document.body.removeChild(link);
+                                  }
+                                }
+                                await new Promise((r) => setTimeout(r, 300));
+                              }
+                              Swal.close();
+                            } catch (e) {
+                              Swal.fire("خطأ", "حدث خطأ أثناء تحميل الملفات", "error");
+                            }
                           }}
                           className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition"
                         >
@@ -493,17 +555,68 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                       )}
                       {(getVideoUrl(selectedItem) ||
                         getImageUrl(selectedItem)) && (
-                        <a
-                          href={
-                            (getVideoUrl(selectedItem) ||
-                              getImageUrl(selectedItem))!
-                          }
-                          download
+                        <button
+                          onClick={async () => {
+                            const url = getVideoUrl(selectedItem) || getImageUrl(selectedItem);
+                            if (!url) return;
+                            
+                            try {
+                              Swal.fire({
+                                title: "جاري التحميل...",
+                                text: "يرجى الانتظار",
+                                allowOutsideClick: false,
+                                didOpen: () => {
+                                  Swal.showLoading();
+                                },
+                              });
+
+                              const baseFilename = `${selectedItem.type}-${selectedItem.id}`;
+                              const defaultExt = selectedItem.type === "video" ? ".mp4" : ".png";
+
+                              if (url.startsWith("data:")) {
+                                const link = document.createElement("a");
+                                link.href = url;
+                                link.download = baseFilename + defaultExt;
+                                document.body.appendChild(link);
+                                link.click();
+                                document.body.removeChild(link);
+                              } else {
+                                try {
+                                  const res = await fetch(url);
+                                  if (!res.ok) throw new Error("Fetch failed");
+                                  const blob = await res.blob();
+                                  const contentType = res.headers.get("content-type") || "";
+                                  let ext = defaultExt;
+                                  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = ".jpg";
+                                  else if (contentType.includes("webp")) ext = ".webp";
+                                  else if (contentType.includes("webm")) ext = ".webm";
+                                  
+                                  const objectUrl = window.URL.createObjectURL(blob);
+                                  const link = document.createElement("a");
+                                  link.href = objectUrl;
+                                  link.download = baseFilename + ext;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                  window.URL.revokeObjectURL(objectUrl);
+                                } catch (e) {
+                                  const link = document.createElement("a");
+                                  link.href = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(baseFilename + defaultExt)}`;
+                                  document.body.appendChild(link);
+                                  link.click();
+                                  document.body.removeChild(link);
+                                }
+                              }
+                              Swal.close();
+                            } catch (e) {
+                              Swal.fire("خطأ", "حدث خطأ أثناء التحميل", "error");
+                            }
+                          }}
                           className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition"
                         >
                           <Download className="w-3.5 h-3.5" />
                           {hasMulti ? "تحميل الواحدة" : "تحميل"}
-                        </a>
+                        </button>
                       )}
                     </>
                   );
@@ -541,13 +654,13 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     : null;
                   if (Array.isArray(multiImages) && multiImages.length > 0) {
                     return (
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-2 p-2">
+                      <div className={`grid gap-2 p-2 ${multiImages.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
                         {multiImages.map((src: string, idx: number) => (
                           <Image
                             key={idx}
                             src={src}
                             alt={`${selectedItem.prompt} ${idx + 1}`}
-                            className="w-full h-auto object-cover rounded-lg border border-zinc-800"
+                            className={`w-full ${multiImages.length === 1 ? "h-full object-contain" : "h-auto object-cover rounded-lg border border-zinc-800"}`}
                             width={400}
                             height={300}
                             unoptimized
