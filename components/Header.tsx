@@ -189,13 +189,12 @@ function NavList({
   const navListItemsData = [
     { id: 1, title: "الرئيسية", href: "/" },
     { id: 2, title: "اخر المستجدات", href: "/latest" },
-    { id: 11, title: "معرض أعمالنا", href: "/portfolio" },
-    { id: 3, title: "المسابقات", href: "/competitions" },
-    { id: 7, title: "المنتجات الرائجة", href: "/trending" },
-    { id: 4, title: "الخدمات الرقمية", href: "/services" },
-    { id: 8, title: "الذكاء الاصطناعي", href: "/ai" },
-    { id: 5, title: "اتصل بنا", href: "/contact" },
-    { id: 6, title: "من نحن", href: "/about" },
+    { id: 3, title: "معرض أعمالنا", href: "/portfolio" },
+    { id: 4, title: "المنتجات الرائجة", href: "/trending" },
+    { id: 5, title: "الخدمات الرقمية", href: "/services" },
+    { id: 6, title: "الذكاء الاصطناعي", href: "/ai" },
+    { id: 7, title: "اتصل بنا", href: "/contact" },
+    { id: 8, title: "من نحن", href: "/about" },
   ];
   const isMobile = useIsMobile();
   return (

@@ -100,20 +100,26 @@ const page = async () => {
 
   const rows = rowData;
 
-  const allCourses = rows.map((row) => ({
-    id: row.id,
-    title: row.title,
-    description: row.description,
-    imageUrl: row.imageUrl,
-    hours: row.hours,
-    price: row.price,
-    duration: row.duration,
-    createdAt: row.createdAt,
-    updatedAt: row.updatedAt,
-    approvedAt: row.approvedAt,
-    currency: row.currency,
-    // ممكن تضيف sections كمصفوفة منفصلة لو بدك
-  }));
+  const allCourses = Array.from(
+    new Map(
+      rows.map((row) => [
+        row.id,
+        {
+          id: row.id,
+          title: row.title,
+          description: row.description,
+          imageUrl: row.imageUrl,
+          hours: row.hours,
+          price: row.price,
+          duration: row.duration,
+          createdAt: row.createdAt,
+          updatedAt: row.updatedAt,
+          approvedAt: row.approvedAt,
+          currency: row.currency,
+        },
+      ]),
+    ).values(),
+  );
 
   const organizationJsonLd = {
     "@context": "https://schema.org",
