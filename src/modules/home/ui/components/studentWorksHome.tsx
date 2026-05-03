@@ -1,7 +1,7 @@
 "use client";
 import { Card, CardContent } from "@/components/ui/card";
 import Image from "next/image";
-import React from "react";
+import React, { useState } from "react";
 import { motion } from "framer-motion";
 import { FaMedal, FaPlayCircle } from "react-icons/fa"; // ✅ أيقونة ميدالية
 
@@ -19,6 +19,14 @@ const StudentWorksHome = ({
     userName: string | null;
   }[];
 }) => {
+  const [playingId, setPlayingId] = useState<string | null>(null);
+
+  const getYoutubeId = (url: string) => {
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return match && match[2].length === 11 ? match[2] : null;
+  };
+
   const cardVariants = {
     hidden: { opacity: 0, y: 50 },
     visible: (i: number) => ({
@@ -109,42 +117,51 @@ const StudentWorksHome = ({
                   )}
 
                   {story.type === "video" && (
-                    <div className="w-full h-64 flex items-center justify-center overflow-hidden rounded-xl bg-black relative group/vid">
-                      {story.youtubeUrl ? (
-                        <iframe
-                          src={`https://www.youtube-nocookie.com/embed/${(() => {
-                            const regExp =
-                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                            const match = story.youtubeUrl.match(regExp);
-                            return match && match[2].length === 11
-                              ? match[2]
-                              : story.youtubeUrl.split("/").pop();
-                          })()}?autoplay=1&mute=1&loop=1&playlist=${(() => {
-                            const regExp =
-                              /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=)([^#\&\?]*).*/;
-                            const match = story.youtubeUrl.match(regExp);
-                            return match && match[2].length === 11
-                              ? match[2]
-                              : story.youtubeUrl.split("/").pop();
-                          })()}`}
-                          className="w-full h-full border-none"
-                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                          allowFullScreen
-                        />
+                    <div 
+                      className="w-full h-64 flex items-center justify-center overflow-hidden rounded-xl bg-black relative group/vid cursor-pointer"
+                      onClick={() => setPlayingId(story.id)}
+                    >
+                      {playingId === story.id ? (
+                        story.youtubeUrl ? (
+                          <iframe
+                            src={`https://www.youtube-nocookie.com/embed/${getYoutubeId(story.youtubeUrl) || story.youtubeUrl.split("/").pop()}?autoplay=1`}
+                            className="w-full h-full border-none"
+                            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                            allowFullScreen
+                          />
+                        ) : (
+                          <video
+                            src={story.mediaUrl ?? ""}
+                            controls
+                            autoPlay
+                            className="w-full h-full object-cover"
+                          />
+                        )
                       ) : (
-                        <video
-                          src={story.mediaUrl ?? ""}
-                          controls
-                          autoPlay
-                          muted
-                          loop
-                          className="w-full h-full object-cover"
-                        />
-                      )}
-                      {(story.youtubeUrl || story.type === "video") && (
-                         <div className="absolute inset-0 bg-black/20 flex items-center justify-center pointer-events-none">
-                          <FaPlayCircle className="text-white/70 text-5xl" />
-                        </div>
+                        <>
+                          {story.youtubeUrl ? (
+                            <Image
+                              src={`https://img.youtube.com/vi/${getYoutubeId(story.youtubeUrl)}/hqdefault.jpg`}
+                              alt={story.title}
+                              fill
+                              className="object-cover opacity-60"
+                              unoptimized
+                            />
+                          ) : story.mediaUrl ? (
+                            <video
+                              src={story.mediaUrl}
+                              className="w-full h-full object-cover opacity-60"
+                              muted
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-gray-900" />
+                          )}
+                          <div className="absolute inset-0 flex items-center justify-center">
+                            <div className="bg-primary/90 text-white p-5 rounded-full shadow-2xl transform group-hover/vid:scale-110 transition-all duration-300">
+                              <FaPlayCircle className="text-5xl" />
+                            </div>
+                          </div>
+                        </>
                       )}
                     </div>
                   )}

@@ -2,7 +2,6 @@
 
 import { useState, useMemo, useEffect } from "react";
 import Image from "next/image";
-import { Link } from "next-view-transitions";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   FaArrowLeft, 
@@ -11,7 +10,8 @@ import {
   FaTimes, 
   FaPlay, 
   FaImage,
-  FaExternalLinkAlt
+  FaExternalLinkAlt,
+  FaPlayCircle
 } from "react-icons/fa";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -54,6 +54,7 @@ export default function PortfolioGallery({
 
   const [selectedType, setSelectedType] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
+  const [playingId, setPlayingId] = useState<string | null>(null);
   const [selectedWork, setSelectedWork] = useState<Work | null>(null);
   
   // Pagination State
@@ -108,6 +109,13 @@ export default function PortfolioGallery({
 
   const handleTypeClick = (typeId: string) => {
     setSelectedType((prev) => (prev === typeId ? null : typeId));
+  };
+
+  const getYoutubeId = (url: string | null) => {
+    if (!url) return null;
+    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|\&v=|shorts\/)([^#\&\?]*).*/;
+    const match = url.match(regExp);
+    return (match && match[2].length === 11) ? match[2] : null;
   };
 
   return (
@@ -261,47 +269,98 @@ export default function PortfolioGallery({
                       className="group bg-white rounded-3xl overflow-hidden border border-gray-100 shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all duration-500 flex flex-col h-full"
                     >
                       {/* Image Container */}
-                      <div className="relative aspect-[3/4] overflow-hidden bg-gray-100">
-                        {work.imageUrl ? (
-                          (work.type === "video" && !work.imageUrl.includes("img.youtube.com")) ? (
-                            <video
-                              src={work.imageUrl}
-                              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
-                              muted
-                              loop
-                              playsInline
-                              autoPlay
+                      <div 
+                        className="relative aspect-[3/4] overflow-hidden bg-gray-100 cursor-pointer group/vid"
+                        onClick={() => {
+                          if (work.type === "video") {
+                            setPlayingId(work.id);
+                          } else {
+                            setSelectedWork(work);
+                          }
+                        }}
+                      >
+                        {playingId === work.id ? (
+                          work.youtubeUrl ? (
+                            <iframe
+                              src={`https://www.youtube-nocookie.com/embed/${getYoutubeId(work.youtubeUrl)}?autoplay=1`}
+                              className="w-full h-full border-none"
+                              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                              allowFullScreen
                             />
                           ) : (
-                            <Image
-                              src={work.imageUrl}
-                              alt={work.title}
-                              fill
-                              className="object-cover transition-transform duration-700 group-hover:scale-110"
-                              unoptimized
+                            <video
+                              src={work.imageUrl ?? ""}
+                              controls
+                              autoPlay
+                              className="w-full h-full object-cover"
                             />
                           )
                         ) : (
-                          <div className="w-full h-full flex items-center justify-center bg-primary/5">
-                            <FaImage size={48} className="text-primary/20" />
-                          </div>
-                        )}
-                        {/* Service Tag */}
-                        <div className="absolute top-4 right-4 z-10">
-                          <span className="px-3 py-1.5 rounded-lg text-[10px] font-black shadow-lg backdrop-blur-md bg-white/90 text-primary">
-                            {work.serviceName}
-                          </span>
-                        </div>
-                        {/* Type Icon Overlay */}
-                        <div className="absolute bottom-4 left-4 z-10">
-                          <div className="bg-white/90 backdrop-blur-md size-10 rounded-xl flex items-center justify-center shadow-lg group-hover:bg-primary transition-all duration-500">
-                            {work.type === "video" ? (
-                              <FaPlay className="text-primary group-hover:text-white transition-all size-3" />
-                            ) : (
-                              <FaImage className="text-primary group-hover:text-white transition-all size-3" />
+                          <>
+                            {(() => {
+                              const youtubeId = getYoutubeId(work.youtubeUrl);
+                              const isVideoFile = work.imageUrl?.match(/\.(mp4|webm|ogg|mov|m4v)$/i);
+                              
+                              if (isVideoFile) {
+                                return (
+                                  <video
+                                    src={work.imageUrl!}
+                                    className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-110"
+                                    muted
+                                    loop
+                                    playsInline
+                                    onMouseOver={(e) => e.currentTarget.play()}
+                                    onMouseOut={(e) => e.currentTarget.pause()}
+                                  />
+                                );
+                              }
+
+                              const thumbUrl = work.imageUrl || (youtubeId ? `https://img.youtube.com/vi/${youtubeId}/hqdefault.jpg` : null);
+
+                              if (thumbUrl) {
+                                return (
+                                  <Image
+                                    src={thumbUrl}
+                                    alt={work.title}
+                                    fill
+                                    className="object-cover transition-transform duration-700 group-hover:scale-110"
+                                    unoptimized
+                                  />
+                                );
+                              }
+
+                              return (
+                                <div className="w-full h-full flex items-center justify-center bg-primary/5">
+                                  <FaImage size={48} className="text-primary/20" />
+                                </div>
+                              );
+                            })()}
+
+                            {/* Service Tag */}
+                            <div className="absolute top-4 right-4 z-10">
+                              <span className="px-3 py-1.5 rounded-lg text-[10px] font-black shadow-lg backdrop-blur-md bg-white/90 text-primary">
+                                {work.serviceName}
+                              </span>
+                            </div>
+
+                            {/* Type Icon Overlay */}
+                            <div className="absolute bottom-4 left-4 z-10">
+                              <div className="bg-white/90 backdrop-blur-md size-10 rounded-xl flex items-center justify-center shadow-lg group-hover:bg-primary transition-all duration-500">
+                                {work.type === "video" ? (
+                                  <FaPlayCircle className="text-primary group-hover:text-white transition-all size-3" />
+                                ) : (
+                                  <FaImage className="text-primary group-hover:text-white transition-all size-3" />
+                                )}
+                              </div>
+                            </div>
+
+                            {work.type === "video" && (
+                              <div className="absolute inset-0 flex items-center justify-center bg-black/0 group-hover:bg-black/20 transition-all">
+                                <FaPlayCircle className="text-white/80 text-6xl opacity-0 group-hover:opacity-100 transition-all transform scale-90 group-hover:scale-100" />
+                              </div>
                             )}
-                          </div>
-                        </div>
+                          </>
+                        )}
                       </div>
 
                       {/* Content Container */}
@@ -417,11 +476,7 @@ export default function PortfolioGallery({
               <div className="flex-1 bg-black flex items-center justify-center relative overflow-hidden group">
                 {selectedWork.youtubeUrl ? (
                   <iframe
-                    src={selectedWork.youtubeUrl.includes('watch?v=') 
-                      ? selectedWork.youtubeUrl.replace('watch?v=', 'embed/') 
-                      : selectedWork.youtubeUrl.includes('youtu.be/')
-                        ? selectedWork.youtubeUrl.replace('youtu.be/', 'youtube.com/embed/')
-                        : selectedWork.youtubeUrl}
+                    src={`https://www.youtube.com/embed/${getYoutubeId(selectedWork.youtubeUrl)}?autoplay=1`}
                     className="w-full aspect-video rounded-3xl"
                     allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
                     allowFullScreen
