@@ -23,6 +23,9 @@ import {
 import {
   fetchGenerationHistoryAction,
   deleteGenerationAction,
+  checkGenerationStatus,
+  updateGenerationStatusAction,
+  refundFailedTaskAction,
 } from "@/app/actions/ai-common";
 import Swal from "sweetalert2";
 import { authClient } from "@/lib/auth-client";
@@ -71,10 +74,12 @@ const HistoryItemCard = React.memo(
     item,
     onSelect,
     onDelete,
+    onSync,
   }: {
     item: HistoryItem;
     onSelect: (item: HistoryItem) => void;
     onDelete: (e: React.MouseEvent, id: string) => void;
+    onSync: (e: React.MouseEvent, item: HistoryItem) => void;
   }) => {
     const statusInfo = STATUS_MAP[item.status] ?? STATUS_MAP.pending;
     const StatusIcon = statusInfo.icon;
@@ -191,6 +196,15 @@ const HistoryItemCard = React.memo(
             </span>
 
             <div className="flex items-center gap-3">
+              {item.status === "pending" && (
+                <button
+                  onClick={(e) => onSync(e, item)}
+                  title="تحديث الحالة"
+                  className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                >
+                  <RefreshCw className="w-3.5 h-3.5" />
+                </button>
+              )}
               <button
                 onClick={(e) => onDelete(e, item.id)}
                 className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
@@ -218,6 +232,7 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
   const [filter, setFilter] = useState<"all" | "video" | "image">("all");
   const [selectedItem, setSelectedItem] = useState<HistoryItem | null>(null);
   const [isMounted, setIsMounted] = useState(false);
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
 
   const { data: session } = authClient.useSession();
 
@@ -308,6 +323,77 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
 
   const getImageUrl = (item: HistoryItem) =>
     item.type === "image" ? item.resultUrl : null;
+
+  const handleSyncStatus = async (e: React.MouseEvent, item: HistoryItem) => {
+    e.stopPropagation();
+    if (isSyncing) return;
+
+    setIsSyncing(item.id);
+    try {
+      const res = await checkGenerationStatus(item.taskUuid);
+      if (!res.success) {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "error",
+          title: "تعذر الاتصال بالسيرفر حالياً",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+        return;
+      }
+
+      const status = res.data.status;
+      const isCompleted = status === 2 || String(status).toLowerCase() === "completed" || String(status).toLowerCase() === "success";
+      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
+
+      if (isCompleted) {
+        let foundUrl = null;
+        if (res.data.generated_video?.[0]?.video_url) foundUrl = res.data.generated_video[0].video_url;
+        else if (res.data.video) foundUrl = res.data.video;
+        else if (res.data.files?.[0]?.url) foundUrl = res.data.files[0].url;
+        else if (res.data.url) foundUrl = res.data.url;
+
+        await updateGenerationStatusAction(
+          item.taskUuid,
+          "completed",
+          foundUrl || "",
+          res.data.thumbnail_url || res.data.thumbnail || ""
+        );
+        
+        Swal.fire({
+          icon: "success",
+          title: "اكتمل التوليد!",
+          text: "تم تحديث الحالة بنجاح.",
+          timer: 2000,
+        });
+        loadHistory(page, filter);
+      } else if (isFailed) {
+        await updateGenerationStatusAction(item.taskUuid, "failed");
+        await refundFailedTaskAction(item.taskUuid, res.data.error || "Failed");
+        
+        Swal.fire({
+          icon: "info",
+          title: "فشل التوليد",
+          text: "تم التأكد من فشل العملية وإعادة الرصيد لمحفظتك.",
+        });
+        loadHistory(page, filter);
+      } else {
+        Swal.fire({
+          toast: true,
+          position: "top-end",
+          icon: "info",
+          title: "ما زال قيد المعالجة...",
+          showConfirmButton: false,
+          timer: 2000,
+        });
+      }
+    } catch (err) {
+      console.error("Sync error:", err);
+    } finally {
+      setIsSyncing(null);
+    }
+  };
 
   const formatDate = (dateStr: string) => {
     return new Date(dateStr).toLocaleString("ar-SA", {
@@ -427,6 +513,7 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     item={item}
                     onSelect={setSelectedItem}
                     onDelete={handleDelete}
+                    onSync={handleSyncStatus}
                   />
                 ))}
               </div>

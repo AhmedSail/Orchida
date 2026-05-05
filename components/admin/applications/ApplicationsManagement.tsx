@@ -46,6 +46,7 @@ import { useSearchParams } from "next/navigation";
 import StatusManagementDialog from "./StatusManagementDialog";
 import AcceptApplicationDialog from "./AcceptApplicationDialog";
 import BulkAcceptDialog from "./BulkAcceptDialog";
+import EditApplicationDialog from "./EditApplicationDialog";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 
@@ -134,6 +135,13 @@ const ApplicationsManagement = () => {
     courseTitle: "",
     studentName: "",
     attendanceType: "",
+  });
+  const [editDialog, setEditDialog] = useState<{
+    open: boolean;
+    application: Application | null;
+  }>({
+    open: false,
+    application: null,
   });
 
   const searchParams = useSearchParams();
@@ -666,6 +674,24 @@ const ApplicationsManagement = () => {
                             <span className="text-[10px] text-zinc-500">مشاهدة كافة البيانات</span>
                           </div>
                         </DropdownMenuItem>
+
+                        <DropdownMenuItem 
+                          className="rounded-xl gap-3 cursor-pointer py-3 text-primary focus:text-primary focus:bg-primary/5"
+                          onClick={() => {
+                            setEditDialog({
+                              open: true,
+                              application: app,
+                            });
+                          }}
+                        >
+                          <div className="w-8 h-8 bg-primary/10 rounded-lg flex items-center justify-center">
+                            <Settings2 className="w-4 h-4 text-primary" />
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold">تعديل البيانات</span>
+                            <span className="text-[10px] text-zinc-500">تعديل كافة بيانات الطالب</span>
+                          </div>
+                        </DropdownMenuItem>
                         
                         <div className="h-px bg-zinc-100 my-2" />
                         
@@ -782,6 +808,14 @@ const ApplicationsManagement = () => {
           setSelectedIds([]);
           fetchData();
         }}
+      />
+
+      <EditApplicationDialog
+        open={editDialog.open}
+        onOpenChange={(open) => setEditDialog(prev => ({ ...prev, open }))}
+        application={editDialog.application}
+        courses={courses}
+        onSuccess={fetchData}
       />
     </div>
   );

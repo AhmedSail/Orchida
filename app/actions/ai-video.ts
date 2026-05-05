@@ -65,6 +65,7 @@ export async function generateVideoAction(clientFormData: FormData) {
     
     if (duration > 0) {
       apiFormData.append("duration", duration.toString());
+      apiFormData.append("video_duration", duration.toString()); // Some providers use this name
     }
     
     if (provider === "Grok") {
@@ -100,6 +101,13 @@ export async function generateVideoAction(clientFormData: FormData) {
       const grokImage = clientFormData.get("image") as File;
       if (grokImage && grokImage.size > 0) apiFormData.append("files", grokImage);
     }
+
+    console.log(`[AI Video Action] Outgoing Request:`, {
+      provider: endpointProvider,
+      model: apiFormData.get("model"),
+      duration: apiFormData.get("duration"),
+      resolution: apiFormData.get("resolution")
+    });
 
     let response;
     const controller = new AbortController();

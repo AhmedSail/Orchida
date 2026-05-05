@@ -415,23 +415,12 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
         if (grokImage) formData.append("image", grokImage);
       }
 
-      console.log("🚀 Sending Video Generation Request:", {
+      console.log("🚀 [DEBUG] Final Form Data being sent:", {
         provider,
         model: mappedModel,
-        prompt,
         duration,
         resolution,
-        aspectRatio: orientation,
-        cost,
-        firstImage: firstImage
-          ? { name: firstImage.name, size: firstImage.size }
-          : "none",
-        lastImage: lastImage
-          ? { name: lastImage.name, size: lastImage.size }
-          : "none",
-        grokImage: grokImage
-          ? { name: grokImage.name, size: grokImage.size }
-          : "none",
+        cost
       });
 
       const res = await generateVideoAction(formData);
@@ -458,26 +447,45 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
 
   const pollStatus = async (uuid: string) => {
     let attempts = 0;
-    const maxAttempts = 60; // 5 minutes timeout
+    const maxAttempts = 120; // 10 minutes timeout (120 * 5s)
+    let consecutiveErrors = 0;
 
     const intervalId = setInterval(async () => {
       attempts++;
+      
+      // 1. Check for max attempts (timeout)
       if (attempts > maxAttempts) {
         clearInterval(intervalId);
         localStorage.removeItem("pending_video_gen");
         setGenerationError(
-          "Generation timed out. Please check your history later.",
+          "استغرق توليد الفيديو وقتاً طويلاً. يرجى مراجعة صفحة 'السجل' بعد قليل، فربما يكتمل في الخلفية. إذا فشل تماماً، سيتم استرداد رصيدك.",
         );
         setIsGenerating(false);
         return;
       }
 
       const res = await checkGenerationStatus(uuid);
-      if (!res.success) return; // Skip a tick if network error
+      
+      // 2. Handle network/API errors during polling
+      if (!res.success) {
+        consecutiveErrors++;
+        if (consecutiveErrors > 5) {
+          clearInterval(intervalId);
+          setGenerationError("فشل الاتصال المستمر بخادم التحديث. يرجى التحقق من السجل لاحقاً.");
+          setIsGenerating(false);
+        }
+        return; 
+      }
+      
+      consecutiveErrors = 0; // Reset errors on success
 
+      // 3. Process status
       // 0: pending, 1: generating, 2: completed, 3: failed
       const status = res.data.status;
-      if (status === 2 || String(status).toLowerCase() === "completed") {
+      const isCompleted = status === 2 || String(status).toLowerCase() === "completed" || String(status).toLowerCase() === "success";
+      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
+
+      if (isCompleted) {
         clearInterval(intervalId);
         setIsGenerating(false);
         localStorage.removeItem("pending_video_gen");
@@ -509,14 +517,13 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
         if (foundUrl) {
           setResultVideoUrl(foundUrl);
         } else {
-          // If we couldn't parse the URL, we keep the raw data to show on screen for debugging
           setRawResponseData(res.data);
           setGenerationError(
-            "Video generated successfully, but the system couldn't read the URL structure. View raw data below.",
+            "تم إنشاء الفيديو بنجاح، ولكن تعذر قراءة الرابط مباشرة. يمكنك العثور عليه في السجل.",
           );
         }
 
-        // تحديث السجل المحلي بالرابط والصورة
+        // Update local DB
         updateGenerationStatusAction(
           uuid,
           "completed",
@@ -524,19 +531,18 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
           res.data.thumbnail_url || res.data.thumbnail || "",
         );
 
-        // Refresh credits after successful generation
+        // Refresh balance
         getStudentInternalCredits().then((r) => {
           if (r.success && r.balance !== undefined) {
             setUserBalance(r.balance);
             window.dispatchEvent(new CustomEvent("balanceUpdated"));
           }
         });
-      } else if (status === 3 || String(status).toLowerCase() === "failed") {
+      } else if (isFailed) {
         clearInterval(intervalId);
         setIsGenerating(false);
         localStorage.removeItem("pending_video_gen");
 
-        // Extract the error sent from the API
         let errorData =
           res.data.error ||
           res.data.message ||
@@ -548,25 +554,28 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
 
         const errorMessage =
           errorData ||
-          "فشل الخادم في معالجة طلب الفيديو. قد يكون ذلك بسبب ضغط العمل أو قيود في المحتوى.";
+          "فشل الخادم في معالجة طلب الفيديو.";
+        
         const displayError = `فشل إنشاء الفيديو: ${errorMessage}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
-
         setGenerationError(displayError);
 
-        // تحديث السجل المحلي بالفشل
-        updateGenerationStatusAction(uuid, "failed");
-        refundFailedTaskAction(uuid, errorMessage).then(() => {
-          // Refresh user balance to reflect refund
+        // Update local DB to failed
+        await updateGenerationStatusAction(uuid, "failed");
+        
+        // Trigger Refund
+        const refundRes = await refundFailedTaskAction(uuid, errorMessage);
+        if (refundRes.success) {
           getStudentInternalCredits().then((r) => {
             if (r.success && r.balance !== undefined) {
               setUserBalance(r.balance);
               window.dispatchEvent(new CustomEvent("balanceUpdated"));
             }
           });
-        });
+        }
       }
     }, 5000);
   };
+
 
   return (
     <div className="relative z-10 w-full pb-20">
@@ -653,7 +662,7 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
                     المدة (Duration)
                   </label>
                   <div className="flex gap-2">
-                    {["6", "8"].map((sec) => (
+                    {["6", "8", "10"].map((sec) => (
                       <button
                         key={sec}
                         onClick={() => setDuration(sec)}
@@ -1099,10 +1108,18 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
                     Duration
                   </label>
-                  <button className="flex items-center gap-2 px-4 py-1.5 rounded-full border border-primary text-primary bg-primary/5 text-sm">
-                    <div className="w-1.5 h-1.5 rounded-full bg-primary"></div>{" "}
-                    5s
-                  </button>
+                  <div className="flex gap-2">
+                    {["5", "10"].map((sec) => (
+                      <button
+                        key={sec}
+                        onClick={() => setDuration(sec)}
+                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm transition ${duration === sec ? "border-primary text-primary bg-primary/5" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      >
+                        <div className={`w-1.5 h-1.5 rounded-full ${duration === sec ? "bg-primary" : "bg-zinc-300"}`}></div>{" "}
+                        {sec}s
+                      </button>
+                    ))}
+                  </div>
                 </div>
                 <div>
                   <label className="block text-sm font-semibold text-zinc-700 mb-2">
