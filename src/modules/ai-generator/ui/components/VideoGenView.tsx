@@ -16,7 +16,9 @@ import {
   Info,
   Trash2,
   X,
+  Download,
 } from "lucide-react";
+import { handleDownload } from "@/lib/download";
 import { useRouter, useSearchParams } from "next/navigation";
 import { generateVideoAction } from "@/app/actions/ai-video";
 import {
@@ -1356,13 +1358,22 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
                   </p>
                 </div>
               ) : resultVideoUrl ? (
-                <video
-                  src={resultVideoUrl}
-                  controls
-                  autoPlay
-                  loop
-                  className="absolute inset-0 w-full h-full object-contain bg-black z-10"
-                />
+                <div className="absolute inset-0 w-full h-full z-10 group">
+                  <video
+                    src={resultVideoUrl}
+                    controls
+                    autoPlay
+                    loop
+                    className="w-full h-full object-contain bg-black"
+                  />
+                  <button
+                    onClick={() => handleDownload(resultVideoUrl, `video-${Date.now()}.mp4`)}
+                    className="absolute top-4 left-4 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl"
+                  >
+                    <Download className="w-4 h-4" />
+                    تحميل الفيديو
+                  </button>
+                </div>
               ) : rawResponseData ? (
                 <div className="absolute inset-0 w-full h-full overflow-auto bg-zinc-950 p-6 text-emerald-400 font-mono text-sm block whitespace-pre-wrap text-left z-20">
                   <span className="text-zinc-500 mb-2 block">
