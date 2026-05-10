@@ -14,6 +14,7 @@ import {
   MessageSquare,
   ArrowRightLeft,
 } from "lucide-react";
+import { handleDownload } from "@/lib/download";
 import {
   checkGenerationStatus,
   updateGenerationStatusAction,
@@ -301,16 +302,14 @@ export default function FreeTrialView({ userBalance }: FreeTrialViewProps) {
                             className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-110"
                             alt={`Generated result ${idx + 1}`}
                           />
-                          <a
-                            href={url}
-                            download
-                            target="_blank"
+                          <button
+                            onClick={() => handleDownload(url, `image-${idx}.png`)}
                             className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center"
                           >
                             <div className="bg-white text-black p-3 rounded-full font-black text-[10px] scale-0 group-hover:scale-100 transition-transform">
-                              عرض كامل
+                              تحميل الصورة
                             </div>
-                          </a>
+                          </button>
                         </div>
                       ))}
                     </div>
