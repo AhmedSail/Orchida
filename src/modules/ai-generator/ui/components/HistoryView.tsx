@@ -727,6 +727,9 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     src={getVideoUrl(selectedItem)!}
                     controls
                     autoPlay
+                    muted
+                    playsInline
+                    crossOrigin="anonymous"
                     className="w-full h-full object-contain"
                   />
                 ) : (
