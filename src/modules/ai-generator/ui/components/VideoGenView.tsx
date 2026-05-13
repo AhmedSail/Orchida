@@ -1363,6 +1363,9 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
                     src={resultVideoUrl}
                     controls
                     autoPlay
+                    muted
+                    playsInline
+                    crossOrigin="anonymous"
                     loop
                     className="w-full h-full object-contain bg-black"
                   />
