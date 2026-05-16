@@ -172,10 +172,13 @@ export default function VideoGenView({
       if (stopped) return;
       attempts++;
 
-      if (attempts > 150) { // 150 × 5s = 12.5 دقيقة
+      if (attempts > 150) {
+        // 150 × 5s = 12.5 دقيقة
         stopped = true;
         setIsGenerating(false);
-        toast.error("استغرقت العملية وقتاً طويلاً. يرجى التحقق من الخزنة لاحقاً.");
+        toast.error(
+          "استغرقت العملية وقتاً طويلاً. يرجى التحقق من الخزنة لاحقاً.",
+        );
         return;
       }
 
@@ -191,8 +194,12 @@ export default function VideoGenView({
       const taskData = res.data;
       const status = taskData?.status;
 
-      const isCompleted = status === 2 || String(status).toLowerCase() === "completed";
-      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
+      const isCompleted =
+        status === 2 || String(status).toLowerCase() === "completed";
+      const isFailed =
+        status === 3 ||
+        String(status).toLowerCase() === "failed" ||
+        String(status).toLowerCase() === "error";
 
       if (isCompleted) {
         stopped = true;
@@ -212,8 +219,10 @@ export default function VideoGenView({
         if (foundUrl) {
           toast.loading("جاري الرفع للسحابة... ☁️", { id: "upload" });
           const saveResult: any = await updateGenerationStatusAction(
-            uuid, "completed", foundUrl,
-            taskData?.thumbnail_url || ""
+            uuid,
+            "completed",
+            foundUrl,
+            taskData?.thumbnail_url || "",
           );
           toast.dismiss("upload");
           const displayUrl = saveResult.finalResultUrl || foundUrl;
@@ -221,20 +230,22 @@ export default function VideoGenView({
           setResultVideoUrl(displayUrl);
           toast.success("تم توليد الفيديو ورفعه للسحابة بنجاح! ☁️");
         } else {
-          console.error("[VideoGen] No URL found in:", JSON.stringify(taskData));
+          console.error(
+            "[VideoGen] No URL found in:",
+            JSON.stringify(taskData),
+          );
           setGenerationError("تم الانتهاء ولكن لم يتم العثور على رابط الفيديو");
           toast.error("لم نتمكن من العثور على رابط الفيديو الناتج.");
         }
         window.dispatchEvent(new CustomEvent("balanceUpdated"));
-
       } else if (isFailed) {
         stopped = true;
         setIsGenerating(false);
-        const errMsg = taskData?.error_message || taskData?.message || "فشل توليد الفيديو";
+        const errMsg =
+          taskData?.error_message || taskData?.message || "فشل توليد الفيديو";
         setGenerationError(errMsg);
         toast.error(`فشل الطلب: ${errMsg}`);
         updateGenerationStatusAction(uuid, "failed");
-
       } else {
         // لا تزال قيد المعالجة - انتظر وحاول مجدداً
         if (!stopped) setTimeout(poll, 5000);
@@ -244,7 +255,6 @@ export default function VideoGenView({
     // ابدأ أول poll بعد 5 ثواني
     setTimeout(poll, 5000);
   };
-
 
   const handleGenerate = async () => {
     if (!session) return;
@@ -486,25 +496,6 @@ export default function VideoGenView({
                     ))}
                   </div>
                 </div>
-
-                {provider === "Grok" && (
-                  <div>
-                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 block">
-                      عدد النتائج
-                    </label>
-                    <div className="flex gap-2">
-                      {[1, 2, 3, 4].map((n) => (
-                        <button
-                          key={n}
-                          onClick={() => setNumResults(n)}
-                          className={`size-9 md:size-10 rounded-xl border text-[10px] md:text-xs font-black transition-all ${numResults === n ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:text-zinc-900"}`}
-                        >
-                          {n}
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-                )}
               </div>
             </div>
 
