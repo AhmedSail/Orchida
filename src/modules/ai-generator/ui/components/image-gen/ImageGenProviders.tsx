@@ -1,4 +1,6 @@
 import React from "react";
+import { motion } from "framer-motion";
+import { Sparkles, Palette, Zap } from "lucide-react";
 
 interface ImageGenProvidersProps {
   provider: string;
@@ -12,62 +14,81 @@ export const ImageGenProviders: React.FC<ImageGenProvidersProps> = ({
   const providers = [
     {
       id: "Imagen",
-      name: "G Imagen",
-      desc: "Gemini 3 Pro",
-      disabled: false,
+      name: "Google Imagen",
+      badge: "Gemini 3 Pro",
+      icon: Palette,
+      color: "text-blue-500",
     },
     {
       id: "Grok",
-      name: "✖ Grok",
-      desc: "Aurora XL",
-      disabled: false,
+      name: "xAI Grok-3",
+      badge: "Aurora XL",
+      icon: Zap,
+      color: "text-emerald-500",
+    },
+    {
+      id: "Meta AI",
+      name: "Meta Llama",
+      badge: "Llama Vision",
+      icon: Sparkles,
+      color: "text-primary",
     },
   ];
 
   return (
-    <div className="mb-6">
-      <label className="block text-sm font-bold text-zinc-700 mb-3">
-        محرك التوليد
+    <div className="space-y-4">
+      <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+        محرك الإنتاج الذكي
       </label>
-      <div className="flex flex-wrap gap-2">
-        <button
-          onClick={() => setProvider("Meta AI")}
-          className={`flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl border transition-all duration-300 ${
-            provider === "Meta AI"
-              ? "bg-gradient-to-r from-blue-600 to-indigo-600 border-transparent text-white shadow-lg shadow-blue-200 scale-[1.02]"
-              : "bg-white border-zinc-100 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50"
-          }`}
-        >
-          <div className={`p-1 rounded-md ${provider === "Meta AI" ? "bg-white/20" : "bg-zinc-100"}`}>
-            <span className={`w-4 h-4 ${provider === "Meta AI" ? "text-white" : "text-zinc-500"}`}>⚡</span>
-          </div>
-          <span className="font-bold text-sm">Meta AI</span>
-          <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-md ${provider === "Meta AI" ? "bg-white/20 text-white" : "bg-zinc-100 text-zinc-400"}`}>
-            Meta
-          </span>
-        </button>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {providers.map((p) => (
           <button
             key={p.id}
-            disabled={p.disabled}
-            onClick={() => !p.disabled && setProvider(p.id)}
-            className={`flex flex-1 items-center justify-between gap-2 px-4 py-3 rounded-xl border text-sm font-semibold transition 
-              ${
-                p.disabled
-                  ? "opacity-60 cursor-not-allowed bg-zinc-50 border-zinc-100 text-zinc-400"
-                  : provider === p.id
-                    ? "border-primary bg-primary/5 text-primary"
-                    : "border-zinc-100 text-zinc-500 hover:bg-zinc-50"
-              }`}
+            onClick={() => setProvider(p.id)}
+            className={`group relative flex items-center gap-4 px-6 py-5 rounded-[1.5rem] border transition-all duration-500 ${
+              provider === p.id
+                ? "bg-white border-primary shadow-[0_20px_40px_rgba(99,102,241,0.1)] ring-1 ring-primary/20 scale-[1.02]"
+                : "bg-white border-zinc-200 text-zinc-500 hover:border-zinc-300 hover:bg-zinc-50"
+            }`}
           >
-            <div className="flex flex-col items-start">
-              <span>{p.name}</span>
-            </div>
-            <span
-              className={`${p.disabled ? "bg-zinc-200 text-zinc-500" : provider === p.id ? "bg-primary text-white" : "bg-zinc-100 text-zinc-400"} text-[8px] px-1.5 py-0.5 rounded-md uppercase tracking-tighter`}
+            {/* Active indicator */}
+            {provider === p.id && (
+              <motion.div
+                layoutId="active-indicator"
+                className="absolute inset-0 bg-gradient-to-r from-primary/5 to-transparent"
+                transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+              />
+            )}
+
+            <div
+              className={`size-12 rounded-2xl flex items-center justify-center transition-all duration-500 ${
+                provider === p.id
+                  ? "bg-primary text-white shadow-lg shadow-primary/30"
+                  : "bg-zinc-100 text-zinc-400 group-hover:bg-zinc-200 group-hover:text-zinc-600"
+              }`}
             >
-              {p.desc}
-            </span>
+              <p.icon className={`size-6 ${provider === p.id ? "animate-pulse" : ""}`} />
+            </div>
+            
+            <div className="text-right">
+              <span
+                className={`block text-xs font-black tracking-tight transition-colors ${
+                  provider === p.id ? "text-zinc-900" : "text-zinc-500"
+                }`}
+              >
+                {p.name}
+              </span>
+              <span className={`text-[9px] font-bold uppercase tracking-widest ${
+                provider === p.id ? "text-primary" : "text-zinc-400"
+              }`}>
+                {p.badge}
+              </span>
+            </div>
+
+            {/* Selection Dot */}
+            {provider === p.id && (
+              <div className="absolute top-4 left-4 size-2 bg-primary rounded-full" />
+            )}
           </button>
         ))}
       </div>

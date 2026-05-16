@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from "react";
 import {
-  Video,
+  Video as VideoIcon,
   Image as ImageIcon,
   Zap,
   ChevronDown,
@@ -17,8 +17,13 @@ import {
   Trash2,
   X,
   Download,
+  Terminal,
+  Settings2,
+  Layers,
+  History as HistoryIcon,
 } from "lucide-react";
-import { handleDownload } from "@/lib/download";
+import { toast } from "sonner";
+import { motion, AnimatePresence } from "framer-motion";
 import { useRouter, useSearchParams } from "next/navigation";
 import { generateVideoAction } from "@/app/actions/ai-video";
 import {
@@ -45,113 +50,78 @@ interface VideoGenViewProps {
   userBalance?: number | null;
 }
 
-export default function VideoGenView({ userBalance: propBalance }: VideoGenViewProps) {
+export default function VideoGenView({
+  userBalance: propBalance,
+}: VideoGenViewProps) {
   const searchParams = useSearchParams();
   const [provider, setProvider] = useState("Veo");
-  const [veoModel] = useState("veo-3.1-fast"); // Locked to Veo 3.1 Fast as requested
-  const [grokMode] = useState("normal"); // Locked to Normal as requested
+  const [veoModel] = useState("veo-3.1-fast");
   const [prompt, setPrompt] = useState("");
 
-  React.useEffect(() => {
-    const urlPrompt = searchParams.get("prompt");
-    if (urlPrompt) {
-      setPrompt(decodeURIComponent(urlPrompt));
-    }
-  }, [searchParams]);
-
   const [orientation, setOrientation] = useState("Landscape (16:9)");
-  const [resolution, setResolution] = useState("High 720p"); // Default for Veo
-  const [duration, setDuration] = useState("6"); // e.g. "6" or "10"
+  const [resolution, setResolution] = useState("High 720p");
+  const [duration, setDuration] = useState("6");
+  const [numResults, setNumResults] = useState(1);
+  const [grokMode, setGrokMode] = useState("normal");
 
-  // Auth State
   const { data: session } = authClient.useSession();
-
-  // User Credits State
-  const [userBalance, setUserBalance] = useState<number | null>(propBalance ?? null);
-
-  useEffect(() => {
-    if (propBalance !== undefined) {
-      setUserBalance(propBalance);
-    }
-  }, [propBalance]);
+  const [userBalance, setUserBalance] = useState<number | null>(
+    propBalance ?? null,
+  );
   const [pricingRules, setPricingRules] = useState<PricingRule[]>([]);
 
-  // Debug State
-  const [rawResponseData, setRawResponseData] = useState<any>(null);
-
-  // Use Effect to grab balance on mount
-
-  // Image Upload states
   const [firstImage, setFirstImage] = useState<File | null>(null);
   const [lastImage, setLastImage] = useState<File | null>(null);
   const [grokImage, setGrokImage] = useState<File | null>(null);
 
-  // Helper: File to Base64
-  const fileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-  };
+  const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
+  const [lastImageUrl, setLastImageUrl] = useState<string | null>(null);
+  const [grokImageUrl, setGrokImageUrl] = useState<string | null>(null);
 
-  // Helper: Base64 to File
-  const base64ToFile = (base64: string, filename: string): File => {
-    try {
-      const arr = base64.split(",");
-      const mime = arr[0].match(/:(.*?);/)![1];
-      const bstr = atob(arr[1]);
-      let n = bstr.length;
-      const u8arr = new Uint8Array(n);
-      while (n--) {
-        u8arr[n] = bstr.charCodeAt(n);
-      }
-      return new File([u8arr], filename, { type: mime });
-    } catch (e) {
-      console.error("Base64 to File error:", e);
-      return null as any;
-    }
-  };
-
-  // Input refs
   const firstImageRef = React.useRef<HTMLInputElement>(null);
   const lastImageRef = React.useRef<HTMLInputElement>(null);
   const grokImageRef = React.useRef<HTMLInputElement>(null);
 
-  // API Generation states
   const [isGenerating, setIsGenerating] = useState(false);
   const [isEnhancing, setIsEnhancing] = useState(false);
-  const [generationTaskId, setGenerationTaskId] = useState<string | null>(null);
   const [resultVideoUrl, setResultVideoUrl] = useState<string | null>(null);
   const [generationError, setGenerationError] = useState<string | null>(null);
 
-  const handleClearAll = () => {
-    setPrompt("");
-    setFirstImage(null);
-    setLastImage(null);
-    setGrokImage(null);
-    setResultVideoUrl(null);
-    setRawResponseData(null);
-    setGenerationError(null);
-    if (firstImageRef.current) firstImageRef.current.value = "";
-    if (lastImageRef.current) lastImageRef.current.value = "";
-    if (grokImageRef.current) grokImageRef.current.value = "";
+  useEffect(() => {
+    const urlPrompt = searchParams.get("prompt");
+    if (urlPrompt) setPrompt(decodeURIComponent(urlPrompt));
+  }, [searchParams]);
 
-    // Clear persistence
-    localStorage.removeItem("ai_video_state");
+  useEffect(() => {
+    if (firstImage) {
+      const url = URL.createObjectURL(firstImage);
+      setFirstImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [firstImage]);
 
-    Swal.fire({
-      toast: true,
-      position: "top-end",
-      icon: "info",
-      title: "تم مسح جميع الحقول 🧹",
-      showConfirmButton: false,
-      timer: 2000,
+  useEffect(() => {
+    if (lastImage) {
+      const url = URL.createObjectURL(lastImage);
+      setLastImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [lastImage]);
+
+  useEffect(() => {
+    if (grokImage) {
+      const url = URL.createObjectURL(grokImage);
+      setGrokImageUrl(url);
+      return () => URL.revokeObjectURL(url);
+    }
+  }, [grokImage]);
+
+  useEffect(() => {
+    getAllAiPricingAction().then((rules) => {
+      if (rules) setPricingRules(rules as PricingRule[]);
     });
-  };
+  }, []);
 
-  // Credit calculation logic
   const calculateCost = () => {
     const seconds = parseInt(duration) || 6;
     const resQuality = resolution.includes("720")
@@ -159,12 +129,9 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
       : resolution.includes("1080")
         ? "1080p"
         : "480p";
-
-    // Use uppercase for matching with DB if stored as VEO/GROK
     const dbProvider = provider.toLowerCase().trim();
     const dbQuality = resQuality.toLowerCase().trim();
 
-    // Find match: Priority to exact duration, then fallback to duration 0/null (global)
     const match = pricingRules.find(
       (r) =>
         r.serviceType === "video" &&
@@ -173,1221 +140,493 @@ export default function VideoGenView({ userBalance: propBalance }: VideoGenViewP
         (r.duration === seconds || r.duration === 0 || r.duration === null),
     );
 
-    if (match) return match.credits;
-
-    // 3. Fallback to hardcoded logic if no DB rule found
-    switch (provider) {
-      case "Grok":
-        return 3;
-      case "Veo":
-        return 3;
-      default:
-        return 3;
-    }
+    return match ? match.credits : 3;
   };
 
   const cost = calculateCost();
 
-  React.useEffect(() => {
-    // 1. Fetch initial user balance
-    getStudentInternalCredits().then((res) => {
-      if (res.success && res.balance !== undefined) {
-        setUserBalance(res.balance);
-      }
-    });
-
-    // 2. Fetch dynamic pricing rules
-    getAllAiPricingAction().then((rules) => {
-      if (rules) {
-        setPricingRules(rules as PricingRule[]);
-      }
-    });
-
-    const savedState = localStorage.getItem("ai_video_state");
-    const pendingGen = localStorage.getItem("pending_video_gen");
-
-    if (savedState) {
-      try {
-        const parsed = JSON.parse(savedState);
-        if (parsed.provider) setProvider(parsed.provider);
-        if (parsed.prompt) setPrompt(parsed.prompt);
-        if (parsed.orientation) setOrientation(parsed.orientation);
-        if (parsed.resolution) setResolution(parsed.resolution);
-        if (parsed.duration) setDuration(parsed.duration);
-
-        // Restore images from Base64
-        if (parsed.firstImageBase64) {
-          setFirstImage(
-            base64ToFile(
-              parsed.firstImageBase64,
-              parsed.firstImageName || "first.png",
-            ),
-          );
-        }
-        if (parsed.lastImageBase64) {
-          setLastImage(
-            base64ToFile(
-              parsed.lastImageBase64,
-              parsed.lastImageName || "last.png",
-            ),
-          );
-        }
-        if (parsed.grokImageBase64) {
-          setGrokImage(
-            base64ToFile(
-              parsed.grokImageBase64,
-              parsed.grokImageName || "grok.png",
-            ),
-          );
-        }
-      } catch (e) {
-        console.error("Error loading saved state:", e);
-      }
-    }
-
-    if (pendingGen) {
-      setIsGenerating(true);
-      setGenerationTaskId(pendingGen);
-      pollStatus(pendingGen);
-    }
-  }, []);
-
-  // Use effects for temporary object URLs to prevent memory leaks and refresh bugs
-  const [firstImageUrl, setFirstImageUrl] = useState<string | null>(null);
-  const [lastImageUrl, setLastImageUrl] = useState<string | null>(null);
-  const [grokImageUrl, setGrokImageUrl] = useState<string | null>(null);
-
-  React.useEffect(() => {
-    if (firstImage) {
-      const url = URL.createObjectURL(firstImage);
-      setFirstImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setFirstImageUrl(null);
-  }, [firstImage]);
-
-  React.useEffect(() => {
-    if (lastImage) {
-      const url = URL.createObjectURL(lastImage);
-      setLastImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setLastImageUrl(null);
-  }, [lastImage]);
-
-  React.useEffect(() => {
-    if (grokImage) {
-      const url = URL.createObjectURL(grokImage);
-      setGrokImageUrl(url);
-      return () => URL.revokeObjectURL(url);
-    }
-    setGrokImageUrl(null);
-  }, [grokImage]);
-
-  // Consolidated Persistence Effect (Prevents race conditions between options and images)
-  React.useEffect(() => {
-    const saveState = async () => {
-      try {
-        const stateToSave: any = {
-          provider,
-          veoModel,
-          grokMode,
-          prompt,
-          orientation,
-          resolution,
-          duration,
-        };
-
-        if (firstImage) {
-          stateToSave.firstImageBase64 = await fileToBase64(firstImage);
-          stateToSave.firstImageName = firstImage.name;
-        }
-        if (lastImage) {
-          stateToSave.lastImageBase64 = await fileToBase64(lastImage);
-          stateToSave.lastImageName = lastImage.name;
-        }
-        if (grokImage) {
-          stateToSave.grokImageBase64 = await fileToBase64(grokImage);
-          stateToSave.grokImageName = grokImage.name;
-        }
-
-        localStorage.setItem("ai_video_state", JSON.stringify(stateToSave));
-      } catch (e) {
-        console.error("Persistence error:", e);
-      }
-    };
-
-    const timer = setTimeout(saveState, 500); // Debounce to prevent lag on typing
-    return () => clearTimeout(timer);
-  }, [
-    provider,
-    prompt,
-    orientation,
-    resolution,
-    duration,
-    firstImage,
-    lastImage,
-    grokImage,
-  ]);
-
-  const handleEnhancePrompt = async (type: "video" | "image" = "video") => {
-    if (!prompt.trim()) return;
-    setIsEnhancing(true);
+  const handleDownload = async (url: string, filename: string) => {
     try {
-      const res = await enhancePromptAction(prompt, type);
-      if (res.success && res.enhancedPrompt) {
-        setPrompt(res.enhancedPrompt);
-        Swal.fire({
-          toast: true,
-          position: "top-end",
-          icon: "success",
-          title: "تم تحسين الوصف بنجاح ✨",
-          showConfirmButton: false,
-          timer: 2000,
-        });
-      }
-    } catch (e) {
-      console.error("Enhancement error", e);
-    } finally {
-      setIsEnhancing(false);
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      window.open(url, "_blank");
     }
   };
 
-  const handleGenerate = async () => {
-    // Check if user is logged in
-    if (!session) {
-      Swal.fire({
-        title: "يجب تسجيل الدخول",
-        text: "يرجى تسجيل الدخول لتتمكن من استخدام خدمات الذكاء الاصطناعي",
-        icon: "warning",
-        showCancelButton: true,
-        confirmButtonText: "تسجيل الدخول",
-        cancelButtonText: "إلغاء",
-        reverseButtons: true,
-      }).then((result) => {
-        if (result.isConfirmed) {
-          const callbackUrl = encodeURIComponent(window.location.href);
-          window.location.href = `/sign-in?callbackUrl=${callbackUrl}`;
+  const pollStatus = async (uuid: string) => {
+    console.log(`[VideoGen] Starting poll for task: ${uuid}`);
+    let attempts = 0;
+    let stopped = false;
+
+    const poll = async () => {
+      if (stopped) return;
+      attempts++;
+
+      if (attempts > 150) { // 150 × 5s = 12.5 دقيقة
+        stopped = true;
+        setIsGenerating(false);
+        toast.error("استغرقت العملية وقتاً طويلاً. يرجى التحقق من الخزنة لاحقاً.");
+        return;
+      }
+
+      console.log(`[VideoGen] Poll attempt ${attempts} for ${uuid}...`);
+      const res = await checkGenerationStatus(uuid);
+
+      if (!res.success) {
+        console.warn(`[VideoGen] Poll failed:`, res.error);
+        if (!stopped) setTimeout(poll, 5000);
+        return;
+      }
+
+      const taskData = res.data;
+      const status = taskData?.status;
+
+      const isCompleted = status === 2 || String(status).toLowerCase() === "completed";
+      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
+
+      if (isCompleted) {
+        stopped = true;
+        setIsGenerating(false);
+
+        const foundUrl =
+          taskData?.generated_video?.[0]?.video_url ||
+          taskData?.video_url ||
+          taskData?.video ||
+          taskData?.files?.[0]?.url ||
+          taskData?.result_url ||
+          taskData?.url ||
+          null;
+
+        console.log(`[VideoGen] Completed! URL: ${foundUrl}`);
+
+        if (foundUrl) {
+          toast.loading("جاري الرفع للسحابة... ☁️", { id: "upload" });
+          const saveResult: any = await updateGenerationStatusAction(
+            uuid, "completed", foundUrl,
+            taskData?.thumbnail_url || ""
+          );
+          toast.dismiss("upload");
+          const displayUrl = saveResult.finalResultUrl || foundUrl;
+          console.log(`[VideoGen] Display URL: ${displayUrl}`);
+          setResultVideoUrl(displayUrl);
+          toast.success("تم توليد الفيديو ورفعه للسحابة بنجاح! ☁️");
+        } else {
+          console.error("[VideoGen] No URL found in:", JSON.stringify(taskData));
+          setGenerationError("تم الانتهاء ولكن لم يتم العثور على رابط الفيديو");
+          toast.error("لم نتمكن من العثور على رابط الفيديو الناتج.");
         }
-      });
-      return;
-    }
+        window.dispatchEvent(new CustomEvent("balanceUpdated"));
 
-    if (!prompt.trim()) {
-      setGenerationError("Please enter a text prompt to generate video");
-      return;
-    }
+      } else if (isFailed) {
+        stopped = true;
+        setIsGenerating(false);
+        const errMsg = taskData?.error_message || taskData?.message || "فشل توليد الفيديو";
+        setGenerationError(errMsg);
+        toast.error(`فشل الطلب: ${errMsg}`);
+        updateGenerationStatusAction(uuid, "failed");
 
+      } else {
+        // لا تزال قيد المعالجة - انتظر وحاول مجدداً
+        if (!stopped) setTimeout(poll, 5000);
+      }
+    };
+
+    // ابدأ أول poll بعد 5 ثواني
+    setTimeout(poll, 5000);
+  };
+
+
+  const handleGenerate = async () => {
+    if (!session) return;
     setIsGenerating(true);
     setGenerationError(null);
     setResultVideoUrl(null);
-    setGenerationTaskId(null);
-    setRawResponseData(null);
 
     try {
       const formData = new FormData();
       formData.append("provider", provider);
-
-      const mappedModel =
-        provider === "Veo"
-          ? veoModel
-          : provider === "Grok"
-            ? "grok-3"
-            : provider === "Bytedance"
-              ? "seedance"
-              : provider === "Kling"
-                ? "kling"
-                : "meta";
-
-      formData.append("model", mappedModel);
+      formData.append("model", provider === "Veo" ? veoModel : "grok-3");
       formData.append("prompt", prompt);
-      formData.append("duration", duration.toString());
+      formData.append("duration", duration);
       formData.append("resolution", resolution);
       formData.append("aspectRatio", orientation);
       formData.append("cost", cost.toString());
-      if (provider === "Grok") {
-        formData.append("mode", grokMode);
-      }
+      formData.append("numResults", numResults.toString());
+      formData.append("mode", grokMode);
 
-      // Append images if present
       if (provider === "Veo") {
         if (firstImage) formData.append("firstImage", firstImage);
         if (lastImage) formData.append("lastImage", lastImage);
-      } else if (provider === "Grok") {
-        if (grokImage) formData.append("image", grokImage);
+      } else if (provider === "Grok" && grokImage) {
+        formData.append("image", grokImage);
       }
-
-      console.log("🚀 [DEBUG] Final Form Data being sent:", {
-        provider,
-        model: mappedModel,
-        duration,
-        resolution,
-        cost
-      });
 
       const res = await generateVideoAction(formData);
-
-      if (!res.success) {
-        setGenerationError(res.error || "Failed to start generation");
+      if (res.success) {
+        pollStatus(res.data.uuid);
+      } else {
+        setGenerationError(res.error || "فشل الطلب");
         setIsGenerating(false);
-        return;
       }
-
-      // Success, started!
-      const taskId = res.data.uuid;
-      setGenerationTaskId(taskId);
-      localStorage.setItem("pending_video_gen", taskId);
-      window.dispatchEvent(new CustomEvent("balanceUpdated"));
-
-      // Start polling
-      pollStatus(taskId);
     } catch (e: any) {
       setGenerationError(e.message);
       setIsGenerating(false);
     }
   };
 
-  const pollStatus = async (uuid: string) => {
-    let attempts = 0;
-    const maxAttempts = 120; // 10 minutes timeout (120 * 5s)
-    let consecutiveErrors = 0;
-
-    const intervalId = setInterval(async () => {
-      attempts++;
-      
-      // 1. Check for max attempts (timeout)
-      if (attempts > maxAttempts) {
-        clearInterval(intervalId);
-        localStorage.removeItem("pending_video_gen");
-        setGenerationError(
-          "استغرق توليد الفيديو وقتاً طويلاً. يرجى مراجعة صفحة 'السجل' بعد قليل، فربما يكتمل في الخلفية. إذا فشل تماماً، سيتم استرداد رصيدك.",
-        );
-        setIsGenerating(false);
-        return;
-      }
-
-      const res = await checkGenerationStatus(uuid);
-      
-      // 2. Handle network/API errors during polling
-      if (!res.success) {
-        consecutiveErrors++;
-        if (consecutiveErrors > 5) {
-          clearInterval(intervalId);
-          setGenerationError("فشل الاتصال المستمر بخادم التحديث. يرجى التحقق من السجل لاحقاً.");
-          setIsGenerating(false);
-        }
-        return; 
-      }
-      
-      consecutiveErrors = 0; // Reset errors on success
-
-      // 3. Process status
-      // 0: pending, 1: generating, 2: completed, 3: failed
-      const status = res.data.status;
-      const isCompleted = status === 2 || String(status).toLowerCase() === "completed" || String(status).toLowerCase() === "success";
-      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
-
-      if (isCompleted) {
-        clearInterval(intervalId);
-        setIsGenerating(false);
-        localStorage.removeItem("pending_video_gen");
-
-        console.log("🔥 Generation Completed! Full Data Object:", res.data);
-
-        // Find URL in typical API response structures
-        let foundUrl = null;
-        if (
-          res.data.generated_video &&
-          res.data.generated_video.length > 0 &&
-          res.data.generated_video[0].video_url
-        ) {
-          foundUrl = res.data.generated_video[0].video_url;
-        } else if (res.data.video) {
-          foundUrl = res.data.video;
-        } else if (res.data.files && res.data.files.length > 0) {
-          foundUrl = res.data.files[0].url;
-        } else if (res.data.result_url) {
-          foundUrl = res.data.result_url;
-        } else if (res.data.url) {
-          foundUrl = res.data.url;
-        } else if (res.data.data && res.data.data.url) {
-          foundUrl = res.data.data.url;
-        } else if (res.data.video_url) {
-          foundUrl = res.data.video_url;
-        }
-
-        if (foundUrl) {
-          setResultVideoUrl(foundUrl);
-        } else {
-          setRawResponseData(res.data);
-          setGenerationError(
-            "تم إنشاء الفيديو بنجاح، ولكن تعذر قراءة الرابط مباشرة. يمكنك العثور عليه في السجل.",
-          );
-        }
-
-        // Update local DB
-        updateGenerationStatusAction(
-          uuid,
-          "completed",
-          foundUrl || "",
-          res.data.thumbnail_url || res.data.thumbnail || "",
-        );
-
-        // Refresh balance
-        getStudentInternalCredits().then((r) => {
-          if (r.success && r.balance !== undefined) {
-            setUserBalance(r.balance);
-            window.dispatchEvent(new CustomEvent("balanceUpdated"));
-          }
-        });
-      } else if (isFailed) {
-        clearInterval(intervalId);
-        setIsGenerating(false);
-        localStorage.removeItem("pending_video_gen");
-
-        let errorData =
-          res.data.error ||
-          res.data.message ||
-          res.data.result ||
-          res.data.reason;
-        if (typeof errorData === "object") {
-          errorData = errorData.message || JSON.stringify(errorData);
-        }
-
-        const errorMessage =
-          errorData ||
-          "فشل الخادم في معالجة طلب الفيديو.";
-        
-        const displayError = `فشل إنشاء الفيديو: ${errorMessage}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`;
-        setGenerationError(displayError);
-
-        // Update local DB to failed
-        await updateGenerationStatusAction(uuid, "failed");
-        
-        // Trigger Refund
-        const refundRes = await refundFailedTaskAction(uuid, errorMessage);
-        if (refundRes.success) {
-          getStudentInternalCredits().then((r) => {
-            if (r.success && r.balance !== undefined) {
-              setUserBalance(r.balance);
-              window.dispatchEvent(new CustomEvent("balanceUpdated"));
-            }
-          });
-        }
-      }
-    }, 5000);
-  };
-
-
   return (
-    <div className="relative z-10 w-full pb-20">
-      {/* Header Section */}
-      <div className="text-center px-4 mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-          مولّد الفيديو بالذكاء الاصطناعي
-        </h1>
-        <p className="text-zinc-500 mb-6 font-medium">
-          أنشئ فيديوهات احترافية من نص بسيط باستخدام أحدث نماذج الذكاء الاصطناعي
-        </p>
-      </div>
+    <div className="relative w-full max-w-7xl mx-auto pb-20 animate-in fade-in duration-1000">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 md:gap-8 items-start">
+        {/* Viewport Column - First on Mobile */}
+        <div className="lg:col-span-5 order-1 lg:order-2">
+          <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] overflow-hidden shadow-[0_20px_60px_rgba(0,0,0,0.06)] flex flex-col aspect-[4/5] relative">
+            <div className="p-3 md:p-4 bg-zinc-50/80 backdrop-blur-md border-b border-zinc-100 flex items-center justify-between relative z-20">
+              <div className="flex items-center gap-2 md:gap-3">
+                <div className="flex gap-1">
+                  <div className="size-1.5 md:size-2 rounded-full bg-red-400" />
+                  <div className="size-1.5 md:size-2 rounded-full bg-amber-400" />
+                  <div className="size-1.5 md:size-2 rounded-full bg-emerald-400" />
+                </div>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="size-1.5 md:size-2 rounded-full bg-red-500 animate-pulse" />
+                <span className="text-[8px] md:text-[10px] font-black text-red-500 tracking-widest uppercase font-mono">
+                  بث مباشر
+                </span>
+              </div>
+            </div>
 
-      {/* Main Grid Content */}
-      <div className="max-w-[1000px] mx-auto px-4  gap-6">
-        {/* Left Column - Controls */}
-        <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm">
-          {/* Tabs */}
-          <div className="flex bg-zinc-100 mx-auto w-full md:w-2/3 p-1 rounded-lg mb-6 gap-1">
-            <button className="flex-[2] flex items-center justify-center gap-2 bg-primary text-primary-foreground text-sm font-semibold py-2 rounded-md shadow transition-all active:scale-95">
-              <Video className="w-4 h-4" />
-              إنشاء جديد
-            </button>
-            <button
-              onClick={handleClearAll}
-              className="flex-1 flex items-center justify-center gap-2 bg-white text-zinc-500 hover:text-red-500 text-sm font-semibold py-2 rounded-md border border-zinc-200 hover:border-red-200 transition-all active:scale-95 group"
+            <div className="flex-1 relative bg-[#0a0a0c] overflow-hidden flex items-center justify-center">
+              <div
+                className="absolute inset-0 pointer-events-none opacity-[0.03] z-10"
+                style={{
+                  backgroundImage:
+                    "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))",
+                  backgroundSize: "100% 2px, 3px 100%",
+                }}
+              />
+              <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.4)_100%)] pointer-events-none z-10" />
+
+              <AnimatePresence mode="wait">
+                {isGenerating ? (
+                  <motion.div
+                    key="gen"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    className="flex flex-col items-center gap-6 relative z-20"
+                  >
+                    <div className="size-12 md:size-16 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+                    <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest animate-pulse">
+                      جاري توليد الفيديو...
+                    </p>
+                  </motion.div>
+                ) : resultVideoUrl ? (
+                  <motion.video
+                    key="video"
+                    src={resultVideoUrl}
+                    className="size-full object-contain relative z-10"
+                    controls
+                    autoPlay
+                    loop
+                    crossOrigin="anonymous"
+                    onError={(e) => {
+                      console.error("[VideoGen] Video Playback Error:", e);
+                      toast.error(
+                        "حدث خطأ أثناء تشغيل الفيديو. قد يكون الرابط غير صالح.",
+                      );
+                    }}
+                  />
+                ) : (
+                  <div className="flex flex-col items-center gap-4 opacity-20 relative z-20">
+                    <VideoIcon className="size-12 md:size-16 text-white" />
+                    <p className="text-[8px] md:text-[10px] font-black text-white uppercase tracking-widest">
+                      في انتظار الأمر
+                    </p>
+                  </div>
+                )}
+              </AnimatePresence>
+            </div>
+
+            <div className="p-4 md:p-5 bg-zinc-50 border-t border-zinc-100 flex items-center justify-between">
+              <div className="space-y-0.5">
+                <p className="text-[8px] md:text-[9px] font-black text-zinc-400 uppercase tracking-widest font-mono">
+                  الحالة: جاهز
+                </p>
+                <p className="text-[8px] md:text-[9px] font-black text-zinc-300 uppercase tracking-widest font-mono">
+                  محرك أوركيدة
+                </p>
+              </div>
+              {resultVideoUrl && (
+                <button
+                  onClick={() =>
+                    handleDownload(resultVideoUrl, `studio-${Date.now()}.mp4`)
+                  }
+                  className="px-4 md:px-6 py-2 bg-zinc-900 text-white rounded-xl text-[8px] md:text-[10px] font-black uppercase tracking-widest hover:bg-primary transition-all"
+                >
+                  تحميل
+                </button>
+              )}
+            </div>
+          </div>
+
+          <div className="mt-6 md:mt-8 bg-primary/5 border border-primary/10 rounded-3xl p-4 md:p-6 flex gap-3 md:gap-4 items-start">
+            <div className="size-8 md:size-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0">
+              <Info className="size-4 md:size-5" />
+            </div>
+            <p
+              className="text-[10px] md:text-xs font-bold text-zinc-500 leading-relaxed"
+              dir="rtl"
             >
-              <Trash2 className="w-4 h-4 group-hover:animate-bounce" />
-              مسح الحقول
-            </button>
+              للحصول على نتائج احترافية، استخدم وصفاً مفصلاً يشمل حركة الكاميرا
+              (مثلاً: Zoom Slow) ونوع الإضاءة (مثلاً: Cinematic lighting).
+            </p>
           </div>
+        </div>
 
-          {/* Providers */}
-          <div className="mb-6">
-            <label className="block text-sm font-semibold text-zinc-700 mb-3">
-              اختر مزود توليد الفيديو
-            </label>
-            <div className="flex flex-wrap gap-2">
+        {/* Configuration Panel - Second on Mobile */}
+        <div className="lg:col-span-7 space-y-6 md:space-y-8 order-2 lg:order-1">
+          <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-6 md:p-8 shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative group">
+            <div className="flex items-center justify-between mb-6 md:mb-8">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                  <Terminal className="size-5 text-primary" />
+                </div>
+                <h2 className="text-lg md:text-xl font-bold text-zinc-900 tracking-tight">
+                  إعدادات المشهد
+                </h2>
+              </div>
               <button
-                onClick={() => {
-                  setProvider("Veo");
-                  setResolution("High 720p");
-                  setOrientation("Landscape (16:9)");
-                  setDuration("6");
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Veo" ? "border-primary bg-primary/10 text-primary" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
+                onClick={() => setPrompt("")}
+                className="text-xs font-bold text-zinc-400 hover:text-red-500 transition-colors"
               >
-                G Veo{" "}
-                <span className="bg-primary text-primary-foreground text-[9px] px-1.5 py-0.5 rounded">
-                  Google AI
-                </span>{" "}
-              </button>
-              <button
-                onClick={() => {
-                  setProvider("Grok");
-                  setDuration("6");
-                  // Optional defaults for Grok
-                }}
-                className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border text-sm font-semibold transition ${provider === "Grok" ? "border-primary bg-primary/10 text-primary" : "border-zinc-200 text-zinc-700 hover:bg-zinc-50"}`}
-              >
-                Grok{" "}
-                <span className="bg-[#5de270] text-black text-[9px] px-1.5 py-0.5 rounded font-bold">
-                  xAI
-                </span>{" "}
+                تصفير
               </button>
             </div>
-          </div>
 
-          {/* Dynamic Content Based on Provider */}
-          {provider === "Veo" && (
-            <div className="space-y-6 mb-8">
-              {/* Fixed Model Display */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    الموديل (Version)
-                  </label>
-                  <div className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
-                    <Zap className="w-4 h-4" /> Veo 3.1 Fast
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    المدة (Duration)
-                  </label>
-                  <div className="flex gap-2">
-                    {["6", "8", "10"].map((sec) => (
-                      <button
-                        key={sec}
-                        onClick={() => setDuration(sec)}
-                        className={`flex-1 py-2 rounded-lg border text-xs font-bold transition ${duration === sec ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                      >
-                        {sec} ثانية
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              {/* Image References First/Last */}
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                  الصور المرجعية (اختياري)
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={firstImageRef}
-                    onChange={(e) => setFirstImage(e.target.files?.[0] || null)}
-                  />
-                  <div
-                    onClick={() => firstImageRef.current?.click()}
-                    className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer overflow-hidden relative"
-                  >
-                    {firstImage ? (
-                      <div className="absolute inset-0 w-full h-full group">
-                        {firstImageUrl && (
-                          <img
-                            src={firstImageUrl}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setFirstImage(null);
-                            if (firstImageRef.current)
-                              firstImageRef.current.value = "";
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
-                        <span className="text-xs font-medium">
-                          الصورة الأولى
-                        </span>
-                      </>
-                    )}
-                  </div>
-
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={lastImageRef}
-                    onChange={(e) => setLastImage(e.target.files?.[0] || null)}
-                  />
-                  <div
-                    onClick={() => lastImageRef.current?.click()}
-                    className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer overflow-hidden relative"
-                  >
-                    {lastImage ? (
-                      <div className="absolute inset-0 w-full h-full group">
-                        {lastImageUrl && (
-                          <img
-                            src={lastImageUrl}
-                            className="w-full h-full object-cover"
-                          />
-                        )}
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setLastImage(null);
-                            if (lastImageRef.current)
-                              lastImageRef.current.value = "";
-                          }}
-                          className="absolute top-2 right-2 bg-red-500 text-white p-1 rounded-full opacity-0 group-hover:opacity-100 transition-opacity z-10 hover:bg-red-600 shadow-lg"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
-                        <span className="text-xs font-medium">
-                          الصورة الأخيرة
-                        </span>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </div>
-
-              {/* Prompt */}
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <label className="block text-sm font-semibold text-zinc-700">
-                    النص التوجيهي (Prompt)
-                  </label>
+            <div className="mb-8 md:mb-10">
+              <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4 block">
+                محرك الإنتاج
+              </label>
+              <div className="flex p-1.5 bg-zinc-50 rounded-2xl border border-zinc-200 gap-2">
+                {[
+                  { id: "Veo", name: "Google Veo" },
+                  { id: "Grok", name: "xAI Grok" },
+                ].map((p) => (
                   <button
-                    onClick={() => handleEnhancePrompt("video")}
-                    disabled={isEnhancing || !prompt.trim()}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition disabled:opacity-50"
+                    key={p.id}
+                    onClick={() => setProvider(p.id)}
+                    className={`flex-1 py-2.5 md:py-3 rounded-xl text-xs md:text-sm font-bold transition-all ${provider === p.id ? "bg-white shadow-xl text-zinc-900 ring-1 ring-zinc-200" : "text-zinc-400 hover:text-zinc-600"}`}
                   >
-                    {isEnhancing ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3 h-3" />
-                    )}
-                    تحسين الوصف ذكياً ✨
+                    {p.name}
                   </button>
-                  {prompt && (
-                    <button
-                      onClick={() => setPrompt("")}
-                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition ml-auto"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      مسح
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none"
-                  placeholder="صف الفيديو الذي تريد إنشاؤه باستخدام Veo..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                ></textarea>
-              </div>
-
-              {/* Aspect Ratio & Resolution */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    نسبة العرض إلى الارتفاع
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setOrientation("Landscape (16:9)")}
-                      className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Landscape (16:9)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      <div className="w-16 h-8 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
-                        <Monitor className="w-5 h-5 opacity-40" />
-                      </div>
-                      <span className="text-xs font-bold">
-                        16:9 (Landscape)
-                      </span>
-                    </button>
-
-                    <button
-                      onClick={() => setOrientation("Portrait (9:16)")}
-                      className={`flex flex-col items-center justify-center p-6 rounded-lg border transition ${orientation === "Portrait (9:16)" ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      <div className="w-8 h-12 flex items-center justify-center bg-zinc-100 rounded border border-zinc-200 mb-2">
-                        <Smartphone className="w-5 h-5 opacity-40" />
-                      </div>
-                      <span className="text-xs font-bold">9:16 (Portrait)</span>
-                    </button>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    الدقة
-                  </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setResolution("High 720p")}
-                      className={`flex-1 flex flex-col items-start px-3 py-2 rounded-lg border text-xs font-semibold transition ${resolution === "High 720p" ? "border-[#ff7622]" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${resolution === "High 720p" ? "bg-[#ff7622]" : "border border-zinc-300"}`}
-                        ></div>
-                        <span
-                          className={
-                            resolution === "High 720p" ? "text-zinc-900" : ""
-                          }
-                        >
-                          720p
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-zinc-400 pl-3">
-                        جودة عالية
-                      </span>
-                    </button>
-                    <button
-                      onClick={() => setResolution("Full 1080p")}
-                      className={`flex-1 flex flex-col items-start px-3 py-2 rounded-lg border text-xs font-semibold transition ${resolution === "Full 1080p" ? "border-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${resolution === "Full 1080p" ? "bg-primary" : "border border-zinc-300"}`}
-                        ></div>
-                        <span
-                          className={
-                            resolution === "Full 1080p" ? "text-zinc-900" : ""
-                          }
-                        >
-                          1080p
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-zinc-400 pl-3">
-                        Full HD فائقة الوضوح
-                      </span>
-                    </button>
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
-          )}
 
-          {provider === "Grok" && (
-            <div className="space-y-6 mb-8">
-              {/* Model & Image Ref */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    الموديل
-                  </label>
-                  <div className="relative">
-                    <div className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
-                      <Zap className="w-4 h-4" /> Grok 3 Video
-                    </div>
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    الصورة المرجعية
-                  </label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    className="hidden"
-                    ref={grokImageRef}
-                    onChange={(e) => setGrokImage(e.target.files?.[0] || null)}
-                  />
-                  <button
-                    onClick={() =>
-                      !grokImage
-                        ? grokImageRef.current?.click()
-                        : setGrokImage(null)
-                    }
-                    className="w-full flex items-center justify-center gap-2 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 transition relative overflow-hidden"
-                  >
-                    {grokImage ? (
-                      <div className="flex items-center justify-between w-full">
-                        <span className="text-primary font-semibold truncate px-2">
-                          <ImageIcon className="w-4 h-4 inline mr-1" />{" "}
-                          {grokImage.name}
-                        </span>
-                        <Trash2
-                          className="w-4 h-4 text-red-500 hover:text-red-600 transition cursor-pointer"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setGrokImage(null);
-                            if (grokImageRef.current)
-                              grokImageRef.current.value = "";
-                          }}
-                        />
-                      </div>
-                    ) : (
-                      <>
-                        <ImageIcon className="w-4 h-4" /> اختر صورة
-                      </>
-                    )}
-                  </button>
-                </div>
-              </div>
+            <div className="mb-6 md:mb-8">
+              <textarea
+                className="w-full bg-zinc-50 border border-zinc-200 rounded-2xl md:rounded-3xl p-5 md:p-6 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all min-h-[140px] md:min-h-[160px] resize-none leading-relaxed placeholder:text-zinc-400"
+                placeholder="صف المشهد الذي تريد تخيله..."
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+              />
+            </div>
 
-              {/* Fixed Generation Mode */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 mb-8">
               <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-3">
-                  وضع التوليد (Generation Mode)
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 block">
+                  أبعاد الكاميرا
                 </label>
-                <div className="w-full border border-zinc-200 rounded-lg px-3 py-2 text-sm text-primary font-bold bg-primary/5 flex items-center gap-2">
-                  <Zap className="w-4 h-4" /> عادي (Normal)
-                </div>
-              </div>
-
-              {/* Prompt */}
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <label className="block text-sm font-semibold text-zinc-700">
-                    النص التوجيهي (Prompt)
-                  </label>
-                  <button
-                    onClick={() => handleEnhancePrompt("video")}
-                    disabled={isEnhancing || !prompt.trim()}
-                    className="flex items-center gap-1.5 text-[11px] font-bold text-primary hover:text-primary/80 transition disabled:opacity-50"
-                  >
-                    {isEnhancing ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Sparkles className="w-3 h-3" />
-                    )}
-                    تحسين الوصف ذكياً ✨
-                  </button>
-                  {prompt && (
-                    <button
-                      onClick={() => setPrompt("")}
-                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition ml-auto"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      مسح
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-primary min-h-[100px] resize-none"
-                  placeholder="صف الفيديو الذي تريد إنشاؤه باستخدام Grok..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                ></textarea>
-              </div>
-
-              {/* Orientation */}
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-3">
-                  الاتجاه
-                </label>
-                <div className="flex flex-wrap gap-2">
+                <div className="grid grid-cols-2 gap-3">
                   {[
-                    {
-                      id: "Landscape (16:9)",
-                      icon: Monitor,
-                      label: "أفقي (16:9)",
-                    },
+                    { id: "Landscape (16:9)", icon: Monitor, label: "عريض" },
                     {
                       id: "Portrait (9:16)",
                       icon: Smartphone,
-                      label: "عمودي (9:16)",
-                    },
-                    { id: "Square (1:1)", icon: Square, label: "مربع (1:1)" },
-                    {
-                      id: "Vertical (2:3)",
-                      icon: Smartphone,
-                      label: "طولي (2:3)",
-                    },
-                    {
-                      id: "Horizontal (3:2)",
-                      icon: Monitor,
-                      label: "عرضي (3:2)",
+                      label: "عمودي",
                     },
                   ].map((item) => (
                     <button
                       key={item.id}
                       onClick={() => setOrientation(item.id)}
-                      className={`flex flex-col items-center justify-center py-3 px-1 rounded-lg border transition w-[80px] ${orientation === item.id ? "border-primary text-primary bg-primary/5" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      className={`flex flex-col items-center justify-center p-3 md:p-4 rounded-2xl border transition-all ${orientation === item.id ? "bg-primary/5 border-primary/20 text-zinc-900" : "bg-zinc-50 border-zinc-200 text-zinc-400"}`}
                     >
-                      <item.icon className="w-5 h-5 mb-2" />
-                      <span className="text-[9px] text-center font-bold leading-tight">
+                      <item.icon className="size-4 md:size-5 mb-2 opacity-50" />
+                      <span className="text-[10px] font-black uppercase">
                         {item.label}
                       </span>
                     </button>
                   ))}
                 </div>
               </div>
-
-              {/* Resolution & Duration */}
-              <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-6">
                 <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
+                  <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 block">
                     الدقة
                   </label>
-                  <div className="flex gap-2">
-                    <button
-                      onClick={() => setResolution("Standard 480p")}
-                      className={`flex-1 flex flex-col items-start px-3 py-2 rounded-lg border text-xs font-semibold transition ${resolution === "Standard 480p" ? "border-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                    >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${resolution === "Standard 480p" ? "bg-primary" : "border border-zinc-300"}`}
-                        ></div>
-                        <span
-                          className={
-                            resolution === "Standard 480p"
-                              ? "text-zinc-900"
-                              : ""
-                          }
+                  <div className="flex p-1 bg-zinc-50 rounded-xl border border-zinc-200 gap-1">
+                    {["High 720p", "Full 1080p"].map((res) => (
+                      <button
+                        key={res}
+                        onClick={() => setResolution(res)}
+                        className={`flex-1 py-2 rounded-lg text-[10px] font-black uppercase ${resolution === res ? "bg-white shadow-sm text-zinc-900" : "text-zinc-400"}`}
+                      >
+                        {res.split(" ")[1]}
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                {provider === "Grok" && (
+                  <div>
+                    <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-3 block">
+                      عدد النتائج
+                    </label>
+                    <div className="flex gap-2">
+                      {[1, 2, 3, 4].map((n) => (
+                        <button
+                          key={n}
+                          onClick={() => setNumResults(n)}
+                          className={`size-9 md:size-10 rounded-xl border text-[10px] md:text-xs font-black transition-all ${numResults === n ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-zinc-50 border-zinc-200 text-zinc-400 hover:text-zinc-900"}`}
                         >
-                          Standard
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-zinc-400 pl-3">
-                        480p (SD)
-                      </span>
-                    </button>
+                          {n}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {provider === "Grok" && (
+              <div className="mb-8 p-5 md:p-6 bg-zinc-50 rounded-2xl md:rounded-3xl border border-zinc-100">
+                <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest mb-4 block">
+                  وضع الإنتاج
+                </label>
+                <div className="flex gap-3 md:gap-4">
+                  {[
+                    { id: "normal", name: "عادي" },
+                    { id: "dynamic", name: "ديناميكي" },
+                  ].map((m) => (
                     <button
-                      onClick={() => setResolution("High 720p")}
-                      className={`flex-1 flex flex-col items-start px-3 py-2 rounded-lg border text-xs font-semibold transition ${resolution === "High 720p" ? "border-[#ff7622]" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
+                      key={m.id}
+                      onClick={() => setGrokMode(m.id)}
+                      className={`flex-1 py-2.5 md:py-3 px-3 md:px-4 rounded-xl text-[9px] md:text-[10px] font-black uppercase transition-all border ${grokMode === m.id ? "bg-white border-zinc-200 text-zinc-900 shadow-sm" : "bg-transparent border-transparent text-zinc-400 hover:text-zinc-600"}`}
                     >
-                      <div className="flex items-center gap-1 mb-1">
-                        <div
-                          className={`w-2 h-2 rounded-full ${resolution === "High 720p" ? "bg-[#ff7622]" : "border border-zinc-300"}`}
-                        ></div>
-                        <span
-                          className={
-                            resolution === "High 720p" ? "text-zinc-900" : ""
-                          }
-                        >
-                          High
-                        </span>
-                      </div>
-                      <span className="text-[10px] text-zinc-400 pl-3">
-                        720p (HD)
-                      </span>
+                      {m.name}
                     </button>
-                  </div>
+                  ))}
                 </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    Duration
-                  </label>
-                  <div className="flex gap-2">
-                    {["6", "10"].map((sec) => (
-                      <button
-                        key={sec}
-                        onClick={() => setDuration(sec)}
-                        className={`flex-1 flex items-center justify-center gap-2 px-3 py-3 rounded-lg border text-xs font-semibold transition ${duration === sec ? "border-primary bg-primary/5 text-primary" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                      >
-                         {sec} ثوانٍ
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {provider === "Meta" && (
-            <div className="space-y-6 mb-8">
-              {/* Meta Top Options */}
-              <div className="grid grid-cols-2 gap-8">
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    Duration
-                  </label>
-                  <div className="flex gap-2">
-                    {["5", "10"].map((sec) => (
-                      <button
-                        key={sec}
-                        onClick={() => setDuration(sec)}
-                        className={`flex items-center gap-2 px-4 py-1.5 rounded-full border text-sm transition ${duration === sec ? "border-primary text-primary bg-primary/5" : "border-zinc-200 text-zinc-500 hover:bg-zinc-50"}`}
-                      >
-                        <div className={`w-1.5 h-1.5 rounded-full ${duration === sec ? "bg-primary" : "bg-zinc-300"}`}></div>{" "}
-                        {sec}s
-                      </button>
-                    ))}
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    Number of results
-                  </label>
-                  <div className="flex gap-2">
-                    {[1, 2, 3, 4].map((num) => (
-                      <button
-                        key={num}
-                        className={`w-8 h-8 rounded-full border text-xs font-semibold flex items-center justify-center transition ${num === 1 ? "border-primary text-primary" : "border-zinc-200 text-zinc-500"}`}
-                      >
-                        {num}
-                      </button>
-                    ))}
-                  </div>
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                  Image Reference
-                </label>
-                <div className="w-[150px]">
-                  <button className="w-full flex items-center justify-center gap-2 border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-600 hover:bg-zinc-50 transition">
-                    <ImageIcon className="w-4 h-4" /> Select Image
-                  </button>
-                </div>
-              </div>
-
-              {/* Prompt */}
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <label className="block text-sm font-semibold text-zinc-700">
-                    Prompt
-                  </label>
-                  {prompt && (
-                    <button
-                      onClick={() => setPrompt("")}
-                      className="flex items-center gap-1 text-[11px] font-bold text-red-500 hover:text-red-600 transition"
-                    >
-                      <Trash2 className="w-3 h-3" />
-                      Clear
-                    </button>
-                  )}
-                </div>
-                <textarea
-                  className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 min-h-[100px] resize-none"
-                  placeholder="Describe the video you want to generate..."
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                ></textarea>
-              </div>
-            </div>
-          )}
-
-          {(provider === "Bytedance" || provider === "Kling") && (
-            <div className="space-y-6 mb-8">
-              {/* Model & Gen Mode */}
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    Model
-                  </label>
-                  <div className="relative">
-                    <select className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
-                      <option>
-                        {provider === "Bytedance"
-                          ? "♪ Seedance 2"
-                          : "Kling 3.0"}
-                      </option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
-                <div>
-                  <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                    Generation Mode
-                  </label>
-                  <div className="relative">
-                    <select className="w-full appearance-none border border-zinc-200 rounded-lg px-3 py-2 text-sm text-zinc-700 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white">
-                      <option>
-                        {provider === "Bytedance" ? "Fast" : "Standard"}
-                      </option>
-                    </select>
-                    <ChevronDown className="w-4 h-4 text-zinc-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
-                  </div>
-                </div>
-              </div>
-
-              {/* Image References First/Last */}
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-2">
-                  Image References (Optional)
-                </label>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer">
-                    <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
-                    <span className="text-xs font-medium">First Image</span>
-                  </div>
-                  <div className="border border-dashed border-zinc-300 rounded-lg p-6 flex flex-col items-center justify-center text-zinc-400 hover:bg-zinc-50 transition cursor-pointer">
-                    <ImageIcon className="w-6 h-6 mb-2 opacity-50" />
-                    <span className="text-xs font-medium">Last Image</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Prompt */}
-              <div>
-                <div className="flex justify-between items-end mb-2">
-                  <label className="block text-sm font-semibold text-zinc-700">
-                    Prompt
-                  </label>
-                </div>
-                <textarea
-                  className="w-full border border-zinc-200 rounded-lg p-3 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500 min-h-[100px] resize-none"
-                  placeholder={`Describe the video you want to generate with ${provider}...`}
-                  value={prompt}
-                  onChange={(e) => setPrompt(e.target.value)}
-                ></textarea>
-              </div>
-
-              {/* Aspect Ratio */}
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-3">
-                  Aspect Ratio
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {["16:9", "9:16", "1:1", "3:4", "4:3", "21:9"]
-                    .slice(0, provider === "Kling" ? 3 : 6)
-                    .map((ratio) => (
-                      <button
-                        key={ratio}
-                        onClick={() => setOrientation(ratio)}
-                        className={`flex items-center justify-center px-4 py-1.5 rounded-full border transition ${orientation === ratio ? "border-[#ff7622] text-[#ff7622] bg-[#fff5ef]" : "border-zinc-200 text-zinc-500"}`}
-                      >
-                        <span className="text-xs font-semibold flex items-center gap-1.5">
-                          {orientation === ratio && (
-                            <div className="w-1.5 h-1.5 rounded-full bg-[#ff7622]"></div>
-                          )}
-                          {ratio}
-                        </span>
-                      </button>
-                    ))}
-                </div>
-              </div>
-
-              {/* Duration Buttons */}
-              <div>
-                <label className="block text-sm font-semibold text-zinc-700 mb-3">
-                  Duration
-                </label>
-                <div className="flex flex-wrap gap-2">
-                  {Array.from({ length: 13 }, (_, i) => i + 3).map((secs) => {
-                    if (provider === "Bytedance" && secs === 3) return null; // Seedance starts from 4s
-                    return (
-                      <button
-                        key={secs}
-                        onClick={() => setDuration(secs.toString())}
-                        className={`px-3 py-1.5 rounded-full border text-xs font-semibold flex items-center justify-center transition ${duration === secs.toString() ? "border-[#ff7622] text-[#ff7622] bg-[#fff5ef]" : "border-zinc-200 text-zinc-500"}`}
-                      >
-                        {secs}s
-                      </button>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          )}
-
-          {/* Generate Button Area */}
-          <div className="flex flex-col gap-3 pt-2">
-            {generationError && (
-              <div className="bg-red-50 text-red-600 border border-red-200 px-4 py-3 rounded-lg text-sm flex items-start gap-2">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p>{generationError}</p>
               </div>
             )}
-            <div className="flex justify-between  items-end w-full">
-              <div className="flex flex-col items-end mr-4">
-                <span className="text-xs text-zinc-500 mb-1">
-                  الرصيد المتبقي:{" "}
-                  <span className="font-bold text-zinc-800">
-                    {userBalance !== null ? userBalance : "..."}
-                  </span>{" "}
-                  <Zap className="w-3 h-3 inline text-primary mb-0.5" />
-                </span>
-                <span className="text-xs font-semibold text-emerald-600">
-                  تكلفة هذا التوليد: {cost} كريدت
-                </span>
+
+            {provider === "Veo" && (
+              <div className="grid grid-cols-2 gap-4 pt-6 md:pt-8 border-t border-zinc-100">
+                {[
+                  {
+                    label: "البداية",
+                    file: firstImage,
+                    ref: firstImageRef,
+                    set: setFirstImage,
+                    url: firstImageUrl,
+                  },
+                  {
+                    label: "النهاية",
+                    file: lastImage,
+                    ref: lastImageRef,
+                    set: setLastImage,
+                    url: lastImageUrl,
+                  },
+                ].map((img, i) => (
+                  <div
+                    key={i}
+                    onClick={() => img.ref.current?.click()}
+                    className="aspect-video bg-zinc-50 border border-dashed border-zinc-200 rounded-xl md:rounded-2xl flex flex-col items-center justify-center cursor-pointer group hover:bg-zinc-100 transition-all overflow-hidden relative"
+                  >
+                    <input
+                      type="file"
+                      ref={img.ref}
+                      className="hidden"
+                      onChange={(e) => img.set(e.target.files?.[0] || null)}
+                    />
+                    {img.file ? (
+                      <img src={img.url!} className="size-full object-cover" />
+                    ) : (
+                      <div className="text-center">
+                        <ImageIcon className="size-5 md:size-6 text-zinc-300 mb-1.5 md:mb-2 mx-auto" />
+                        <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                          {img.label}
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                ))}
               </div>
-              <button
-                onClick={handleGenerate}
-                disabled={isGenerating}
-                className="bg-primary hover:bg-primary/90 text-primary-foreground px-6 py-2.5 rounded-lg font-semibold flex items-center justify-center gap-2 transition shrink-0 disabled:opacity-70 disabled:cursor-not-allowed min-w-[200px]"
-              >
-                {isGenerating ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin" />
-                    جارٍ التوليد...
-                  </>
-                ) : (
-                  <>
-                    توليد باستخدام {provider} <Zap className="w-4 h-4 ml-1" />
-                  </>
-                )}
-              </button>
+            )}
+
+            {provider === "Grok" && (
+              <div className="pt-6 md:pt-8 border-t border-zinc-100">
+                <div
+                  onClick={() => grokImageRef.current?.click()}
+                  className="aspect-video bg-zinc-50 border border-dashed border-zinc-200 rounded-xl md:rounded-2xl flex flex-col items-center justify-center cursor-pointer group hover:bg-zinc-100 transition-all overflow-hidden relative"
+                >
+                  <input
+                    type="file"
+                    ref={grokImageRef}
+                    className="hidden"
+                    onChange={(e) => setGrokImage(e.target.files?.[0] || null)}
+                  />
+                  {grokImage ? (
+                    <img
+                      src={grokImageUrl!}
+                      className="size-full object-cover"
+                    />
+                  ) : (
+                    <div className="text-center">
+                      <ImageIcon className="size-5 md:size-6 text-zinc-300 mb-1.5 md:mb-2 mx-auto" />
+                      <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                        أضف صورة مرجعية
+                      </span>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+          </div>
+
+          <div className="bg-white border border-zinc-200 rounded-[2rem] md:rounded-[2.5rem] p-5 md:p-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex flex-col md:flex-row items-center justify-between gap-6">
+            <div className="flex items-center gap-4 w-full md:w-auto">
+              <div className="size-10 md:size-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shrink-0">
+                <Zap className="size-5 md:size-6" />
+              </div>
+              <div>
+                <p className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase">
+                  تكلفة الإنتاج
+                </p>
+                <p className="text-lg md:text-xl font-black text-zinc-900">
+                  {cost} نقطة
+                </p>
+              </div>
             </div>
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className="w-full md:w-auto bg-primary hover:bg-primary/90 text-white px-8 md:px-12 py-3.5 md:py-4 rounded-xl md:rounded-2xl font-black uppercase tracking-widest text-xs md:text-sm shadow-xl shadow-primary/20 transition-all disabled:opacity-30"
+            >
+              {isGenerating ? "جاري التوليد..." : "توليد الفيديو"}
+            </button>
           </div>
         </div>
-
-        {/* Dynamic Generation Display Area (Added to show results) */}
-        {(isGenerating || resultVideoUrl || rawResponseData) && (
-          <div className="bg-white rounded-2xl p-6 border border-zinc-200 shadow-sm mt-6 flex flex-col w-full min-h-[400px]">
-            <div className="text-center mb-6">
-              <h2 className="text-xl font-bold text-zinc-800 mb-1">
-                نتيجة التوليد
-              </h2>
-              <p className="text-xs text-zinc-500">
-                {isGenerating
-                  ? "الفيديو قيد التوليد الآن..."
-                  : "فيديوك جاهز! يمكنك مشاهدته وتحميله"}
-              </p>
-            </div>
-
-            <div className="relative rounded-xl overflow-hidden bg-zinc-900 flex-1 min-h-[400px] flex items-center justify-center">
-              {isGenerating ? (
-                <div className="flex flex-col items-center justify-center p-8 z-20">
-                  <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
-                  <p className="text-white font-semibold text-lg animate-pulse mb-1">
-                    جارٍ توليد الفيديو بالذكاء الاصطناعي...
-                  </p>
-                  <p className="text-zinc-400 text-xs">
-                    قد يستغرق ذلك بضع دقائق
-                  </p>
-                </div>
-              ) : resultVideoUrl ? (
-                <div className="absolute inset-0 w-full h-full z-10 group">
-                  <video
-                    src={resultVideoUrl}
-                    controls
-                    autoPlay
-                    muted
-                    playsInline
-                    crossOrigin="anonymous"
-                    loop
-                    className="w-full h-full object-contain bg-black"
-                  />
-                  <button
-                    onClick={() => handleDownload(resultVideoUrl, `video-${Date.now()}.mp4`)}
-                    className="absolute top-4 left-4 z-20 bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/20 text-white px-4 py-2 rounded-xl flex items-center gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300 shadow-xl"
-                  >
-                    <Download className="w-4 h-4" />
-                    تحميل الفيديو
-                  </button>
-                </div>
-              ) : rawResponseData ? (
-                <div className="absolute inset-0 w-full h-full overflow-auto bg-zinc-950 p-6 text-emerald-400 font-mono text-sm block whitespace-pre-wrap text-left z-20">
-                  <span className="text-zinc-500 mb-2 block">
-                    // Debug API Response:
-                  </span>
-                  {JSON.stringify(rawResponseData, null, 2)}
-                </div>
-              ) : null}
-            </div>
-          </div>
-        )}
       </div>
     </div>
   );

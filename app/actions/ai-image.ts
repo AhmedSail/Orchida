@@ -54,18 +54,20 @@ export async function generateImageAction(input: string | FormData) {
     };
     const dbProvider = PROVIDER_DB_MAP[provider] || provider || "Banana Pro";
 
-    // إذا كانت التكلفة المرسلة هي 0، نعتمدها مباشرة (للتجربة المجانية)
+    // حساب التكلفة: إذا أرسل الـ client تكلفة > 0 نستخدمها (تشمل بالفعل numResults × سعر الصورة)
     let cost = 0;
     if (data.cost === 0 || data.cost === "0") {
       cost = 0;
+    } else if (data.cost && Number(data.cost) > 0) {
+      cost = Math.ceil(Number(data.cost));
     } else {
       const dynamicCost = await getAiPricingAction("image", dbProvider, resQuality);
-      cost = dynamicCost !== null ? dynamicCost : Math.ceil(Number(data.cost) || 2);
+      cost = dynamicCost !== null ? dynamicCost : 2;
     }
 
     // الخصم من الرصيد فقط إذا كانت التكلفة أكبر من 0
     if (cost > 0) {
-      await checkAndDeductCredits(sessionData.session.userId, cost, `Image Generation: ${model} (${resQuality})`);
+      await checkAndDeductCredits(sessionData.session.userId, cost, `Image Generation: ${model} (${resQuality}) ×${finalNumResults}`);
     }
 
     const apiKey = await getGeminiGenApiKey();
@@ -96,7 +98,10 @@ export async function generateImageAction(input: string | FormData) {
         grokOrientation = "portrait";
       }
       apiFormData.append("orientation", grokOrientation);
+      // إرسال المعامل بالصيغتين لضمان التوافق مع API
       apiFormData.append("num_result", finalNumResults.toString());
+      apiFormData.append("num_results", finalNumResults.toString());
+      console.log(`[GrokImage API] orientation: ${grokOrientation}, num_result: ${finalNumResults}, hasFile: ${!!data.imageReference}`);
     } else if (provider === "Meta AI") {
       let metaOrientation = "square";
       const orientStr = (orientation || finalAspectRatio || "").toLowerCase();

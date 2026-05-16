@@ -30,8 +30,27 @@ export async function uploadFromUrl(url: string, prefix: string = "ai-results") 
     const arrayBuffer = await response.arrayBuffer();
     const buffer = Buffer.from(arrayBuffer);
     
-    const contentType = response.headers.get("content-type") || "application/octet-stream";
-    const extension = contentType.split("/")[1] || "bin";
+    // استخراج الامتداد من الرابط مباشرة (لأن presigned URLs تُرجع octet-stream)
+    const urlPath = url.split("?")[0]; // إزالة query params
+    const urlExtension = urlPath.split(".").pop()?.toLowerCase();
+    
+    const extToMime: Record<string, string> = {
+      mp4: "video/mp4",
+      webm: "video/webm",
+      jpg: "image/jpeg",
+      jpeg: "image/jpeg",
+      png: "image/png",
+      webp: "image/webp",
+      gif: "image/gif",
+    };
+    
+    const headerContentType = response.headers.get("content-type") || "";
+    const contentType = 
+      (urlExtension && extToMime[urlExtension]) ||
+      (headerContentType !== "application/octet-stream" ? headerContentType : null) ||
+      "application/octet-stream";
+    
+    const extension = urlExtension || contentType.split("/")[1] || "bin";
     const fileName = `${prefix}/${crypto.randomUUID()}.${extension}`;
 
     await r2Client.send(
@@ -43,7 +62,9 @@ export async function uploadFromUrl(url: string, prefix: string = "ai-results") 
       })
     );
 
-    return `${R2_PUBLIC_DOMAIN}/${fileName}`;
+    const finalUrl = `${R2_PUBLIC_DOMAIN}/${fileName}`;
+    console.log(`[R2 Upload] Success: ${fileName} → ${finalUrl}`);
+    return finalUrl;
   } catch (error) {
     console.error("Error uploading from URL to R2:", error);
     return null;

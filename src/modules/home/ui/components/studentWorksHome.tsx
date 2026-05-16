@@ -37,7 +37,7 @@ const StudentWorksHome = ({
   };
 
   return (
-    <section className="mt-10 container mx-auto px-4" dir="rtl">
+    <section className="mt-10 container mx-auto px-4" dir="rtl" suppressHydrationWarning>
       <div>
         <motion.h2
           className="text-xl lg:text-3xl text-primary font-bold mb-6 text-center"

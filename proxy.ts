@@ -12,7 +12,13 @@ export default async function proxy(req: NextRequest) {
   const pathname = req.nextUrl.pathname;
 
   // جلب الجلسة (Session) باستخدام BetterAuth
-  const session = await auth.api.getSession({ headers: req.headers });
+  let session = null;
+  try {
+    session = await auth.api.getSession({ headers: req.headers });
+  } catch (e) {
+    console.error("[Proxy Error] Session fetch failed:", e);
+  }
+  
   const role = session?.user?.role;
   const userId = session?.user?.id;
 

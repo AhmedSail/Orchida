@@ -30,13 +30,18 @@ import { ImageGenAction } from "./image-gen/ImageGenAction";
 import { ImageGenResults } from "./image-gen/ImageGenResults";
 import { ImageGenLightbox } from "./image-gen/ImageGenLightbox";
 import { useSearchParams } from "next/navigation";
+import { ImageIcon, Zap, Loader2 } from "lucide-react";
 
 interface ImageGenViewProps {
   userBalance?: number | null;
 }
 
-export default function ImageGenView({ userBalance: propBalance }: ImageGenViewProps) {
-  const [userBalance, setUserBalance] = useState<number | null>(propBalance ?? null);
+export default function ImageGenView({
+  userBalance: propBalance,
+}: ImageGenViewProps) {
+  const [userBalance, setUserBalance] = useState<number | null>(
+    propBalance ?? null,
+  );
 
   useEffect(() => {
     if (propBalance !== undefined) {
@@ -66,16 +71,14 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
 
   // خريطة تحويل أسماء الواجهة إلى أسماء قاعدة البيانات
   const PROVIDER_DB_MAP: Record<string, string> = {
-    "Imagen": "Banana Pro",
-    "Grok": "Grok",
+    Imagen: "Banana Pro",
+    Grok: "Grok",
     "Meta AI": "Meta AI",
   };
 
   const cost = (() => {
-    // تحويل اسم المزود من الواجهة إلى الاسم المخزن في قاعدة البيانات
     const dbProvider = PROVIDER_DB_MAP[provider] || provider;
 
-    // توحيد أسماء الجودة لتطابق ما في قاعدة البيانات
     const checkQuality = (q: string) => {
       if (q === "1K") return ["1K", "720p", "HD"];
       if (q === "2K") return ["2K", "1080p", "Full HD"];
@@ -89,10 +92,18 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
       (r) =>
         r.serviceType === "image" &&
         r.provider.toLowerCase() === dbProvider.toLowerCase() &&
-        targetQualities.some(tq => tq.toLowerCase() === r.quality.toLowerCase())
+        targetQualities.some(
+          (tq) => tq.toLowerCase() === r.quality.toLowerCase(),
+        ),
     );
 
-    return match ? match.credits : 3;
+    const baseCredits = match ? match.credits : 3;
+
+    // للـ Grok وMeta AI: سعر الصورة الواحدة × عدد الصور المطلوبة
+    const multiplier =
+      provider === "Grok" || provider === "Meta AI" ? numResults : 1;
+
+    return baseCredits * multiplier;
   })();
 
   // States for generation
@@ -152,7 +163,9 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
         if (parsed.outputFormat) setOutputFormat(parsed.outputFormat);
         if (parsed.orientation) setOrientation(parsed.orientation);
         if (parsed.imageBase64) {
-          setImageReference(base64ToFile(parsed.imageBase64, parsed.imageName || "ref.png"));
+          setImageReference(
+            base64ToFile(parsed.imageBase64, parsed.imageName || "ref.png"),
+          );
         }
       } catch (e) {
         console.error("Error loading image state:", e);
@@ -167,7 +180,15 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
 
   useEffect(() => {
     const saveState = async () => {
-      const state: any = { provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation };
+      const state: any = {
+        provider,
+        prompt,
+        aspectRatio,
+        outputFormat,
+        resolution,
+        numResults,
+        orientation,
+      };
       if (imageReference) {
         state.imageBase64 = await fileToBase64(imageReference);
         state.imageName = imageReference.name;
@@ -175,16 +196,27 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
       localStorage.setItem("ai_image_state", JSON.stringify(state));
     };
     saveState();
-  }, [provider, prompt, aspectRatio, outputFormat, resolution, numResults, orientation, imageReference]);
+  }, [
+    provider,
+    prompt,
+    aspectRatio,
+    outputFormat,
+    resolution,
+    numResults,
+    orientation,
+    imageReference,
+  ]);
 
   const handleClearAll = () => {
     setPrompt("");
     setImageReference(null);
     setResultImageUrls([]);
     setGenerationError(null);
-    const fileInput = document.getElementById("image-ref-input") as HTMLInputElement;
+    const fileInput = document.getElementById(
+      "image-ref-input",
+    ) as HTMLInputElement;
     if (fileInput) fileInput.value = "";
-    
+
     Swal.fire({
       toast: true,
       position: "top-end",
@@ -249,17 +281,33 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
     try {
       const data: any = {
         prompt,
-        model: provider === "Imagen" ? model : provider === "Meta AI" ? "meta-ai-image" : "Grok",
-        aspectRatio: (provider === "Grok" || provider === "Meta AI")
-            ? orientation.includes("16:9") ? "16:9" : orientation.includes("9:16") ? "9:16" : orientation.includes("2:3") ? "2:3" : orientation.includes("3:2") ? "3:2" : "1:1"
+        model:
+          provider === "Imagen"
+            ? model
+            : provider === "Meta AI"
+              ? "meta-ai-image"
+              : "Grok",
+        aspectRatio:
+          provider === "Grok" || provider === "Meta AI"
+            ? orientation.includes("16:9")
+              ? "16:9"
+              : orientation.includes("9:16")
+                ? "9:16"
+                : orientation.includes("2:3")
+                  ? "2:3"
+                  : orientation.includes("3:2")
+                    ? "3:2"
+                    : "1:1"
             : aspectRatio,
         orientation,
         outputFormat,
-        numResults: (provider === "Grok" || provider === "Meta AI") ? numResults : 1,
+        numResults:
+          provider === "Grok" || provider === "Meta AI" ? numResults : 1,
         cost,
         provider,
         style,
-        resolution: (provider === "Grok" || provider === "Meta AI") ? "" : resolution,
+        resolution:
+          provider === "Grok" || provider === "Meta AI" ? "" : resolution,
       };
 
       if (imageReference) {
@@ -277,7 +325,10 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
           window.dispatchEvent(new CustomEvent("balanceUpdated"));
           startPolling(uuid);
         } else {
-          const imgUrl = res.data.image_url || res.data.url || (res.data.data && res.data.data[0]?.url);
+          const imgUrl =
+            res.data.image_url ||
+            res.data.url ||
+            (res.data.data && res.data.data[0]?.url);
           if (imgUrl) {
             setResultImageUrls([imgUrl]);
             setIsGenerating(false);
@@ -305,37 +356,77 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
         const statusRes = await checkGenerationStatus(uuid);
         if (!statusRes.success) return;
 
-        const status = statusRes.data.status;
+        // Handle both flat and nested GeminiGen responses
+        const taskData = statusRes.data?.data || statusRes.data;
+        const status = taskData?.status;
+
         if (status === 2 || String(status).toLowerCase() === "completed") {
           clearInterval(intervalId);
           setIsGenerating(false);
           localStorage.removeItem("pending_image_gen");
 
-          const foundUrls = [];
-          if (statusRes.data.image_url) foundUrls.push(statusRes.data.image_url);
-          else if (statusRes.data.url) foundUrls.push(statusRes.data.url);
-          else if (statusRes.data.data && Array.isArray(statusRes.data.data)) {
-            statusRes.data.data.forEach((item: any) => { if (item.url) foundUrls.push(item.url); });
-          } else if (statusRes.data.generated_image && Array.isArray(statusRes.data.generated_image)) {
-            statusRes.data.generated_image.forEach((item: any) => { if (item.image_url) foundUrls.push(item.image_url); });
+          const foundUrls: string[] = [];
+          if (taskData.image_url) foundUrls.push(taskData.image_url);
+          else if (taskData.url) foundUrls.push(taskData.url);
+          else if (taskData.data && Array.isArray(taskData.data)) {
+            taskData.data.forEach((item: any) => {
+              if (item.url) foundUrls.push(item.url);
+            });
+          } else if (
+            taskData.generated_image &&
+            Array.isArray(taskData.generated_image)
+          ) {
+            taskData.generated_image.forEach((item: any) => {
+              if (item.image_url) foundUrls.push(item.image_url);
+            });
           }
 
           if (foundUrls.length > 0) {
-            setResultImageUrls(foundUrls);
-            updateGenerationStatusAction(uuid, "completed", foundUrls[0], undefined, JSON.stringify(foundUrls));
+            // رفع للكلاود وعرض الروابط المحفوظة
+            const saveResult: any = await updateGenerationStatusAction(
+              uuid,
+              "completed",
+              foundUrls[0],
+              undefined,
+              JSON.stringify(foundUrls),
+            );
+            // استخدام روابط R2 إن توفرت
+            if (saveResult.finalResultsJson) {
+              try {
+                const cloudUrls = JSON.parse(saveResult.finalResultsJson);
+                if (Array.isArray(cloudUrls) && cloudUrls.length > 0) {
+                  setResultImageUrls(cloudUrls);
+                } else {
+                  setResultImageUrls([saveResult.finalResultUrl || foundUrls[0]]);
+                }
+              } catch {
+                setResultImageUrls([saveResult.finalResultUrl || foundUrls[0]]);
+              }
+            } else {
+              setResultImageUrls([saveResult.finalResultUrl || foundUrls[0]]);
+            }
             window.dispatchEvent(new CustomEvent("balanceUpdated"));
           } else {
-            setGenerationError("اكتمل التوليد ولكن لم نجد الرابط في البيانات المستلمة.");
+            setGenerationError(
+              "اكتمل التوليد ولكن لم نجد الرابط في البيانات المستلمة.",
+            );
           }
         } else if (status === 3 || String(status).toLowerCase() === "failed") {
           clearInterval(intervalId);
           setIsGenerating(false);
           localStorage.removeItem("pending_image_gen");
 
-          let errorInfo = statusRes.data.error || statusRes.data.message || statusRes.data.reason || "مشكلة تقنية في الخادم المزود";
-          if (typeof errorInfo === "object") errorInfo = errorInfo.message || JSON.stringify(errorInfo);
+          let errorInfo =
+            taskData.error ||
+            taskData.message ||
+            taskData.reason ||
+            "مشكلة تقنية في الخادم المزود";
+          if (typeof errorInfo === "object")
+            errorInfo = errorInfo.message || JSON.stringify(errorInfo);
 
-          setGenerationError(`فشل توليد الصورة: ${errorInfo}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`);
+          setGenerationError(
+            `فشل توليد الصورة: ${errorInfo}. تم استرجاع الـ ${cost} كريدت الخاصة بك.`,
+          );
           updateGenerationStatusAction(uuid, "failed");
           refundFailedTaskAction(uuid, errorInfo).then(() => {
             getStudentInternalCredits().then((cr) => {
@@ -353,69 +444,160 @@ export default function ImageGenView({ userBalance: propBalance }: ImageGenViewP
   };
 
   return (
-    <div className="relative z-10 w-full pb-20" dir="rtl">
-      <ImageGenHeader onClearAll={handleClearAll} />
-
-      <div className="max-w-[1200px] mx-auto px-4 grid grid-cols-1 lg:grid-cols-2 gap-6 pt-6">
-        {/* Left Column - Controls */}
-        <div className="bg-white rounded-3xl p-6 border border-zinc-200 shadow-sm flex flex-col h-fit">
-          <ImageGenProviders provider={provider} setProvider={setProvider} />
-          
-          <ImageGenPrompt 
-            prompt={prompt} 
-            setPrompt={setPrompt} 
-            isEnhancing={isEnhancing} 
-            onEnhance={handleEnhancePrompt} 
-            provider={provider} 
-          />
-
-          <ImageGenSettings 
-            provider={provider}
-            imageReference={imageReference}
-            setImageReference={setImageReference}
-            numResults={numResults}
-            setNumResults={setNumResults}
-            aspectRatio={aspectRatio}
-            setAspectRatio={setAspectRatio}
-            orientation={orientation}
-            setOrientation={setOrientation}
-            outputFormat={outputFormat}
-            setOutputFormat={setOutputFormat}
-            resolution={resolution}
-            setResolution={setResolution}
-          />
-
-          {generationError && (
-            <div className="mb-4 bg-red-50 text-red-600 border border-red-100 px-4 py-3 rounded-2xl text-xs flex items-center gap-2 animate-pulse">
-              {generationError}
-            </div>
-          )}
-
-          <ImageGenAction 
-            userBalance={userBalance} 
-            cost={cost} 
-            isGenerating={isGenerating} 
-            onGenerate={handleGenerate} 
-            provider={provider} 
-          />
+    <div
+      className="relative w-full max-w-7xl mx-auto pb-32 animate-in fade-in duration-1000"
+      dir="rtl"
+    >
+      {/* Visual Header */}
+      <div className="mb-12 text-center px-4">
+        <h2 className="text-4xl font-black text-zinc-900 tracking-tight mb-3 italic">
+          الصور
+        </h2>
+        <div className="flex items-center justify-center gap-3">
+          <div className="h-px w-8 bg-primary/20" />
+          <p className="text-zinc-500 font-bold text-xs uppercase tracking-widest">
+            نظام الإنتاج الإبداعي
+          </p>
+          <div className="h-px w-8 bg-primary/20" />
         </div>
-
-        {/* Right Column - Results */}
-        <ImageGenResults 
-          isGenerating={isGenerating} 
-          resultImageUrls={resultImageUrls} 
-          onOpenLightbox={(url, idx) => { setLightboxUrl(url); setLightboxIdx(idx); }} 
-        />
       </div>
 
-      <ImageGenLightbox 
-        lightboxUrl={lightboxUrl} 
-        lightboxIdx={lightboxIdx} 
-        resultImageUrls={resultImageUrls} 
-        onClose={() => setLightboxUrl(null)} 
-        onPrev={() => { const prev = (lightboxIdx - 1 + resultImageUrls.length) % resultImageUrls.length; setLightboxIdx(prev); setLightboxUrl(resultImageUrls[prev]); }}
-        onNext={() => { const next = (lightboxIdx + 1) % resultImageUrls.length; setLightboxIdx(next); setLightboxUrl(resultImageUrls[next]); }}
-        onSelect={(url, index) => { setLightboxIdx(index); setLightboxUrl(url); }}
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        {/* Left: Settings Panel */}
+        <div className="lg:col-span-7 space-y-8">
+          <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-8 shadow-[0_20px_50px_rgba(0,0,0,0.05)] relative overflow-hidden">
+            <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-60" />
+
+            <div className="flex items-center justify-between mb-10">
+              <div className="flex items-center gap-3">
+                <div className="size-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                  <ImageIcon className="size-5 text-primary" />
+                </div>
+                <h3 className="text-xl font-bold text-zinc-900">مختبر الصور</h3>
+              </div>
+              <button
+                onClick={handleClearAll}
+                className="text-xs font-bold text-zinc-500 hover:text-red-400 transition-colors"
+              >
+                تفريغ الإعدادات
+              </button>
+            </div>
+
+            <div className="space-y-10">
+              {/* Provider Selector */}
+              <ImageGenProviders
+                provider={provider}
+                setProvider={setProvider}
+              />
+
+              {/* Prompt Field */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <label className="text-[10px] font-black text-zinc-500 uppercase tracking-widest">
+                    الموجه البصري
+                  </label>
+                  <button
+                    onClick={handleEnhancePrompt}
+                    disabled={isEnhancing || !prompt.trim()}
+                    className="text-[10px] font-black text-primary hover:text-primary/80 transition-all bg-primary/10 py-1.5 px-3 rounded-lg border border-primary/20 disabled:opacity-30"
+                  >
+                    {isEnhancing ? "تحسين..." : "تحسين الموجه آلياً ✨"}
+                  </button>
+                </div>
+                <textarea
+                  className="w-full bg-zinc-50 border border-zinc-200 rounded-3xl p-6 text-sm text-zinc-900 focus:outline-none focus:ring-2 focus:ring-primary/20 transition-all min-h-[140px] resize-none leading-relaxed placeholder:text-zinc-400"
+                  placeholder="صف المشهد الذي تريد تخيله بالتفصيل..."
+                  value={prompt}
+                  onChange={(e) => setPrompt(e.target.value)}
+                />
+              </div>
+
+              {/* Settings Grid */}
+              <div className="bg-zinc-50/50 border border-zinc-200 rounded-3xl p-6">
+                <ImageGenSettings
+                  provider={provider}
+                  imageReference={imageReference}
+                  setImageReference={setImageReference}
+                  numResults={numResults}
+                  setNumResults={setNumResults}
+                  aspectRatio={aspectRatio}
+                  setAspectRatio={setAspectRatio}
+                  orientation={orientation}
+                  setOrientation={setOrientation}
+                  outputFormat={outputFormat}
+                  setOutputFormat={setOutputFormat}
+                  resolution={resolution}
+                  setResolution={setResolution}
+                />
+              </div>
+            </div>
+          </div>
+
+          {/* Action Hub */}
+          <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-6 flex items-center justify-between shadow-[0_20px_50px_rgba(0,0,0,0.05)]">
+            <div className="flex items-center gap-4 px-4">
+              <div className="size-12 rounded-2xl bg-emerald-500/5 border border-emerald-500/10 flex items-center justify-center text-emerald-500">
+                <Zap className="size-6" />
+              </div>
+              <div>
+                <p className="text-[10px] font-black text-zinc-400 uppercase tracking-wider mb-0.5">
+                  تكلفة التوليد
+                </p>
+                <p className="text-xl font-black text-zinc-900">
+                  {cost} <span className="text-xs text-emerald-600">نقطة</span>
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleGenerate}
+              disabled={isGenerating || !prompt.trim()}
+              className="bg-primary hover:bg-primary/90 text-white px-12 py-4 rounded-2xl font-black uppercase tracking-widest text-sm shadow-xl shadow-primary/20 transition-all hover:scale-105 active:scale-95 disabled:opacity-50 flex items-center gap-3"
+            >
+              {isGenerating ? (
+                <Loader2 className="size-5 animate-spin" />
+              ) : (
+                <Zap className="size-5" />
+              )}
+              {isGenerating ? "جاري التوليد..." : "توليد الصورة"}
+            </button>
+          </div>
+        </div>
+
+        {/* Right: Results Canvas */}
+        <div className="lg:col-span-5">
+          <div className="sticky top-24">
+            <ImageGenResults
+              isGenerating={isGenerating}
+              resultImageUrls={resultImageUrls}
+              onOpenLightbox={(url, idx) => {
+                setLightboxUrl(url);
+                setLightboxIdx(idx);
+              }}
+            />
+          </div>
+        </div>
+      </div>
+
+      <ImageGenLightbox
+        lightboxUrl={lightboxUrl}
+        lightboxIdx={lightboxIdx}
+        resultImageUrls={resultImageUrls}
+        onClose={() => setLightboxUrl(null)}
+        onPrev={() => {
+          const prev =
+            (lightboxIdx - 1 + resultImageUrls.length) % resultImageUrls.length;
+          setLightboxIdx(prev);
+          setLightboxUrl(resultImageUrls[prev]);
+        }}
+        onNext={() => {
+          const next = (lightboxIdx + 1) % resultImageUrls.length;
+          setLightboxIdx(next);
+          setLightboxUrl(resultImageUrls[next]);
+        }}
+        onSelect={(url, index) => {
+          setLightboxIdx(index);
+          setLightboxUrl(url);
+        }}
       />
     </div>
   );

@@ -152,7 +152,10 @@ export default function LatestNewsUser({ news }: { news: NewsType[] }) {
                           </span>
                         </div>
                         <div className="w-12 h-px bg-white/20" />
-                        <span className="text-white/80 text-xs font-bold uppercase tracking-widest">
+                        <span 
+                          className="text-white/80 text-xs font-bold uppercase tracking-widest"
+                          suppressHydrationWarning
+                        >
                           {item.publishedAt
                             ? new Date(item.publishedAt).toLocaleDateString(
                                 "ar-EG",

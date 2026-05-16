@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { Geist, Geist_Mono, Tajawal } from "next/font/google";
 import { ViewTransitions } from "next-view-transitions";
 import PwaRegister from "@/components/PwaRegister";
+import { GlobalLoading } from "@/src/components/providers/global-loading";
+import { SmoothScrollProvider } from "@/src/components/providers/smooth-scroll";
 import "./globals.css";
 
 const tajawal = Tajawal({
@@ -106,7 +108,10 @@ export default function RootLayout({
         className={`${tajawal.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ViewTransitions>{children}</ViewTransitions>
+        <GlobalLoading />
+        <SmoothScrollProvider>
+          <ViewTransitions>{children}</ViewTransitions>
+        </SmoothScrollProvider>
       </body>
     </html>
   );

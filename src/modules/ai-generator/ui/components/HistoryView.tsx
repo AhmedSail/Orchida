@@ -19,6 +19,7 @@ import {
   Filter,
   Trash2,
   Lock,
+  Maximize,
 } from "lucide-react";
 import {
   fetchGenerationHistoryAction,
@@ -52,18 +53,18 @@ const STATUS_MAP: Record<
   { label: string; color: string; icon: React.ElementType }
 > = {
   pending: {
-    label: "جارٍ العمل",
-    color: "text-blue-500 bg-blue-50 border-blue-200",
+    label: "جاري",
+    color: "text-primary bg-primary/5 border-primary/10",
     icon: Loader2,
   },
   completed: {
     label: "مكتمل",
-    color: "text-emerald-600 bg-emerald-50 border-emerald-200",
+    color: "text-emerald-600 bg-emerald-50 border-emerald-100",
     icon: CheckCircle,
   },
   failed: {
     label: "فشل",
-    color: "text-red-500 bg-red-50 border-red-200",
+    color: "text-red-600 bg-red-50 border-red-100",
     icon: XCircle,
   },
 };
@@ -88,7 +89,6 @@ const HistoryItemCard = React.memo(
     // محاولة الحصول على صورة مصغرة
     let displayImage = item.thumbnailUrl || item.resultUrl;
 
-    // إذا لم يوجد رابط مباشر، نحاول استخراجه من JSON (لحالة الصور المتعددة)
     if (!displayImage && item.resultsJson) {
       try {
         const parsed = JSON.parse(item.resultsJson);
@@ -103,12 +103,12 @@ const HistoryItemCard = React.memo(
     return (
       <div
         onClick={() => (item.status === "completed" ? onSelect(item) : null)}
-        className={`bg-white rounded-2xl border border-zinc-200 shadow-sm overflow-hidden flex flex-col transition hover:shadow-md ${
+        className={`group bg-white border border-zinc-200 rounded-[2rem] overflow-hidden flex flex-col transition-all duration-500 hover:shadow-[0_30px_60px_rgba(0,0,0,0.06)] hover:border-primary/30 ${
           item.status === "completed" ? "cursor-pointer" : ""
         }`}
       >
-        {/* Thumbnail */}
-        <div className="relative bg-zinc-900 aspect-video flex items-center justify-center overflow-hidden">
+        {/* Thumbnail Viewport */}
+        <div className="relative bg-[#0a0a0c] aspect-video flex items-center justify-center overflow-hidden">
           {displayImage ? (
             <Image
               src={displayImage}
@@ -117,99 +117,93 @@ const HistoryItemCard = React.memo(
               height={300}
               unoptimized
               loading="lazy"
-              className="w-full h-full object-cover"
+              className="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105"
             />
           ) : (
-            <div className="flex flex-col items-center text-zinc-600">
+            <div className="flex flex-col items-center gap-3 text-zinc-700 opacity-20">
               {item.type === "video" ? (
-                <Video className="w-10 h-10 opacity-30" />
+                <Video className="size-10" />
               ) : (
-                <ImageIcon className="w-10 h-10 opacity-30" />
+                <ImageIcon className="size-10" />
               )}
             </div>
           )}
 
-          {/* Play overlay */}
-          {item.status === "completed" && videoUrl && (
-            <div className="absolute inset-0 bg-black/30 flex items-center justify-center opacity-0 hover:opacity-100 transition">
-              <div className="w-14 h-14 bg-white/90 rounded-full flex items-center justify-center shadow-lg">
-                <Play className="w-6 h-6 text-primary fill-primary mr-[-2px]" />
+          {/* Viewport Overlay Effects */}
+          <div
+            className="absolute inset-0 pointer-events-none opacity-[0.03]"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%)",
+              backgroundSize: "100% 2px",
+            }}
+          />
+
+          {/* Action Overlay */}
+          {item.status === "completed" && (
+            <div className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-500 backdrop-blur-sm">
+              <div className="size-14 bg-white/10 backdrop-blur-xl rounded-full flex items-center justify-center border border-white/20 shadow-2xl scale-90 group-hover:scale-100 transition-transform duration-500">
+                {item.type === "video" ? (
+                  <Play className="size-6 text-white fill-white ml-0.5" />
+                ) : (
+                  <Maximize className="size-6 text-white" />
+                )}
               </div>
             </div>
           )}
 
           {/* Status Badge */}
           <div
-            className={`absolute top-2 right-2 flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-bold ${statusInfo.color}`}
+            className={`absolute top-4 right-4 flex items-center gap-2 px-3 py-1.5 rounded-xl border text-[9px] font-black tracking-widest shadow-xl backdrop-blur-md ${statusInfo.color}`}
           >
             <StatusIcon
-              className={`w-3 h-3 ${item.status === "pending" ? "animate-spin" : ""}`}
+              className={`size-3 ${item.status === "pending" ? "animate-spin" : ""}`}
             />
             {statusInfo.label}
           </div>
 
-          {/* Type & Count badge */}
-          <div className="absolute top-2 left-2 flex flex-col gap-1 items-start">
-            <div className="bg-black/50 text-white text-[10px] font-bold px-2 py-0.5 rounded-full">
-              {item.type === "video" ? "فيديو" : "صورة"}
+          {/* Type Indicator */}
+          <div className="absolute top-4 left-4">
+            <div className="bg-white/10 backdrop-blur-md text-white text-[9px] font-black px-3 py-1.5 rounded-xl border border-white/10 uppercase tracking-widest shadow-xl">
+              {item.type === "video" ? "MOTION" : "STILL"}
             </div>
-            {item.type === "image" &&
-              item.resultsJson &&
-              (() => {
-                try {
-                  const arr = JSON.parse(item.resultsJson);
-                  if (Array.isArray(arr) && arr.length > 0) {
-                    return (
-                      <div className="bg-primary/80 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm border border-white/20">
-                        {arr.length} صور
-                      </div>
-                    );
-                  }
-                } catch {
-                  return null;
-                }
-              })()}
           </div>
         </div>
 
-        {/* Info */}
-        <div className="p-4 flex flex-col gap-2 flex-1">
-          <p className="text-sm font-semibold text-zinc-800 line-clamp-2 leading-relaxed h-[40px]">
-            {item.prompt || "—"}
-          </p>
-
-          <div className="flex items-center gap-2 flex-wrap">
-            <span className="bg-primary/10 text-primary text-[10px] font-bold px-2 py-0.5 rounded-full">
+        {/* Studio Content Info */}
+        <div className="p-6 flex flex-col gap-4 flex-1 bg-white">
+          <div className="space-y-1.5">
+            <p className="text-[10px] font-black text-primary uppercase tracking-widest opacity-60">
               {item.model}
-            </span>
-            {item.resolution && (
-              <span className="bg-zinc-100 text-zinc-500 text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                {item.resolution}
-              </span>
-            )}
+            </p>
+            <p className="text-xs font-bold text-zinc-900 line-clamp-2 leading-relaxed min-h-[40px]">
+              {item.prompt || "NO_PROMPT_METADATA"}
+            </p>
           </div>
 
-          <div className="flex items-center justify-between mt-auto pt-2 border-t border-zinc-100">
-            <span className="flex items-center gap-1 text-[11px] text-zinc-400">
-              <Clock className="w-3 h-3" />
-              {new Date(item.createdAt).toLocaleDateString("ar-EG")}
-            </span>
+          <div className="flex items-center justify-between mt-auto pt-6 border-t border-zinc-50">
+            <div className="flex items-center gap-2 text-[9px] font-black text-zinc-400 font-mono tracking-widest">
+              <Clock className="size-3.5 text-zinc-300" />
+              {new Date(item.createdAt).toLocaleDateString("en-US", {
+                month: "short",
+                day: "numeric",
+              })}
+            </div>
 
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2">
               {item.status === "pending" && (
                 <button
                   onClick={(e) => onSync(e, item)}
-                  title="تحديث الحالة"
-                  className="p-1.5 text-blue-400 hover:text-blue-600 hover:bg-blue-50 rounded-md transition-colors"
+                  className="size-9 flex items-center justify-center bg-zinc-50 text-primary border border-zinc-100 rounded-xl hover:bg-white hover:border-primary/30 transition-all shadow-sm"
                 >
-                  <RefreshCw className="w-3.5 h-3.5" />
+                  <RefreshCw className="size-4" />
                 </button>
               )}
               <button
                 onClick={(e) => onDelete(e, item.id)}
-                className="p-1.5 text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-md transition-colors"
+                className="size-9 flex items-center justify-center bg-zinc-50 text-zinc-400 border border-zinc-100 rounded-xl hover:bg-red-50 hover:text-red-500 hover:border-red-100 transition-all shadow-sm"
               >
-                <Trash2 className="w-3.5 h-3.5" />
+                <Trash2 className="size-4" />
               </button>
             </div>
           </div>
@@ -220,8 +214,6 @@ const HistoryItemCard = React.memo(
 );
 
 HistoryItemCard.displayName = "HistoryItemCard";
-
-// STATUS_MAP moved above HistoryItemCard (see top of file)
 
 export default function HistoryView({ isActive }: { isActive?: boolean }) {
   const [items, setItems] = useState<HistoryItem[]>([]);
@@ -293,7 +285,8 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
       confirmButtonText: "نعم، احذفه!",
       cancelButtonText: "إلغاء",
       reverseButtons: true,
-      background: "#fff",
+      background: "#09090b",
+      color: "#fff",
     });
 
     if (result.isConfirmed) {
@@ -308,6 +301,8 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
             icon: "success",
             timer: 1500,
             showConfirmButton: false,
+            background: "#09090b",
+            color: "#fff",
           });
         } else {
           Swal.fire("خطأ!", res.error || "حدث خطأ أثناء الحذف", "error");
@@ -339,43 +334,72 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
           title: "تعذر الاتصال بالسيرفر حالياً",
           showConfirmButton: false,
           timer: 2000,
+          background: "#09090b",
+          color: "#fff",
         });
         return;
       }
 
-      const status = res.data.status;
-      const isCompleted = status === 2 || String(status).toLowerCase() === "completed" || String(status).toLowerCase() === "success";
-      const isFailed = status === 3 || String(status).toLowerCase() === "failed" || String(status).toLowerCase() === "error";
+      // Handle both flat and nested GeminiGen responses
+      const taskData = res.data?.data || res.data;
+      const status = taskData?.status;
+      
+      // Full log so we can debug field names
+      console.log("[HistoryView Sync] Raw taskData:", JSON.stringify(taskData, null, 2));
+      
+      const isCompleted =
+        status === 2 ||
+        String(status).toLowerCase() === "completed" ||
+        String(status).toLowerCase() === "success";
+      const isFailed =
+        status === 3 ||
+        String(status).toLowerCase() === "failed" ||
+        String(status).toLowerCase() === "error";
 
       if (isCompleted) {
-        let foundUrl = null;
-        if (res.data.generated_video?.[0]?.video_url) foundUrl = res.data.generated_video[0].video_url;
-        else if (res.data.video) foundUrl = res.data.video;
-        else if (res.data.files?.[0]?.url) foundUrl = res.data.files[0].url;
-        else if (res.data.url) foundUrl = res.data.url;
+        // Try every possible field name GeminiGen might use
+        const foundUrl =
+          taskData?.generated_video?.[0]?.video_url ||
+          taskData?.video_url ||
+          taskData?.video ||
+          taskData?.files?.[0]?.url ||
+          taskData?.files?.[0]?.video_url ||
+          taskData?.result_url ||
+          taskData?.output_url ||
+          taskData?.url ||
+          taskData?.media_url ||
+          taskData?.output?.[0]?.url ||
+          taskData?.outputs?.[0]?.url ||
+          null;
+
+        console.log("[HistoryView Sync] Found URL:", foundUrl);
 
         await updateGenerationStatusAction(
           item.taskUuid,
           "completed",
           foundUrl || "",
-          res.data.thumbnail_url || res.data.thumbnail || ""
+          taskData?.thumbnail_url || taskData?.thumbnail || "",
         );
-        
+
         Swal.fire({
           icon: "success",
           title: "اكتمل التوليد!",
           text: "تم تحديث الحالة بنجاح.",
           timer: 2000,
+          background: "#09090b",
+          color: "#fff",
         });
         loadHistory(page, filter);
       } else if (isFailed) {
         await updateGenerationStatusAction(item.taskUuid, "failed");
         await refundFailedTaskAction(item.taskUuid, res.data.error || "Failed");
-        
+
         Swal.fire({
           icon: "info",
           title: "فشل التوليد",
           text: "تم التأكد من فشل العملية وإعادة الرصيد لمحفظتك.",
+          background: "#09090b",
+          color: "#fff",
         });
         loadHistory(page, filter);
       } else {
@@ -386,12 +410,57 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
           title: "ما زال قيد المعالجة...",
           showConfirmButton: false,
           timer: 2000,
+          background: "#09090b",
+          color: "#fff",
         });
       }
     } catch (err) {
       console.error("Sync error:", err);
     } finally {
       setIsSyncing(null);
+    }
+  };
+
+  const handleDownload = async (url: string, filename: string) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = window.URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+      window.open(url, "_blank");
+    }
+  };
+
+  const handleDownloadAll = async (item: any) => {
+    const ext = item.type === "video" ? "mp4" : "jpg";
+    let urls: string[] = [];
+
+    // جمع كل الروابط من resultsJson أو resultUrl
+    if (item.resultsJson) {
+      try {
+        const parsed = JSON.parse(item.resultsJson);
+        if (Array.isArray(parsed)) urls = parsed;
+      } catch {}
+    }
+    if (urls.length === 0 && item.resultUrl) {
+      urls = [item.resultUrl];
+    }
+    if (urls.length === 0) return;
+
+    for (let i = 0; i < urls.length; i++) {
+      const url = urls[i];
+      if (!url) continue;
+      await handleDownload(url, `orchida-${item.type}-${item.id}-${i + 1}.${ext}`);
+      // تأخير بسيط بين كل تحميل
+      if (i < urls.length - 1) await new Promise(r => setTimeout(r, 600));
     }
   };
 
@@ -406,42 +475,43 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
   };
 
   return (
-    <div className="relative z-10 w-full pb-20" dir="rtl">
+    <div
+      className="relative z-10 w-full pb-32 animate-in fade-in duration-1000"
+      dir="rtl"
+    >
       {/* Header */}
-      <div className="text-center px-4 mb-8">
-        <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-3">
-          سجل التوليدات
-        </h1>
+      <div className="text-center px-4 mb-16">
+        <h2 className="text-4xl font-black text-zinc-900 tracking-tight mb-3 italic">
+          سجل <span className="text-primary">الإبداعات</span>
+        </h2>
         <p className="text-zinc-500 font-medium">
-          استعرض جميع الفيديوهات والصور التي قمت بتوليدها سابقاً
+          استكشف أرشيف إبداعاتك السابقة والنتائج التي تم توليدها
         </p>
       </div>
 
-      <div className="max-w-[1100px] mx-auto px-4">
+      <div className="max-w-7xl mx-auto px-4">
         {!session ? (
-          <div className="flex flex-col items-center justify-center py-24 text-zinc-400 bg-white rounded-3xl border border-zinc-100 shadow-sm">
-            <div className="bg-zinc-50 p-6 rounded-full mb-6">
-              <Lock className="w-12 h-12 opacity-20" />
+          <div className="flex flex-col items-center justify-center py-24 text-zinc-400 bg-white border border-zinc-200 rounded-[2.5rem] shadow-[0_20px_50px_rgba(0,0,0,0.05)]">
+            <div className="bg-zinc-50 p-8 rounded-full mb-8 border border-zinc-100 shadow-xl">
+              <Lock className="size-12 text-zinc-300" />
             </div>
-            <p className="font-bold text-xl mb-2 text-zinc-800">
-              سجل التوليدات محمي
-            </p>
-            <p className="text-sm mb-6 text-zinc-500">
-              يجب تسجيل الدخول لتتمكن من استعراض تاريخ توليداتك السابقة
+            <p className="font-black text-2xl mb-3 text-zinc-900">السجل مشفر</p>
+            <p className="text-sm mb-10 text-zinc-500 max-w-xs text-center leading-relaxed">
+              يجب تسجيل الدخول لتتمكن من الوصول إلى أرشيف التوليدات الخاص بك
             </p>
             <button
               onClick={() => (window.location.href = "/sign-in")}
-              className="bg-primary hover:bg-primary/90 text-white font-bold px-10 py-3 rounded-2xl shadow-lg shadow-primary/20 transition-all active:scale-95"
+              className="bg-primary hover:bg-primary/90 text-white font-black px-12 py-4 rounded-2xl shadow-2xl shadow-primary/20 transition-all active:scale-95"
             >
-              تسجيل الدخول الآن
+              فتح السجل
             </button>
           </div>
         ) : (
           <>
             {/* Controls Bar */}
-            <div className="flex flex-wrap items-center justify-between gap-3 mb-6">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-6 mb-12">
               {/* Filter Tabs */}
-              <div className="flex bg-white border border-zinc-200 rounded-xl p-1 gap-1 shadow-sm">
+              <div className="flex bg-white border border-zinc-200 rounded-2xl p-1.5 gap-2 shadow-sm">
                 {(
                   [
                     { id: "all", label: "الكل", icon: History },
@@ -452,13 +522,13 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                   <button
                     key={id}
                     onClick={() => handleFilterChange(id)}
-                    className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold transition ${
+                    className={`flex items-center gap-3 px-6 py-2.5 rounded-xl text-xs font-black tracking-widest transition-all duration-300 ${
                       filter === id
-                        ? "bg-primary text-primary-foreground shadow"
-                        : "text-zinc-500 hover:bg-zinc-50"
+                        ? "bg-primary text-white shadow-lg shadow-primary/20"
+                        : "text-zinc-400 hover:text-zinc-600 hover:bg-zinc-50"
                     }`}
                   >
-                    <Icon className="w-4 h-4" />
+                    <Icon className="size-4" />
                     {label}
                   </button>
                 ))}
@@ -468,10 +538,10 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
               <button
                 onClick={() => loadHistory(page, filter)}
                 disabled={isLoading}
-                className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-50 transition shadow-sm disabled:opacity-50"
+                className="flex items-center gap-3 px-8 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-zinc-400 hover:text-zinc-900 hover:bg-zinc-50 transition-all shadow-sm disabled:opacity-50"
               >
                 <RefreshCw
-                  className={`w-4 h-4 ${isLoading ? "animate-spin" : ""}`}
+                  className={`size-4 ${isLoading ? "animate-spin" : ""}`}
                 />
                 تحديث
               </button>
@@ -479,34 +549,40 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
 
             {/* Error State */}
             {error && (
-              <div className="bg-red-50 text-red-600 border border-red-200 rounded-xl px-4 py-4 flex items-start gap-3 mb-6">
-                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
-                <p className="text-sm">{error}</p>
+              <div className="bg-red-50 text-red-500 border border-red-100 rounded-2xl px-6 py-4 flex items-center gap-4 mb-10">
+                <AlertCircle className="size-5 shrink-0" />
+                <p className="text-xs font-bold font-mono tracking-tighter uppercase">
+                  {error}
+                </p>
               </div>
             )}
 
             {/* Loading State */}
             {isLoading && (
-              <div className="flex flex-col items-center justify-center py-24 text-zinc-400">
-                <Loader2 className="w-10 h-10 animate-spin mb-4 text-primary" />
-                <p className="font-medium">جارٍ تحميل السجل...</p>
+              <div className="flex flex-col items-center justify-center py-32 text-zinc-300">
+                <Loader2 className="size-12 animate-spin mb-6 text-primary" />
+                <p className="font-black text-sm uppercase tracking-[0.2em] animate-pulse">
+                  جاري التحميل...
+                </p>
               </div>
             )}
 
             {/* Empty State */}
             {!isLoading && !error && items.length === 0 && (
-              <div className="flex flex-col items-center justify-center py-24 text-zinc-400">
-                <History className="w-16 h-16 mb-4 opacity-20" />
-                <p className="font-semibold text-lg mb-1">
-                  لا توجد توليدات بعد
+              <div className="flex flex-col items-center justify-center py-32 text-zinc-200">
+                <History className="size-20 mb-8" />
+                <p className="font-black text-xl mb-2 text-zinc-400">
+                  السجل فارغ
                 </p>
-                <p className="text-sm">ابدأ بتوليد فيديو أو صورة لتظهر هنا</p>
+                <p className="text-xs font-medium text-zinc-300">
+                  ابدأ عملية إنتاج جديدة لتظهر هنا
+                </p>
               </div>
             )}
 
             {/* Grid */}
             {!isLoading && items.length > 0 && (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4 mb-8">
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6 mb-12">
                 {items.map((item) => (
                   <HistoryItemCard
                     key={item.id}
@@ -521,25 +597,25 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
 
             {/* Pagination */}
             {!isLoading && items.length > 0 && (
-              <div className="flex items-center justify-center gap-4">
+              <div className="flex items-center justify-center gap-6">
                 <button
                   onClick={() => setPage((p) => Math.max(1, p - 1))}
                   disabled={page === 1 || isLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-50 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-3 px-8 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-zinc-400 hover:text-zinc-900 transition-all shadow-sm disabled:opacity-20"
                 >
-                  <ChevronRight className="w-4 h-4" />
+                  <ChevronRight className="size-4" />
                   السابق
                 </button>
-                <span className="text-sm font-semibold text-zinc-500 bg-white border border-zinc-200 rounded-xl px-4 py-2">
+                <span className="text-xs font-black text-primary font-mono bg-primary/5 border border-primary/10 rounded-2xl px-8 py-3 shadow-sm">
                   صفحة {page}
                 </span>
                 <button
                   onClick={() => setPage((p) => p + 1)}
                   disabled={!hasMore || isLoading}
-                  className="flex items-center gap-2 px-4 py-2 bg-white border border-zinc-200 rounded-xl text-sm font-semibold text-zinc-600 hover:bg-zinc-50 transition shadow-sm disabled:opacity-40 disabled:cursor-not-allowed"
+                  className="flex items-center gap-3 px-8 py-3 bg-white border border-zinc-200 rounded-2xl text-xs font-black text-zinc-400 hover:text-zinc-900 transition-all shadow-sm disabled:opacity-20"
                 >
                   التالي
-                  <ChevronLeft className="w-4 h-4" />
+                  <ChevronLeft className="size-4" />
                 </button>
               </div>
             )}
@@ -547,180 +623,18 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
         )}
       </div>
 
-      {/* Video Lightbox Modal */}
+      {/* Modern Lightbox Modal */}
       {selectedItem && (
         <div
-          className="fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-white/95 backdrop-blur-xl z-[200] flex items-center justify-center p-4 md:p-12 animate-in fade-in duration-500"
           onClick={() => setSelectedItem(null)}
         >
           <div
-            className="bg-zinc-900 rounded-2xl overflow-hidden max-w-4xl w-full shadow-2xl"
+            className="bg-white border border-zinc-200 rounded-[2.5rem] overflow-hidden max-w-6xl w-full shadow-[0_50px_100px_rgba(0,0,0,0.1)] relative flex flex-col md:flex-row h-full max-h-[85vh]"
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Modal Header */}
-            <div className="flex items-center justify-between px-5 py-4 border-b border-zinc-800">
-              <div>
-                <p className="text-white font-semibold text-sm line-clamp-1">
-                  {selectedItem.prompt}
-                </p>
-                <p className="text-zinc-400 text-xs mt-0.5">
-                  {selectedItem.model} · {formatDate(selectedItem.createdAt)}
-                </p>
-              </div>
-              <div className="flex items-center gap-2">
-                {(() => {
-                  const multiImages = selectedItem.resultsJson
-                    ? JSON.parse(selectedItem.resultsJson)
-                    : null;
-                  const hasMulti =
-                    Array.isArray(multiImages) && multiImages.length > 1;
-
-                  return (
-                    <>
-                      {hasMulti && (
-                        <button
-                          onClick={async () => {
-                            try {
-                              Swal.fire({
-                                title: "جاري التحميل...",
-                                html: "يرجى الانتظار بينما يتم تجهيز الصور",
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                  Swal.showLoading();
-                                },
-                              });
-
-                              for (let i = 0; i < multiImages.length; i++) {
-                                const url = multiImages[i];
-                                const baseFilename = `image-${selectedItem.id}-${i + 1}`;
-                                
-                                if (url.startsWith("data:")) {
-                                  const link = document.createElement("a");
-                                  link.href = url;
-                                  link.download = baseFilename + ".png";
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                } else {
-                                  try {
-                                    const res = await fetch(url);
-                                    if (!res.ok) throw new Error("Fetch failed");
-                                    const blob = await res.blob();
-                                    const contentType = res.headers.get("content-type") || "";
-                                    let ext = ".png";
-                                    if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = ".jpg";
-                                    else if (contentType.includes("webp")) ext = ".webp";
-                                    
-                                    const objectUrl = window.URL.createObjectURL(blob);
-                                    const link = document.createElement("a");
-                                    link.href = objectUrl;
-                                    link.download = baseFilename + ext;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                    window.URL.revokeObjectURL(objectUrl);
-                                  } catch (e) {
-                                    const link = document.createElement("a");
-                                    link.href = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(baseFilename + ".png")}`;
-                                    document.body.appendChild(link);
-                                    link.click();
-                                    document.body.removeChild(link);
-                                  }
-                                }
-                                await new Promise((r) => setTimeout(r, 300));
-                              }
-                              Swal.close();
-                            } catch (e) {
-                              Swal.fire("خطأ", "حدث خطأ أثناء تحميل الملفات", "error");
-                            }
-                          }}
-                          className="flex items-center gap-1.5 bg-emerald-600 text-white text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-emerald-700 transition"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          تحميل الكل ({multiImages.length})
-                        </button>
-                      )}
-                      {(getVideoUrl(selectedItem) ||
-                        getImageUrl(selectedItem)) && (
-                        <button
-                          onClick={async () => {
-                            const url = getVideoUrl(selectedItem) || getImageUrl(selectedItem);
-                            if (!url) return;
-                            
-                            try {
-                              Swal.fire({
-                                title: "جاري التحميل...",
-                                text: "يرجى الانتظار",
-                                allowOutsideClick: false,
-                                didOpen: () => {
-                                  Swal.showLoading();
-                                },
-                              });
-
-                              const baseFilename = `${selectedItem.type}-${selectedItem.id}`;
-                              const defaultExt = selectedItem.type === "video" ? ".mp4" : ".png";
-
-                              if (url.startsWith("data:")) {
-                                const link = document.createElement("a");
-                                link.href = url;
-                                link.download = baseFilename + defaultExt;
-                                document.body.appendChild(link);
-                                link.click();
-                                document.body.removeChild(link);
-                              } else {
-                                try {
-                                  const res = await fetch(url);
-                                  if (!res.ok) throw new Error("Fetch failed");
-                                  const blob = await res.blob();
-                                  const contentType = res.headers.get("content-type") || "";
-                                  let ext = defaultExt;
-                                  if (contentType.includes("jpeg") || contentType.includes("jpg")) ext = ".jpg";
-                                  else if (contentType.includes("webp")) ext = ".webp";
-                                  else if (contentType.includes("webm")) ext = ".webm";
-                                  
-                                  const objectUrl = window.URL.createObjectURL(blob);
-                                  const link = document.createElement("a");
-                                  link.href = objectUrl;
-                                  link.download = baseFilename + ext;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                  window.URL.revokeObjectURL(objectUrl);
-                                } catch (e) {
-                                  const link = document.createElement("a");
-                                  link.href = `/api/download?url=${encodeURIComponent(url)}&filename=${encodeURIComponent(baseFilename + defaultExt)}`;
-                                  document.body.appendChild(link);
-                                  link.click();
-                                  document.body.removeChild(link);
-                                }
-                              }
-                              Swal.close();
-                            } catch (e) {
-                              Swal.fire("خطأ", "حدث خطأ أثناء التحميل", "error");
-                            }
-                          }}
-                          className="flex items-center gap-1.5 bg-primary text-primary-foreground text-xs font-bold px-3 py-1.5 rounded-lg hover:bg-primary/90 transition"
-                        >
-                          <Download className="w-3.5 h-3.5" />
-                          {hasMulti ? "تحميل الواحدة" : "تحميل"}
-                        </button>
-                      )}
-                    </>
-                  );
-                })()}
-                <button
-                  onClick={() => setSelectedItem(null)}
-                  className="text-zinc-400 hover:text-white text-2xl leading-none transition"
-                >
-                  ×
-                </button>
-              </div>
-            </div>
-
-            {/* Media Player */}
-            <div
-              className={`bg-black ${selectedItem.type === "image" && selectedItem.resultsJson ? "overflow-y-auto max-h-[70vh]" : "aspect-video"}`}
-            >
+            {/* Media Area */}
+            <div className="flex-1 bg-zinc-50 flex items-center justify-center relative overflow-hidden group/media">
               {selectedItem.type === "video" ? (
                 getVideoUrl(selectedItem) ? (
                   <video
@@ -730,11 +644,14 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     muted
                     playsInline
                     crossOrigin="anonymous"
-                    className="w-full h-full object-contain"
+                    className="size-full object-contain"
                   />
                 ) : (
-                  <div className="flex items-center justify-center h-full text-zinc-500">
-                    لا يوجد رابط فيديو متاح
+                  <div className="flex flex-col items-center gap-4 text-zinc-300">
+                    <Video className="size-20 opacity-20" />
+                    <p className="text-xs font-black uppercase tracking-widest">
+                      الملف غير موجود
+                    </p>
                   </div>
                 )
               ) : (
@@ -744,15 +661,17 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     : null;
                   if (Array.isArray(multiImages) && multiImages.length > 0) {
                     return (
-                      <div className={`grid gap-2 p-2 ${multiImages.length > 1 ? "grid-cols-1 md:grid-cols-2" : "grid-cols-1"}`}>
+                      <div
+                        className={`grid gap-6 p-8 size-full overflow-y-auto scrollbar-hide ${multiImages.length > 1 ? "grid-cols-1 lg:grid-cols-2" : "grid-cols-1"}`}
+                      >
                         {multiImages.map((src: string, idx: number) => (
                           <Image
                             key={idx}
                             src={src}
                             alt={`${selectedItem.prompt} ${idx + 1}`}
-                            className={`w-full ${multiImages.length === 1 ? "h-full object-contain" : "h-auto object-cover rounded-lg border border-zinc-800"}`}
-                            width={400}
-                            height={300}
+                            className="w-full h-auto object-cover rounded-3xl border border-zinc-200 shadow-xl transition-transform hover:scale-[1.02]"
+                            width={800}
+                            height={600}
                             unoptimized
                           />
                         ))}
@@ -763,18 +682,111 @@ export default function HistoryView({ isActive }: { isActive?: boolean }) {
                     <Image
                       src={getImageUrl(selectedItem)!}
                       alt={selectedItem.prompt}
-                      width={400}
-                      height={300}
+                      width={1200}
+                      height={900}
                       unoptimized
-                      className="w-full h-full object-contain"
+                      className="size-full object-contain"
                     />
                   ) : (
-                    <div className="flex items-center justify-center h-full text-zinc-500">
-                      لا يوجد رابط صورة متاح
+                    <div className="flex flex-col items-center gap-4 text-zinc-300">
+                      <ImageIcon className="size-20 opacity-20" />
+                      <p className="text-xs font-black uppercase tracking-widest">
+                        Media_Not_Found
+                      </p>
                     </div>
                   );
                 })()
               )}
+            </div>
+
+            {/* Sidebar Info */}
+            <div className="w-full md:w-[350px] bg-white border-t md:border-t-0 md:border-r border-zinc-100 p-8 flex flex-col justify-between order-first md:order-last">
+              <div>
+                <div className="flex items-center gap-3 mb-8">
+                  <div className="size-10 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center">
+                    {selectedItem.type === "video" ? (
+                      <Video className="size-5 text-primary" />
+                    ) : (
+                      <ImageIcon className="size-5 text-primary" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-xs font-bold text-zinc-900">
+                      {selectedItem.model}
+                    </p>
+                  </div>
+                </div>
+
+                <h4 className="text-xs font-black text-zinc-400 uppercase tracking-widest mb-3">
+                  نص الطلب
+                </h4>
+                <p className="text-sm font-medium text-zinc-600 leading-relaxed bg-zinc-50 p-4 rounded-2xl border border-zinc-100 mb-8 max-h-[200px] overflow-y-auto">
+                  {selectedItem.prompt}
+                </p>
+
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                      تاريخ الإنشاء
+                    </span>
+                    <span className="text-[10px] font-bold text-zinc-500 font-mono">
+                      {formatDate(selectedItem.createdAt)}
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between">
+                    <span className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+                      جودة الملف
+                    </span>
+                    <span className="text-[10px] font-bold text-emerald-600 font-mono uppercase tracking-widest">
+                      عالي الجودة
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              <div className="mt-12 flex flex-col gap-3">
+                {/* تحميل الكل — يظهر فقط عند وجود أكثر من صورة */}
+                {selectedItem.resultsJson && (() => {
+                  try {
+                    const parsed = JSON.parse(selectedItem.resultsJson);
+                    if (Array.isArray(parsed) && parsed.length > 1) {
+                      return (
+                        <button
+                          onClick={() => handleDownloadAll(selectedItem)}
+                          className="w-full bg-zinc-900 hover:bg-zinc-800 text-white font-black py-4 rounded-2xl transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+                        >
+                          <Download className="size-5" />
+                          تحميل الكل ({parsed.length} ملفات)
+                        </button>
+                      );
+                    }
+                  } catch {}
+                  return null;
+                })()}
+
+                {/* تحميل ملف واحد */}
+                <button
+                  onClick={async () => {
+                    const url =
+                      getVideoUrl(selectedItem) || getImageUrl(selectedItem);
+                    if (!url) return;
+                    handleDownload(
+                      url,
+                      `${selectedItem.type}-${selectedItem.id}.${selectedItem.type === "video" ? "mp4" : "png"}`,
+                    );
+                  }}
+                  className="w-full bg-primary hover:bg-primary/90 text-white font-black py-4 rounded-2xl shadow-xl shadow-primary/20 transition-all hover:scale-[1.02] active:scale-[0.98] flex items-center justify-center gap-3"
+                >
+                  <Download className="size-5" />
+                  تحميل
+                </button>
+                <button
+                  onClick={() => setSelectedItem(null)}
+                  className="w-full bg-zinc-50 hover:bg-zinc-100 text-zinc-400 hover:text-zinc-600 font-black py-4 rounded-2xl transition-all"
+                >
+                  إغلاق
+                </button>
+              </div>
             </div>
           </div>
         </div>
