@@ -12,8 +12,8 @@
   ],
   "crons": [
     {
-      "path": "/api/cron/ai-sync ",
-      "schedule": "0 * * * *"
+      "path": "/api/cron/ai-sync",
+      "schedule": "0 0 * * *"
     }
   ]
 }
