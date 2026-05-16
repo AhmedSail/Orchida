@@ -1,6 +1,13 @@
 import React from "react";
 import Image from "next/image";
-import { Download, Maximize, Sparkles, Image as ImageIcon } from "lucide-react";
+import {
+  Download,
+  Maximize,
+  Sparkles,
+  Image as ImageIcon,
+  Loader2,
+  Terminal,
+} from "lucide-react";
 
 interface ImageGenResultsProps {
   isGenerating: boolean;
@@ -8,97 +15,149 @@ interface ImageGenResultsProps {
   onOpenLightbox: (url: string, index: number) => void;
 }
 
+const handleDownload = async (url: string, index: number) => {
+  try {
+    const response = await fetch(url);
+    const blob = await response.blob();
+    const ext = blob.type.includes("png") ? "png" : blob.type.includes("webp") ? "webp" : "jpg";
+    const blobUrl = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = blobUrl;
+    link.download = `orchida-image-${index + 1}.${ext}`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(blobUrl);
+  } catch {
+    // fallback: open in new tab
+    window.open(url, "_blank");
+  }
+};
+
 export const ImageGenResults: React.FC<ImageGenResultsProps> = ({
   isGenerating,
   resultImageUrls,
   onOpenLightbox,
 }) => {
   return (
-    <div className="bg-white rounded-3xl p-6 border border-zinc-200 shadow-sm flex flex-col min-h-[500px]">
-      <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-black text-zinc-800">معاينة النتيجة</h2>
-        {resultImageUrls.length > 0 && (
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-zinc-400 font-semibold">{resultImageUrls.length} صورة</span>
-            <a
-              href={resultImageUrls[0]}
-              download
-              target="_blank"
-              className="flex items-center gap-1.5 bg-emerald-50 text-emerald-600 px-3 py-1.5 rounded-lg text-xs font-bold hover:bg-emerald-100 transition"
-            >
-              <Download className="w-3.5 h-3.5" /> تحميل الكل
-            </a>
+    <div className="bg-white border border-zinc-200 rounded-[2.5rem] p-8 shadow-[0_20px_60px_rgba(0,0,0,0.06)] flex flex-col min-h-[500px] overflow-hidden relative group/results">
+      <div className="flex items-center justify-between mb-8">
+        <div className="flex items-center gap-3">
+          <div className="size-10 rounded-xl bg-primary/5 flex items-center justify-center text-primary shadow-inner">
+            <Sparkles className="size-5" />
+          </div>
+          <h2 className="text-sm font-black text-zinc-900 uppercase tracking-widest">
+            مختبر النتائج
+          </h2>
+        </div>
+        {resultImageUrls.length > 0 && !isGenerating && (
+          <div className="px-4 py-1.5 bg-emerald-50 text-emerald-600 text-[9px] font-black rounded-full border border-emerald-100 flex items-center gap-2 tracking-widest">
+            <div className="size-1.5 rounded-full bg-emerald-500 animate-pulse" />
+            جاهزة للتحميل
           </div>
         )}
       </div>
 
-      <div className="relative rounded-2xl overflow-hidden flex-1 bg-gradient-to-br from-zinc-50 to-zinc-100 border border-zinc-200 flex items-center justify-center p-3 min-h-[400px]">
+      <div className="flex-1 relative flex items-center justify-center overflow-hidden bg-[#0a0a0c] rounded-3xl group">
+        {/* Subtle Scanline Effect */}
+        <div
+          className="absolute inset-0 pointer-events-none opacity-[0.03] z-10"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06))",
+            backgroundSize: "100% 2px, 3px 100%",
+          }}
+        />
+
+        {/* Overlay Vignette */}
+        <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,transparent_0%,rgba(0,0,0,0.3)_100%)] pointer-events-none z-10" />
+
         {isGenerating ? (
-          <div className="flex flex-col items-center gap-4">
+          <div className="relative z-20 flex flex-col items-center gap-8">
             <div className="relative">
-              <div className="w-20 h-20 rounded-full border-4 border-primary/20 border-t-primary animate-spin" />
-              <ImageIcon className="w-7 h-7 text-primary absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+              <div className="size-24 rounded-full border-2 border-primary/20 border-t-primary animate-spin" />
+              <Loader2 className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 size-8 text-primary animate-pulse" />
             </div>
-            <div className="text-center">
-              <p className="text-zinc-700 font-bold text-base">فناننا الرقمي يرسم الآن...</p>
-              <p className="text-zinc-400 text-xs mt-1">عادةً ما يستغرق التوليد من 5 إلى 15 ثانية</p>
-            </div>
-            <div className="flex gap-1.5 mt-1">
-              {[0, 1, 2].map(i => (
-                <div key={i} className="w-2 h-2 bg-primary rounded-full animate-bounce" style={{ animationDelay: `${i * 0.15}s` }} />
-              ))}
+            <div className="space-y-2 text-center">
+              <h3 className="text-xl font-black text-white italic tracking-tight">
+                جاري التوليد...
+              </h3>
+              <p className="text-[10px] text-zinc-500 font-bold uppercase tracking-widest">
+                يتم بناء الصورة الآن، لحظة من فضلك
+              </p>
             </div>
           </div>
         ) : resultImageUrls.length > 0 ? (
-          <div className={`grid w-full gap-2.5 ${
-            resultImageUrls.length === 1 ? "grid-cols-1" :
-            resultImageUrls.length <= 2 ? "grid-cols-2" :
-            resultImageUrls.length <= 4 ? "grid-cols-2" :
-            "grid-cols-3"
-          }`}>
+          <div
+            className={`grid w-full h-full p-6 gap-6 relative z-10 ${
+              resultImageUrls.length === 1 ? "grid-cols-1" : "grid-cols-2"
+            }`}
+          >
             {resultImageUrls.map((url, idx) => (
               <div
                 key={idx}
-                onClick={() => onOpenLightbox(url, idx)}
-                className="relative aspect-square group rounded-2xl overflow-hidden border border-white shadow-md cursor-zoom-in transition-all duration-300 hover:-translate-y-1 hover:shadow-xl"
+                className="relative aspect-square group/item rounded-2xl overflow-hidden border border-white/5 shadow-2xl transition-all duration-500"
               >
                 <Image
                   src={url}
                   fill
-                  alt={`Generated Result ${idx + 1}`}
-                  className="object-cover transition-transform duration-500 group-hover:scale-110"
+                  alt={`صورة مولّدة ${idx + 1}`}
+                  className="object-cover transition-transform duration-700 group-hover/item:scale-105"
+                  unoptimized
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                <span className="absolute top-2 right-2 bg-black/50 text-white text-[9px] font-bold px-1.5 py-0.5 rounded-full backdrop-blur-sm opacity-0 group-hover:opacity-100 transition">
-                  #{idx + 1}
-                </span>
-                <div className="absolute bottom-0 inset-x-0 flex items-center justify-between px-3 py-2 opacity-0 group-hover:opacity-100 transition-all duration-300 translate-y-1 group-hover:translate-y-0">
-                  <span className="text-white text-[10px] font-bold flex items-center gap-1">
-                    <Maximize className="w-3 h-3" /> عرض
-                  </span>
-                  <a
-                    href={url}
-                    download
-                    onClick={e => e.stopPropagation()}
-                    className="p-1 bg-white/20 backdrop-blur-sm rounded-lg text-white hover:bg-white/40 transition"
+                {/* Hover overlay with two buttons */}
+                <div className="absolute inset-0 bg-black/60 opacity-0 group-hover/item:opacity-100 transition-opacity duration-500 flex flex-col items-center justify-center gap-3 backdrop-blur-sm">
+                  {/* View full */}
+                  <button
+                    onClick={() => onOpenLightbox(url, idx)}
+                    className="size-12 rounded-full bg-white/10 backdrop-blur-xl border border-white/20 flex items-center justify-center scale-90 group-hover/item:scale-100 transition-transform duration-500 hover:bg-white/20"
                   >
-                    <Download className="w-3.5 h-3.5" />
-                  </a>
+                    <Maximize className="size-5 text-white" />
+                  </button>
+                  {/* Download */}
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDownload(url, idx);
+                    }}
+                    className="flex items-center gap-2 px-4 py-2 bg-primary/90 hover:bg-primary backdrop-blur-xl border border-primary/40 rounded-full text-white text-[9px] font-black tracking-widest transition-all hover:scale-105"
+                  >
+                    <Download className="size-3.5" />
+                    تحميل
+                  </button>
                 </div>
               </div>
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center gap-3 text-zinc-300">
-            <div className="w-20 h-20 bg-white rounded-2xl flex items-center justify-center shadow-inner border border-zinc-200">
-              <Sparkles className="w-10 h-10 text-zinc-200" />
+          <div className="flex flex-col items-center gap-6 text-center opacity-40 relative z-20">
+            <div className="size-20 rounded-full border border-dashed border-zinc-700 flex items-center justify-center bg-zinc-900 shadow-inner">
+              <ImageIcon className="size-8 text-zinc-600" />
             </div>
-            <div className="text-center">
-              <p className="text-base font-bold text-zinc-400">جاهز للإبداع؟</p>
-              <p className="text-xs mt-1 text-zinc-300">اكتب وصفاً واضغط توليد</p>
+            <div className="space-y-1">
+              <p className="text-[9px] font-bold text-zinc-500 uppercase tracking-widest font-mono">
+                في انتظار الطلب...
+              </p>
             </div>
           </div>
         )}
+      </div>
+
+      <div className="mt-8 pt-6 border-t border-zinc-100 flex items-center justify-between text-[9px] font-black text-zinc-400 uppercase tracking-widest font-mono">
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-2">
+            <div
+              className={`size-1.5 rounded-full ${isGenerating ? "bg-amber-500 animate-pulse shadow-[0_0_8px_rgba(245,158,11,0.5)]" : "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]"}`}
+            />
+            الحالة: {isGenerating ? "جاري العمل" : "جاهز"}
+          </div>
+          <div className="h-3 w-px bg-zinc-200" />
+          <span>الملفات: {resultImageUrls.length}</span>
+        </div>
+        <div className="flex items-center gap-2">
+          <Terminal className="size-3 text-primary/40" />
+          محرك أوركيدة
+        </div>
       </div>
     </div>
   );

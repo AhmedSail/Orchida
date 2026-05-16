@@ -189,7 +189,7 @@ export default function Footer({ result }: { result: Links }) {
         >
           <div className="text-center md:text-right">
             <p className="text-indigo-100/70">
-              &copy; {new Date().getFullYear()} جميع الحقوق محفوظة |{" "}
+              &copy; <span suppressHydrationWarning>{new Date().getFullYear()}</span> جميع الحقوق محفوظة |{" "}
               <span className="text-white font-bold">شركة أروكيدة للتقنية</span>
             </p>
           </div>

@@ -33,20 +33,20 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
   setResolution,
 }) => {
   return (
-    <>
+    <div className="space-y-10">
       {/* Image Reference */}
-      <div className="mb-6">
-        <label className="block text-sm font-bold text-zinc-700 mb-2">
-          مرجع الصورة (Image Reference)
+      <div className="space-y-4">
+        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+          مرجع بصري
         </label>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => document.getElementById("image-ref-input")?.click()}
-            className="flex items-center gap-2 px-4 py-2 border border-zinc-200 rounded-xl text-xs font-bold text-zinc-600 hover:bg-zinc-50 transition bg-white flex-1"
+            className="flex items-center gap-3 px-5 py-4 bg-white border border-zinc-200 rounded-2xl text-xs font-bold text-zinc-600 hover:border-primary/50 hover:bg-primary/5 transition-all flex-1 group"
           >
-            <ImageIcon className="w-4 h-4" />
-            <span className="truncate max-w-[150px]">
-              {imageReference ? imageReference.name : "اختر صورة مرجعية"}
+            <ImageIcon className="size-5 text-primary group-hover:scale-110 transition-transform" />
+            <span className="truncate max-w-[200px]">
+              {imageReference ? imageReference.name : "إضافة صورة مرجعية"}
             </span>
           </button>
           {imageReference && (
@@ -56,10 +56,10 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
                 const fileInput = document.getElementById("image-ref-input") as HTMLInputElement;
                 if (fileInput) fileInput.value = "";
               }}
-              className="p-2 border border-red-100 rounded-xl text-red-500 hover:bg-red-50 transition bg-white"
-              title="مسح الصورة"
+              className="size-14 flex items-center justify-center bg-red-50 border border-red-100 rounded-2xl text-red-500 hover:bg-red-500 transition-all hover:text-white"
+              title="حذف"
             >
-              <Trash2 className="w-4 h-4" />
+              <Trash2 className="size-5" />
             </button>
           )}
         </div>
@@ -72,12 +72,19 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
         />
       </div>
 
-      {/* Number of Results (Grok and Meta AI) */}
+      {/* Number of Results */}
       {(provider === "Grok" || provider === "Meta AI") && (
-        <div className="mb-6">
-          <label className="block text-sm font-bold text-zinc-700 mb-3">
-            عدد الصور (Number of Results)
-          </label>
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+              عدد الصور
+            </label>
+            {provider === "Grok" && imageReference && (
+              <span className="text-[9px] font-bold text-amber-500 bg-amber-50 border border-amber-100 px-2 py-1 rounded-lg">
+                الحد الأقصى مع الصورة المرجعية: 2
+              </span>
+            )}
+          </div>
           <div className="flex flex-wrap gap-2">
             {(() => {
               let options = [1, 2, 3, 4, 5, 6];
@@ -85,7 +92,6 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
                 options = [1, 2, 3, 4];
               } else if (provider === "Grok" && imageReference) {
                 options = [1, 2];
-                // Ensure current selection is within limits
                 if (numResults > 2) setNumResults(1);
               }
               
@@ -93,60 +99,55 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
                 <button
                   key={num}
                   onClick={() => setNumResults(num)}
-                  className={`w-12 h-10 flex items-center justify-center rounded-xl border transition font-bold text-xs ${numResults === num ? "border-primary bg-primary/5 text-primary" : "bg-white border-zinc-200 text-zinc-400 hover:bg-zinc-50"}`}
+                  className={`size-12 flex items-center justify-center rounded-xl border font-black text-xs transition-all ${numResults === num ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-400"}`}
                 >
                   {num}
                 </button>
               ));
             })()}
           </div>
-          <p className="text-[10px] text-zinc-400 mt-2 font-medium">
-            {provider === "Grok" && imageReference 
-              ? "عند استخدام مرجع صورة في Grok، يقتصر التوليد على صورتين كحد أقصى."
-              : `سيتم توليد مصفوفة من ${numResults} صور.`}
-          </p>
         </div>
       )}
 
-      {/* Aspect Ratio / Orientation */}
-      <div className="mb-6">
-        <label className="block text-sm font-bold text-zinc-700 mb-3">
-          {(provider === "Grok" || provider === "Meta AI") ? "الاتجاه (Orientation)" : "أبعاد الصورة (Aspect Ratio)"}
+      {/* Orientation */}
+      <div className="space-y-4">
+        <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">
+          {(provider === "Grok" || provider === "Meta AI") ? "نسبة الأبعاد" : "الأبعاد"}
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="grid grid-cols-3 md:grid-cols-5 gap-3">
           {(provider === "Grok" || provider === "Meta AI") ? (
             [
-              { id: "Landscape (16:9)", label: "Landscape (16:9)", icon: Monitor },
-              { id: "Portrait (9:16)", label: "Portrait (9:16)", icon: Smartphone },
-              { id: "Square (1:1)", label: "Square (1:1)", icon: Square },
+              { id: "Landscape (16:9)", label: "16:9", icon: Monitor },
+              { id: "Portrait (9:16)", label: "9:16", icon: Smartphone },
+              { id: "Square (1:1)", label: "1:1", icon: Square },
               ...(provider === "Grok" ? [
-                { id: "Vertical (2:3)", label: "Vertical (2:3)", icon: Smartphone },
-                { id: "Horizontal (3:2)", label: "Horizontal (3:2)", icon: Monitor },
+                { id: "Vertical (2:3)", label: "2:3", icon: Smartphone },
+                { id: "Horizontal (3:2)", label: "3:2", icon: Monitor },
               ] : [])
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setOrientation(item.id)}
-                className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition min-w-[80px] ${orientation === item.id ? "border-primary bg-primary/5 text-primary" : "bg-zinc-50 border-transparent text-zinc-400 hover:bg-zinc-100"}`}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 ${orientation === item.id ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-400"}`}
               >
-                <item.icon className="w-5 h-5 mb-1.5" />
-                <span className="text-[9px] font-bold text-center">{item.label}</span>
+                <item.icon className="size-4 mb-2" />
+                <span className="text-[10px] font-bold">{item.label}</span>
               </button>
             ))
           ) : (
             [
-              { id: "1:1", label: "مربع (1:1)", icon: Square },
-              { id: "16:9", label: "أفقي (16:9)", icon: Monitor },
-              { id: "9:16", label: "عمودي (9:16)", icon: Smartphone },
+              { id: "1:1", label: "1:1", icon: Square },
+              { id: "16:9", label: "16:9", icon: Monitor },
+              { id: "9:16", label: "9:16", icon: Smartphone },
               { id: "3:4", label: "3:4", icon: Smartphone },
               { id: "4:3", label: "4:3", icon: Monitor },
             ].map((item) => (
               <button
                 key={item.id}
                 onClick={() => setAspectRatio(item.id)}
-                className={`flex-1 flex flex-col items-center justify-center p-3 rounded-xl border transition min-w-[70px] ${aspectRatio === item.id ? "border-primary bg-primary/5 text-primary" : "bg-zinc-50 border-transparent text-zinc-400 hover:bg-zinc-100"}`}
+                className={`flex flex-col items-center justify-center p-3 rounded-2xl border transition-all duration-300 ${aspectRatio === item.id ? "bg-primary border-primary text-white shadow-lg shadow-primary/20" : "bg-white border-zinc-200 text-zinc-400 hover:text-zinc-900 hover:border-zinc-400"}`}
               >
-                <item.icon className="w-5 h-5 mb-1.5" />
+                <item.icon className="size-4 mb-2" />
                 <span className="text-[10px] font-bold">{item.label}</span>
               </button>
             ))
@@ -154,35 +155,35 @@ export const ImageGenSettings: React.FC<ImageGenSettingsProps> = ({
         </div>
       </div>
 
-      {/* Settings Grid (Imagen Only) */}
+      {/* Quality (Imagen Only) */}
       {(provider !== "Grok" && provider !== "Meta AI") && (
-        <div className="grid grid-cols-2 gap-4 mb-8">
-          <div>
-            <label className="block text-sm font-bold text-zinc-700 mb-2">صيغة الملف</label>
+        <div className="grid grid-cols-2 gap-4">
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">تنسيق المخرج</label>
             <select
               value={outputFormat}
               onChange={(e) => setOutputFormat(e.target.value)}
-              className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-zinc-50 font-semibold"
+              className="w-full bg-white border border-zinc-200 rounded-2xl px-4 py-3.5 text-xs font-bold text-zinc-600 outline-none focus:border-primary/50 transition-all appearance-none cursor-pointer"
             >
-              <option value="JPEG">JPEG</option>
-              <option value="PNG">PNG</option>
-              <option value="WEBP">WEBP</option>
+              <option value="JPEG">JPEG High</option>
+              <option value="PNG">PNG Raw</option>
+              <option value="WEBP">WEBP Lite</option>
             </select>
           </div>
-          <div>
-            <label className="block text-sm font-bold text-zinc-700 mb-2">الدقة</label>
+          <div className="space-y-3">
+            <label className="text-[10px] font-black text-zinc-400 uppercase tracking-widest">الدقة القصوى</label>
             <select
               value={resolution}
               onChange={(e) => setResolution(e.target.value)}
-              className="w-full border border-zinc-200 rounded-xl px-3 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-primary bg-zinc-50 font-semibold"
+              className="w-full bg-white border border-zinc-200 rounded-2xl px-4 py-3.5 text-xs font-bold text-zinc-600 outline-none focus:border-primary/50 transition-all appearance-none cursor-pointer"
             >
-              <option value="1K">1K (HD)</option>
+              <option value="1K">1K (Standard)</option>
               <option value="2K">2K (Full HD)</option>
               <option value="4K">4K (Ultra HD)</option>
             </select>
           </div>
         </div>
       )}
-    </>
+    </div>
   );
 };

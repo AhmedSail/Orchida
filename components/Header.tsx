@@ -204,7 +204,7 @@ function NavList({
         {navListItemsData.map(({ id, title, href }) => (
           <Link key={id} href={href} onClick={closeMenu}>
             {/* @ts-ignore */}
-            <Typography as="span" className="font-bold text-md relative group">
+            <Typography as="div" className="font-bold text-md relative group">
               {/* @ts-ignore */}
               <ListItem className="flex items-center gap-2 py-2 pl-4 group">
                 {title}

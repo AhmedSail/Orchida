@@ -43,38 +43,43 @@ export async function checkAndDeductCredits(userId: string, cost: number, descri
   });
 }
 
-// 2. دالة استرجاع الرصيد في حالة الفشل
+// 2. دالة استرجاع الرصيد في حالة الفشل (النسخة الداخلية للاستخدام في الخلفية أو الـ Cron)
+export async function internalRefundFailedTask(taskUuid: string, userId: string, reason: string) {
+  // Find the original generation record to get the exact cost
+  const record = await db.query.aiGenerations.findFirst({
+    where: and(
+      eq(aiGenerations.taskUuid, taskUuid),
+      eq(aiGenerations.userId, userId)
+    )
+  });
+
+  if (!record) return { success: false, error: "Record not found" };
+  if (record.isRefunded) return { success: true, message: "Already refunded" };
+
+  const cost = record.creditCost || 0;
+  if (cost <= 0) {
+     await db.update(aiGenerations).set({ isRefunded: true }).where(eq(aiGenerations.id, record.id));
+     return { success: true };
+  }
+
+  // Refund the exact amount recorded in DB
+  await checkAndDeductCredits(userId, -cost, `Refund: ${reason.substring(0, 50)}`);
+
+  // Mark as refunded to prevent double refunds
+  await db.update(aiGenerations)
+    .set({ isRefunded: true, updatedAt: new Date() })
+    .where(eq(aiGenerations.id, record.id));
+
+  return { success: true };
+}
+
+// دالة استرجاع الرصيد في حالة الفشل (للاستدعاء من قبل المستخدم)
 export async function refundFailedTaskAction(taskUuid: string, reason: string) {
   try {
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) return { success: false, error: "Unauthorized" };
 
-    // Find the original generation record to get the exact cost
-    const record = await db.query.aiGenerations.findFirst({
-      where: and(
-        eq(aiGenerations.taskUuid, taskUuid),
-        eq(aiGenerations.userId, sessionData.session.userId)
-      )
-    });
-
-    if (!record) return { success: false, error: "Record not found" };
-    if (record.isRefunded) return { success: true, message: "Already refunded" };
-
-    const cost = record.creditCost || 0;
-    if (cost <= 0) {
-       await db.update(aiGenerations).set({ isRefunded: true }).where(eq(aiGenerations.id, record.id));
-       return { success: true };
-    }
-
-    // Refund the exact amount recorded in DB
-    await checkAndDeductCredits(sessionData.session.userId, -cost, `Refund: ${reason.substring(0, 50)}`);
-
-    // Mark as refunded to prevent double refunds
-    await db.update(aiGenerations)
-      .set({ isRefunded: true, updatedAt: new Date() })
-      .where(eq(aiGenerations.id, record.id));
-
-    return { success: true };
+    return await internalRefundFailedTask(taskUuid, sessionData.session.userId, reason);
   } catch (e: any) {
     return { success: false, error: e.message };
   }
@@ -93,8 +98,13 @@ export async function checkGenerationStatus(uuid: string) {
     });
 
     if (!response.ok) throw new Error("Error fetching status");
-    return { success: true, data: await response.json() };
+    const json = await response.json();
+    // لوج كامل لفهم بنية البيانات
+    console.log(`[checkGenerationStatus] UUID: ${uuid}`);
+    console.log(`[checkGenerationStatus] Full Response:`, JSON.stringify(json, null, 2));
+    return { success: true, data: json };
   } catch (error: any) {
+    console.error(`[checkGenerationStatus] Error:`, error.message);
     return { success: false, error: error.message };
   }
 }
@@ -126,7 +136,69 @@ export async function getInternalStatusAction(taskUuid: string) {
   }
 }
 
-// 4. تحديث السجل المحلي
+// 4. تحديث السجل المحلي (النسخة الداخلية للاستخدام في الخلفية أو الـ Cron)
+export async function internalUpdateGenerationStatus(
+  taskUuid: string, 
+  userId: string,
+  status: "completed" | "failed", 
+  resultUrl?: string, 
+  thumbnailUrl?: string,
+  resultsJson?: string
+) {
+  let finalResultUrl = resultUrl;
+  let finalThumbnailUrl = thumbnailUrl;
+  let finalResultsJson = resultsJson;
+
+  // 1. رفع للسحابة (R2)
+  if (resultsJson) {
+    try {
+      const urls: string[] = JSON.parse(resultsJson);
+      if (Array.isArray(urls) && urls.length > 0) {
+        const cloudUrls = await Promise.all(
+          urls.map(u => uploadFromUrl(u, "ai-temp"))
+        );
+        const filtered = cloudUrls.filter(u => u !== null) as string[];
+        if (filtered.length > 0) {
+          finalResultsJson = JSON.stringify(filtered);
+          finalResultUrl = filtered[0]; // أول رابط = الرابط الرئيسي
+        }
+      }
+    } catch (e) {
+      console.error("Error processing resultsJson for cloud upload:", e);
+    }
+  } else if (resultUrl) {
+    // صورة واحدة فقط
+    const cloudUrl = await uploadFromUrl(resultUrl, "ai-temp");
+    if (cloudUrl) finalResultUrl = cloudUrl;
+  }
+
+  if (thumbnailUrl) {
+    const cloudThumb = await uploadFromUrl(thumbnailUrl, "ai-temp");
+    if (cloudThumb) finalThumbnailUrl = cloudThumb;
+  }
+
+  await db.update(aiGenerations)
+    .set({ 
+      status, 
+      resultUrl: finalResultUrl || null,
+      thumbnailUrl: finalThumbnailUrl || null,
+      resultsJson: finalResultsJson || null,
+      updatedAt: new Date()
+    })
+    .where(and(
+      eq(aiGenerations.taskUuid, taskUuid),
+      eq(aiGenerations.userId, userId)
+    ));
+
+  return { 
+    success: true, 
+    finalResultUrl: finalResultUrl || null,
+    finalThumbnailUrl: finalThumbnailUrl || null,
+    finalResultsJson: finalResultsJson || null,
+  };
+}
+
+// تحديث السجل المحلي (للاستدعاء من قبل المستخدم)
 export async function updateGenerationStatusAction(
   taskUuid: string, 
   status: "completed" | "failed", 
@@ -138,51 +210,16 @@ export async function updateGenerationStatusAction(
     const sessionData = await auth.api.getSession({ headers: await headers() });
     if (!sessionData?.session?.userId) throw new Error("Unauthorized");
 
-    let finalResultUrl = resultUrl;
-    let finalThumbnailUrl = thumbnailUrl;
-    let finalResultsJson = resultsJson;
-
-    // 1. برمجية الرفع للسحاب (R2) مع مجلد التخزين المؤقت (7 أيام)
-    if (resultUrl) {
-      const cloudUrl = await uploadFromUrl(resultUrl, "ai-temp");
-      if (cloudUrl) finalResultUrl = cloudUrl;
-    }
-
-    if (thumbnailUrl) {
-      const cloudThumb = await uploadFromUrl(thumbnailUrl, "ai-temp");
-      if (cloudThumb) finalThumbnailUrl = cloudThumb;
-    }
-
-    if (resultsJson) {
-      try {
-        const urls = JSON.parse(resultsJson);
-        if (Array.isArray(urls)) {
-          const cloudUrls = await Promise.all(
-            urls.map(u => uploadFromUrl(u, "ai-temp"))
-          );
-          const filtered = cloudUrls.filter(u => u !== null) as string[];
-          if (filtered.length > 0) finalResultsJson = JSON.stringify(filtered);
-        }
-      } catch (e) {
-        console.error("Error processing resultsJson for cloud upload:", e);
-      }
-    }
-
-    await db.update(aiGenerations)
-      .set({ 
-        status, 
-        resultUrl: finalResultUrl || null,
-        thumbnailUrl: finalThumbnailUrl || null,
-        resultsJson: finalResultsJson || null,
-        updatedAt: new Date()
-      })
-      .where(and(
-        eq(aiGenerations.taskUuid, taskUuid),
-        eq(aiGenerations.userId, sessionData.session.userId)
-      ));
-
-    return { success: true };
+    return await internalUpdateGenerationStatus(
+      taskUuid, 
+      sessionData.session.userId, 
+      status, 
+      resultUrl, 
+      thumbnailUrl, 
+      resultsJson
+    );
   } catch (error: any) {
+    console.error("updateGenerationStatus error:", error);
     return { success: false, error: error.message };
   }
 }

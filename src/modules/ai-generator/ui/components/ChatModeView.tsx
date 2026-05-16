@@ -12,12 +12,9 @@ import {
   Check,
   MessageSquare,
   Zap,
-  Lock,
   Gift,
   Paperclip,
   FileText,
-  Image as ImageIcon,
-  Video as VideoIcon,
   X,
 } from "lucide-react";
 import { sendChatMessageAction, ChatMessage } from "@/app/actions/ai-chat";
@@ -102,20 +99,17 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
     const trimmed = input.trim();
     if ((!trimmed && attachments.length === 0) || isLoading) return;
 
-    // ── 1. خصم/تحقق من الكريدت أو المجاني ──
     const consumeRes = await consumeChatMessageAction();
     if (!consumeRes.success) {
       toast.error(consumeRes.error || "فشل التحقق من الرصيد");
       return;
     }
 
-    // تحديث العداد محلياً
     setUsedCount((prev) => prev + 1);
     if (!consumeRes.wasFree && consumeRes.creditDeducted) {
       window.dispatchEvent(new Event("balanceUpdated"));
     }
 
-    // تجهيز المرفقات
     const newAttachments: MessageAttachment[] = attachments.map((f) => ({
       name: f.name,
       type: f.type,
@@ -150,12 +144,12 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
         if (!msg.attachments || msg.attachments.length === 0) {
           return msg.content || "مرفق";
         }
-        
+
         const contentArr: any[] = [];
         if (msg.content) {
           contentArr.push({ type: "text", text: msg.content });
         }
-        
+
         for (const att of msg.attachments) {
           if (att.type.startsWith("image/") && att.file) {
             const base64 = await fileToBase64(att.file);
@@ -164,11 +158,9 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
               image_url: { url: base64 },
             });
           } else {
-             // For non-image files, just send a text note that a file was attached.
-             contentArr.push({ type: "text", text: `[ملف مرفق: ${att.name}]` });
+            contentArr.push({ type: "text", text: `[ملف مرفق: ${att.name}]` });
           }
         }
-        
         return contentArr;
       };
 
@@ -192,7 +184,6 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
         };
         setMessages((prev) => [...prev, assistantMessage]);
       } else {
-        // Refund if fail
         if (!consumeRes.wasFree) {
           await refundChatMessageAction(res.error || "AI Reply Failed");
           window.dispatchEvent(new Event("balanceUpdated"));
@@ -200,7 +191,6 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
         toast.error(res.error || "فشل الحصول على رد");
       }
     } catch (e: any) {
-      // Refund if exception
       if (!consumeRes.wasFree) {
         await refundChatMessageAction(e.message || "Technical Error");
         window.dispatchEvent(new Event("balanceUpdated"));
@@ -227,40 +217,42 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
   ];
 
   return (
-    <div className="flex flex-col h-[calc(100vh-180px)] max-w-4xl mx-auto px-4" dir="rtl">
-
-      {/* Header */}
-      <div className="flex items-center justify-between py-4 border-b border-zinc-100">
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 bg-gradient-to-br from-primary to-purple-600 rounded-2xl flex items-center justify-center shadow-lg shadow-primary/20">
-            <Bot className="w-5 h-5 text-white" />
+    <div
+      className="flex flex-col h-[calc(100vh-200px)] md:h-[calc(100vh-250px)] max-w-5xl mx-auto px-4"
+      dir="rtl"
+    >
+      {/* Header Container - Light Studio */}
+      <div className="bg-white border border-zinc-200 rounded-3xl md:rounded-[2.5rem] p-4 md:p-6 mb-4 md:mb-6 shadow-[0_20px_50px_rgba(0,0,0,0.05)] flex items-center justify-between relative overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-primary/20 to-transparent opacity-60" />
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className="size-10 md:size-12 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shadow-xl shadow-primary/5">
+            <Bot className="size-5 md:size-6" />
           </div>
           <div>
-            <h2 className="font-black text-zinc-900 text-sm">مساعد أوركيدة الذكي</h2>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-              <span className="text-[10px] font-bold text-zinc-400">GPT-4o • Online</span>
-            </div>
+            <h2 className="font-black text-zinc-900 text-sm md:text-base leading-tight">
+              مساعد أوركيدة{" "}
+            </h2>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
-          {/* Usage Badge */}
+        <div className="flex items-center gap-2 md:gap-4">
           {settingsLoaded && (
-            <div className={`flex items-center gap-1.5 px-3 py-1.5 rounded-xl text-xs font-black border ${
-              isPaidMode
-                ? "bg-amber-50 text-amber-600 border-amber-100"
-                : "bg-emerald-50 text-emerald-600 border-emerald-100"
-            }`}>
+            <div
+              className={`flex items-center gap-1.5 md:gap-2 px-3 md:px-4 py-1.5 md:py-2 rounded-xl text-[8px] md:text-[10px] font-black border transition-all ${
+                isPaidMode
+                  ? "bg-amber-50 text-amber-600 border-amber-100"
+                  : "bg-emerald-50 text-emerald-600 border-emerald-100"
+              }`}
+            >
               {isPaidMode ? (
                 <>
-                  <Zap className="w-3 h-3" />
-                  {costPerMsg} كريدت/رسالة
+                  <Zap className="size-2.5 md:size-3" />
+                  {costPerMsg} CR
                 </>
               ) : (
                 <>
-                  <Gift className="w-3 h-3" />
-                  {freeRemaining} رسالة مجانية متبقية
+                  <Gift className="size-2.5 md:size-3" />
+                  {freeRemaining} FREE
                 </>
               )}
             </div>
@@ -269,60 +261,36 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
           {messages.length > 0 && (
             <button
               onClick={handleClear}
-              className="flex items-center gap-1.5 px-3 py-1.5 text-xs font-bold text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all"
+              className="size-9 md:size-10 flex items-center justify-center text-zinc-400 hover:text-red-500 hover:bg-red-50 rounded-xl transition-all border border-transparent hover:border-red-100"
             >
-              <Trash2 className="w-3.5 h-3.5" />
-              مسح
+              <Trash2 className="size-4 md:size-5" />
             </button>
           )}
         </div>
       </div>
 
-      {/* Progress Bar - Free Messages */}
-      {settingsLoaded && !isPaidMode && (
-        <div className="py-2 px-1">
-          <div className="flex justify-between text-[10px] font-bold text-zinc-400 mb-1">
-            <span>المحادثات المجانية</span>
-            <span>{usedCount} / {freeLimit}</span>
-          </div>
-          <div className="h-1.5 bg-zinc-100 rounded-full overflow-hidden">
-            <div
-              className="h-full bg-gradient-to-r from-emerald-400 to-teal-500 rounded-full transition-all duration-500"
-              style={{ width: `${Math.min((usedCount / freeLimit) * 100, 100)}%` }}
-            />
-          </div>
-        </div>
-      )}
-
-      {/* Paid mode notice */}
-      {settingsLoaded && isPaidMode && (
-        <div className="flex items-center gap-2 py-2 px-3 bg-amber-50 border border-amber-100 rounded-2xl mt-2 text-xs font-bold text-amber-700">
-          <Lock className="w-3.5 h-3.5 shrink-0" />
-          انتهت رسائلك المجانية. كل رسالة الآن تكلّف {costPerMsg} كريدت من رصيدك.
-        </div>
-      )}
-
-      {/* Messages Area */}
-      <div className="flex-1 overflow-y-auto py-6 space-y-6">
-
-        {/* Empty State */}
+      {/* Messages Scroll Area */}
+      <div className="flex-1 overflow-y-auto px-2 space-y-8 scrollbar-hide pb-8">
         {messages.length === 0 && (
-          <div className="flex flex-col items-center justify-center h-full text-center px-4">
-            <div className="w-20 h-20 bg-gradient-to-br from-primary/10 to-purple-100 rounded-3xl flex items-center justify-center mb-6">
-              <Sparkles className="w-10 h-10 text-primary" />
+          <div className="flex flex-col items-center justify-center h-full text-center px-4 animate-in fade-in zoom-in-95 duration-1000">
+            <div className="size-16 md:size-24 rounded-3xl md:rounded-[2.5rem] bg-white border border-zinc-100 flex items-center justify-center mb-6 md:mb-8 shadow-sm relative">
+              <Sparkles className="size-8 md:size-10 text-primary relative z-10 animate-pulse" />
             </div>
-            <h3 className="text-2xl font-black text-zinc-800 mb-2">كيف يمكنني مساعدتك؟</h3>
-            <p className="text-zinc-400 text-sm font-medium mb-8 max-w-sm">
-              مساعد أوركيدة الذكي جاهز للإجابة على أسئلتك في التسويق، التصميم، البرمجة، والمزيد.
+            <p className="text-zinc-500 text-xs md:text-sm font-medium mb-8 md:mb-12 max-w-xs md:max-w-sm leading-relaxed">
+              تحدث مع المساعد حول أي موضوع تقني أو إبداعي، وسيقدم لك أفضل الحلول
+              المبنية على بيانات ضخمة.
             </p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 w-full max-w-2xl">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 w-full max-w-3xl">
               {suggestions.map((s, i) => (
                 <button
                   key={i}
-                  onClick={() => { setInput(s); textareaRef.current?.focus(); }}
-                  className="text-right p-4 bg-white border border-zinc-100 rounded-2xl text-sm font-medium text-zinc-600 hover:border-primary/30 hover:bg-primary/5 hover:text-primary transition-all shadow-sm"
+                  onClick={() => {
+                    setInput(s);
+                    textareaRef.current?.focus();
+                  }}
+                  className="text-right p-5 bg-white border border-zinc-100 rounded-2xl text-sm font-bold text-zinc-600 hover:text-primary hover:border-primary/20 hover:bg-primary/5 transition-all duration-300 shadow-sm group"
                 >
-                  <MessageSquare className="w-4 h-4 mb-2 text-primary/60" />
+                  <MessageSquare className="size-4 mb-3 text-primary/40 group-hover:text-primary transition-colors" />
                   {s}
                 </button>
               ))}
@@ -330,46 +298,62 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
           </div>
         )}
 
-        {/* Message Bubbles */}
         {messages.map((msg) => (
           <div
             key={msg.id}
-            className={`flex gap-3 animate-in fade-in slide-in-from-bottom-2 duration-300 ${
+            className={`flex gap-4 animate-in fade-in slide-in-from-bottom-4 duration-500 ${
               msg.role === "user" ? "flex-row-reverse" : "flex-row"
             }`}
           >
-            <div className={`w-8 h-8 rounded-xl flex items-center justify-center shrink-0 ${
-              msg.role === "user"
-                ? "bg-primary text-white"
-                : "bg-gradient-to-br from-purple-500 to-primary text-white"
-            }`}>
-              {msg.role === "user" ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
+            <div
+              className={`size-8 md:size-10 rounded-xl md:rounded-2xl flex items-center justify-center shrink-0 ${
+                msg.role === "user"
+                  ? "bg-zinc-100 text-zinc-500"
+                  : "bg-primary text-white shadow-lg shadow-primary/20"
+              }`}
+            >
+              {msg.role === "user" ? (
+                <User className="size-4 md:size-5" />
+              ) : (
+                <Bot className="size-4 md:size-5" />
+              )}
             </div>
 
-            <div className={`group relative max-w-[80%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}>
-              <div className={`px-5 py-3.5 rounded-2xl text-sm leading-relaxed whitespace-pre-wrap ${
-                msg.role === "user"
-                  ? "bg-primary text-white rounded-tr-sm"
-                  : "bg-white border border-zinc-100 text-zinc-800 shadow-sm rounded-tl-sm"
-              }`}>
-                {msg.content && <div>{msg.content}</div>}
-                
-                {/* Attachments Display */}
+            <div
+              className={`group relative max-w-[90%] md:max-w-[85%] ${msg.role === "user" ? "items-end" : "items-start"} flex flex-col`}
+            >
+              <div
+                className={`p-5 rounded-3xl text-sm leading-relaxed shadow-sm ${
+                  msg.role === "user"
+                    ? "bg-primary text-white"
+                    : "bg-zinc-50 border border-zinc-100 text-zinc-800"
+                }`}
+              >
+                {msg.content && (
+                  <div className="whitespace-pre-wrap">{msg.content}</div>
+                )}
+
                 {msg.attachments && msg.attachments.length > 0 && (
-                  <div className={`flex flex-wrap gap-2 ${msg.content ? "mt-3 pt-3 border-t border-primary/20" : ""}`}>
+                  <div
+                    className={`flex flex-wrap gap-3 ${msg.content ? "mt-4 pt-4 border-t border-zinc-200" : ""}`}
+                  >
                     {msg.attachments.map((att, i) => (
-                      <div key={i} className="flex items-center gap-2 p-2 bg-black/10 rounded-xl overflow-hidden max-w-full">
+                      <div
+                        key={i}
+                        className="bg-white rounded-2xl overflow-hidden border border-zinc-200"
+                      >
                         {att.type.startsWith("image/") ? (
-                          <img src={att.url} alt={att.name} className="h-16 w-auto rounded-lg object-cover" />
-                        ) : att.type.startsWith("video/") ? (
-                          <div className="flex items-center gap-2 px-2">
-                            <VideoIcon className="w-4 h-4" />
-                            <span className="text-xs truncate max-w-[100px]">{att.name}</span>
-                          </div>
+                          <img
+                            src={att.url}
+                            alt={att.name}
+                            className="h-32 w-auto object-cover"
+                          />
                         ) : (
-                          <div className="flex items-center gap-2 px-2">
-                            <FileText className="w-4 h-4" />
-                            <span className="text-xs truncate max-w-[100px]">{att.name}</span>
+                          <div className="flex items-center gap-3 p-4">
+                            <FileText className="size-5 text-primary" />
+                            <span className="text-xs font-mono text-zinc-500">
+                              {att.name}
+                            </span>
                           </div>
                         )}
                       </div>
@@ -377,98 +361,124 @@ export default function ChatModeView({ userBalance }: ChatModeViewProps) {
                   </div>
                 )}
               </div>
-              <div className={`flex items-center gap-2 mt-1 opacity-0 group-hover:opacity-100 transition-opacity ${
-                msg.role === "user" ? "flex-row-reverse" : "flex-row"
-              }`}>
-                <span className="text-[10px] text-zinc-400 font-medium">
-                  {msg.timestamp.toLocaleTimeString("ar", { hour: "2-digit", minute: "2-digit" })}
-                </span>
-                <button onClick={() => handleCopy(msg.id, msg.content)} className="p-1 text-zinc-400 hover:text-zinc-600 transition-colors">
-                  {copiedId === msg.id ? <Check className="w-3 h-3 text-emerald-500" /> : <Copy className="w-3 h-3" />}
-                </button>
-              </div>
+              <p
+                className={`text-[9px] font-black uppercase tracking-widest font-mono mt-2 ${msg.role === "user" ? "text-left" : "text-right"} text-zinc-300 px-4`}
+              >
+                {msg.role === "user" ? "USER_SIGNAL" : "CORE_RESPONSE"}
+              </p>
             </div>
           </div>
         ))}
 
-        {/* Loading */}
         {isLoading && (
-          <div className="flex gap-3 animate-in fade-in duration-300">
-            <div className="w-8 h-8 rounded-xl bg-gradient-to-br from-purple-500 to-primary text-white flex items-center justify-center shrink-0">
-              <Bot className="w-4 h-4" />
+          <div className="flex gap-3 md:gap-4 animate-in fade-in duration-300">
+            <div className="size-10 md:size-12 rounded-xl md:rounded-[2.5rem] bg-primary text-white flex items-center justify-center shrink-0 shadow-lg shadow-primary/20">
+              <Bot className="size-5 md:size-6" />
             </div>
-            <div className="bg-white border border-zinc-100 shadow-sm rounded-2xl rounded-tl-sm px-5 py-4 flex items-center gap-2">
-              <div className="flex gap-1">
-                <span className="w-2 h-2 bg-primary/40 rounded-full animate-bounce [animation-delay:0ms]" />
-                <span className="w-2 h-2 bg-primary/60 rounded-full animate-bounce [animation-delay:150ms]" />
-                <span className="w-2 h-2 bg-primary rounded-full animate-bounce [animation-delay:300ms]" />
+            <div className="bg-zinc-50 border border-zinc-100 rounded-3xl md:rounded-4xl px-6 md:px-8 py-4 md:py-5 flex items-center gap-3 md:gap-4 shadow-sm">
+              <div className="flex gap-1.5 md:gap-2">
+                <span className="size-1.5 md:size-2 bg-primary/40 rounded-full animate-bounce [animation-delay:-0.3s]" />
+                <span className="size-1.5 md:size-2 bg-primary/70 rounded-full animate-bounce [animation-delay:-0.15s]" />
+                <span className="size-1.5 md:size-2 bg-primary rounded-full animate-bounce" />
               </div>
-              <span className="text-xs text-zinc-400 font-medium">يكتب...</span>
+              <span className="text-[8px] md:text-[10px] font-black text-zinc-400 uppercase tracking-[0.2em] md:tracking-[0.3em] font-mono italic animate-pulse">
+                Neural Thinking...
+              </span>
             </div>
           </div>
         )}
       </div>
 
-      {/* Input Area */}
-      <div className="py-4 border-t border-zinc-100">
-        
-        {/* Attachments Preview Area */}
-        {attachments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-3">
-            {attachments.map((file, idx) => (
-              <div key={idx} className="relative flex items-center gap-2 bg-zinc-100 border border-zinc-200 rounded-xl p-1.5 pr-3 max-w-[150px]">
-                {file.type.startsWith("image/") ? (
-                  <ImageIcon className="w-4 h-4 text-primary shrink-0" />
-                ) : file.type.startsWith("video/") ? (
-                  <VideoIcon className="w-4 h-4 text-blue-500 shrink-0" />
-                ) : (
-                  <FileText className="w-4 h-4 text-emerald-500 shrink-0" />
-                )}
-                <span className="text-xs text-zinc-700 truncate font-medium flex-1">{file.name}</span>
-                <button
-                  onClick={() => removeAttachment(idx)}
-                  className="p-1 hover:bg-zinc-200 rounded-lg transition-colors"
+      {/* Input Console */}
+      <div className="pt-4 md:pt-8 border-t border-zinc-100 relative z-10">
+        <div className="relative bg-zinc-50/50 border border-zinc-200 rounded-3xl md:rounded-[2.5rem] p-2 md:p-3 shadow-inner focus-within:bg-white focus-within:border-primary/40 focus-within:shadow-2xl focus-within:shadow-primary/5 transition-all duration-700">
+          {attachments.length > 0 && (
+            <div className="flex flex-wrap gap-2 px-4 md:px-6 py-3 md:py-4 border-b border-zinc-100 mb-2 md:mb-3">
+              {attachments.map((file, idx) => (
+                <div
+                  key={idx}
+                  className="relative flex items-center gap-2 md:gap-3 bg-white border border-zinc-200 rounded-xl px-3 md:px-4 py-2 md:py-2.5 animate-in zoom-in-95 shadow-sm"
                 >
-                  <X className="w-3 h-3 text-zinc-500" />
-                </button>
-              </div>
-            ))}
-          </div>
-        )}
+                  <div className="size-5 md:size-6 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                    <FileText className="size-3 md:size-3.5" />
+                  </div>
+                  <span className="text-[9px] md:text-[10px] text-zinc-900 font-black truncate max-w-[100px] md:max-w-[150px] uppercase tracking-tight">
+                    {file.name}
+                  </span>
+                  <button
+                    onClick={() => removeAttachment(idx)}
+                    className="size-5 md:size-6 flex items-center justify-center hover:bg-red-50 text-zinc-400 hover:text-red-500 rounded-lg transition-all"
+                  >
+                    <X className="size-3 md:size-4" />
+                  </button>
+                </div>
+              ))}
+            </div>
+          )}
 
-        <div className="flex gap-3 items-end bg-white border border-zinc-200 rounded-3xl p-3 shadow-sm focus-within:border-primary/30 focus-within:shadow-md transition-all">
-          <button
-            onClick={() => fileInputRef.current?.click()}
-            className="w-10 h-10 rounded-2xl text-zinc-400 flex items-center justify-center hover:bg-zinc-50 hover:text-primary transition-colors shrink-0"
-          >
-            <Paperclip className="w-5 h-5" />
-          </button>
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            multiple
-            className="hidden"
-          />
-          <textarea
-            ref={textareaRef}
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            placeholder="اكتب رسالتك هنا..."
-            rows={1}
-            className="flex-1 bg-transparent resize-none outline-none text-sm text-zinc-800 placeholder:text-zinc-400 leading-relaxed py-1 px-2 max-h-[200px] overflow-y-auto"
-          />
-          <button
-            onClick={handleSend}
-            disabled={(!input.trim() && attachments.length === 0) || isLoading || !settingsLoaded}
-            className="w-10 h-10 rounded-2xl bg-primary text-white flex items-center justify-center hover:bg-primary/90 disabled:opacity-40 disabled:cursor-not-allowed transition-all hover:scale-105 active:scale-95 shrink-0"
-          >
-            {isLoading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
-          </button>
+          <div className="flex items-center gap-2 md:gap-3 px-2 md:px-3">
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="size-10 md:size-14 flex items-center justify-center text-zinc-400 hover:text-primary hover:bg-primary/5 rounded-xl md:rounded-2xl transition-all duration-500 hover:scale-110 active:scale-95"
+            >
+              <Paperclip className="size-5 md:size-7" />
+            </button>
+            <input
+              type="file"
+              ref={fileInputRef}
+              onChange={handleFileChange}
+              multiple
+              className="hidden"
+            />
+
+            <textarea
+              ref={textareaRef}
+              value={input}
+              onChange={(e) => setInput(e.target.value)}
+              placeholder="ارسل تعليماتك..."
+              rows={1}
+              className="flex-1 bg-transparent resize-none outline-none text-sm md:text-base text-zinc-900 placeholder:text-zinc-400 leading-relaxed py-3 md:py-5 scrollbar-hide max-h-[120px] md:max-h-[150px] font-medium"
+              onKeyDown={(e) => {
+                if (e.key === "Enter" && !e.shiftKey) {
+                  e.preventDefault();
+                  handleSend();
+                }
+              }}
+            ></textarea>
+
+            <button
+              onClick={handleSend}
+              disabled={
+                (!input.trim() && attachments.length === 0) ||
+                isLoading ||
+                !settingsLoaded
+              }
+              className="size-12 md:size-16 rounded-xl md:rounded-[1.5rem] bg-primary text-white flex items-center justify-center hover:bg-primary/90 disabled:opacity-30 transition-all duration-500 hover:scale-[1.05] active:scale-95 shadow-2xl shadow-primary/30 group/send"
+            >
+              {isLoading ? (
+                <Loader2 className="size-5 md:size-7 animate-spin" />
+              ) : (
+                <Send className="size-5 md:size-7 group-hover/send:rotate-[-15deg] transition-transform duration-500" />
+              )}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center justify-center gap-1.5 mt-2">
-          <Zap className="w-3 h-3 text-zinc-300" />
-          <span className="text-[10px] text-zinc-400 font-medium">مدعوم بـ GPT-4o من OpenAI</span>
+
+        <div className="hidden md:flex items-center justify-between px-8 mt-6">
+          <div className="flex items-center gap-3">
+            <div className="size-2 rounded-full bg-primary/20 animate-pulse" />
+            <span className="text-[9px] font-black text-zinc-400 uppercase tracking-widest font-mono">
+              Neural Hub Optimized
+            </span>
+          </div>
+          <div className="flex items-center gap-6">
+            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest font-mono">
+              Token_Buffer: ACTIVE
+            </span>
+            <span className="text-[9px] font-black text-zinc-300 uppercase tracking-widest font-mono">
+              Latency: {isLoading ? "..." : "18ms"}
+            </span>
+          </div>
         </div>
       </div>
     </div>

@@ -58,6 +58,11 @@ export async function generateVideoAction(clientFormData: FormData) {
     apiFormData.append("prompt", prompt);
     apiFormData.append("model", model || `${endpointProvider}-2`);
     
+    const numResults = clientFormData.get("numResults");
+    if (numResults) {
+      apiFormData.append("num_results", numResults);
+    }
+    
     if (resolution) {
       const safeRes = resolution || "480p";
       apiFormData.append("resolution", safeRes.includes("720") ? "720p" : safeRes.includes("1080") ? "1080p" : "480p");
